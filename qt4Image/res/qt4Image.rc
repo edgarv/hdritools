@@ -1,0 +1,67 @@
+#include <windows.h>
+
+// Application and HDR Files icons
+IDI_ICON1			ICON    DISCARDABLE     "app.ico"
+IDI_ICON2			ICON    DISCARDABLE     "exr.ico"
+IDI_ICON3			ICON    DISCARDABLE     "rgbe.ico"
+IDI_ICON4			ICON    DISCARDABLE     "hdr.ico"
+
+// Strings with the long description. Don't forget to use
+// the same ID number when refering to the resources, as
+// in @C:\Path...\qt4Image.exe,-20
+// Check the documentation at 
+// http://msdn.microsoft.com/en-us/library/aa381050(VS.85).aspx
+
+// I checked as example iTunes, which uses the ID 20 for the description
+#define IDS_QT4IMAGE_DESC 20
+
+STRINGTABLE DISCARDABLE
+BEGIN
+IDS_QT4IMAGE_DESC,
+"Qt4Image is a simple, fast viewer for High Dynamic Range Images (HDR) in \
+the Radiance (.rgbe, .hdr) and OpenEXR (.exr) formats. It allows changing \
+the exposure and gamma curve for the image, saving a tone-mapped image to \
+common formats such as PNG and JPEG and comparing against another HDR \
+file. It provides other amenities such as zooming, per-pixel information \
+and drag-and-drop.\n\r\n\r\n\rIt is implemented on top of several Open Source \
+libraries: OpenEXR, zlib, Threading Building Blocks and (naturally) Qt4."
+END
+
+
+#ifdef GCC_WINDRES
+VS_VERSION_INFO		VERSIONINFO
+#else
+VS_VERSION_INFO		VERSIONINFO	MOVEABLE IMPURE LOADONCALL DISCARDABLE
+#endif
+  FILEVERSION		0,1,0,0
+  PRODUCTVERSION	0,1,0,0
+  FILEFLAGSMASK		VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS		1
+#else
+  FILEFLAGS		0
+#endif
+  FILEOS		VOS_DOS_WINDOWS32
+  FILETYPE		VFT_DLL
+  FILESUBTYPE		0	// not used
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    //language ID = U.S. English, char set = Windows, Multilingual
+    BEGIN
+      VALUE "FileDescription",	"Qt4Image\0"
+	  VALUE "CompanyName", "Program of Computer Graphics, Cornell University\0"
+      VALUE "FileVersion",	"0.1.0\0"
+      VALUE "InternalName",	"qt4Image.exe\0"
+      VALUE "LegalCopyright",	"Copyright (c) 2008, Program of Computer Graphics, Cornell University\0"
+      VALUE "OriginalFilename",	"qt4Image.exe\0"
+      VALUE "ProductName",	"qt4Image\0"
+      VALUE "ProductVersion",	"0.1.0\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1252
+  END
+END

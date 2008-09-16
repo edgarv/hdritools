@@ -1,0 +1,347 @@
+<ui version="4.0" >
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>540</width>
+    <height>620</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>QT4Image</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="../res/icons.qrc" >
+    <normaloff>:/icons/app-48x48.png</normaloff>:/icons/app-48x48.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <layout class="QVBoxLayout" >
+    <item>
+     <widget class="QScrollArea" name="imgScrollFrame" >
+      <property name="frameShape" >
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow" >
+       <enum>QFrame::Plain</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QGridLayout" >
+      <property name="horizontalSpacing" >
+       <number>6</number>
+      </property>
+      <property name="verticalSpacing" >
+       <number>4</number>
+      </property>
+      <item row="0" column="0" >
+       <widget class="QLabel" name="exposureLabel" >
+        <property name="text" >
+         <string>Exposure:</string>
+        </property>
+        <property name="buddy" >
+         <cstring>exposureSpinBox</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" >
+       <widget class="QLabel" name="exponentLabel" >
+        <property name="text" >
+         <string>2^</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3" >
+       <widget class="QSlider" name="exposureSlider" >
+        <property name="minimum" >
+         <number>-1000</number>
+        </property>
+        <property name="maximum" >
+         <number>1000</number>
+        </property>
+        <property name="singleStep" >
+         <number>5</number>
+        </property>
+        <property name="pageStep" >
+         <number>50</number>
+        </property>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition" >
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+        <property name="tickInterval" >
+         <number>50</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" >
+       <widget class="QDoubleSpinBox" name="exposureSpinBox" >
+        <property name="correctionMode" >
+         <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
+        </property>
+        <property name="prefix" >
+         <string/>
+        </property>
+        <property name="suffix" >
+         <string/>
+        </property>
+        <property name="minimum" >
+         <double>-20.000000000000000</double>
+        </property>
+        <property name="maximum" >
+         <double>20.000000000000000</double>
+        </property>
+        <property name="singleStep" >
+         <double>0.020000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" >
+       <widget class="QLabel" name="gammaLabel" >
+        <property name="text" >
+         <string>Gamma:</string>
+        </property>
+        <property name="buddy" >
+         <cstring>gammaSpinBox</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" >
+       <widget class="QDoubleSpinBox" name="gammaSpinBox" >
+        <property name="correctionMode" >
+         <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
+        </property>
+        <property name="minimum" >
+         <double>0.100000000000000</double>
+        </property>
+        <property name="maximum" >
+         <double>5.000000000000000</double>
+        </property>
+        <property name="singleStep" >
+         <double>0.050000000000000</double>
+        </property>
+        <property name="value" >
+         <double>2.200000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3" >
+       <widget class="QSlider" name="gammaSlider" >
+        <property name="minimum" >
+         <number>5</number>
+        </property>
+        <property name="maximum" >
+         <number>250</number>
+        </property>
+        <property name="singleStep" >
+         <number>5</number>
+        </property>
+        <property name="pageStep" >
+         <number>5</number>
+        </property>
+        <property name="value" >
+         <number>110</number>
+        </property>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition" >
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+        <property name="tickInterval" >
+         <number>50</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar" >
+   <property name="geometry" >
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>540</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File" >
+    <property name="title" >
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_Open" />
+    <addaction name="action_Save_as" />
+    <addaction name="separator" />
+    <addaction name="actionCompare_With" />
+    <addaction name="separator" />
+    <addaction name="actionE_xit" />
+   </widget>
+   <widget class="QMenu" name="menu_Help" >
+    <property name="title" >
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="action_About" />
+    <addaction name="actionAbout_Qt" />
+   </widget>
+   <widget class="QMenu" name="menu_View" >
+    <property name="title" >
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionZoom_In" />
+    <addaction name="actionZoom_Out" />
+    <addaction name="action_Fit_on_Screen" />
+    <addaction name="action_Actual_Pixels" />
+    <addaction name="separator" />
+    <addaction name="action_Pixel_Info" />
+   </widget>
+   <widget class="QMenu" name="menu_Window" >
+    <property name="title" >
+     <string>&amp;Window</string>
+    </property>
+    <addaction name="action_AdjustSize" />
+   </widget>
+   <addaction name="menu_File" />
+   <addaction name="menu_View" />
+   <addaction name="menu_Window" />
+   <addaction name="menu_Help" />
+  </widget>
+  <action name="action_Open" >
+   <property name="text" >
+    <string>&amp;Open...</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="action_Save_as" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>&amp;Save As...</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionCompare_With" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>Compare &amp;With...</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+Alt+O</string>
+   </property>
+  </action>
+  <action name="action_About" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionE_xit" >
+   <property name="text" >
+    <string>E&amp;xit</string>
+   </property>
+   <property name="shortcut" >
+    <string>Esc</string>
+   </property>
+  </action>
+  <action name="actionZoom_In" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>Zoom &amp;In</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl++</string>
+   </property>
+  </action>
+  <action name="actionZoom_Out" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>Zoom &amp;Out</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+-</string>
+   </property>
+  </action>
+  <action name="action_Fit_on_Screen" >
+   <property name="checkable" >
+    <bool>true</bool>
+   </property>
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>&amp;Fit on Screen</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+0</string>
+   </property>
+  </action>
+  <action name="action_Actual_Pixels" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>&amp;Actual Pixels</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+Alt+0</string>
+   </property>
+  </action>
+  <action name="actionAbout_Qt" >
+   <property name="text" >
+    <string>About Qt</string>
+   </property>
+   <property name="menuRole" >
+    <enum>QAction::AboutQtRole</enum>
+   </property>
+  </action>
+  <action name="action_Pixel_Info" >
+   <property name="checkable" >
+    <bool>true</bool>
+   </property>
+   <property name="text" >
+    <string>Pixel &amp;Info</string>
+   </property>
+   <property name="shortcut" >
+    <string>F8</string>
+   </property>
+  </action>
+  <action name="action_AdjustSize" >
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
+   <property name="text" >
+    <string>&amp;Adjust to Image Size</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+ </widget>
+ <tabstops>
+  <tabstop>exposureSpinBox</tabstop>
+  <tabstop>exposureSlider</tabstop>
+  <tabstop>gammaSpinBox</tabstop>
+  <tabstop>gammaSlider</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../res/icons.qrc" />
+ </resources>
+ <connections/>
+</ui>
