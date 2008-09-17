@@ -89,8 +89,12 @@ if(WIN32)
   )
   
   install(FILES
+	${CMAKE_CURRENT_BINARY_DIR}/InstallVista.reg
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallVista.reg
-    ${CMAKE_CURRENT_BINARY_DIR}/InstallVista.reg
+	${CMAKE_CURRENT_SOURCE_DIR}/win32/Types.reg
+	${CMAKE_CURRENT_SOURCE_DIR}/win32/Types-Photoshop.reg
+	${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes.reg
+	${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes-Photoshop.reg
 	DESTINATION win32
 	)
 
