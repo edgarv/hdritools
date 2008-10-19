@@ -5,7 +5,7 @@ add_executable(b44ExpLogTable b44ExpLogTable.cpp)
 target_link_libraries(b44ExpLogTable Half)
 
 # Directory with the LUTs
-set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lut)
+set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 include_directories( ${LUT_DIRECTORY} )
 
 # We set the working directory to the one containing the half dll (not an issue with the static libs)

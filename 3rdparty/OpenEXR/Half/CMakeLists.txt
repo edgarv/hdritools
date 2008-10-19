@@ -5,7 +5,7 @@ add_executable(eLUT eLut.cpp)
 add_executable(toFloat toFloat.cpp)
 
 # Directory with the LUTs
-set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lut)
+set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 include_directories( ${LUT_DIRECTORY} )
   
 # All the actual sources

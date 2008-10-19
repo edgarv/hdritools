@@ -42,15 +42,18 @@ endif(NOT AWK)
 # Small macro to set the LIBNAME_VERSION variable accoring to the contents of the VERSION
 macro(GET_VERSION libname)
   string(TOUPPER "${libname}" libname_upper)
-  execute_process(COMMAND "${AWK}" 
-    "toupper($1) ~ /^${libname_upper}/ { print $3 }"
-	"${CMAKE_CURRENT_SOURCE_DIR}/VERSION"
-	OUTPUT_VARIABLE AUX_VERSION
-  )
-  set(${libname_upper}_VERSION "${AUX_VERSION}" 
-    CACHE STRING 
-	"Version number for ${libname} as defined in the VERSION file.")
-  mark_as_advanced(${libname_upper}_VERSION)
+  if(NOT ${libname_upper}_VERSION)
+    execute_process(COMMAND "${AWK}" 
+      "toupper($1) ~ /^${libname_upper}/ { print $3 }"
+	  "${CMAKE_CURRENT_SOURCE_DIR}/VERSION"
+	  OUTPUT_VARIABLE AUX_VERSION
+	  OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(${libname_upper}_VERSION "${AUX_VERSION}" 
+      CACHE STRING 
+	  "Version number for ${libname} as defined in the VERSION file.")
+    mark_as_advanced(${libname_upper}_VERSION)
+  endif(NOT ${libname_upper}_VERSION)
 endmacro(GET_VERSION)
 
 # A small macro to pass extra compiler properties to MSVC (useful to disable warnins)
@@ -115,7 +118,11 @@ endif(CMAKE_USE_PTHREADS_INIT)
 
 # posix semaphores
 include(CheckIncludeFile)
-CHECK_INCLUDE_FILE("semaphore.h" HAVE_POSIX_SEMAPHORES)
+if(APPLE)
+  set(HAVE_POSIX_SEMAPHORES 0)
+else(APPLE)
+  CHECK_INCLUDE_FILE("semaphore.h" HAVE_POSIX_SEMAPHORES)
+endif(APPLE)
 
 
 # Large stack is enabled only in linux systems
@@ -283,7 +290,9 @@ add_subdirectory(IlmImf)
 if(OPENEXR_IS_INTERNAL)
 
   set(OpenEXR_FOUND 1 PARENT_SCOPE)
-  set(OpenEXR_LIBRARIES Half Iex Imath IlmThread IlmImf PARENT_SCOPE)
+  
+  # Sets the libraries only to IlmImf: cmake will automatically all the transitive dependencies
+  set(OpenEXR_LIBRARIES IlmImf PARENT_SCOPE)
   set(OpenEXR_INCLUDE_DIR ${OPENEXR_CFG_DIR})
   foreach(dir Half Iex Imath IlmThread IlmImf)
     get_filename_component(fulldir ${dir} ABSOLUTE)
