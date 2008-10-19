@@ -28,16 +28,16 @@ option(USE_SYSTEM_OPENEXR
 # TODO: How to build packages with mixed C++ and Java code?
 #             And for this particular one: how to specify the full  java prefix?
 option(BUILD_OPENEXR_JNI 
-  "Builds the OpenEXR JNI binding." ON)
+  "Builds the OpenEXR JNI binding." OFF)
 
 option(BUILD_OPENEXR_MATLAB
-  "Builds the OpenEXR Matlab MEX binaries." ON)
+  "Builds the OpenEXR Matlab MEX binaries." OFF)
   
 option(BUILD_BATCH_TONEMAPPER
-  "Builds the command line batch tonemapper." ON)
+  "Builds the command line batch tonemapper." OFF)
   
 option(BUILD_QT4IMAGE
-  "Builds the QT4 successor of glimage." ON)
+  "Builds the QT4 successor of glimage." OFF)
   
 # Sets the required zlib variables if we are using the bundled OpenEXR or if building the batch tonemapper
 if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
@@ -56,15 +56,17 @@ if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
   
 endif(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
 
-# At the bare minimum we need to build the imageio library, which depends on
-# OpenEXR and Intel Threading Building Blocks
-find_package(TBB 2.0 REQUIRED)
-
+# We always need to use OpenEXR
 if(USE_SYSTEM_OPENEXR)
   find_package(OpenEXR 1.6 REQUIRED)
 else(USE_SYSTEM_OPENEXR)
   set(OPENEXR_IS_INTERNAL TRUE)
   add_subdirectory(3rdparty/OpenEXR)
+  
+  # Also clear the cache variable that might have seet previously by the FindOpenEXR script
+  set(OpenEXR_PREFIX_PATH 
+    CACHE INTERNAL "Prefix for external OpenEXR not used." FORCE)
+  
 endif(USE_SYSTEM_OPENEXR)
 
   
@@ -72,14 +74,17 @@ endif(USE_SYSTEM_OPENEXR)
 if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   find_package(Qt4 REQUIRED)
   include(QtAddImgPlugins)
+  
+  # ImageIO depends on TBB
+  find_package(TBB 2.0 REQUIRED)
+  
+  # We need to build ImageIO
+  add_subdirectory(ImageIO)
 endif(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
-# We always build ImageIO
-add_subdirectory(ImageIO)
-
 # With the basic configuration options, proceed to the individual configuration
 if(BUILD_OPENEXR_JNI)
-  #add_subdirectory(OpenEXR_JNI)
+  add_subdirectory(OpenEXR_JNI)
 endif(BUILD_OPENEXR_JNI)
 
 if(BUILD_OPENEXR_MATLAB)

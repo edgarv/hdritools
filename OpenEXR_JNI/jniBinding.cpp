@@ -4,108 +4,94 @@
 #include <ImfArray.h>
 #include <ImfRgbaFile.h>
 #include <ImfStandardAttributes.h>
+
+#include <IlmThread.h>
+#include <IlmThreadPool.h>
+
+#include <ImfStdIO.h>
+
+#include <fstream>
 #include <cassert>
 
-#include "jni/fileformat_OpenEXRFormat.h"
+#include <edu_cornell_graphics_exr_EXRSimpleImage.h>
+
 #include "util.h"
+#if !USE_JAVA_UTF8
+  #include "UnicodeStream.h"
+#endif
 
 
 // Our favourite exception for this DLL
 const char *EXCEPTION = "fileformat/OpenEXRFormat$OpenEXRIOException";
+const char *EXR_EXCEPTION = "edu/cornell/graphics/exr/EXRIOException";
 
-
-/*
- * Class:     fileformat_OpenEXRFormat
- * Method:    toHalf
- * Signature: (F)S
- */
-JNIEXPORT jshort JNICALL Java_fileformat_OpenEXRFormat_toHalf
-(JNIEnv *, jclass, jfloat n) {
-
-	jshort result;
-	unsigned short uhalf = half(n).bits();
-
-	// I only want to copy the bits, so I perform a little trick here
-	jshort *aux = reinterpret_cast<jshort*>(&uhalf);
-	result = *aux;
-	return result;
+// Such a simple method, but will save painful debugging
+jlong JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_getNativeVersion
+  (JNIEnv *, jclass)
+{
+	return edu_cornell_graphics_exr_EXRSimpleImage_serialVersionUID;
 }
 
-/*
- * Class:     fileformat_OpenEXRFormat
- * Method:    write
- * Signature: (Ljava/lang/String;Ljava/nio/ByteBuffer;IIIZ)V
- */
-JNIEXPORT void JNICALL Java_fileformat_OpenEXRFormat_write
-  (JNIEnv *env, jclass clazz, jstring jfilename, jobject jpixels, jint width, jint height, 
-   jint compressionFlag,jboolean isBufferHalfRGBA)
+// Sets the number of global working threads, or throws a nasty exception
+void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_setNumWorkingThreads
+  (JNIEnv *env, jclass, jint numThreads)
 {
-	
-	// We retrieve the name of the file
-	const char *filename = env->GetStringUTFChars(jfilename, 0);
+	assert(numThreads >= 0);
+	if (IlmThread::supportsThreads()) {
 
-	// This was the point to keep a directbuffer from Java
-	float *rgbPixels = reinterpret_cast<float*>(env->GetDirectBufferAddress(jpixels));
-	
-	// Throws a Java Exception and returns if we don't have a buffer
-	if (rgbPixels == NULL) {
-		JNU_ThrowByName(env, EXCEPTION, "JNI could not retrieve the Direct Buffer address.");
-		return;
+		IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
 	}
+	else {
 
-	// Paranoid validation
-	assert(fileformat_OpenEXRFormat_NO_COMPRESSION    == Imf::NO_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_RLE_COMPRESSION   == Imf::RLE_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_ZIPS_COMPRESSION  == Imf::ZIPS_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_ZIP_COMPRESSION   == Imf::ZIP_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_PIZ_COMPRESSION   == Imf::PIZ_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_PXR24_COMPRESSION == Imf::PXR24_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_B44_COMPRESSION   == Imf::B44_COMPRESSION);
-	assert(fileformat_OpenEXRFormat_B44A_COMPRESSION  == Imf::B44A_COMPRESSION);
+		JNU_ThrowByName(env,
+			"java/lang/UnsupportedOperationException",
+			"The IlmThread library doesn't support threads.");
+	}
+}
 
+// Initializes the type caches
+JNIEXPORT void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_initCache
+  (JNIEnv *env, jclass)
+{
 	try {
-
-		// Performs the inplace conversion if required
-		if (!isBufferHalfRGBA) {
-			convertToHalfRGBA(rgbPixels, width, height);
+		Attributes::initCache(env);
+		OpenEXRTo::initCache(env);
+	}
+	catch(std::exception & e) {
+		if (! env->ExceptionCheck()) {
+			JNU_ThrowByName(env, EXR_EXCEPTION, e.what());
 		}
-		// The base is always the same
-		Imf::Rgba *halfPixelsBase = reinterpret_cast<Imf::Rgba*>(rgbPixels);
-
-		// Hyper-easy IlmImf-based file creation:
-		// Filename, width, height, channels, pixel aspect ratio, screen windows center, 
-		// screen window width, line order, compression
-		Imf::RgbaOutputFile file(filename, width, height, Imf::WRITE_RGB, 1, 
-			Imath::V2f(0,0), 1, Imf::INCREASING_Y, static_cast<Imf::Compression>(compressionFlag));
-		file.setFrameBuffer(halfPixelsBase, 1, width);
-		file.writePixels(height);
 	}
-	catch (Iex::BaseExc &e) {
-		// Something ugly has happened, so we throw that exception to Java
-		JNU_ThrowByName(env, EXCEPTION, e.what());
-	}
-
-
-
-	// Cleanup time
-	env->ReleaseStringUTFChars(jfilename, filename);
 }
 
 
 /*
- * Class:     fileformat_OpenEXRFormat
+ * Class:     edu_cornell_graphics_exr_EXRSimpleImage
  * Method:    read
- * Signature: (Lfileformat/OpenEXRFormat$OpenEXRTo;Ljava/lang/String;)V
+ * Signature: (Ledu/cornell/graphics/exr/EXRSimpleImage/OpenEXRTo;ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_fileformat_OpenEXRFormat_read
-(JNIEnv *env, jclass clazz, jobject jTo, jstring jfilename) 
+JNIEXPORT void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_read
+  (JNIEnv *env, jclass cls, jobject jexrTo, jint numChannels, jstring jfilename)
 {
 
-	// We retrieve the name of the file
-	const char *filename = env->GetStringUTFChars(jfilename, 0);
+#if USE_JAVA_UTF8
+	const char * filename = env->GetStringUTFChars(jfilename, NULL);
+#else
+	const jchar * filename = env->GetStringChars(jfilename, NULL);
+#endif
 
 	try {
-		Imf::RgbaInputFile file(filename);
+		if (filename == NULL) {
+			throw JavaExc("Null filename.");
+		}
+
+#if USE_JAVA_UTF8
+		Imf::StdIFStream imfIs(filename);
+#else
+		const jint filenameLen = env->GetStringLength(jfilename);
+		UnicodeIFStream imfIs(filename, filenameLen);
+#endif
+		Imf::RgbaInputFile file(imfIs);
 
 		Imath::Box2i dw = file.dataWindow();
 		const int width  = dw.max.x - dw.min.x + 1;
@@ -118,19 +104,118 @@ JNIEXPORT void JNICALL Java_fileformat_OpenEXRFormat_read
 		file.setFrameBuffer (&halfPixels[0][0], 1, width);
 		file.readPixels (dw.min.y, dw.max.y);	// Ossia, (0, height-1);
 
-		// Now we allocate another array which will be passed to
-		// the JVM with the same array but with float RGB pixels
-		float *rgbPixels = convertToFloatRGB(halfPixels, width, height);
-
 		// And saves that into the transfer object
-		saveToTransferObject(env, jTo, rgbPixels, width, height);
+		saveToTransferObject(env, jexrTo, file.header(), 
+			halfPixels, width, height, numChannels);
 	}
-	catch (Iex::BaseExc &e) {
-		// Something ugly has happened, so we throw that exception to Java
-		JNU_ThrowByName(env, EXCEPTION, e.what());
+	catch (std::exception &e) {
+		if (! env->ExceptionCheck() ) {
+			// Something ugly has happened, so we throw that exception to Java
+			// ... unless something so bad occured that an exception is already raised!
+			JNU_ThrowByName(env, EXR_EXCEPTION, e.what());
+		}
 	}
 
-	// Cleanup time
+#if USE_JAVA_UTF8
 	env->ReleaseStringUTFChars(jfilename, filename);
+#else
+	// Release the filename
+	env->ReleaseStringChars(jfilename, filename);
+#endif
+
+}
+
+
+/*
+ * Class:     edu_cornell_graphics_exr_EXRSimpleImage
+ * Method:    write
+ * Signature: (Ljava/lang/String;[FIIILedu/cornell/graphics/exr/Attributes;I)V
+ */
+JNIEXPORT void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_write
+  (JNIEnv *env, jclass, jstring jfilename, jfloatArray jpixelBuffer, 
+   jint width, jint height, jint numChannels, jobject jattrib, jint compressionFlag)
+{
+	assert(numChannels == 3 || numChannels == 4);
+	
+#if USE_JAVA_UTF8
+	const char * filename = env->GetStringUTFChars(jfilename, NULL);
+#else
+	// Get the Unicode filename
+	const jchar * filename = env->GetStringChars(jfilename, NULL);
+#endif
+
+	try {
+		if (filename == NULL) {
+			throw JavaExc("Null filename.");
+		}
+
+		// If there is an error in creating the stream there won't be any conversions
+#if USE_JAVA_UTF8
+		Imf::StdOFStream omfOs(filename);
+#else
+		const jint filenameLen = env->GetStringLength(jfilename);
+		UnicodeOFStream omfOs(filename, filenameLen);
+#endif
+		
+		// Converted version of the memory
+		Imf::Array2D<Imf::Rgba> halfPixels(width, height);
+
+		// Convert the pixels according to the channel configuration
+		jboolean isBufferCopy;
+		const float *pixels = (const float*)env->GetPrimitiveArrayCritical(jpixelBuffer, &isBufferCopy);
+
+		const int numPixels = width*height;
+		Imf::Rgba * halfPixelsPtr = &halfPixels[0][0];
+		if (numChannels == 3) {
+			for(int i = 0; i < numPixels; ++i) {
+				const int base = i*3;
+				halfPixelsPtr[i].r = pixels[base];
+				halfPixelsPtr[i].g = pixels[base+1];
+				halfPixelsPtr[i].b = pixels[base+2];
+			}
+		}
+		else if (numChannels == 4) {
+			for(int i = 0; i < numPixels; ++i) {
+				const int base = i*4;
+				halfPixelsPtr[i].r = pixels[base];
+				halfPixelsPtr[i].g = pixels[base+1];
+				halfPixelsPtr[i].b = pixels[base+2];
+				halfPixelsPtr[i].a = pixels[base+3];
+			}
+		}
+		
+		const Imf::RgbaChannels channels = numChannels == 3 ? Imf::WRITE_RGB : Imf::WRITE_RGBA;
+		env->ReleasePrimitiveArrayCritical(jpixelBuffer, const_cast<float*>(pixels), 0);
+
+		Imf::Header hd(width, height,
+			   /* pixelAspectRatio */   1,
+			   /* screenWindowCenter */ Imath::V2f(0,0),
+			   /* screenWindowWidth */  1,
+			   /* lineOrder */          Imf::INCREASING_Y,
+			   /* compression) */       static_cast<Imf::Compression>(compressionFlag) );
+
+		if(jattrib != NULL) {
+			Attributes attrib(jattrib);
+			attrib.setHeaderAttribs(env, hd);
+		}
+
+		// Actually write the file
+		Imf::RgbaOutputFile file(omfOs, hd, channels);
+		file.setFrameBuffer(&halfPixels[0][0], 1, width);
+		file.writePixels(height);
+
+	}
+	catch (std::exception &e) {
+		// Something ugly has happened, so we throw that exception to Java
+		JNU_ThrowByName(env, EXR_EXCEPTION, e.what());
+	}
+
+
+	// Release the filename
+#if USE_JAVA_UTF8
+	env->ReleaseStringUTFChars(jfilename, filename);
+#else
+	env->ReleaseStringChars(jfilename, filename);
+#endif
 
 }

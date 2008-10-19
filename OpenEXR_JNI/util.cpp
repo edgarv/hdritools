@@ -2,7 +2,7 @@
  * Utility functions for the RTGI oriented OpenEXR JNI binding.
  *
  * Edgar Velazquez-Armendariz - eva5 [at] cs_cornell_edu
- * August 2007.
+ * August 2007 - October 2008.
  */
 
 #include "util.h"
@@ -12,6 +12,9 @@
 #include <Iex.h>
 #include <ImfRgbaFile.h>
 #include <cassert>
+
+#include <ImfStandardAttributes.h>
+#include <string>
 
 
 // An utility function to "throw" java exceptions. When this methods are called
@@ -31,86 +34,314 @@ void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg) {
 }
 
 
-// Utility function to convert in place a buffer of width*height float RGB pixels
-// into half RGBA pixels.
-void convertToHalfRGBA(float *rgbPixels, const int width, const int height, 
-					   const half defaultAlpha) {
+// Initialize Attributes' static data
+jfieldID Attributes::ownerID = NULL;
+jfieldID Attributes::commentsID = NULL;
+jfieldID Attributes::capDateID = NULL;
+jfieldID Attributes::utcOffsetID = NULL;
+jmethodID Attributes::constructorID = NULL;
+bool Attributes::isCacheUpdated = false;
 
-	// By contract the memory pointed by rgbPixels is not needed, so I will use
-	// it as the destination. Note that even when using full RGBA pixels, the size
-	// will be enough: rgbPixels size = (3 * 4) >  required size = (4 * 2)
-	Imf::Rgba *halfPixels = reinterpret_cast<Imf::Rgba*>(rgbPixels);
-	
-	// Convert all pixels in order
-	for (int i = 0; i < width*height; ++i) {
 
-		// There is no overwriting, thus we make the conversion completely in place.
-		halfPixels->r = *rgbPixels++;
-		halfPixels->g = *rgbPixels++;
-		halfPixels->b = *rgbPixels++;
-		halfPixels->a = defaultAlpha;
+void Attributes::setStringField(JNIEnv *env, jfieldID fid, const char * val){
+	assert(instance != NULL);
+	jstring jstr = env->NewStringUTF(val);
+	if (jstr == NULL) {
+		throw JavaExc("JVM constructor returned null");
+	}
+	env->SetObjectField(instance, fid, jstr);
+	if (env->ExceptionCheck()) {
+		env->DeleteLocalRef(jstr);
+		throw JavaExc("Java exception occurred.");
+	}
+	env->DeleteLocalRef(jstr);
+}
 
-		++halfPixels;
+void Attributes::setStringField(JNIEnv *env, jfieldID fid, const std::string & val) {
+	setStringField(env, fid, val.c_str());
+}
+
+void Attributes::setFloatField(JNIEnv *env, jfieldID fid, jfloat val) {
+	assert(instance != NULL);
+	env->SetFloatField(instance, fid, val);
+	if (env->ExceptionCheck()) {
+		throw JavaExc("Java exception occurred.");
 	}
 }
 
+void Attributes::setStringAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
+	void (*attribMethod)(Imf::Header &, const std::string &) )
+{
+	assert(attribMethod != NULL);
+	jstring jstr = (jstring)env->GetObjectField(instance, fid);
+	if (jstr != NULL) {
+		const char * str = env->GetStringUTFChars(jstr, NULL);
+		if (str == NULL) {
+			env->ReleaseStringUTFChars(jstr, str);
+			throw JavaExc("Unexpected NULL String.");
+		}
+		(*attribMethod)(header, str);
+		env->ReleaseStringUTFChars(jstr, str);
+	}
+}
 
-// Utility function to allocate a new array which will hold the float RGB version of
-// the given image. It assumes that everything is properly allocated and setup!
-// It also assumes that sizeof(float) = 4
-float* convertToFloatRGB(const Imf::Array2D<Imf::Rgba> &halfImage, 
-						 const int width, const int height) {
+void Attributes::setFloatAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
+	void (*attribMethod)(Imf::Header &, const float &) ) 
+{
+	assert(attribMethod != NULL);
+	jfloat val = env->GetFloatField(instance, fid);
+	// Getting the bits
+	const unsigned int & bits = *reinterpret_cast<unsigned int*>(&val);
+	// Add if the value is not NaN nor INFINITY
+	if (bits != 0x7fc00000 && bits != 0x7f800000 && bits != 0xff800000) {
+		(*attribMethod)(header, val);
+	}
+}
 
-	// Our base pointer
-	const Imf::Rgba *halfPixels = &halfImage[0][0];
+void Attributes::initCache(JNIEnv *env) 
+{
+	jclass attribClass = env->FindClass("edu/cornell/graphics/exr/Attributes");
+	if (attribClass == NULL) { throw JavaExc("attribClass NULL"); }
 
-	// Allocates the new data
-	float *rgbPixels = new float[width * height * 4];
-	float *base = rgbPixels;
-
-	// Converts all pixels
-	for (int i = 0; i < width*height; ++i, ++halfPixels) {
-
-		*rgbPixels++ = halfPixels->r;
-		*rgbPixels++ = halfPixels->g;
-		*rgbPixels++ = halfPixels->b;
+	ownerID = env->GetFieldID(attribClass, "owner", "Ljava/lang/String;");
+	if (ownerID == NULL) { 
+		env->DeleteLocalRef(attribClass);
+		throw JavaExc("ownerID NULL"); 
 	}
 
-	return base;
+	commentsID = env->GetFieldID(attribClass, "comments", "Ljava/lang/String;");
+	if (commentsID == NULL) { 
+		env->DeleteLocalRef(attribClass);
+		throw JavaExc("commentsID NULL"); 
+	}
+
+	capDateID = env->GetFieldID(attribClass, "capDate", "Ljava/lang/String;");
+	if (capDateID == NULL) { 
+		env->DeleteLocalRef(attribClass);
+		throw JavaExc("capDateID NULL"); 
+	}
+
+	utcOffsetID = env->GetFieldID(attribClass, "utcOffset", "F");
+	if (utcOffsetID == NULL) { 
+		env->DeleteLocalRef(attribClass);
+		throw JavaExc("utcOffsetID NULL"); 
+	}
+
+	// We'll use the explicit boolean constructor
+	constructorID = env->GetMethodID(attribClass, "<init>", "(Z)V");
+	if (constructorID == NULL) { 
+		env->DeleteLocalRef(attribClass);
+		throw JavaExc("constructorID NULL"); 
+	}
+
+	env->DeleteLocalRef(attribClass);
+	isCacheUpdated = true;
+}
+
+Attributes::Attributes(JNIEnv *env, const Imf::Header & header) : instance(NULL) 
+{
+	assert(isCacheUpdated);
+
+	// Gets which attributes are in the header. If none is set
+	// don't create the attributes object.
+	const bool hasComments  = Imf::hasComments(header);
+	const bool hasOwner     = Imf::hasOwner(header);
+	const bool hasCapDate   = Imf::hasCapDate(header);
+	const bool hasUtcOffset = Imf::hasUtcOffset(header);
+
+	// Note that it's not possible to cache the class, if we do we would
+	// get an instance of InvocationTargetException or other bizarre things instead!!
+	jclass attribClass = env->FindClass("edu/cornell/graphics/exr/Attributes");
+	if (attribClass == NULL) { throw JavaExc("attribClass NULL"); }
+
+	// Don't initialize anything: leave all the defaults
+	instance = env->NewObject(attribClass, constructorID, JNI_FALSE);
+	if (env->ExceptionCheck()) {
+		env->DeleteLocalRef(attribClass);
+		throw JavaExc("Java exception occurred.");
+	}
+
+	// Sets whatever fields are there
+	try {
+		if (hasComments) {
+			setStringField(env, commentsID, Imf::comments(header) );
+		}
+		if (hasOwner) {
+			setStringField(env, ownerID, Imf::owner(header) );
+		}
+		if (hasCapDate) {
+			setStringField(env, capDateID, Imf::capDate(header) );
+		}
+		if (hasUtcOffset) {
+			setFloatField(env, utcOffsetID, Imf::utcOffset(header) );
+		}
+		else if (hasCapDate) {
+			setFloatField(env, utcOffsetID, 0.0f );
+		}
+	}
+	catch(std::exception &e) {
+		env->DeleteLocalRef(attribClass);
+		throw e;
+	}
+
+	env->DeleteLocalRef(attribClass);
+}
+
+
+Attributes::Attributes(jobject attrib) : instance(attrib) {
+	assert(isCacheUpdated);
+}
+
+
+// Adds the attributes to the header
+void Attributes::setHeaderAttribs(JNIEnv *env, Imf::Header & header)
+{
+	assert(isCacheUpdated);
+	if (instance == NULL) { return; }
+
+	// Sets the attributes in the header for the valid fields
+	setStringAttrib(env, header, ownerID,     &Imf::addOwner);
+	setStringAttrib(env, header, commentsID,  &Imf::addComments);
+	setStringAttrib(env, header, capDateID,   &Imf::addCapDate);
+	setFloatAttrib( env, header, utcOffsetID, &Imf::addUtcOffset);
 }
 
 
 
-/*
- * Saves the given buffer of float RGB pixels and its dimensions into the Java transfer object
- */
-void saveToTransferObject(JNIEnv *env, jobject jTo, 
-						  const float *rgbPixels, const int width, const int height) {
 
-	// Create the Java ByteBuffer to encapsule the rgbPixels
-	jobject jDataBuffer = 
-		env->NewDirectByteBuffer(const_cast<float*>(rgbPixels), width*height*3*4);
-	if (jDataBuffer == NULL) {
-		Iex::throwErrnoExc("JNI could not create the Direct Buffer.");
+
+// Initial values for OpenEXRTo static data
+jfieldID OpenEXRTo::attribID = NULL;
+jfieldID OpenEXRTo::widthID = NULL;
+jfieldID OpenEXRTo::heightID = NULL;
+jfieldID OpenEXRTo::bufferID = NULL;
+bool OpenEXRTo::isCacheUpdated = false;
+
+OpenEXRTo::OpenEXRTo(jobject obj) : instance(obj) {
+	assert(instance != NULL);
+}
+
+void OpenEXRTo::setWidth(JNIEnv *env, int width) {
+	assert(isCacheUpdated);
+	env->SetIntField(instance, widthID, width);
+	if (env->ExceptionCheck()) {
+		throw JavaExc("Java exception occurred.");
+	}
+}
+
+void OpenEXRTo::setHeight(JNIEnv *env, int height) {
+	assert(isCacheUpdated);
+	env->SetIntField(instance, heightID, height);
+	if (env->ExceptionCheck()) {
+		throw JavaExc("Java exception occurred.");
+	}
+}
+
+void OpenEXRTo::setAttributes(JNIEnv *env, const Attributes & attrib) {
+	assert(isCacheUpdated);
+	env->SetObjectField(instance, attribID, attrib.getInstance());
+	if (env->ExceptionCheck()) {
+		throw JavaExc("Java exception occurred.");
+	}
+}
+
+void OpenEXRTo::setBuffer(JNIEnv *env, jobject buffer) {
+	assert(isCacheUpdated);
+	env->SetObjectField(instance, bufferID, buffer);
+	if (env->ExceptionCheck()) {
+		throw JavaExc("Java exception occurred.");
+	}
+}
+
+void OpenEXRTo::initCache(JNIEnv *env)
+{
+	jclass toClass = env->FindClass("edu/cornell/graphics/exr/EXRSimpleImage$OpenEXRTo");
+	if (toClass == NULL) { throw JavaExc("toClass NULL"); }
+
+	attribID = env->GetFieldID(toClass, "attrib", "Ledu/cornell/graphics/exr/Attributes;");
+	if (attribID == NULL) { 
+		env->DeleteLocalRef(toClass);
+		throw JavaExc("attribID NULL"); 
 	}
 
-	// Class of the transferObjet
-	jclass toClass = env->GetObjectClass(jTo);
-	assert(toClass != NULL);
-	
-	// IDs for the fields
-	jfieldID dataBufferID = env->GetFieldID(toClass, "dataBuffer", "Ljava/nio/ByteBuffer;");
-	jfieldID widthID      = env->GetFieldID(toClass, "width", "I");
-	jfieldID heightID     = env->GetFieldID(toClass, "height", "I");
+	widthID = env->GetFieldID(toClass, "width", "I");
+	if (widthID == NULL) { 
+		env->DeleteLocalRef(toClass);
+		throw JavaExc("widthID NULL"); 
+	}
 
-	// Consistency checks
-	assert(dataBufferID != NULL);
-	assert(widthID != NULL);
-	assert(heightID != NULL);
+	heightID = env->GetFieldID(toClass, "height", "I");
+	if (heightID == NULL) { 
+		env->DeleteLocalRef(toClass);
+		throw JavaExc("heightID NULL"); 
+	}
 
-	// Set the dataBuffer, width and height fields of the TO instance
-	env->SetObjectField(jTo, dataBufferID, jDataBuffer);
-	env->SetIntField(jTo, widthID, width);
-	env->SetIntField(jTo, heightID, height);
+	bufferID = env->GetFieldID(toClass, "buffer", "[F");
+	if (bufferID == NULL) { 
+		env->DeleteLocalRef(toClass);
+		throw JavaExc("bufferID NULL"); 
+	}
 
+	env->DeleteLocalRef(toClass);
+	isCacheUpdated = true;
+}
+
+
+// Updated save function with support for attributes
+void saveToTransferObject(JNIEnv *env, jobject jTo,
+	  const Imf::Header &header,
+	  const Imf::Array2D<Imf::Rgba> &halfPixels,
+	  const int width, const int height, const int numChannels)
+{
+	assert(numChannels == 3 || numChannels == 4);
+	OpenEXRTo to(jTo);
+
+	// Start with the basics: width & height
+	to.setWidth(env, width);
+	to.setHeight(env, height);
+
+	// Conversion from half to float
+	const jsize numElements = width*height*numChannels;
+	jfloatArray jbuffer = env->NewFloatArray(numElements);
+	if (jbuffer == NULL) { return; /* exception thrown */ }
+
+	// This method has greater chances to get the actual array data without extra copies
+	jboolean isBufferCopy;
+	float * pixels = (float*)env->GetPrimitiveArrayCritical(jbuffer, &isBufferCopy);
+
+	const Imf::Rgba * halfPixelsPtr = &halfPixels[0][0];
+
+	if (numChannels == 3) {
+
+		for(int i = 0; i < width*height; ++i) {
+			const int base = i*3;
+			const Imf::Rgba & px = halfPixelsPtr[i];
+			pixels[base]   = px.r;
+			pixels[base+1] = px.g;
+			pixels[base+2] = px.b;
+		}
+
+	}
+	else if (numChannels == 4) {
+
+		for(int i = 0; i < width*height; ++i) {
+			const int base = i*4;
+			const Imf::Rgba & px = halfPixelsPtr[i];
+			pixels[base]   = px.r;
+			pixels[base+1] = px.g;
+			pixels[base+2] = px.b;
+			pixels[base+3] = px.a;
+		}
+	}
+	env->ReleasePrimitiveArrayCritical(jbuffer, pixels, 0);
+	to.setBuffer(env, jbuffer);
+
+	// Gets which attributes are in the header. If none is set
+	// don't create/set the attributes object.
+	if (Imf::hasComments(header) || Imf::hasOwner(header) || 
+		Imf::hasCapDate(header)  || Imf::hasUtcOffset(header))
+	{
+		Attributes attrib(env, header);
+		to.setAttributes(env, attrib);
+	}
 }
