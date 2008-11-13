@@ -72,3 +72,5 @@ install(TARGETS ImageIO
   PUBLIC_HEADER DESTINATION "include"
   )
 
+# Finally adds the subdirectory with the tests
+add_subdirectory(test)
