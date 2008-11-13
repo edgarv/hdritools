@@ -88,7 +88,7 @@ if(BUILD_OPENEXR_JNI)
 endif(BUILD_OPENEXR_JNI)
 
 if(BUILD_OPENEXR_MATLAB)
-  #add_subdirectory(OpenEXR_Matlab)
+  add_subdirectory(OpenEXR_Matlab)
 endif(BUILD_OPENEXR_MATLAB)
 
 if(BUILD_BATCH_TONEMAPPER)

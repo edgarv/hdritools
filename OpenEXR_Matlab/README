@@ -1,0 +1,70 @@
+This directory contains two simple mex plugins for EXR image read/write in Matlab. 
+EXR is an image format for high dynamic range image. More information about it can 
+be found at OpenEXR website.
+
+
+To install these two plugins, you need to first install OpenEXR library (version 1.2.2 or above). 
+Then in Matlab 7.0.1 or above:
+
+>> compile_exrio
+
+Make sure your MEX setup uses the VC7.1 compiler or above instead of VC6. 
+Also change the pathname in compile_exrio.m to the path you installed OpenEXR library.
+
+After these setting and compiling, you should now have exrread.dll and exrwrite.dll 
+(in Matlab 7.1 or above, the output is exrread.mexw32 and exrwrite.mexw32). 
+Now you could use them as common Matlab functions. For example,
+
+>> a = exrread('norm_btf_009_12.exr');
+
+>> size(a)
+
+ans =
+
+   512   512     3
+
+>> max(a(:))
+
+ans =
+
+    2.9297
+
+>> min(a(:))
+
+ans =
+
+    0.3069
+
+>> a=100*rand(300,300,3);
+>> size(a)
+
+ans =
+
+   300   300     3
+
+>> exrwrite(a,'a.exr');
+ 
+
+
+Authors
+-------
+Jinwei Gu
+Dept of Computer Science
+Columbia University,
+450 Computer Science Building, New York, NY
+jwgu@cs.columbia.edu
+http://www.cs.columbia.edu/~jwgu/
+
+Disclaimer
+----------
+The Columbia University and the author make no representations about
+the suitability or fitness of this software for any purpose.  It is
+provided "as is" without express or implied warranty.
+---------------------------------------------------------------------
+
+** 
+* Modified to use a custom compiled static version of OpenEXR 1.6.1
+* and to provide Matlab side error handling and documentation by
+Edgar Velazquez-Armendariz
+eva5 [at] cs_cornell_edu
+April 2008
