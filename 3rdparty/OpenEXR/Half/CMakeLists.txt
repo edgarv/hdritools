@@ -1,7 +1,7 @@
 # Description for the Half Library
 
 # Programs which build the LUTs
-add_executable(eLUT eLut.cpp)
+add_executable(eLut eLut.cpp)
 add_executable(toFloat toFloat.cpp)
 
 # Directory with the LUTs
@@ -13,13 +13,13 @@ set(HALF_HEADERS
   half.h halfFunction.h halfLimits.h
   )
 set(HALF_SOURCES
-  ${LUT_DIRECTORY}/eLUT.h
+  ${LUT_DIRECTORY}/eLut.h
   ${LUT_DIRECTORY}/toFloat.h
   half.cpp
   )
   
-add_custom_command(OUTPUT ${LUT_DIRECTORY}/eLUT.h
-  COMMAND eLUT > ${LUT_DIRECTORY}/eLUT.h
+add_custom_command(OUTPUT ${LUT_DIRECTORY}/eLut.h
+  COMMAND eLut > ${LUT_DIRECTORY}/eLut.h
   COMMENT "Generating float-to-half LUT..."
   )
 
