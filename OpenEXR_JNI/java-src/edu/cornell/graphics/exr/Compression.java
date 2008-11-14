@@ -63,7 +63,7 @@ public enum Compression {
 	 * differences between horizontally adjacent pixels are compressed with 
 	 * zlib, similar to ZIP. PXR24 compression preserves image channels of t
 	 * ype HALF and UINT exactly, but the relative error of FLOAT data increases 
-	 * to about 3×10<sup>-5</sup>. This compression method works well for depth buffers 
+	 * to about 3x10<sup>-5</sup>. This compression method works well for depth buffers 
 	 * and similar images, where the possible range of values is very large, 
 	 * but where full 32-bit floating-point accuracy is not necessary. 
 	 * Rounding improves compression significantly by eliminating the pixels' 8 
