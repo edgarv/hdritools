@@ -7,11 +7,15 @@
 // that uses this DLL. This way any other project whose source files include this file see 
 // IMAGEIO_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
-#ifdef IMAGEIO_EXPORTS
-#define IMAGEIO_API __declspec(dllexport)
+#ifdef WIN32
+  #ifdef IMAGEIO_EXPORTS
+  #define IMAGEIO_API __declspec(dllexport)
+  #else
+  #define IMAGEIO_API __declspec(dllimport)
+  #endif
 #else
-#define IMAGEIO_API __declspec(dllimport)
-#endif
+  #define IMAGEIO_API
+#endif /* WIN32 */
 
 
 // This class is exported from the ImageIO.dll
