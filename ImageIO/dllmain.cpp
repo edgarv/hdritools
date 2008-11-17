@@ -1,19 +1,24 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 
-#define WINDOWS_LEAN_AND_MEAN
-#include <windows.h>
 
-#include <cassert>
 
 // To provide the automatic initialization of TBB: the DLL_PROCESS_*
 // calls are done by the main thread, and we exactly want a scheduler
-// for the main thread
-// TODO How does this work in Linux??
+// for the main thread. GCC has equivalent tricks.
 
+#include <cassert>
 #include <tbb/task_scheduler_init.h>
 using namespace tbb;
 
 tbb::task_scheduler_init *tbbInit;
+
+#ifdef WIN32
+
+#define WINDOWS_LEAN_AND_MEAN
+#include <windows.h>
+
+
+
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -41,4 +46,26 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	}
 	return TRUE;
 }
+
+#else /* WIN32 */
+
+
+// Called when the library is loaded and before dlopen() returns
+void __attribute__ ((constructor)) pcg_imageio_load(void)
+{
+    tbbInit = NULL;
+	tbbInit = new task_scheduler_init;
+	assert(tbbInit != NULL);
+}
+
+// Called when the library is unloaded and before dlclose()
+// returns
+void __attribute__ ((destructor)) pcg_imageio_unload(void)
+{
+    assert(tbbInit != NULL);
+	delete tbbInit;
+}
+
+
+#endif /* WIN32 */
 
