@@ -157,8 +157,9 @@ int main(int argc, char* argv[])
 
 	tick_count t0 = tick_count::now();
 
-	// Init TBB (unnecessary in windows, as the ImageIO library does this automatically
-#if !defined(_WIN32)
+	// Inits TBB
+	// TODO Change by a ImageIO::Initialize() function for non Windows/Linux-gcc
+#if 0
 	tbb::task_scheduler_init init;
 #endif
 
