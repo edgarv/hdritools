@@ -1,7 +1,7 @@
 #include "ToneMappingFilter.h"
 #include "ImageInfo.h"
 
-#include <QImage.h>
+#include <QImage>
 
 #include <iostream>
 
