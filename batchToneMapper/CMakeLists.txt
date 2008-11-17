@@ -18,6 +18,13 @@ include(${QT_USE_FILE})
 add_executable(batchToneMapper ${SRCS})
 target_link_libraries(batchToneMapper ImageIO zipfile ${QT_LIBRARIES})
 
+# Enable explicitly SSE2 in linux
+if(NOT MSVC)
+set_target_properties(batchToneMapper PROPERTIES 
+  COMPILE_FLAGS "-msse -msse2 -ftree-vectorizer-verbose=5"
+  )
+endif(NOT MSVC)
+
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( batchToneMapper )
 
