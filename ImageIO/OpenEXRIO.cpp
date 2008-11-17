@@ -1,6 +1,7 @@
 // Implementation file for loading the OpenEXR Images
 
 #include "OpenEXRIO.h"
+#include "Exception.h"
 
 // OpenEXR includes
 #include <half.h>
@@ -9,6 +10,7 @@
 #include <ImfArray.h>
 #include <ImfRgbaFile.h>
 #include <ImfIO.h>
+#include <errno.h>
 
 // Almost a copy of Imf::StdIFStream, but this one works with any kind of istreams,
 // it won't close them when it's done
@@ -129,12 +131,12 @@ void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename) 
 void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  istream &is) {
 
 	try {
-		ReadImage(img, Imf::RgbaInputFile(StdIStream(is)));
+		StdIStream stdis(is);
+		Imf::RgbaInputFile file(stdis);
+		ReadImage(img, file);
 	}
 	catch (Iex::BaseExc &e) {
-
-		// TODO throw our custom exception
-		throw std::exception(e);
+		throw IOException(e);
 	}
 }
 
@@ -204,8 +206,7 @@ void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename, Compres
 	}
 	catch (Iex::BaseExc &e) {
 
-		// TODO throw our custom exception
-		throw std::exception(e);
+		throw IOException(e);
 	}
 
 }

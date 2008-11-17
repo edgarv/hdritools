@@ -109,7 +109,6 @@ namespace pcg {
 			// all the inputs as references so that it can be fully inlined
 			// by the compiler. For this to work the type T must have a method:
 			//   T.set(unsigned char r, unsigned char g, unsigned char b)
-			template <class T>
 			void ToneMapKernel(const Rgba32F &srcPix, T &destPix, const Rgba32F &expF,
 				const __m128 &ones, const __m128 &zeros, const __m128 &lutQ) const {
 
@@ -188,7 +187,7 @@ namespace pcg {
 		void ToneMap(Image<T, M> &dest, const Image<Rgba32F, M> &src, const ToneMapper &tm) {
 
 			if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
-				throw std::exception("The images dimensions' don't match");
+				throw IllegalArgumentException("The images dimensions' don't match");
 			}			
 
 			const int numPixels = src.Size();
@@ -200,7 +199,7 @@ namespace pcg {
 		void ToneMap(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, const ToneMapper &tm) {
 
 			if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
-				throw std::exception("The images dimensions' don't match");
+				throw IllegalArgumentException("The images dimensions' don't match");
 			}
 
 			parallel_for(blocked_range2d<int>(0,src.Height(), 0,src.Width()), 

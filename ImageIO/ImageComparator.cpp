@@ -1,4 +1,5 @@
 #include "ImageComparator.h"
+#include "Exception.h"
 
 
 // Intel Threading Blocks 2.0
@@ -65,7 +66,7 @@ void ImageComparator::CompareHelper(Type type, Image<Rgba32F, S> &dest,
 	if ( dest.Width() != src1.Width() || dest.Height() != src1.Height() ||
 		src1.Width() != src2.Width() || src1.Height() != src2.Height() )
 	{
-		throw std::exception("Incompatible images size");
+		throw IllegalArgumentException("Incompatible images size");
 	}
 
 	// And launch the parallel for

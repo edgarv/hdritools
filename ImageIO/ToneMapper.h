@@ -12,6 +12,7 @@
 #include "Rgba32F.h"
 #include "LDRPixels.h"
 #include "ImageIO.h"
+#include "Exception.h"
 
 namespace pcg {
 
@@ -90,7 +91,7 @@ namespace pcg {
 		// Therefore gamma must be greater than zero; the typical value for LCD's is 2.2
 		void SetGamma(float gamma) {
 			if (gamma <= 0) {
-				throw std::exception("Something terrible happens!");
+				throw IllegalArgumentException("The gamma must be greater that zero");
 			}
 			this->gamma    = gamma;
 			this->invGamma = 1.0f/gamma;

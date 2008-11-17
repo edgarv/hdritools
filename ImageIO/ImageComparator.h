@@ -14,7 +14,7 @@ namespace pcg {
 
 	public:
 		// Enumeration with the different comparison methods
-		static enum Type {
+		enum Type {
 			AbsoluteDifference
 		};
 		
