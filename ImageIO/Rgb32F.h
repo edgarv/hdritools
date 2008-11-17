@@ -24,6 +24,13 @@ namespace pcg {
 		Rgb32F(const float r, const float g, const float b) : 
 			r(r), g(g), b(b) {}
 
+		// Explicit copy constructor
+		Rgb32F(const Rgb32F &pixel) {
+			r = pixel.r;
+			g = pixel.g;
+			b = pixel.b;
+		}
+
 		// Construct from a full float pixel
 		Rgb32F(const Rgba32F &pixel) {
 			Rgba32F tmp = pixel;
