@@ -1,5 +1,6 @@
 // Implementation for the Image Data Providers
 #include "ImageDataProvider.h"
+#include <Exception.h>
 
 void ImageDataProvider::setSize( const QSize &otherSize ) {
 	if (otherSize != _size) {
@@ -20,7 +21,7 @@ void ImageIODataProvider::update()
 {
 	// Validates that they are the same size
 	if (hdr.Width() != ldr.Width() || hdr.Height() != ldr.Height()) {
-		throw std::exception("Incongruent sizes!");
+		throw IllegalArgumentException("Incongruent sizes!");
 	}
 
 	// Now we can safely set the size of this guy
