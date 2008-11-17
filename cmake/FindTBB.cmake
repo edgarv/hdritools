@@ -19,7 +19,7 @@ find_path(TBB_INCLUDE_DIR tbb/task.h
   )
 mark_as_advanced(TBB_INCLUDE_DIR)
   
-# Set the actual locations
+# Set the actual locations for MSVC
 if(MSVC)
   if(CMAKE_CL_64)
     set(TBB_PLATFORM em64t)
@@ -40,6 +40,37 @@ if(MSVC)
   set(TBB_LIB_SUFFIX ${TBB_PLATFORM}/${TBB_COMPILER})
   
 endif(MSVC)
+
+# On linux the paths are slightly different
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  # To match the TBB makefile, find the output of uname -m (cmake provides uname -p)
+  execute_process(COMMAND uname -m
+    OUTPUT_VARIABLE UNAME_M
+	ERROR_QUIET
+	OUTPUT_STRIP_TRAILING_WHITESPACE)
+	
+  if(${UNAME_M} STREQUAL "i686")
+    set(TBB_PLATFORM ia32)
+  elseif(${UNAME_M} STREQUAL "ia64")
+    set(TBB_PLATFORM itanium)
+  elseif(${UNAME_M} STREQUAL "x86_64")
+    set(TBB_PLATFORM em64t)
+  elseif(${UNAME_M} STREQUAL "sparc64")
+	set(TBB_PLATFORM sparc)
+  else(${UNAME_M} STREQUAL "i686")
+    message(FATAL_ERROR "Unknown machine type: ${UNAME_M}")
+  endif(${UNAME_M} STREQUAL "i686")
+	
+  # This works only with gcc so far
+  execute_process(COMMAND pwd)
+  execute_process(COMMAND ${CMAKE_HOME_DIRECTORY}/cmake/tbb_runtime.sh
+    OUTPUT_VARIABLE TBB_RUNTIME
+	ERROR_QUIET
+	OUTPUT_STRIP_TRAILING_WHITESPACE)
+	
+  set(TBB_LIB_SUFFIX ${TBB_PLATFORM}/${TBB_RUNTIME})
+
+endif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 include(FindReleaseAndDebug)
 
