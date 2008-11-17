@@ -49,7 +49,7 @@ void DoubleSpinSliderConnect::setSliderValue( double val )
 	// We convert that relative distance into the slider units, add
 	// the offset (ossia the minimum) and set the value to that
 	// For some stupid reason, round() is not defined in MSVC!
-	const int newVal = floor((ratio * lenSlider)+0.5) + slider->minimum();
+	const int newVal = (int)floor((ratio * lenSlider)+0.5) + slider->minimum();
 	slider->setValue(newVal);
 
 	qDebug() << "SetSliderValue" << val << ',' << newVal;
