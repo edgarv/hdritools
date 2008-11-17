@@ -23,10 +23,29 @@ option(USE_SYSTEM_OPENEXR
   "Use the system version of OpenEXR instead of the bundled one."
   ${USE_SYSTEM_LIBS_DEFAULT})
 
-# Options to select which components to build
+# In Linux, options for the RPATH
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  option(USE_FULL_RPATH
+    "Use full RPATH information for the installed binaries." OFF)
 
-# TODO: How to build packages with mixed C++ and Java code?
-#             And for this particular one: how to specify the full  java prefix?
+  if(USE_FULL_RPATH)
+    
+	# the RPATH to be used when installing
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+    # add the automatically determined parts of the RPATH
+    # which point to directories outside the build tree to the install RPATH
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+	
+  else(USE_FULL_RPATH)
+    # Use the default settings
+    set(CMAKE_INSTALL_RPATH "")
+	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+  endif(USE_FULL_RPATH)
+  
+endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  
+# Options to select which components to build
 option(BUILD_OPENEXR_JNI 
   "Builds the OpenEXR JNI binding." OFF)
 
