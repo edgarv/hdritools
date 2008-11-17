@@ -20,7 +20,11 @@ int main() {
 		"// Do not edit.\n"
 		"//\n\n";
 
-	cout << "{\n  {\n    ";
+	cout << 
+		"{\n  {\n"
+		"    // Bidimensional array with the different floating point versions\n" 
+		"    // of the numbers [0,255] to avoid a cast everytime we convert rgbe "
+		"pixels.\n    ";
 
 	const int iMax = (1 << 8);
 
@@ -28,7 +32,7 @@ int main() {
 	{
 		float f = (float)i;
 		unsigned int val = *reinterpret_cast<unsigned int*>(&f);
-		cout << "{0x" << setfill ('0') << setw (8) << val << "}, ";
+		cout << "0x" << setfill ('0') << setw (8) << val << ", ";
 
 		if (i % 4 == 3)
 		{
@@ -40,13 +44,17 @@ int main() {
 	}
 
 	// Exponent LUT
-	cout << "  },\n  {\n    ";
+	cout << 
+		"  },\n  {\n"
+		"    // LUT for the exponents: (float)(ldexp(1.0,exp-(int)(128+8)))\n"
+		"    // for all possible values of exp [0,255], but at 0 it always "
+		"returns 0.\n    ";
 
 	for (int i = 0; i < iMax; i++)
 	{
 		float f = i > 0 ? ldexp(1.0f,i-(128+8)) : 0.0f;
 		unsigned int val = *reinterpret_cast<unsigned int*>(&f);
-		cout << "{0x" << setfill ('0') << setw (8) << val << "}, ";
+		cout << "0x" << setfill ('0') << setw (8) << val << ", ";
 
 		if (i % 4 == 3)
 		{
