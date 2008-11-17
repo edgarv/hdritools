@@ -12,6 +12,8 @@ using std::streamsize;
 using std::streambuf;
 using std::ios_base;
 
+#define BUF_SIZE 8192
+
 namespace pcg {
 
 	// Forward declaration
@@ -21,8 +23,25 @@ namespace pcg {
 
 		friend class ZipFile;
 
+	private:
+		// Basic exception type
+		class ZipException: public std::exception
+		{
+		  public:
+			ZipException (const char* text=0) throw()     : message(text) {}
+			ZipException (const std::string &text) throw(): message(text) {}
+
+			virtual ~ZipException() throw () {}
+
+			virtual const char * what () const throw () {
+				return message.c_str();
+			}
+
+		private:
+			std::string message;
+		};
+
 	protected:
-		const static int BUF_SIZE = 8192;
 		char buffer[BUF_SIZE];
 
 		const static pos_type BAD_POSITION;

@@ -11,18 +11,19 @@ using namespace pcg;
 using std::cerr;
 using std::endl;
 
+
 ZipFile::ZipFile(const char *name) :
 	m_uzFile(NULL), isOpen(false), currIndex(0),
 	zipstream(NULL), zstreambuf(NULL)
 {
 
 	if (name == NULL) {
-		throw std::exception("Null pointer to name");
+		throw ZipException("Null pointer to name");
 	}
 
 	m_uzFile = unzOpen(name);
 	if (m_uzFile == NULL) {
-		throw std::exception("Error openning zipfile");
+		throw ZipException("Error openning zipfile");
 	}
 
 	unz_global_info info;
@@ -30,7 +31,7 @@ ZipFile::ZipFile(const char *name) :
 	// Gets the global info
 	if (unzGetGlobalInfo(m_uzFile, &info) != UNZ_OK)
 	{
-		throw std::exception("Couln't get the global info");
+		throw ZipException("Couln't get the global info");
 	}
 
 	isOpen = true;
@@ -134,7 +135,7 @@ bool ZipFile::GotoFile(unsigned int nFile)
 ZipEntry* ZipFile::GetNextEntry()
 {
 	if (!isOpen) {
-		throw std::exception("Invalid state: the file is not open");
+		throw ZipException("Invalid state: the file is not open");
 	}
 	else if (size() == currIndex) {
 		return NULL;	// No more entries
@@ -181,18 +182,18 @@ ZipEntry* ZipFile::GetNextEntry()
 istream& ZipFile::GetInputStream(const ZipEntry *entry) {
 
 	if (!isOpen) {
-		throw std::exception("Invalid state: the file is not open");
+		throw ZipException("Invalid state: the file is not open");
 	}
 
 	// We validate that the entry matches what we have
 	const ZipEntry *e = entries.at(entry->GetIndex());
 	if (e->GetCrc() != entry->GetCrc()) {
-		throw std::exception("Entries missmatch, are you sure this is an entry from this zip?");
+		throw ZipException("Entries missmatch, are you sure this is an entry from this zip?");
 	}
 
 	// Once the entry has been validated, we need to position the zipfile at that entry
 	if ( !GotoFile(e->GetIndex()) ) {
-		throw std::exception("Unexpeced error when moving to the specified file index");
+		throw ZipException("Unexpeced error when moving to the specified file index");
 	}
 	zipstream_buf *zipbuffer = new zipstream_buf(m_uzFile, e->GetSize());
 

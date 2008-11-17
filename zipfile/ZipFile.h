@@ -152,6 +152,23 @@ namespace pcg {
 
 		// The currently active zipstream_buf
 		zipstream_buf *zstreambuf;
+
+		// Basic exception type
+		class ZipException: public std::exception
+		{
+		  public:
+			ZipException (const char* text=0) throw()     : message(text) {}
+			ZipException (const std::string &text) throw(): message(text) {}
+
+			virtual ~ZipException() throw () {}
+
+			virtual const char * what () const throw () {
+				return message.c_str();
+			}
+
+		private:
+			std::string message;
+		};
 		
 	public:
 

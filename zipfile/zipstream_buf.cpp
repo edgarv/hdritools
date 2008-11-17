@@ -18,11 +18,11 @@ zipstream_buf::zipstream_buf(const void* _m_uzFile, const unsigned long _size) :
 	m_uzFile(_m_uzFile), size(_size), readBytes(0), endOfEntry(false)
 {
 	if (m_uzFile == NULL) {
-		throw std::exception("Null unzip archive");
+		throw ZipException("Null unzip archive");
 	}
 
 	if (unzOpenCurrentFile(const_cast<void*>(m_uzFile)) != UNZ_OK) {
-		throw std::exception("Error when opening the current zip file");
+		throw ZipException("Error when opening the current zip file");
 	}
 
 	// Set the pointers to the beginning  of the stuff,
@@ -59,10 +59,10 @@ zipstream_buf::int_type	zipstream_buf::underflow()
 		// That's it, whe read everything, did we?
 		endOfEntry = true;
 		if (readBytes != size) {
-			throw std::exception("Unexpected end of zip entry");
+			throw ZipException("Unexpected end of zip entry");
 		}
 		if (unzCloseCurrentFile(const_cast<void*>(m_uzFile)) == UNZ_CRCERROR) {
-			throw std::exception("Read all the file but the CRC is not good");
+			throw ZipException("Read all the file but the CRC is not good");
 		}
 		return traits_type::eof();
 	}
@@ -89,7 +89,7 @@ zipstream_buf::pos_type zipstream_buf::seekpos(pos_type sp, ios_base::openmode w
 	}
 
 	// Lets limit the seek to within the buffer
-	const int relativePos = static_cast<int>(sp < BUF_SIZE ? sp : sp % BUF_SIZE);
+	const int relativePos = static_cast<int>(sp < BUF_SIZE ? (int)sp : (int)(sp % BUF_SIZE));
 	assert(relativePos >= 0 && relativePos < BUF_SIZE);
 
 	setg(&buffer[0], &buffer[relativePos], egptr());
