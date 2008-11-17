@@ -5,7 +5,7 @@
 add_executable(rgbeLUT rgbeLUT.cpp)
 
 # Directory with the LUTs
-set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lut)
+set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 include_directories( ${LUT_DIRECTORY} )
 
 add_custom_command(OUTPUT ${LUT_DIRECTORY}/rgbeLUT.h
@@ -29,6 +29,7 @@ set(SRCS
   RgbeIOPrivate.h
   ToneMapper.h ToneMapper.cpp
   ${LUT_DIRECTORY}/rgbeLUT.h
+  Exception.h
   )
   
 # Subset of the sources which are the public headers
@@ -45,6 +46,7 @@ set(SRCS_PUBLIC
   RgbeIO.h
   ToneMapper.h
   StdAfx.h
+  Exception.h
   )
   
 add_library(ImageIO SHARED ${SRCS})
@@ -55,6 +57,13 @@ set_target_properties(ImageIO PROPERTIES
   PUBLIC_HEADER "${SRCS_PUBLIC}"
   DEBUG_POSTFIX "d"
   )
+  
+# Enable explicitly SSE2 in linux
+if(NOT MSVC)
+set_target_properties(ImageIO PROPERTIES 
+  COMPILE_FLAGS "-msse -msse2 -ftree-vectorizer-verbose=5"
+  )
+endif(NOT MSVC)
 
 # TODO This should be done only when building it as a shared library in Windows
 add_definitions(-DIMAGEIO_EXPORTS)
