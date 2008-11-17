@@ -15,6 +15,10 @@
 	#define PCG_IMAGE_CRAZY_TEMPLATES 0
 #endif
 
+#ifdef __GNUC__
+#define _XOPEN_SOURCE 600 /* For posix_memalign */
+#endif
+
 #include <cstdlib>
 #include <cassert>
 
@@ -29,7 +33,7 @@ namespace pcg {
 		BottomUp
 	};
 
-	template< class T, ScanLineMode S = TopDown >
+	template< typename T, ScanLineMode S = TopDown >
 	class Image {
 
 #if PCG_IMAGE_CRAZY_TEMPLATES
@@ -110,6 +114,16 @@ namespace pcg {
 
 #endif /* PCG_IMAGE_CRAZY_TEMPLATES */
 
+		// Helper function to allocate the memory: GCC's new does not respect
+		// the alignment as it should
+		inline void alloc() {
+		#ifdef __GNUC__
+			posix_memalign ((void**)&(this->d), 16, w*h*sizeof(T));
+		#else
+			this->d = new T[w*h];
+		#endif
+		}
+
 	public:
 
 
@@ -123,7 +137,7 @@ namespace pcg {
 			assert(w > 0 && h > 0);
 			this->w = w;
 			this->h = h;
-			this->d = new T[w*h];
+			alloc();
 		}
 
 		// Destructor, it reclaims the space previously allocated
@@ -137,12 +151,18 @@ namespace pcg {
 			Clear();
 			this->w = w;
 			this->h = h;
-			this->d = new T[w*h];
+			alloc();
 		}
 
 		// Deallocates the memory and resets the image dimensions to 0
 		void Clear() {
-			if(d != NULL) delete d;
+			if(d != NULL) {
+			#ifdef __GNUC__
+				free(d);
+			#else
+				delete [] d;
+			#endif
+			}
 			d = 0;
 			w = h = 0;
 		}
