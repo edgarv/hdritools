@@ -58,13 +58,6 @@ set_target_properties(ImageIO PROPERTIES
   DEBUG_POSTFIX "d"
   )
   
-# Enable explicitly SSE2 in linux
-if(NOT MSVC)
-set_target_properties(ImageIO PROPERTIES 
-  COMPILE_FLAGS "-msse -msse2 -ftree-vectorizer-verbose=5"
-  )
-endif(NOT MSVC)
-
 # TODO This should be done only when building it as a shared library in Windows
 add_definitions(-DIMAGEIO_EXPORTS)
 

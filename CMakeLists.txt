@@ -39,6 +39,20 @@ option(BUILD_BATCH_TONEMAPPER
 option(BUILD_QT4IMAGE
   "Builds the QT4 successor of glimage." OFF)
   
+# Extra compiler flags for enabling SSE & SSE2. These will always be enabled.
+if(MSVC AND NOT CMAKE_CL_64)
+  set(SSE2_COMPILER_FLAGS "/arch:SSE2")
+elseif(CMAKE_COMPILER_IS_GNUCXX)
+  set(SSE2_COMPILER_FLAGS "-malign-double -msse -msse2")
+endif(MSVC AND NOT CMAKE_CL_64)
+set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SSE2_COMPILER_FLAGS}" )
+set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE2_COMPILER_FLAGS}" )
+
+# For GCC we always want to use the source fortify options
+if(CMAKE_COMPILER_IS_GNUCXX)
+  add_definitions("-D_FORTIFY_SOURCE=2")
+endif(CMAKE_COMPILER_IS_GNUCXX)
+  
 # Sets the required zlib variables if we are using the bundled OpenEXR or if building the batch tonemapper
 if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
   

@@ -70,6 +70,14 @@ else(NOT ZLIB_IS_INTERNAL)
 	
   else(ZLIB_SHARED_LIB)
     add_library(zlib STATIC ${HEADERS} ${SRCS})
+	
+	# Use the fpic flag in linux so that this can go into shared libraries
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+    set_target_properties(zlib PROPERTIES 
+      COMPILE_FLAGS "-fpic"
+    )
+    endif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+	
   endif(ZLIB_SHARED_LIB)
   
   set(ZLIB_TARGETS zlib)

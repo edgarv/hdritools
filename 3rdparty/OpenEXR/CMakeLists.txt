@@ -94,16 +94,6 @@ if(OPENEXR_SHARED_LIBS AND MSVC)
   set(OPENEXR_DLL ON)
 endif(OPENEXR_SHARED_LIBS AND MSVC)
 
-# Enable SSE2 for x86 targets on MSVC
-if(MSVC AND NOT CMAKE_CL_64)
-  option(OPENEXR_USE_SSE2 "Enables the SSE2 instruction set." ON)
-  if(OPENEXR_USE_SSE2)
-    set ( CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /arch:SSE2" )
-    set ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2" )
-  endif(OPENEXR_USE_SSE2)
-endif(MSVC AND NOT CMAKE_CL_64)
-
-
 # First we need to create the configuration headers
 
 # Directory for the generated configuration files
@@ -259,6 +249,13 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
     VERSION ${version}
 	DEBUG_POSTFIX "d"
   )
+  
+  # If built as a static library in gcc we need to add the fpic flag, so that the code will work when linked into a shared lib
+  if(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+    set_target_properties(${targetname} PROPERTIES 
+      COMPILE_FLAGS "-fpic"
+    )
+  endif(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
   
   if(NOT OPENEXR_IS_INTERNAL)
     set_target_properties(${targetname} PROPERTIES
