@@ -86,7 +86,7 @@ include_directories(
 
 # Finally adds the actual library targets
 add_library(openexrjni SHARED ${SRCS} ${JNI_HEADERS})
-target_link_libraries(openexrjni ${OpenEXR_LIBRARIES} ${JNI_LIBRARIES})
+target_link_libraries(openexrjni ${OpenEXR_LIBRARIES})
 
 # This is version 2 of the OpenEXR JNI addin
 set_target_properties(openexrjni PROPERTIES
