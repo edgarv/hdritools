@@ -19,7 +19,7 @@ namespace pcg {
 		// Create a new image with the specified dimensions. The content of the pixels
 		// is undefined! The space for them is already allocated though, you only
 		// need to fill them with something useful
-		RgbeImage(int width, int height) : Image(width, height) {}
+		RgbeImage(int width, int height) : Image<Rgbe, TopDown>(width, height) {}
 
 		// Creates a new instance by reading from the specified stream.
 		// If something fails an exception is thrown
