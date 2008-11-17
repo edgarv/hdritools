@@ -2,6 +2,7 @@
 
 #include "RgbeIO.h"
 #include "RgbeIOPrivate.h"
+#include "Exception.h"
 
 #include <fstream>
 #include <iomanip>
@@ -10,6 +11,11 @@ using namespace pcg;
 
 // Alias the private namespace
 namespace rgbeions = pcg::rgbeio_internal;
+
+// For MSVC >= 2005, force sscanf_s
+#if _MSC_VER >= 1400
+  #define sscanf sscanf_s
+#endif
 
 
 int rgbeions::rgbe_error(rgbe_error_codes code, const char *msg)
@@ -118,11 +124,11 @@ int rgbeions::readHeader(istream &is, int &width, int &height, rgbe_header_info 
 				break;       /* Break out of loop; end of header */
 		else if (strcmp(buf,"FORMAT=32-bit_rle_rgbe") == 0)
 			found_format = true;
-		else if (sscanf_s(buf,"GAMMA=%g",&tempf) == 1) {
+		else if (sscanf(buf,"GAMMA=%g",&tempf) == 1) {
 			info.gamma = tempf;
 			info.setValidGamma(true);
 		}
-		else if (sscanf_s(buf,"EXPOSURE=%g",&tempf) == 1) {
+		else if (sscanf(buf,"EXPOSURE=%g",&tempf) == 1) {
 			info.exposure = tempf;
 			info.setValidExposure(true);
 		}
@@ -138,7 +144,7 @@ int rgbeions::readHeader(istream &is, int &width, int &height, rgbe_header_info 
 	is.getline( &buf[0], sizeof(buf));
 	if ( is.fail() )
 		return rgbe_error(rgbe_read_error,NULL);
-	if (sscanf_s(buf,"-Y %d +X %d", &height, &width) < 2)
+	if (sscanf(buf,"-Y %d +X %d", &height, &width) < 2)
 		return rgbe_error(rgbe_format_error,"missing image size specifier");
 	return RGBE_RETURN_SUCCESS;
 }
@@ -211,103 +217,6 @@ namespace pcg {
 
 
 		// ####################################################################
-		// ####         LOADING         #######################################
-		// ####################################################################
-
-
-		// Static method: it efficiently creates a new instance of the specified
-		// image type and fills the pixels with the contents of the given RGBE file,
-		// which is read from the given stream. In order for this method to work,
-		// it must be possible to create a pixel from the given type from an RGBE pixel
-		// using just a cast. Note that if you just want the plain RgbeImage (Rgbe pixels
-		// with top-down order) it might be better just to use a normal instance.
-		// It receives a reference to the destination image to that the template can be deduced
-		// automatically. Be awere that the contents of img will be whipped without mercy!
-		template < class T, ScanLineMode S >
-		inline void Load(Image<T,S> &img, istream &is) {
-
-			// Read the header
-			int width, height;
-			rgbe_header_info info;
-			if (readHeader(is, width, height, info) != RGBE_RETURN_SUCCESS) {
-				throw std::exception("RGBE Load badness!!");
-			}
-
-			// Allocates the space
-			img.Alloc(width, height);
-
-			// Reads the pixels. The scanline-related issues will be handled
-			// by templates
-			if ( read(is, img) != RGBE_RETURN_SUCCESS ) {
-				throw std::exception("RGBE Load badness!!");
-			}
-		}
-
-		// The same as above, only that it creates the stream for you and
-		// optionaly closes it
-		template < class T, ScanLineMode S >
-		inline void Load(Image<T,S> &img, const char *filename, bool closeStream = true) {
-			
-			ifstream rgbeFile(filename, ios_base::binary);
-			if (! rgbeFile.bad() ) {
-				Load(img, rgbeFile);
-				if (closeStream) {
-					rgbeFile.close();
-				}
-			}
-			else {
-				// Something terrible takes place here
-				throw std::exception("RGBE Load badness!!");
-			}
-		}
-
-
-		// ####################################################################
-		// ####         SAVING          #######################################
-		// ####################################################################
-		
-		template < class T, ScanLineMode S >
-		inline void Save(Image<T,S> &img, const char *filename, bool closeStream = true) {
-
-			ofstream rgbeFile(filename, ios_base::binary);
-			if (! rgbeFile.bad() ) {
-				Save(img, rgbeFile);
-				if (closeStream) {
-					rgbeFile.close();
-				}
-			}
-			else {
-				// Something terrible takes place here
-				throw std::exception("RGBE Load badness!!");
-			}
-
-		}
-
-		template < class T, ScanLineMode S >
-		inline void Save(Image<T,S> &img, ostream &os) {
-
-			/* Write the header for a raw image (without gamma correction) */
-			rgbe_header_info info;
-			info.exposure = 1.0f;
-			info.gamma    = 1.0f;
-			info.setValidExposure(true);
-			info.setValidGamma(true);
-
-			// Writes the header witht the default program type
-			if (writeHeader(os, img.Width(), img.Height(), info) != RGBE_RETURN_SUCCESS) {
-				throw std::exception("RGBE Save badness!!");
-			}
-
-			// Writes the pixels. The scanline-related issues will be handled
-			// by templates
-			if ( write(os, img) != RGBE_RETURN_SUCCESS ) {
-				throw std::exception("RGBE Save badness!!");
-			}
-		}
-
-
-
-		// ####################################################################
 		// ####         READING         #######################################
 		// ####################################################################
 
@@ -349,7 +258,7 @@ namespace pcg {
 				is.read(reinterpret_cast<char*>(&rgbe), sizeof(Rgbe));
 				if ( is.fail() )
 					return rgbe_error(rgbe_read_error,NULL);
-				*data++ = (T)rgbe;
+				*data++ = rgbe;
 			}
 			return RGBE_RETURN_SUCCESS;
 		}
@@ -387,7 +296,7 @@ namespace pcg {
 				}
 				if ((rgbe[0] != 2)||(rgbe[1] != 2)||(rgbe[2] & 0x80)) {
 					/* this file is not run length encoded */
-					*data++ = (T)rgbe;
+					*data++ = rgbe;
 					delete [] scanline_buffer;
 					return readPixels(is,data,scanline_width*num_scanlines-1);
 				}
@@ -445,7 +354,7 @@ namespace pcg {
 					rgbe.g = scanline_buffer[i+scanline_width];
 					rgbe.b = scanline_buffer[i+2*scanline_width];
 					rgbe.e = scanline_buffer[i+3*scanline_width];
-					*data++ = (T)rgbe;
+					*data++ = rgbe;
 				}
 				num_scanlines--;
 			}
@@ -462,7 +371,7 @@ namespace pcg {
 		// The basic utility methods for saving to an RGBE file which has
 		// already been successfully open. This handles the general case by going line by line
 		template < class T, ScanLineMode S >
-		int write(ostream &os, Image<T,S> &img)
+		int write(ostream &os, const Image<T,S> &img)
 		{
 			const int width  = img.Width();
 			const int height = img.Height();
@@ -479,7 +388,7 @@ namespace pcg {
 
 		// Easy case: the destination is TopDown, just as the RGBE files
 		template <class T>
-		int write(ostream &os, Image<T,TopDown> &img)
+		int write(ostream &os, const Image<T,TopDown> &img)
 		{
 			return writePixels_RLE(os, img.GetDataPointer(), img.Width(), img.Height());
 		}
@@ -566,6 +475,101 @@ namespace pcg {
 			return RGBE_RETURN_SUCCESS;
 		}
 
+
+		// ####################################################################
+		// ####         LOADING         #######################################
+		// ####################################################################
+
+
+		// Static method: it efficiently creates a new instance of the specified
+		// image type and fills the pixels with the contents of the given RGBE file,
+		// which is read from the given stream. In order for this method to work,
+		// it must be possible to create a pixel from the given type from an RGBE pixel
+		// using just a cast. Note that if you just want the plain RgbeImage (Rgbe pixels
+		// with top-down order) it might be better just to use a normal instance.
+		// It receives a reference to the destination image to that the template can be deduced
+		// automatically. Be awere that the contents of img will be whipped without mercy!
+		template < class T, ScanLineMode S >
+		inline void Load(Image<T,S> &img, istream &is) {
+
+			// Read the header
+			int width, height;
+			rgbe_header_info info;
+			if (readHeader(is, width, height, info) != RGBE_RETURN_SUCCESS) {
+				throw IOException("Couldn't read RGBE header.");
+			}
+
+			// Allocates the space
+			img.Alloc(width, height);
+
+			// Reads the pixels. The scanline-related issues will be handled
+			// by templates
+			if ( read(is, img) != RGBE_RETURN_SUCCESS ) {
+				throw IOException("Couldn't read RGBE pixel data.");
+			}
+		}
+
+		// The same as above, only that it creates the stream for you and
+		// optionaly closes it
+		template < class T, ScanLineMode S >
+		inline void Load(Image<T,S> &img, const char *filename, bool closeStream = true) {
+			
+			ifstream rgbeFile(filename, ios_base::binary);
+			if (! rgbeFile.bad() ) {
+				Load(img, rgbeFile);
+				if (closeStream) {
+					rgbeFile.close();
+				}
+			}
+			else {
+				// Something terrible takes place here
+				throw IOException("RGBE Load badness!!");
+			}
+		}
+
+
+		// ####################################################################
+		// ####         SAVING          #######################################
+		// ####################################################################
+
+		template < class T, ScanLineMode S >
+		inline void Save(Image<T,S> &img, ostream &os) {
+
+			/* Write the header for a raw image (without gamma correction) */
+			rgbe_header_info info;
+			info.exposure = 1.0f;
+			info.gamma    = 1.0f;
+			info.setValidExposure(true);
+			info.setValidGamma(true);
+
+			// Writes the header witht the default program type
+			if (writeHeader(os, img.Width(), img.Height(), info) != RGBE_RETURN_SUCCESS) {
+				throw IOException("RGBE Save badness!!");
+			}
+
+			// Writes the pixels. The scanline-related issues will be handled
+			// by templates
+			if ( write(os, img) != RGBE_RETURN_SUCCESS ) {
+				throw IOException("RGBE Save badness!!");
+			}
+		}
+		
+		template < class T, ScanLineMode S >
+		inline void Save(Image<T,S> &img, const char *filename, bool closeStream = true) {
+
+			ofstream rgbeFile(filename, ios_base::binary);
+			if (! rgbeFile.bad() ) {
+				Save(img, rgbeFile);
+				if (closeStream) {
+					rgbeFile.close();
+				}
+			}
+			else {
+				// Something terrible takes place here
+				throw IOException("RGBE Save badness!!");
+			}
+
+		}
 
 	}
 }
