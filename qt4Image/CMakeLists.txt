@@ -8,6 +8,7 @@ set(SRCS
   ImageDataProvider.h ImageDataProvider.cpp
   MainWindow.h MainWindow.cpp
   PixelInfoDialog.h PixelInfoDialog.cpp
+  HDRImageDisplay.h HDRImageDisplay.cpp
   main.cpp
   )
 
@@ -18,6 +19,7 @@ set(MOC_HEADERS
   ImageDataProvider.h
   MainWindow.h
   PixelInfoDialog.h
+  HDRImageDisplay.h
   )
   
 # Run moc on the appropriate headers

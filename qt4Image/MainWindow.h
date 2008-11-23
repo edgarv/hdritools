@@ -17,7 +17,11 @@
 
 #include "PixelInfoDialog.h"
 #include "ImageDataProvider.h"
+#include "HDRImageDisplay.h"
+
+#if 0
 #include "HDRImageLabel.h"
+#endif
 
 // Uses forward declarations
 class QLabel;
@@ -36,8 +40,16 @@ class MainWindow : public QMainWindow, public Ui::MainWindow
 
 
 protected:
+#if 0
 	// The container for the image
 	HDRImageLabel *imageLabel;
+#endif
+
+	// The actual widget with all the magic
+	HDRImageDisplay *hdrDisplay;
+
+	// The dialog for the pixel information
+	PixelInfoDialog *pixInfoDialog;
 
 	// The synchronization objects for the pairs of slider-spin
 	DoubleSpinSliderConnect *exposureConnect;
@@ -50,6 +62,7 @@ protected:
 	// A String with the current directory for the open dialog
 	QString openFileDir;
 
+#if 0
 	// Helper function just to load an HDR file from a non-empty filename
 	// Returns true if it could open the file and load it into dest, false if
 	// it didn't recognize the HDR file. If the last parameter is not null,
@@ -57,11 +70,13 @@ protected:
 	// When something really bad occurs the
 	// method can throw an exception
 	static bool loadHdr(QString filename, Image<Rgba32F> &dest, QString *imgDir = NULL);
+#endif
 
 	// This function updates the gui when a new file has been already loaded.
 	// The parameter indicates the name to display in the title bar
 	void updateForLoadedImage(QString imgName);
 
+#if 0
 	// The internal representation of the HDR Image
 	Image<Rgba32F> hdrImage;
 
@@ -73,6 +88,7 @@ protected:
 
 	// Our nice tonemapper
 	ToneMapper toneMapper;
+#endif
 
 	// The current scale factor
 	float scaleFactor;
@@ -86,9 +102,6 @@ protected:
 
 	// A copy of the original window tittle
 	QString appTitle;
-
-	// The dialog for the pixel information
-	PixelInfoDialog pixInfoDialog;
 
 	// Utility functions related to the scaling of the image
 	void scaleImage(float factor);

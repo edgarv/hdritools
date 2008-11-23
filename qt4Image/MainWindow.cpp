@@ -15,15 +15,20 @@
 #include "Image.h"
 #include "RgbeIO.h"
 #include "OpenEXRIO.h"
+#if 0
 #include "ImageComparator.h"
+#endif
 
 using namespace pcg;
 
 
 MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : QMainWindow(parent), 
 	app(application),
-	toneMapper(4096), scaleFactor(1.0f), minScaleFactor(0.125f), maxScaleFactor(8.0f),
-	dataProvider(hdrImage, ldrImage), pixInfoDialog(dataProvider, this),
+	scaleFactor(1.0f), minScaleFactor(0.125f), maxScaleFactor(8.0f),
+#if 0
+	toneMapper(4096), dataProvider(hdrImage, ldrImage),
+#endif
+	hdrDisplay(NULL), pixInfoDialog(NULL),
 	openFileDir(QDir::currentPath())
 {
 	// This method ONLY configures the GUI as in Qt Designer
@@ -31,11 +36,19 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 
 	appTitle = this->windowTitle();
 
+#if 0
 	imageLabel = new HDRImageLabel;
 	imageLabel->setBackgroundRole(QPalette::NoRole);
 	imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+#endif 
 
-	imgScrollFrame->setWidget(imageLabel);
+	// FIXME Test code!!!. 
+	/* Ricorda: QScrollArea::setWidget(widget) makes the scroll area to
+	/* take total care of the widget, including its destruction */ 
+	hdrDisplay = new HDRImageDisplay();
+	imgScrollFrame->setWidget(hdrDisplay);
+
+	pixInfoDialog = new PixelInfoDialog(hdrDisplay->imageDataProvider(), this);
 
 	// We are also aware of drag and drop
 	setAcceptDrops(true);
@@ -65,9 +78,12 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 	connect( action_AdjustSize, SIGNAL(triggered()), this, SLOT(adjustSize()) );
 
 	// Connections for the pixel info dialog and receiving the files dropped
-	connect( &pixInfoDialog, SIGNAL(rejected()), this, SLOT(pixelInfoClosed()) );
+	connect( pixInfoDialog, SIGNAL(rejected()), this, SLOT(pixelInfoClosed()) );
+#if 0
 	connect( imageLabel, SIGNAL(mouseOver(QPoint)), this, SLOT(mouseOverImage(QPoint)) );
-	connect( this, SIGNAL(requestPixelInfo(QPoint)), &pixInfoDialog, SLOT(showInfo(QPoint)) );
+#endif
+	connect( hdrDisplay, SIGNAL(mouseOverPixel(QPoint)), this, SLOT(mouseOverImage(QPoint)) );
+	connect( this, SIGNAL(requestPixelInfo(QPoint)), pixInfoDialog, SLOT(showInfo(QPoint)) );
 
 	// An standard dialog for about QT
 	connect( actionAbout_Qt, SIGNAL(triggered()), this, SLOT(aboutQt()) );
@@ -90,7 +106,6 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 
 void MainWindow::saveAs()
 {
-	// TODO: save also as rgbe/hdr and exr
 
 	// Filter for the ldr files: by default we save the images as PNG
 	static QString filter = tr("Image files (*.png;*.bmp;*.jpg;*.tiff;*.rgbe;*.hdr;*.exr);;PNG (*.png);;"
@@ -104,6 +119,8 @@ void MainWindow::saveAs()
 	if (!file.isEmpty()) {
 
 		QFileInfo fileInfo(file);
+
+#if 0
 		QString suffix = fileInfo.suffix();
 
 		// We must have something to save
@@ -142,6 +159,13 @@ void MainWindow::saveAs()
 			QMessageBox::warning(this, appTitle,
 				tr("An error occurred while saving %1 in a HDR format.").arg(file));
 		}
+#endif
+
+		if (! hdrDisplay->save(file) ) {
+			QMessageBox::warning(this, appTitle,
+					tr("An error occurred while saving the tone mapped image %1.").arg(file));
+			return;
+		}
 
 		// Finally, save the directory of the saved file
 		dir = fileInfo.dir().path();
@@ -171,7 +195,7 @@ void MainWindow::open()
 }
 
 
-
+#if 0
 bool MainWindow::loadHdr(QString filename, Image<Rgba32F> &dest, QString *imgDir)
 {
 	QFileInfo fileInfo(filename);
@@ -198,10 +222,52 @@ bool MainWindow::loadHdr(QString filename, Image<Rgba32F> &dest, QString *imgDir
 	}
 	return true;
 }
+#endif
 
 
 void MainWindow::compareWith()
 {
+	QString fileName = chooseHDRFile(tr("Open file for comparison"));
+	if (fileName.isEmpty()) {
+		return;
+	}
+
+	HDRImageDisplay::HdrResult result;
+	QCursor waitCursor(Qt::WaitCursor);
+	QApplication::setOverrideCursor(waitCursor);
+
+	if (hdrDisplay->compareTo(fileName, ImageComparator::AbsoluteDifference, &result)) {
+
+		QFileInfo fileInfo(fileName);
+		openFileDir = fileInfo.dir().path();
+
+		// Makes all what is necessary to the gui
+		updateForLoadedImage(tr("[Absolute Difference]"));
+
+		QApplication::restoreOverrideCursor();
+	}
+	else {
+		Q_ASSERT( result != HDRImageDisplay::NoError );
+		QApplication::restoreOverrideCursor();
+
+		switch(result) {
+			case HDRImageDisplay::UnknownType:
+				QMessageBox::warning(this, appTitle,
+					tr("Unknown HDR format for the input file %1.").arg(fileName));
+				break;
+			case HDRImageDisplay::SizeMissmatch:
+				QMessageBox::warning(this, appTitle,
+					tr("The image to compare must have the same size "
+					   "as the one currently loaded."));
+				break;
+			default:
+				QMessageBox::warning(this, appTitle,
+					tr("An error occurred while loading %1.").arg(fileName));
+		}
+
+	}
+
+#if 0
 	QString fileName = chooseHDRFile(tr("Open file for comparison"));
 
 	if (!fileName.isEmpty()) {
@@ -225,7 +291,7 @@ void MainWindow::compareWith()
 				return;
 			}
 
-			// Now we perfor the comparison operation in place
+			// Now we perform the comparison operation in place
 			ImageComparator::Compare(ImageComparator::AbsoluteDifference,
 				hdrImage, hdrImage, other);
 
@@ -237,11 +303,49 @@ void MainWindow::compareWith()
 				tr("An error occurred while loading %1.").arg(fileName));
 		}
 	}
-
+#endif
 }
 
 void MainWindow::open(const QString &fileName, bool adjustSize)
 {
+	
+	HDRImageDisplay::HdrResult result;
+	QCursor waitCursor(Qt::WaitCursor);
+	QApplication::setOverrideCursor(waitCursor);
+	
+	if (hdrDisplay->open(fileName, &result)) {
+
+		QFileInfo fileInfo(fileName);
+		openFileDir = fileInfo.dir().path();
+
+		// Makes all what is necessary to the gui
+		updateForLoadedImage(fileInfo.fileName());
+
+		// And adjust the size of the window if requested
+		if (adjustSize) {
+			this->adjustSize();
+		}
+
+		QApplication::restoreOverrideCursor();
+	}
+	else {
+		Q_ASSERT( result != HDRImageDisplay::NoError );
+		QApplication::restoreOverrideCursor();
+
+		switch(result) {
+			case HDRImageDisplay::UnknownType:
+				QMessageBox::warning(this, appTitle,
+					tr("Unknown HDR format for the input file %1.").arg(fileName));
+				break;
+			default:
+				QMessageBox::warning(this, appTitle,
+					tr("An error occurred while loading %1.").arg(fileName));
+		}
+
+	}
+
+#if 0
+
 	QFileInfo fileInfo(fileName);
 	QString suffix = fileInfo.suffix();		// Suffix without the trailing "."
 
@@ -271,12 +375,14 @@ void MainWindow::open(const QString &fileName, bool adjustSize)
 		QMessageBox::warning(this, appTitle,
 			tr("An error occurred while loading %1.").arg(fileName));
 	}
+#endif
 
 }
 
 
 void MainWindow::updateForLoadedImage(QString imgName)
 {
+#if 0
 	ldrImage.Alloc(hdrImage.Width(), hdrImage.Height());
 	toneMapper.ToneMap(ldrImage, hdrImage);
 
@@ -288,6 +394,7 @@ void MainWindow::updateForLoadedImage(QString imgName)
 	if (!action_Fit_on_Screen->isChecked()) {
 		imageLabel->adjustSize();
 	}
+#endif
 
 	// Updates the status of the gui actions
 	action_Fit_on_Screen->setEnabled(true);
@@ -295,14 +402,20 @@ void MainWindow::updateForLoadedImage(QString imgName)
 	actionCompare_With->setEnabled(true);
 	updateActions();
 
+#if 0
 	// We also need to update our data provider
 	dataProvider.update();
+#endif
 
 	// And sets an appropriate title with the name of the application
 	this->setWindowTitle( tr("%1 - %2 (%3x%4)")
 		.arg( appTitle, imgName )
+#if 0
 		.arg( ldrImage.Width() )
 		.arg( ldrImage.Height() ) );
+#endif
+		.arg( hdrDisplay->sizeOrig().width() )
+		.arg( hdrDisplay->sizeOrig().height() ) );
 
 }
 
@@ -328,7 +441,9 @@ void MainWindow::fitToWindow()
 	const bool fitToWin = action_Fit_on_Screen->isChecked();
 	
 	if (fitToWin) {
+#if 0
 		imageLabel->setScaledContents(true);
+#endif
 
 		// Less elegant, but in order to keep the aspect ratio, we need to
 		// do a manual resizing. First we retrieve the size of the viewport
@@ -336,6 +451,7 @@ void MainWindow::fitToWindow()
 		imgScrollFrame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 		imgScrollFrame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+#if 0
 		// Now we set an appropriate size
 		Q_ASSERT(imageLabel->pixmap() != NULL && imageLabel->pixmap()->size().isValid());
 		QSize size = imageLabel->pixmap()->size();
@@ -344,6 +460,14 @@ void MainWindow::fitToWindow()
 
 		// And manually set the scaling factor used
 		scaleFactor = (float)size.width() / imageLabel->pixmap()->size().width();
+#endif
+		QSize size = hdrDisplay->sizeOrig();
+		size.scale(imgScrollFrame->viewport()->size(), Qt::KeepAspectRatio);
+
+		// And manually set the scaling factor used
+		const float sf = (float)size.width() / hdrDisplay->sizeOrig().width();
+		scaleFactor = 1.0f;
+		scaleImage(sf);
 
 		//imgScrollFrame->setWidgetResizable(true);		/* From the tutorial */
 	}
@@ -362,23 +486,28 @@ void MainWindow::fitToWindow()
 
 void MainWindow::scaleImage(float factor)
 {
+#if 0
 	Q_ASSERT(imageLabel->pixmap());
+#endif
 	scaleFactor *= factor;
 
 	// Correct from floating point errors close to 1
 	if (abs(scaleFactor - 1.0f) < 1e-3f) {
 		scaleFactor = 1.0f;
 	}
-
+#if 0
 	// This is a bug/horrible limitation: we only enable the exposure and
 	// gamma settings when the scale factor is 1. This is the kind of
 	// stuff which just works perfect and smooth using a GPU version
 	imageLabel->setScaledContents(scaleFactor != 1.0f);
 
 	imageLabel->resize(scaleFactor * imageLabel->pixmap()->size());
+#endif
 
 	adjustScrollBar(imgScrollFrame->horizontalScrollBar(), factor);
 	adjustScrollBar(imgScrollFrame->verticalScrollBar(), factor);
+
+	hdrDisplay->setScale(scaleFactor);
 
 	updateActions();
 }
@@ -396,9 +525,15 @@ void MainWindow::updateActions()
 	action_Actual_Pixels->setEnabled( !action_Fit_on_Screen->isChecked());
 	action_AdjustSize->setEnabled( !action_Fit_on_Screen->isChecked());
 
+	const bool enableTone = !(hdrDisplay->size().isEmpty());
+	exposureConnect->setEnabled(enableTone);
+	gammaConnect->setEnabled(enableTone);
+
+#if 0
 	const bool isOriginalSize = scaleFactor == 1.0f;
 	exposureConnect->setEnabled(!action_Fit_on_Screen->isChecked()  && isOriginalSize);
 	gammaConnect->setEnabled(!action_Fit_on_Screen->isChecked()  && isOriginalSize);
+#endif
 } 
 
 
@@ -411,10 +546,10 @@ void MainWindow::pixelInfo()
 {
 	const bool showPixInfo = action_Pixel_Info->isChecked();
 	if (showPixInfo) {
-		pixInfoDialog.show();
+		pixInfoDialog->show();
 	}
 	else {
-		pixInfoDialog.hide();
+		pixInfoDialog->hide();
 	}
 }
 
@@ -426,8 +561,9 @@ void MainWindow::pixelInfoClosed()
 void MainWindow::mouseOverImage( QPoint pos )
 {
 	// Request that query point if it makes sense
-	if (pixInfoDialog.isVisible()) {
+	if (pixInfoDialog->isVisible()) {
 
+#if 0
 		// We scale this by the inverse of the scale factor to get the actual pixel location.
 		// Note that just calling "pos /= scaleFactor" fails, especially when using the zoom,
 		// because of the rounding. Instead we need to use "floor" to play safe
@@ -435,7 +571,9 @@ void MainWindow::mouseOverImage( QPoint pos )
 		pos.setY((int)floor(pos.y() / scaleFactor));
 		Q_ASSERT(pos.x() >= 0 && pos.x() < hdrImage.Width());
 		Q_ASSERT(pos.y() >= 0 && pos.y() < hdrImage.Height());
+#endif
 
+		qDebug() << "Requesting info at: " << pos;
 		requestPixelInfo( pos );
 	}
 }
@@ -443,14 +581,19 @@ void MainWindow::mouseOverImage( QPoint pos )
 
 void MainWindow::adjustSize()
 {
+#if 0
 	Q_ASSERT(ldrImage.Width() > 0 && ldrImage.Height() > 0);
+#endif
 
 	// First we need to know how big is the difference between the
 	// window and our frame:
 	QSize offset = this->size() - imgScrollFrame->size();
 
 	// We add the actual size of the image and set that as our size + the small 1px border
+#if 0
 	offset += QSize(ldrImage.Width(), ldrImage.Height()) + QSize(2,2);
+#endif
+	offset += hdrDisplay->sizeOrig() + QSize(2,2);
 
 	// We will limit to the available geometry if we can know it by intersecting the regions
 	if (app != NULL) {
@@ -503,20 +646,24 @@ void MainWindow::dropEvent(QDropEvent *event)
 // ### This should go in a different class, shouldn't it?
 void MainWindow::setGamma(float gamma)
 {
+	hdrDisplay->setGamma(gamma);
+#if 0
 	if (gamma != toneMapper.Gamma()) {
 		toneMapper.SetGamma(gamma);
 		toneMapper.ToneMap(ldrImage, hdrImage);
 		imageLabel->update();
 	}
-
+#endif
 }
 
 void MainWindow::setExposure(float exposure)
 {
+	hdrDisplay->setExposure(exposure);
+#if 0
 	if (exposure != toneMapper.Exposure()) {
 		toneMapper.SetExposure(exposure);
 		toneMapper.ToneMap(ldrImage, hdrImage);
 		imageLabel->update();
 	}
-
+#endif
 }
