@@ -108,9 +108,10 @@ void MainWindow::saveAs()
 {
 
 	// Filter for the ldr files: by default we save the images as PNG
-	static QString filter = tr("Image files (*.png;*.bmp;*.jpg;*.tiff;*.rgbe;*.hdr;*.exr);;PNG (*.png);;"
-		"BMP (*.bmp);;JPEG (*.jpg;*.jpeg);;PPM (*.ppm);;TIFF (*.tiff);;"
-		"Radiance (*.rgbe;*.hdr);;OpenEXR (*.exr);;All files (*.*)");
+	static QString filter = 
+		tr("Image files (*.png *.bmp *.jpg *.tiff *.rgbe *.hdr *.exr);;"
+		"PNG (*.png);;BMP (*.bmp);;JPEG (*.jpg;*.jpeg);;PPM (*.ppm);;TIFF (*.tiff);;"
+		"Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;All files (*.*)");
 	static QString dir = QDir::currentPath();
 
 	QString file = QFileDialog::getSaveFileName(this,
@@ -161,14 +162,20 @@ void MainWindow::saveAs()
 		}
 #endif
 
+		QCursor waitCursor(Qt::WaitCursor);
+		QApplication::setOverrideCursor(waitCursor);
+
 		if (! hdrDisplay->save(file) ) {
+			QApplication::restoreOverrideCursor();
 			QMessageBox::warning(this, appTitle,
 					tr("An error occurred while saving the tone mapped image %1.").arg(file));
-			return;
 		}
+		else {
+			QApplication::restoreOverrideCursor();
 
-		// Finally, save the directory of the saved file
-		dir = fileInfo.dir().path();
+			// Finally, save the directory of the saved file
+			dir = fileInfo.dir().path();
+		}		
 	}
 
 }
@@ -176,8 +183,8 @@ void MainWindow::saveAs()
 QString MainWindow::chooseHDRFile(QString message) 
 {
 	// Our filter for files
-	static QString filter = tr("HDR Images (*.rgbe;*.hdr;*.exr);;"
-		"Radiance (*.rgbe; *.hdr);;OpenEXR (*.exr);;All files (*.*)");
+	static QString filter = tr("HDR Images (*.rgbe *.hdr *.exr);;"
+		"Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;All files (*.*)");
 
 	QString file = QFileDialog::getOpenFileName(this,
 		message, openFileDir, filter);
