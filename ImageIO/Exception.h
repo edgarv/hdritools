@@ -2,7 +2,7 @@
 #define PCG_EXCEPTION_H
 
 #include "ImageIO.h"
-#include <string.h>
+#include <string>
 
 // Macro to save typing when subclassing the basic exception
 // based on the IexBaseExc.h macro
@@ -36,6 +36,7 @@ namespace pcg {
 	// Some specific exceptions
 	PCG_DEFINE_EXC(IllegalArgumentException, Exception);
 	PCG_DEFINE_EXC(IOException, Exception);
+	PCG_DEFINE_EXC(RuntimeException, Exception);
 
 }
 
