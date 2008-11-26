@@ -70,6 +70,10 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	
   set(TBB_LIB_SUFFIX ${TBB_PLATFORM}/${TBB_RUNTIME})
 
+elseif(APPLE)
+  # Fixed path with the commercial-aligned binary release
+  set(TBB_LIB_SUFFIX "ia32/cc4.0.1_os10.4.9")
+
 endif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 include(FindReleaseAndDebug)
