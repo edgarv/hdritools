@@ -1,5 +1,5 @@
 /**
- * A templated image, it heavily based in Fabio's far codebase
+ * A templated image, it's heavily based in Fabio's far codebase
  */
 
 #if !defined( PCG_IMAGE_H )
@@ -15,12 +15,21 @@
 	#define PCG_IMAGE_CRAZY_TEMPLATES 0
 #endif
 
-#ifdef __GNUC__
+/* In Linux memory is not automagically align into 16-bytes */
+#if defined( __GNUC__ ) && !defined(__APPLE__)
+#define USE_MEMALIGN 1
+#else
+#define USE_MEMALIGN 0
+#endif
+
+#if USE_MEMALIGN
 #define _XOPEN_SOURCE 600 /* For posix_memalign */
 #endif
 
 #include <cstdlib>
 #include <cassert>
+
+#include "Exception.h"
 
 namespace pcg {
 
@@ -117,8 +126,10 @@ namespace pcg {
 		// Helper function to allocate the memory: GCC's new does not respect
 		// the alignment as it should
 		inline void alloc() {
-		#ifdef __GNUC__
-			posix_memalign ((void**)&(this->d), 16, w*h*sizeof(T));
+		#if USE_MEMALIGN
+			if (posix_memalign ((void**)&(this->d), 16, w*h*sizeof(T)) != 0) {
+				throw RuntimeException("Couldn't allocate the memory for the image");
+			}
 		#else
 			this->d = new T[w*h];
 		#endif
@@ -157,7 +168,7 @@ namespace pcg {
 		// Deallocates the memory and resets the image dimensions to 0
 		void Clear() {
 			if(d != NULL) {
-			#ifdef __GNUC__
+			#if USE_MEMALIGN
 				free(d);
 			#else
 				delete [] d;
