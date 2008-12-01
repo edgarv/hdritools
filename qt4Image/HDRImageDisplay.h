@@ -33,7 +33,7 @@ public:
 		IllegalState
 	};
 
-	HDRImageDisplay() : scaleFactor(1), toneMapper(4096), needsToneMap(true),
+	HDRImageDisplay() : scaleFactor(1), toneMapper(0.0f, 4096), needsToneMap(true),
 		dataProvider(hdrImage, ldrImage)
 	{
 		// By default we want to receive events whenever the mouse moves around
@@ -71,7 +71,6 @@ public:
 			needsToneMap = true;
 			update();
 		}
-
 	}
 
 	void setExposure(float exposure)
@@ -81,8 +80,18 @@ public:
 			needsToneMap = true;
 			update();
 		}
-
 	}
+
+	void setSRGB(bool enable)
+	{
+		if (enable != toneMapper.isSRGB()) {
+			toneMapper.SetSRGB(enable);
+			needsToneMap = true;
+			update();
+		}
+	}
+
+
 
 	void setScale(float scale)
 	{

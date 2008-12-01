@@ -42,9 +42,8 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 	imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 #endif 
 
-	// FIXME Test code!!!. 
-	/* Ricorda: QScrollArea::setWidget(widget) makes the scroll area to
-	/* take total care of the widget, including its destruction */ 
+	/* Ricorda: QScrollArea::setWidget(widget) causes the scroll area to
+	/* take total control of the widget, including its destruction */ 
 	hdrDisplay = new HDRImageDisplay();
 	imgScrollFrame->setWidget(hdrDisplay);
 
@@ -85,16 +84,20 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 	connect( hdrDisplay, SIGNAL(mouseOverPixel(QPoint)), this, SLOT(mouseOverImage(QPoint)) );
 	connect( this, SIGNAL(requestPixelInfo(QPoint)), pixInfoDialog, SLOT(showInfo(QPoint)) );
 
-	// An standard dialog for about QT
+	// Standard dialog for about
+	connect( action_About,   SIGNAL(triggered()), this, SLOT(about()) );
 	connect( actionAbout_Qt, SIGNAL(triggered()), this, SLOT(aboutQt()) );
 
 	// Connects the gamma and exposure controls
 	connect( exposureConnect, SIGNAL(valueChanged(float)), this, SLOT(setExposure(float)) );
 	connect( gammaConnect,    SIGNAL(valueChanged(float)), this, SLOT(setGamma(float)) );
 
+	// Also connects the sRGB control
+	connect( srgbChk, SIGNAL(stateChanged(int)), this, SLOT(setSRGB(int)) );
+
 	// Initial values for the tone mapper
-	setGamma(2.2f);
 	setExposure(0.0f);
+	setSRGB(true);
 
 	// Finally we activate both the window's layout and the central widget's layout
 	// so that everything is distributed before showing the window
@@ -407,6 +410,7 @@ void MainWindow::updateForLoadedImage(QString imgName)
 	action_Fit_on_Screen->setEnabled(true);
 	action_Save_as->setEnabled(true);
 	actionCompare_With->setEnabled(true);
+	action_Pixel_Info->setEnabled(true);
 	updateActions();
 
 #if 0
@@ -534,7 +538,11 @@ void MainWindow::updateActions()
 
 	const bool enableTone = !(hdrDisplay->size().isEmpty());
 	exposureConnect->setEnabled(enableTone);
-	gammaConnect->setEnabled(enableTone);
+	srgbChk->setEnabled(enableTone);
+
+	const bool enableGamma = enableTone && !srgbChk->isChecked();
+	gammaConnect->setEnabled(enableGamma);
+	gammaLabel->setEnabled(enableGamma);
 
 #if 0
 	const bool isOriginalSize = scaleFactor == 1.0f;
@@ -543,6 +551,18 @@ void MainWindow::updateActions()
 #endif
 } 
 
+
+void MainWindow::about()
+{
+	// TODO Parametrize the version and update it automatically somehow
+	QMessageBox::about(this, tr("About %1").arg(appTitle), 
+		tr("<p><b>%1</b></p>"
+		"<p>Version %2.<br/>"
+		"%1 is a simple, fast viewer for High Dynamic Range (HDR) images.</p>"
+		"<p>Copyright (C) 2008 Program of Computer Graphics, Cornell University.</p>")
+			.arg(appTitle)
+			.arg(tr("0.1.0")) );
+}
 
 void MainWindow::aboutQt()
 {
@@ -673,4 +693,10 @@ void MainWindow::setExposure(float exposure)
 		imageLabel->update();
 	}
 #endif
+}
+
+void MainWindow::setSRGB(int value)
+{
+	hdrDisplay->setSRGB(value != Qt::Unchecked);
+	updateActions();
 }

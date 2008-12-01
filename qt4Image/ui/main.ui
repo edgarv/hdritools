@@ -36,24 +36,20 @@
       <property name="verticalSpacing" >
        <number>4</number>
       </property>
-      <item row="0" column="0" >
-       <widget class="QLabel" name="exposureLabel" >
-        <property name="text" >
-         <string>Exposure:</string>
-        </property>
-        <property name="buddy" >
-         <cstring>exposureSpinBox</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1" >
-       <widget class="QLabel" name="exponentLabel" >
-        <property name="text" >
-         <string>2^</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="3" >
+       <widget class="QLabel" name="exponentLabel" >
+        <property name="layoutDirection" >
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="text" >
+         <string>2 ^</string>
+        </property>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5" >
        <widget class="QSlider" name="exposureSlider" >
         <property name="minimum" >
          <number>-1000</number>
@@ -78,8 +74,11 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2" >
+      <item row="0" column="4" >
        <widget class="QDoubleSpinBox" name="exposureSpinBox" >
+        <property name="accelerated" >
+         <bool>true</bool>
+        </property>
         <property name="correctionMode" >
          <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
         </property>
@@ -100,18 +99,11 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" >
-       <widget class="QLabel" name="gammaLabel" >
-        <property name="text" >
-         <string>Gamma:</string>
-        </property>
-        <property name="buddy" >
-         <cstring>gammaSpinBox</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2" >
+      <item row="1" column="4" >
        <widget class="QDoubleSpinBox" name="gammaSpinBox" >
+        <property name="enabled" >
+         <bool>true</bool>
+        </property>
         <property name="correctionMode" >
          <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
         </property>
@@ -129,8 +121,11 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="3" >
+      <item row="1" column="5" >
        <widget class="QSlider" name="gammaSlider" >
+        <property name="enabled" >
+         <bool>true</bool>
+        </property>
         <property name="minimum" >
          <number>5</number>
         </property>
@@ -154,6 +149,45 @@
         </property>
         <property name="tickInterval" >
          <number>50</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3" >
+       <widget class="QLabel" name="gammaLabel" >
+        <property name="enabled" >
+         <bool>true</bool>
+        </property>
+        <property name="layoutDirection" >
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="text" >
+         <string>Gamma:</string>
+        </property>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy" >
+         <cstring>gammaSpinBox</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" >
+       <widget class="QCheckBox" name="srgbChk" >
+        <property name="text" >
+         <string>sRGB</string>
+        </property>
+        <property name="checked" >
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" >
+       <widget class="QLabel" name="exposureLabel" >
+        <property name="text" >
+         <string>Exposure:</string>
+        </property>
+        <property name="buddy" >
+         <cstring>exposureSpinBox</cstring>
         </property>
        </widget>
       </item>
@@ -223,7 +257,7 @@
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>&amp;Save As...</string>
+    <string>&amp;Save as...</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+S</string>
@@ -234,7 +268,7 @@
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>Compare &amp;With...</string>
+    <string>Compare &amp;with...</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+Alt+O</string>
@@ -242,10 +276,13 @@
   </action>
   <action name="action_About" >
    <property name="enabled" >
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text" >
-    <string>&amp;About</string>
+    <string>&amp;About QT4Image</string>
+   </property>
+   <property name="menuRole" >
+    <enum>QAction::AboutRole</enum>
    </property>
   </action>
   <action name="actionE_xit" >
@@ -255,13 +292,16 @@
    <property name="shortcut" >
     <string>Esc</string>
    </property>
+   <property name="menuRole" >
+    <enum>QAction::QuitRole</enum>
+   </property>
   </action>
   <action name="actionZoom_In" >
    <property name="enabled" >
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>Zoom &amp;In</string>
+    <string>Zoom in</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl++</string>
@@ -272,7 +312,7 @@
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>Zoom &amp;Out</string>
+    <string>Zoom out</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+-</string>
@@ -286,7 +326,7 @@
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>&amp;Fit on Screen</string>
+    <string>&amp;Fit on screen</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+0</string>
@@ -297,7 +337,7 @@
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>&amp;Actual Pixels</string>
+    <string>&amp;Actual pixels</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+Alt+0</string>
@@ -315,8 +355,11 @@
    <property name="checkable" >
     <bool>true</bool>
    </property>
+   <property name="enabled" >
+    <bool>false</bool>
+   </property>
    <property name="text" >
-    <string>Pixel &amp;Info</string>
+    <string>Pixel &amp;info</string>
    </property>
    <property name="shortcut" >
     <string>F8</string>
@@ -327,7 +370,7 @@
     <bool>false</bool>
    </property>
    <property name="text" >
-    <string>&amp;Adjust to Image Size</string>
+    <string>&amp;Adjust to image size</string>
    </property>
    <property name="shortcut" >
     <string>Ctrl+L</string>

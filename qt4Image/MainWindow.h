@@ -128,6 +128,7 @@ protected slots:
 	void pixelInfo();
 
 	// Help menu slots
+	void about();
 	void aboutQt();
 
 	// Adjusts the size of the window so that the image doesn't require any scrollbars
@@ -139,10 +140,10 @@ protected slots:
 	// Receive raw "onMouseOver" events from the image label
 	void mouseOverImage( QPoint pos );
 
-	// TODO This should go to a class than contains the tone mapper and
-	// all the related stuff
+	// TODO Should these slots belong here or in the HDRDisplay widget?
 	void setGamma(float gamma);
 	void setExposure(float exposure);
+	void setSRGB(int value);
 
 
 
