@@ -18,6 +18,7 @@ namespace pcg {
 	namespace tonemapper_internal {
 
 		// Helper class for the TBB version of the LUT update
+		template < bool useSRGB >
 		class ToneMapperLUTBody {
 
 		protected:
@@ -32,6 +33,12 @@ namespace pcg {
 			const Rgba32F &base4;
 			const Rgba32F &delta;
 			const Rgba32F &qFactor;
+
+			// Constants used in sRGB
+			const Rgba32F srgbThreshold; // 0.0031308f
+			const Rgba32F srgbLowScale;  // 12.92f
+			const Rgba32F srgb1plusA;	 // 1.0f + 0.055f
+			const Rgba32F srgbA;		 // 0.055f
 
 			// Computes the LUT values, 4 at a time
 			inline void kernel(const int &i, 
@@ -60,18 +67,64 @@ namespace pcg {
 				// Combine everything in place. Because of using the previous intrinsics, this code
 				// can run entirelly on registers, doing a single memory copy
 				lutPtr[i] = (D << 24) | (C << 16) | (B << 8) | A;
+			}
+
+			// Computes the LUT for sRGB
+			inline void kernelSRGB(const int &i, 
+				const Rgba32F &base4, const Rgba32F &delta, const Rgba32F &qFactor) const
+			{
+				// Update the linear values
+				Rgba32F values = Rgba32F((float)(i))*base4 + delta;
+
+				// Gets a maks (filled with 0xffffffff where values[i] < threshold (0.0031308)
+				const Rgba32F mask = _mm_cmple_ps(values, srgbThreshold);
+
+				// First case result: when its less than the threshold
+				const Rgba32F below = srgbLowScale * values;
+
+				// Secons case:
+				Rgba32F above(pow(values.r(), 1.0f/2.4f), pow(values.g(), 1.0f/2.4f),
+					pow(values.b(), 1.0f/2.4f), pow(values.a(), 1.0f/2.4f));
+				above *= srgb1plusA;
+				above -= srgbA;
+
+				// Select values according to the mask (to avoid conditionals)
+				values = (mask & below) | (_mm_andnot_ps(mask, above));
+
+				
+				// TODO: this should be extracted to a method!
+
+				// Multiply by 255
+				values *= qFactor;
+				
+				// Convert back to integers with rounding
+				const __m128i valuesI = _mm_cvtps_epi32(values);
+
+				// Copy to the LUT. Each value is only 8 bits long, so we can extract them using SSE2
+				const int A = _mm_extract_epi16(valuesI, 3*2);
+				const int B = _mm_extract_epi16(valuesI, 2*2);
+				const int C = _mm_extract_epi16(valuesI, 1*2);
+				const int D = _mm_extract_epi16(valuesI, 0);
+
+				// Combine everything in place. Because of using the previous intrinsics, this code
+				// can run entirelly on registers, doing a single memory copy
+				lutPtr[i] = (D << 24) | (C << 16) | (B << 8) | A;
 
 			}
 
 		public:
-			ToneMapperLUTBody(float invGamma, unsigned long *lutPtr, 
-				const Rgba32F &_base4, const Rgba32F &_delta, const Rgba32F &_qFactor) :
-			  invGamma(invGamma), lutPtr(lutPtr), base4(_base4), delta(_delta), qFactor(_qFactor)
+
+			ToneMapperLUTBody(unsigned long *lutPtr, 
+				const Rgba32F &_base4, const Rgba32F &_delta, const Rgba32F &_qFactor,
+				float invGamma = 0.0f) :
+			  invGamma(invGamma), lutPtr(lutPtr), base4(_base4), delta(_delta), qFactor(_qFactor),
+			  srgbThreshold(0.0031308f), srgbLowScale(12.92f), srgb1plusA(1.0f+0.055f), srgbA(0.055f)
 			{
 
 			}
 
-			// Linear-style operator. This should only be used on files using the same scanline mode
+			// The actual method to execute. Because useSRGB is a template, the generated
+			// code won't have conditionals
 			void operator()(const blocked_range<int>& r) const {
 
 				// Local copies of the variables
@@ -79,8 +132,15 @@ namespace pcg {
 				const Rgba32F delta   = this->delta;
 				const Rgba32F qFactor = this->qFactor;
 
-				for (int i = r.begin(); i != r.end(); ++i) {
-					kernel(i, base4, delta, qFactor);
+				if (!useSRGB) {
+					for (int i = r.begin(); i != r.end(); ++i) {
+						kernel(i, base4, delta, qFactor);
+					}
+				}
+				else {
+					for (int i = r.begin(); i != r.end(); ++i) {
+						kernelSRGB(i, base4, delta, qFactor);
+					}
 				}
 			}
 		};
@@ -229,11 +289,19 @@ void ToneMapper::UpdateLUT() {
 	// Alias the LUT: we will write quadwords at a time
 	unsigned long *lutPtr = reinterpret_cast<unsigned long *>(lut);
 
-	parallel_for(blocked_range<int>(0,numIter),
-		ToneMapperLUTBody(invGamma, lutPtr, base4, delta, qFactor));
+	// Instanciate the proper templates
+	if (isSRGB()) {
+		parallel_for(blocked_range<int>(0,numIter),
+			ToneMapperLUTBody<true>(lutPtr, base4, delta, qFactor) );
+	}
+	else {
+		parallel_for(blocked_range<int>(0,numIter),
+			ToneMapperLUTBody<false>(lutPtr, base4, delta, qFactor, invGamma) );
 
-	// However the first one is always 0
-	lut[0] = 0;
+		// However the first one is always 0
+		lut[0] = 0;
+	}
+
 }
 
 

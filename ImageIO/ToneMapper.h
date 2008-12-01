@@ -54,6 +54,9 @@ namespace pcg {
 		// The actual exponent for the gamma correction: 1/gamma
 		float invGamma;
 
+		// A flag to know whether to use the simple gamma curve or the sRGB color space
+		bool useSRGB;
+
 		// The lut contains the values of:  round(255 * (p^(1/gamma))),
 		// where p is the pixel value after applying the exposure compensation
 		// and whose value is in the range [0,1]
@@ -66,11 +69,26 @@ namespace pcg {
 		// up the query of the gamma exponentiation. That LUT will be forced to have a size
 		// multiple of four, and of course if it's lenght is ridiculously small everything
 		// is likely to crash in terrible ways.
-		ToneMapper(unsigned short size = 2048) : lut(NULL), lutSize(size & (~0x3)), qLutV((float)lutSize-1) {
-
+		ToneMapper(unsigned short size = 2048) : lut(NULL), lutSize(size & (~0x3)), 
+			qLutV((float)lutSize-1), useSRGB(false) 
+		{
 			lut = new unsigned char[lutSize];
 			SetExposure(0.0f);
 			SetGamma(1.0f);
+		}
+
+		// Constructor which takes an specific exposure, and uses sRGB instead of a gamma curve.
+		// If sRGB is disabled afterwards, the default gamma is 2.2
+		ToneMapper(float exposure, unsigned short size) : lut(NULL), lutSize(size & (~0x3)),
+			qLutV((float)lutSize-1), useSRGB(true),
+			gamma(2.2f), invGamma(1.0f/2.2f)
+		{
+			if (lutSize == 0) {
+				throw IllegalArgumentException("Illegal LUT size of 0");
+			}
+			lut = new unsigned char[lutSize];
+			SetExposure(exposure);
+			UpdateLUT();
 		}
 
 		// The destructor only deletes the LUT
@@ -88,21 +106,32 @@ namespace pcg {
 
 		// Sets the gamma correction. Each pixel's component p, after the exposure correction and clamping to
 		// the range [0,1] will be raised to the power of (1/gamma), thus the final value is p^(1/gamma).
-		// Therefore gamma must be greater than zero; the typical value for LCD's is 2.2
+		// Therefore gamma must be greater than zero; the typical value for LCD's is 2.2.
+		// Calling this method implies disabling sRGB.
 		void SetGamma(float gamma) {
 			if (gamma <= 0) {
 				throw IllegalArgumentException("The gamma must be greater that zero");
 			}
 			this->gamma    = gamma;
 			this->invGamma = 1.0f/gamma;
+			this->useSRGB  = false;
 			UpdateLUT();
 		}
 
-		// Returns the gamma
+		// Enables or disables the sRGB curve
+		void SetSRGB(bool enable) {
+			useSRGB = enable;
+			UpdateLUT();
+		}
+
+		// Returns the gamma employed when sRGB is not used
 		float Gamma() const { return gamma; }
 
 		// Returns the exposure
 		float Exposure() const { return exposure; }
+
+		// Returns wheather it's using sRGB or nor
+		bool isSRGB() const { return useSRGB; }
 
 
 		// The real tone mapping operations: support for the two types
