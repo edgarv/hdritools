@@ -27,6 +27,7 @@ set(SRCS
   RgbeImage.h
   RgbeIO.h RgbeIO.cpp
   RgbeIOPrivate.h
+  sse_mathfun.h
   ToneMapper.h ToneMapper.cpp
   ${LUT_DIRECTORY}/rgbeLUT.h
   Exception.h

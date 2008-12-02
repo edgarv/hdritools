@@ -6,6 +6,15 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
+// FIXME Make this a setup flag
+#define USE_SSE_POW 1
+
+#if USE_SSE_POW
+namespace ssemath {
+	#include "sse_mathfun.h"
+}
+#endif
+
 using namespace pcg;
 using namespace tbb;
 
@@ -40,20 +49,12 @@ namespace pcg {
 			const Rgba32F srgb1plusA;	 // 1.0f + 0.055f
 			const Rgba32F srgbA;		 // 0.055f
 
-			// Computes the LUT values, 4 at a time
-			inline void kernel(const int &i, 
-				const Rgba32F &base4, const Rgba32F &delta, const Rgba32F &qFactor) const {
-
-				// Update values
-				Rgba32F values = Rgba32F((float)(i))*base4 + delta;
-
-				// Exponenciate by 1/gamma (this is slow!!!)
-				values.set(pow(values.r(), invGamma), pow(values.g(), invGamma), 
-						   pow(values.b(), invGamma), pow(values.a(), invGamma));
-
-
+			// Helper method for the LUT kernels
+			FORCEINLINE_BEG void quantizeAndStore(const int &i, 
+				const Rgba32F &vals, const Rgba32F &qFactor) const FORCEINLINE_END
+			{
 				// Multiply by 255
-				values *= qFactor;
+				const Rgba32F values = vals * qFactor;
 				
 				// Convert back to integers with rounding
 				const __m128i valuesI = _mm_cvtps_epi32(values);
@@ -65,8 +66,27 @@ namespace pcg {
 				const int D = _mm_extract_epi16(valuesI, 0);
 
 				// Combine everything in place. Because of using the previous intrinsics, this code
-				// can run entirelly on registers, doing a single memory copy
+				// can run entirely on registers, doing a single memory copy
 				lutPtr[i] = (D << 24) | (C << 16) | (B << 8) | A;
+
+			}
+
+			// Computes the LUT values, 4 at a time
+			inline void kernel(const int &i, 
+				const Rgba32F &base4, const Rgba32F &delta, const Rgba32F &qFactor) const {
+
+				// Update values
+				Rgba32F values = Rgba32F((float)(i))*base4 + delta;
+
+				// Exponentiate by 1/gamma (this is slow!!!)
+#if USE_SSE_POW
+				values = ssemath::exp_ps(ssemath::log_ps(values) * Rgba32F(invGamma));
+#else
+				values.set(pow(values.r(), invGamma), pow(values.g(), invGamma), 
+						   pow(values.b(), invGamma), pow(values.a(), invGamma));
+#endif
+
+				quantizeAndStore(i, values, qFactor);
 			}
 
 			// Computes the LUT for sRGB
@@ -82,9 +102,13 @@ namespace pcg {
 				// First case result: when its less than the threshold
 				const Rgba32F below = srgbLowScale * values;
 
-				// Secons case:
+				// Second case:
+#if USE_SSE_POW
+				Rgba32F above(ssemath::exp_ps(ssemath::log_ps(values) * Rgba32F(1.0f/2.4f)));
+#else
 				Rgba32F above(pow(values.r(), 1.0f/2.4f), pow(values.g(), 1.0f/2.4f),
 					pow(values.b(), 1.0f/2.4f), pow(values.a(), 1.0f/2.4f));
+#endif
 				above *= srgb1plusA;
 				above -= srgbA;
 
@@ -92,23 +116,7 @@ namespace pcg {
 				values = (mask & below) | (_mm_andnot_ps(mask, above));
 
 				
-				// TODO: this should be extracted to a method!
-
-				// Multiply by 255
-				values *= qFactor;
-				
-				// Convert back to integers with rounding
-				const __m128i valuesI = _mm_cvtps_epi32(values);
-
-				// Copy to the LUT. Each value is only 8 bits long, so we can extract them using SSE2
-				const int A = _mm_extract_epi16(valuesI, 3*2);
-				const int B = _mm_extract_epi16(valuesI, 2*2);
-				const int C = _mm_extract_epi16(valuesI, 1*2);
-				const int D = _mm_extract_epi16(valuesI, 0);
-
-				// Combine everything in place. Because of using the previous intrinsics, this code
-				// can run entirelly on registers, doing a single memory copy
-				lutPtr[i] = (D << 24) | (C << 16) | (B << 8) | A;
+				quantizeAndStore(i, values, qFactor);
 
 			}
 

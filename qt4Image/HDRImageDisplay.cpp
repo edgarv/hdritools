@@ -72,7 +72,6 @@ bool HDRImageDisplay::compareTo(const QString &fileName, ImageComparator::Type c
 			return false;
 		}
 
-		// TODO: Set the comparison method as an argument
 		// Now we perform the comparison operation in place
 		ImageComparator::Compare(compareMethod, hdrImage, hdrImage, other);
 

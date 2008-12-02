@@ -18,17 +18,17 @@ namespace pcg {
 	const unsigned int alpha_zero_mask[4] = {0x0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
 
 
-	struct ALIGN16 Rgba32F {
+	struct ALIGN16_BEG Rgba32F {
 		
 	private:
 		__m128 rgba;
 
 		// This mask will clear the sign
-		static const ALIGN16 IMAGEIO_API unsigned int abs_mask[4];
+		static const ALIGN16_BEG IMAGEIO_API unsigned int abs_mask[4] ALIGN16_END;
 
 		// A mask for testing for 0-alpha
 		// Remember the endianess!
-		static const ALIGN16 IMAGEIO_API unsigned int alpha_zero_mask[4];
+		static const ALIGN16_BEG IMAGEIO_API unsigned int alpha_zero_mask[4] ALIGN16_END;
 
 	public:
 
@@ -190,7 +190,7 @@ namespace pcg {
 				<< " }";
 			return os;
 		}
-	};
+	} ALIGN16_END;
 
 }
 

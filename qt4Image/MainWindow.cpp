@@ -61,7 +61,20 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 	// Creates the connection for the file related actions
 	connect( action_Open, SIGNAL(triggered()), this, SLOT(open()) );
 	connect( action_Save_as, SIGNAL(triggered()), this, SLOT(saveAs()) );
-	connect( actionCompare_With, SIGNAL(triggered()), this, SLOT(compareWith()) );
+
+	// Connections for the comparison methods
+	connect( actionAbsDifference, SIGNAL(triggered()), 
+		this, SLOT(compareAbsDifference()) );
+	connect( actionAdd, SIGNAL(triggered()), 
+		this, SLOT(compareAdd()) );
+	connect( actionDivide, SIGNAL(triggered()), 
+		this, SLOT(compareDivide()) );
+	connect( actionRelError, SIGNAL(triggered()), 
+		this, SLOT(compareRelError()) );
+	connect( actionPosNegDifference, SIGNAL(triggered()), 
+		this, SLOT(comparePosNegDifference()) );
+	connect( actionPosNegRelError, SIGNAL(triggered()), 
+		this, SLOT(comparePosNegRelError()) );
 
 	// Connection for the close button
 	connect( actionE_xit, SIGNAL(triggered()), this, SLOT(close()) );
@@ -235,7 +248,7 @@ bool MainWindow::loadHdr(QString filename, Image<Rgba32F> &dest, QString *imgDir
 #endif
 
 
-void MainWindow::compareWith()
+void MainWindow::compareWith(ImageComparator::Type type, const QString & description)
 {
 	QString fileName = chooseHDRFile(tr("Open file for comparison"));
 	if (fileName.isEmpty()) {
@@ -246,13 +259,13 @@ void MainWindow::compareWith()
 	QCursor waitCursor(Qt::WaitCursor);
 	QApplication::setOverrideCursor(waitCursor);
 
-	if (hdrDisplay->compareTo(fileName, ImageComparator::AbsoluteDifference, &result)) {
+	if (hdrDisplay->compareTo(fileName, type, &result)) {
 
 		QFileInfo fileInfo(fileName);
 		openFileDir = fileInfo.dir().path();
 
 		// Makes all what is necessary to the gui
-		updateForLoadedImage(tr("[Absolute Difference]"));
+		updateForLoadedImage(tr("[%1]").arg(description));
 
 		QApplication::restoreOverrideCursor();
 	}
@@ -409,7 +422,7 @@ void MainWindow::updateForLoadedImage(QString imgName)
 	// Updates the status of the gui actions
 	action_Fit_on_Screen->setEnabled(true);
 	action_Save_as->setEnabled(true);
-	actionCompare_With->setEnabled(true);
+	menuCompare->setEnabled(true);
 	action_Pixel_Info->setEnabled(true);
 	updateActions();
 
@@ -699,4 +712,30 @@ void MainWindow::setSRGB(int value)
 {
 	hdrDisplay->setSRGB(value != Qt::Unchecked);
 	updateActions();
+}
+
+void MainWindow::compareAbsDifference() {
+	compareWith(ImageComparator::AbsoluteDifference, tr("Absolute difference"));
+}
+
+void MainWindow::compareAdd() {
+	compareWith(ImageComparator::Addition, tr("Addition"));
+}
+
+void MainWindow::compareDivide() {
+	compareWith(ImageComparator::Division, tr("Division"));
+}
+
+void MainWindow::compareRelError() {
+	compareWith(ImageComparator::RelativeError, tr("Relative error"));
+}
+
+void MainWindow::comparePosNegDifference() {
+	compareWith(ImageComparator::PositiveNegative, 
+		tr("Positive/negative difference"));
+}
+
+void MainWindow::comparePosNegRelError() {
+	compareWith(ImageComparator::PositiveNegativeRelativeError, 
+		tr("Positive/negative relative error"));
 }

@@ -15,7 +15,12 @@ namespace pcg {
 	public:
 		// Enumeration with the different comparison methods
 		enum Type {
-			AbsoluteDifference
+			AbsoluteDifference,
+			Addition,
+			Division,
+			RelativeError,
+			PositiveNegative,
+			PositiveNegativeRelativeError,
 		};
 		
 		static IMAGEIO_API void Compare(Type type, Image<Rgba32F, TopDown> &dest, 

@@ -76,6 +76,9 @@ protected:
 	// The parameter indicates the name to display in the title bar
 	void updateForLoadedImage(QString imgName);
 
+	// The actual comparison method
+	void compareWith(ImageComparator::Type type, const QString & description);
+
 #if 0
 	// The internal representation of the HDR Image
 	Image<Rgba32F> hdrImage;
@@ -115,8 +118,13 @@ protected slots:
 	void open();
 	void saveAs();
 
-	// The comparison action
-	void compareWith();
+	// The different comparison methods
+	void compareAbsDifference();
+	void compareAdd();
+	void compareDivide();
+	void compareRelError();
+	void comparePosNegDifference();
+	void comparePosNegRelError();
 
 	// View mode adjustments
 	void zoomIn();

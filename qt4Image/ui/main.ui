@@ -208,10 +208,24 @@
     <property name="title" >
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menuCompare" >
+     <property name="enabled" >
+      <bool>false</bool>
+     </property>
+     <property name="title" >
+      <string>Compare</string>
+     </property>
+     <addaction name="actionAbsDifference" />
+     <addaction name="actionAdd" />
+     <addaction name="actionDivide" />
+     <addaction name="actionRelError" />
+     <addaction name="actionPosNegDifference" />
+     <addaction name="actionPosNegRelError" />
+    </widget>
     <addaction name="action_Open" />
     <addaction name="action_Save_as" />
     <addaction name="separator" />
-    <addaction name="actionCompare_With" />
+    <addaction name="menuCompare" />
     <addaction name="separator" />
     <addaction name="actionE_xit" />
    </widget>
@@ -261,17 +275,6 @@
    </property>
    <property name="shortcut" >
     <string>Ctrl+S</string>
-   </property>
-  </action>
-  <action name="actionCompare_With" >
-   <property name="enabled" >
-    <bool>false</bool>
-   </property>
-   <property name="text" >
-    <string>Compare &amp;with...</string>
-   </property>
-   <property name="shortcut" >
-    <string>Ctrl+Alt+O</string>
    </property>
   </action>
   <action name="action_About" >
@@ -374,6 +377,36 @@
    </property>
    <property name="shortcut" >
     <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionAbsDifference" >
+   <property name="text" >
+    <string>Absolute difference with...</string>
+   </property>
+  </action>
+  <action name="actionAdd" >
+   <property name="text" >
+    <string>Add with...</string>
+   </property>
+  </action>
+  <action name="actionDivide" >
+   <property name="text" >
+    <string>Divide by...</string>
+   </property>
+  </action>
+  <action name="actionRelError" >
+   <property name="text" >
+    <string>Relative error with...</string>
+   </property>
+  </action>
+  <action name="actionPosNegDifference" >
+   <property name="text" >
+    <string>Positive/negative difference with...</string>
+   </property>
+  </action>
+  <action name="actionPosNegRelError" >
+   <property name="text" >
+    <string>Positive/negative relative error with...</string>
    </property>
   </action>
  </widget>
