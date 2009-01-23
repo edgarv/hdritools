@@ -36,7 +36,7 @@ namespace pcg {
 			const float invGamma;
 
 			// Pointer to the lut
-			unsigned long *lutPtr;
+			uint32_t *lutPtr;
 
 			// References to the helper constants
 			const Rgba32F &base4;
@@ -50,7 +50,7 @@ namespace pcg {
 			const Rgba32F srgbA;		 // 0.055f
 
 			// Helper method for the LUT kernels
-			FORCEINLINE_BEG void quantizeAndStore(const int &i, 
+			FORCEINLINE_BEG void quantizeAndStore(const int i, 
 				const Rgba32F &vals, const Rgba32F &qFactor) const FORCEINLINE_END
 			{
 				// Multiply by 255
@@ -122,7 +122,7 @@ namespace pcg {
 
 		public:
 
-			ToneMapperLUTBody(unsigned long *lutPtr, 
+			ToneMapperLUTBody(uint32_t *lutPtr, 
 				const Rgba32F &_base4, const Rgba32F &_delta, const Rgba32F &_qFactor,
 				float invGamma = 0.0f) :
 			  invGamma(invGamma), lutPtr(lutPtr), base4(_base4), delta(_delta), qFactor(_qFactor),
@@ -151,6 +151,26 @@ namespace pcg {
 					}
 				}
 			}
+
+                        /*
+                        void operator()(int s, int t) const {
+				// Local copies of the variables
+				const Rgba32F base4   = this->base4;
+				const Rgba32F delta   = this->delta;
+				const Rgba32F qFactor = this->qFactor;
+
+				if (!useSRGB) {
+					for(int i = s; i < t; ++ i) {
+						kernel(i, base4, delta, qFactor);
+					}
+				}
+				else {
+                                        for(int i = s;i < t; ++ i) {
+						kernelSRGB(i, base4, delta, qFactor);
+					}
+				}
+                        }
+                        */
 		};
 
 		// The class to be used by TBB
@@ -293,9 +313,8 @@ void ToneMapper::UpdateLUT() {
 	// With some SSE trickery we will be running in 4 elements at a time, that's the
 	// reason for the LUT to be a multiple of 4
 	const int numIter = lutSize >> 2;
-
 	// Alias the LUT: we will write quadwords at a time
-	unsigned long *lutPtr = reinterpret_cast<unsigned long *>(lut);
+	uint32_t *lutPtr = reinterpret_cast<uint32_t *>(lut);
 
 	// Instanciate the proper templates
 	if (isSRGB()) {

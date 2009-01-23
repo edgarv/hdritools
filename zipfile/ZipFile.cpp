@@ -3,6 +3,7 @@
 
 #include "unzip.h"
 
+#include <string.h>
 #include <cassert>
 #include <iostream>
 

@@ -4,6 +4,7 @@
 #include "RgbeIOPrivate.h"
 #include "Exception.h"
 
+#include <string.h>
 #include <fstream>
 #include <iomanip>
 

@@ -3,7 +3,7 @@
 //#include <QImage.h>
 
 #include <Rgba32F.h>
-#include <Rgbe.h>
+#include <rgbe.h>
 #include <Image.h>
 #include <RgbeImage.h>
 #include <RgbeIO.h>

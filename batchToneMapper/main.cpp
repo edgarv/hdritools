@@ -171,14 +171,13 @@ int main(int argc, char* argv[])
 	vector<string> files;
 
 	// Parses the arguments, the process will setup the exposure exponent, gamma and the list of files
-	parseArgs(argc, argv, exposure, gamma, offset, format, files);
+        parseArgs(argc, argv, exposure, gamma, offset, format, files);
 
 	// Creates the batch tone mapper with those arguments
 	BatchToneMapper batchToneMapper(files);
 	batchToneMapper.setupToneMapper(exposure, gamma);
 	batchToneMapper.setOffset(offset);
 	batchToneMapper.setFormat(format);
-
 
 	if( !batchToneMapper.hasWork() ) {
 		cerr << "Error: there are no valid files to process." << endl;

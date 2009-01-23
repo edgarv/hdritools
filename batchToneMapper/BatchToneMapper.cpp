@@ -16,7 +16,7 @@ using namespace std;
 string BatchToneMapper::defaultFormat;
 
 
-BatchToneMapper::BatchToneMapper(const vector<string> &files) :
+BatchToneMapper::BatchToneMapper(const vector<string>& files) :
 toneMapper(LUT_SIZE), offset(0), tokens(0), format(getDefaultFormat())
 {
 	classifyFiles(files);
@@ -102,7 +102,6 @@ void BatchToneMapper::classifyFiles(const vector<string> & files) {
 			}
 		}
 	}
-
 }
 
 void BatchToneMapper::executeZip() const {

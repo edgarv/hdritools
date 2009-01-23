@@ -16,7 +16,6 @@ class BatchToneMapper {
 	friend std::ostream& operator<<(std::ostream& os, const BatchToneMapper& b);
 
 public:
-
 	BatchToneMapper(const std::vector<std::string> &files);
 
 	void setupToneMapper(float exposure, float gamma = 2.2f);

@@ -70,7 +70,7 @@ bool Util::isJpgSupported()
 
 
 
-bool Util::isReadable(const string & filename, bool & isZip, bool & isHdr)
+bool Util::isReadable(const string& filename, bool & isZip, bool & isHdr)
 {
 	QFileInfo info(filename.c_str());
 	if (!info.exists() || !info.isFile() || !info.isReadable()) {

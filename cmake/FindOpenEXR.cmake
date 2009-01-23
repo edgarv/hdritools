@@ -11,14 +11,14 @@
 # TODO: This is just a super hack! Implement this properly!
 
 find_path(OpenEXR_INCLUDE_DIR ImfRgbaFile.h
-  PATHS ${OpenEXR_PREFIX_PATH}/include
-  PATHS ${OpenEXR_PREFIX_PATH}/include/OpenEXR
+  PATHS /usr/include
+  PATHS /usr/include/OpenEXR
   )
 mark_as_advanced(OpenEXR_INCLUDE_DIR)
 
 # Finds the five openexr libraries libraries
 include(FindReleaseAndDebug)
-set(SEARCH_PATH "${OpenEXR_PREFIX_PATH}/lib")
+set(SEARCH_PATH /usr/lib64)
 
 FIND_RELEASE_AND_DEBUG(HALF Half Halfd ${SEARCH_PATH})
 FIND_RELEASE_AND_DEBUG(IEX Iex Iexd ${SEARCH_PATH})
