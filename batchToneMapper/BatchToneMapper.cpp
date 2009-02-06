@@ -29,6 +29,12 @@ toneMapper(LUT_SIZE), offset(0), tokens(0), format(getDefaultFormat())
 void BatchToneMapper::setupToneMapper(float exposure, float gamma) {
 	toneMapper.SetExposure(exposure);
 	toneMapper.SetGamma(gamma);
+	toneMapper.SetSRGB(false);
+}
+
+void BatchToneMapper::setupToneMapper(float exposure) {
+	toneMapper.SetExposure(exposure);
+	toneMapper.SetSRGB(true);
 }
 
 void BatchToneMapper::setFormat(const string & newFormat)
@@ -154,8 +160,16 @@ ostream& operator<<(ostream& os, const BatchToneMapper& b)
 	   << ", using " << b.tokens << " pipeline tokens." << endl
 	   << "Conversion parameters:" << endl
 	   << "  Exposure:  " << b.toneMapper.Exposure() << endl
-	   << "  Gamma:     " << b.toneMapper.Gamma() << endl
-	   << "  Offset:    " << b.offset << endl
+	   << "  Gamma:     " ;
+
+	if ( b.toneMapper.isSRGB() ) {
+		os << "NA (using sRGB)" << endl;
+	}
+	else {
+	   os << b.toneMapper.Gamma() << endl;
+	}
+
+	os << "  Offset:    " << b.offset << endl
 	   << "  Format:    " << b.format << endl;
 	if(b.zipFiles.size() > 0) {
 		os << "  Zip Files: ";

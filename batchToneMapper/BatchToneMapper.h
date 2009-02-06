@@ -18,7 +18,11 @@ class BatchToneMapper {
 public:
 	BatchToneMapper(const std::vector<std::string> &files);
 
-	void setupToneMapper(float exposure, float gamma = 2.2f);
+	// Sets up the tonemapper with a specific gamma
+	void setupToneMapper(float exposure, float gamma);
+
+	// Sets up the tonemapper just with the exposure, using sRGB
+	void setupToneMapper(float exposure);
 
 	// To know if it has any valid files to process when
 	// execute() is called.

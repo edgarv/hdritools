@@ -22,6 +22,8 @@
 // To get the list of formats
 #include "Util.h"
 
+#include <QCoreApplication>
+
 using namespace std;
 using namespace TCLAP;
 
@@ -70,7 +72,7 @@ public:
 
 
 // Main parameter processing through TCLAP
-void parseArgs(int argc, char* argv[], float &exposure, float &gamma, int &offset, 
+void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma, int &offset, 
 			   string &format, vector<string> &files) 
 {
 	try {
@@ -97,6 +99,12 @@ void parseArgs(int argc, char* argv[], float &exposure, float &gamma, int &offse
 			"The pixels will be raised to the power of 1/gamma after the exposure compensation (default 2.2).",
 			false, 2.2f, "possitive float", &constraint);
 
+		// sRGB flag
+		TCLAP::SwitchArg srgbArg("",
+			"srgb",
+			"The pixels will be transformed according to the sRGB space after the exposure compensation.",
+			false);
+
 		// Offset to add to the numeric filenames
 		ValueArg<int> offsetArg("o", "offset",
 			"Filename offset. "
@@ -122,15 +130,16 @@ void parseArgs(int argc, char* argv[], float &exposure, float &gamma, int &offse
 
 		// Adds the arguments to the command line (the unlabeled multi args must be the last ones!!)
 		cmdline.xorAdd(exposureArg, exposureMultiplierArg);
+		cmdline.xorAdd(srgbArg, gammaArg);
 		cmdline.add(offsetArg);
 		cmdline.add(formatArg);
-		cmdline.add(gammaArg);
 		cmdline.add(filesArg);
 		
 		// Parse the argv array
 		cmdline.parse(argc, argv);
 
 		// If we are here we are safe to recover the values
+		srgb = srgbArg.getValue();
 		gamma = gammaArg.getValue();
 		if (exposureArg.isSet()) {
 			exposure = exposureArg.getValue();
@@ -154,28 +163,29 @@ void parseArgs(int argc, char* argv[], float &exposure, float &gamma, int &offse
 // The entry point of the program
 int main(int argc, char* argv[])
 {
+	QCoreApplication qtApp(argc, argv);
 
 	tick_count t0 = tick_count::now();
-
-	// Inits TBB
-	// TODO Change by a ImageIO::Initialize() function for non Windows/Linux-gcc
-#if 0
-	tbb::task_scheduler_init init;
-#endif
 
 	// Working parameters
 	int offset;
 	float exposure;
+	bool srgb;
 	float gamma;
 	string format;
 	vector<string> files;
 
 	// Parses the arguments, the process will setup the exposure exponent, gamma and the list of files
-        parseArgs(argc, argv, exposure, gamma, offset, format, files);
+        parseArgs(argc, argv, exposure, srgb, gamma, offset, format, files);
 
 	// Creates the batch tone mapper with those arguments
 	BatchToneMapper batchToneMapper(files);
-	batchToneMapper.setupToneMapper(exposure, gamma);
+	if (srgb) {
+		batchToneMapper.setupToneMapper(exposure);
+	}
+	else {
+		batchToneMapper.setupToneMapper(exposure, gamma);
+	}
 	batchToneMapper.setOffset(offset);
 	batchToneMapper.setFormat(format);
 
