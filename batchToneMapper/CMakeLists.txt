@@ -18,6 +18,15 @@ include(${QT_USE_FILE})
 add_executable(batchToneMapper ${SRCS})
 target_link_libraries(batchToneMapper ImageIO zipfile ${QT_LIBRARIES})
 
+# To expands the command line arguments in Windows, see:
+# http://msdn.microsoft.com/en-us/library/8bch7bkk.aspx
+# Does this work in MSVC older than 2008?
+if(MSVC)
+  set_target_properties(batchToneMapper PROPERTIES 
+    LINK_FLAGS "setargv.obj"
+  )
+endif(MSVC)
+
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( batchToneMapper )
 
