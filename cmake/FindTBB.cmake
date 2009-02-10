@@ -15,7 +15,8 @@
 # TBB_VERSION_PATCH
 
 find_path(TBB_INCLUDE_DIR tbb/task.h
-  PATHS /usr/include
+  PATHS ${TBB_PREFIX_PATH}/include
+        /usr/include
   )
 mark_as_advanced(TBB_INCLUDE_DIR)
   
@@ -77,9 +78,6 @@ elseif(APPLE)
 endif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 include(FindReleaseAndDebug)
-
-# TEmporal hack
-set(TBB_LIB_SUFFIX /usr/lib64)
 
 # Tries to find the required libraries
 FIND_RELEASE_AND_DEBUG(TBB tbb tbb_debug
