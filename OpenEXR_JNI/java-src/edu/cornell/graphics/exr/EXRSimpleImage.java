@@ -5,7 +5,7 @@ import java.io.Serializable;
 
 
 /**
- * <p>Simple base class which represent either RGB or RGBA images
+ * <p>Simple base class which represents either RGB or RGBA images
  * whose pixels are stored in the half format. This interface
  * receives and returns 32-bit floating point values: the half
  * representation is internal to the exr files.</p>
@@ -33,7 +33,14 @@ public class EXRSimpleImage implements Serializable {
 	 * are RGB and RGBA.
 	 */
 	public static enum Channels {
+		/**
+		 * Interleaved RGB (Red-Green-Blue).
+		 */
 		RGB(3),
+		
+		/**
+		 * Interleaved RGBA (Red-Green-Blue-Alpha).
+		 */
 		RGBA(4);
 		
 		private final int numChannels;
@@ -132,7 +139,7 @@ public class EXRSimpleImage implements Serializable {
 	 * Creates a new instance of the image by reading the OpenEXR file at
 	 * <code>filename</code>, which is read as a simple RGB/RGBA file.
 	 * 
-	 * @param filename the path of the image to be read.
+	 * @param file the path of the image to be read.
 	 * @param channels the desired channel configuration for the file.
 	 * @throws EXRIOException if an error occurs while reading.
 	 */
@@ -162,7 +169,7 @@ public class EXRSimpleImage implements Serializable {
 	 * @param filename path to file to read from.
 	 * @param channels the desired channel configuration for the file.
 	 * @throws EXRIOException if an error occurs while reading.
-	 * @see #EXRSimpleImage(File)
+	 * @see #EXRSimpleImage(File, Channels)
 	 */
 	public EXRSimpleImage(String filename, Channels channels) 
 		throws EXRIOException {
@@ -348,7 +355,7 @@ public class EXRSimpleImage implements Serializable {
 	 * 
 	 * @param x x-coordinate of the pixel.
 	 * @param y y-coordinate of the pixel.
-	 * @param destBuffer array where the pixel values will be written.
+	 * @param destPixel array where the pixel values will be written.
 	 * @see #getPixel(int, int, float[], int)
 	 */
 	public void getPixel(int x, int y, float[] destPixel) {
@@ -464,7 +471,7 @@ public class EXRSimpleImage implements Serializable {
 	 * {@link #write(File, Compression)}, constructing
 	 * the file with the given filename.
 	 * 
-	 * @param file path where the file will be saved.
+	 * @param filename path where the file will be saved.
 	 * @param compression the type of compression used when creating the file.
 	 * @throws EXRIOException if an error occur during writing.
 	 */
