@@ -20,8 +20,8 @@ find_path(TBB_INCLUDE_DIR tbb/task.h
   )
 mark_as_advanced(TBB_INCLUDE_DIR)
   
-# Set the actual locations for MSVC
-if(MSVC)
+# Set the actual locations for Windows
+if(WIN32)
   if(CMAKE_CL_64)
     set(TBB_PLATFORM em64t)
   else(CMAKE_CL_64)
@@ -35,12 +35,13 @@ if(MSVC)
   elseif(MSVC90)
     set(TBB_COMPILER "vc9")
   else(MSVC90)
-    message(SEND_ERROR "Unsupported/Unknown MSVC version.")
+	# This case might happen when using the Intel Compiler
+    # message(SEND_ERROR "Unsupported/Unknown MSVC version.")
   endif(MSVC71)
   
   set(TBB_LIB_SUFFIX ${TBB_PLATFORM}/${TBB_COMPILER})
   
-endif(MSVC)
+endif(WIN32)
 
 # On linux the paths are slightly different
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
