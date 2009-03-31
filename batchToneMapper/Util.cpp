@@ -13,7 +13,10 @@
 #include <tbb/tbb_stddef.h>
 #include <tbb/tbb_machine.h>
 
-#if __linux__
+#if _WIN32||_WIN64
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#elif __linux__
 #include <sys/sysinfo.h>
 #elif __APPLE__
 #include <sys/types.h>
