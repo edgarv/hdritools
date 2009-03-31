@@ -23,6 +23,35 @@ class HDRImageDisplay : public QWidget {
 
 	Q_OBJECT
 
+private:
+
+	// The internal representation of the HDR Image
+	Image<Rgba32F> hdrImage;
+
+	// The tone mapped version of the Image
+	Image<Bgra8> ldrImage;
+
+	// The abstraction to communicate information about the images
+	//ImageIODataProvider dataProvider;
+
+	// Our nice tonemapper
+	ToneMapper toneMapper;
+
+	// QImage version of the stuff, uses implicit sharing
+	QImage qImage;
+
+	// A data provider for querying info
+	ImageIODataProvider dataProvider;
+
+	// Internal cache of the size
+	QSize sizeAux;
+
+
+protected:
+	qreal scaleFactor;
+	bool needsToneMap;
+
+
 public:
 
 	enum HdrResult {
@@ -33,18 +62,7 @@ public:
 		IllegalState
 	};
 
-	HDRImageDisplay() : scaleFactor(1), toneMapper(0.0f, 4096), needsToneMap(true),
-		dataProvider(hdrImage, ldrImage)
-	{
-		// By default we want to receive events whenever the mouse moves around
-		setMouseTracking(true);
-/*
-		sizeAux.setWidth(ldrImage.Width());
-		sizeAux.setHeight(ldrImage.Height());
-
-		resize(sizeAux);
-		*/
-	}
+	HDRImageDisplay(QWidget *parent);
 
 	virtual QSize sizeHint() const {
 
@@ -122,10 +140,6 @@ public:
 protected:
 	virtual void paintEvent(QPaintEvent *event);
 
-
-	qreal scaleFactor;
-	bool needsToneMap;
-
 signals:
 
 	// This signal is like a "mouseOver" event, sending the 
@@ -133,30 +147,6 @@ signals:
 	void mouseOverPixel( QPoint pos );
 
 private:
-
-
-	// The internal representation of the HDR Image
-	Image<Rgba32F> hdrImage;
-
-	// The tone mapped version of the Image
-	Image<Bgra8> ldrImage;
-
-	// The abstraction to communicate information about the images
-	//ImageIODataProvider dataProvider;
-
-	// Our nice tonemapper
-	ToneMapper toneMapper;
-
-	// QImage version of the stuff, uses implicit sharing
-	QImage qImage;
-
-	// A data provider for querying info
-	ImageIODataProvider dataProvider;
-
-	// Internal cache of the size
-	QSize sizeAux;
-
-
 
 	static bool loadHdr(const QString & fileName, Image<Rgba32F> &hdr);
 

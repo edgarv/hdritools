@@ -24,7 +24,7 @@ using namespace pcg;
 
 MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : QMainWindow(parent), 
 	app(application),
-	scaleFactor(1.0f), minScaleFactor(0.125f), maxScaleFactor(8.0f),
+	scaleFactor(1.0f), minScaleFactor(1.0f/512), maxScaleFactor(64.0f),
 #if 0
 	toneMapper(4096), dataProvider(hdrImage, ldrImage),
 #endif
@@ -44,7 +44,7 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 
 	/* Ricorda: QScrollArea::setWidget(widget) causes the scroll area to
 	/* take total control of the widget, including its destruction */ 
-	hdrDisplay = new HDRImageDisplay();
+	hdrDisplay = new HDRImageDisplay(this);
 	imgScrollFrame->setWidget(hdrDisplay);
 
 	pixInfoDialog = new PixelInfoDialog(hdrDisplay->imageDataProvider(), this);
@@ -446,12 +446,14 @@ void MainWindow::updateForLoadedImage(QString imgName)
 
 void MainWindow::zoomIn()
 {
-	scaleImage(1.25f);
+	//scaleImage(1.25f);
+	scaleImage(2.0f);
 }
 
 void MainWindow::zoomOut()
 {
-	scaleImage(0.8f);
+	//scaleImage(0.8f);
+	scaleImage(0.5f);
 }
 
 void MainWindow::actualPixels()
@@ -489,7 +491,9 @@ void MainWindow::fitToWindow()
 		size.scale(imgScrollFrame->viewport()->size(), Qt::KeepAspectRatio);
 
 		// And manually set the scaling factor used
-		const float sf = (float)size.width() / hdrDisplay->sizeOrig().width();
+		const float sf = size.width() > size.height() ?
+			(float)size.width() / hdrDisplay->sizeOrig().width() :
+			(float)size.height() / hdrDisplay->sizeOrig().height();
 		scaleFactor = 1.0f;
 		scaleImage(sf);
 
@@ -571,10 +575,12 @@ void MainWindow::about()
 	QMessageBox::about(this, tr("About %1").arg(appTitle), 
 		tr("<p><b>%1</b></p>"
 		"<p>Version %2.<br/>"
+		"Build date: %3.<br/>"
 		"%1 is a simple, fast viewer for High Dynamic Range (HDR) images.</p>"
-		"<p>Copyright (C) 2008 Program of Computer Graphics, Cornell University.</p>")
+		"<p>Copyright (C) 2008-2009 Program of Computer Graphics, Cornell University.</p>")
 			.arg(appTitle)
-			.arg(tr("0.1.0")) );
+			.arg(tr("0.1.0"))
+			.arg(tr(__DATE__)) );
 }
 
 void MainWindow::aboutQt()

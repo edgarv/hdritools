@@ -7,6 +7,20 @@
 #include <QtDebug>
 
 
+HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
+	scaleFactor(1), toneMapper(0.0f, 4096), needsToneMap(true),
+	dataProvider(hdrImage, ldrImage)
+{
+	// By default we want to receive events whenever the mouse moves around
+	setMouseTracking(true);
+/*
+	sizeAux.setWidth(ldrImage.Width());
+	sizeAux.setHeight(ldrImage.Height());
+
+	resize(sizeAux);
+	*/
+}
+
 bool HDRImageDisplay::open(const QString &fileName, HdrResult * result) 
 {
 	QFileInfo fileInfo(fileName);
