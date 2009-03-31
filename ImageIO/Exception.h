@@ -12,12 +12,13 @@
       public:                                               \
 	name (const char* text=0)      throw(): base (text) {}	\
 	name (const std::string &text) throw(): base (text) {}	\
+	virtual ~name() throw() {} \
     };
 
 namespace pcg {
 
 	// Basic exception type
-	class IMAGEIO_API Exception: public std::exception
+	class Exception: public std::exception
 	{
 	  public:
 		Exception (const char* text=0) throw()     : message(text) {}
