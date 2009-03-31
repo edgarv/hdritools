@@ -10,7 +10,10 @@
 #include <tbb/task_scheduler_init.h>
 using namespace tbb;
 
-tbb::task_scheduler_init *tbbInit;
+// Also set up the number of OpenEXR worker threads
+#include <IlmThreadPool.h>
+
+tbb::task_scheduler_init *tbbInit = NULL;
 
 #ifdef WIN32
 
@@ -31,6 +34,13 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		tbbInit = NULL;
 		tbbInit = new task_scheduler_init;
 		assert(tbbInit != NULL);
+
+		{
+			const int numThreads = (int)(1.5f*task_scheduler_init::default_num_threads());
+			assert(numThreads > 0);
+			IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
+		}
+
 		break;
 
 	case DLL_THREAD_ATTACH:
@@ -56,6 +66,10 @@ void __attribute__ ((constructor)) pcg_imageio_load(void)
     tbbInit = NULL;
 	tbbInit = new task_scheduler_init;
 	assert(tbbInit != NULL);
+
+	const int numThreads = (int)(1.5f*task_scheduler_init::default_num_threads());
+	assert(numThreads > 0);
+	IlmThread::ThreadPool::globalThreadPool().setNumThreads(2*numThreads);
 }
 
 // Called when the library is unloaded and before dlclose()
