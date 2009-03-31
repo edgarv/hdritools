@@ -39,9 +39,6 @@ namespace pcg {
 		// Number of elements in the LUT. It must be a multiple of four!
 		const unsigned short lutSize;
 
-		// A vector which will hold the value lutSize-1, for quantization before querying the LUT
-		const Rgba32F qLutV;
-
 		// Exposure of the image
 		float exposure;
 
@@ -70,7 +67,7 @@ namespace pcg {
 		// multiple of four, and of course if it's lenght is ridiculously small everything
 		// is likely to crash in terrible ways.
 		ToneMapper(unsigned short size = 2048) : lut(NULL), lutSize(size & (~0x3)), 
-			qLutV((float)lutSize-1), useSRGB(false) 
+			useSRGB(false) 
 		{
 			lut = new unsigned char[lutSize];
 			SetExposure(0.0f);
@@ -80,7 +77,7 @@ namespace pcg {
 		// Constructor which takes an specific exposure, and uses sRGB instead of a gamma curve.
 		// If sRGB is disabled afterwards, the default gamma is 2.2
 		ToneMapper(float exposure, unsigned short size) : lut(NULL), lutSize(size & (~0x3)),
-			qLutV((float)lutSize-1), useSRGB(true),
+			useSRGB(true),
 			gamma(2.2f), invGamma(1.0f/2.2f)
 		{
 			if (lutSize == 0) {

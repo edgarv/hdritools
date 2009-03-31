@@ -7,7 +7,7 @@
 #include <tbb/parallel_for.h>
 
 // FIXME Make this a setup flag
-#define USE_SSE_POW 1
+#define USE_SSE_POW 0
 
 #if USE_SSE_POW
 namespace ssemath {
@@ -25,6 +25,21 @@ const Rgba32F ToneMapper::ONES  = Rgba32F(1.0f);
 
 namespace pcg {
 	namespace tonemapper_internal {
+
+		#if _WIN32||_WIN64
+		// define the parts of stdint.h that are needed
+		typedef __int8 int8_t;
+		typedef __int16 int16_t;
+		typedef __int32 int32_t;
+		typedef __int64 int64_t;
+		typedef unsigned __int8 uint8_t;
+		typedef unsigned __int16 uint16_t;
+		typedef unsigned __int32 uint32_t;
+		typedef unsigned __int64 uint64_t;
+		#else
+		#include <stdint.h>
+		#endif
+
 
 		// Helper class for the TBB version of the LUT update
 		template < bool useSRGB >
@@ -238,7 +253,7 @@ namespace pcg {
 				// Local copies of the variables
 				const __m128 ones  = pcg::ToneMapper::ONES;
 				const __m128 zeros = pcg::ToneMapper::ZEROS;
-				const __m128 lutQ  = tm.qLutV;
+				const __m128 lutQ  = _mm_set1_ps((float)(tm.lutSize-1));
 				const Rgba32F expF = this->expF;
 
 				for (int i = r.begin(); i != r.end(); ++i) {
@@ -252,7 +267,7 @@ namespace pcg {
 				// Local copies of the variables
 				const __m128 ones  = pcg::ToneMapper::ONES;
 				const __m128 zeros = pcg::ToneMapper::ZEROS;
-				const __m128 lutQ  = tm.qLutV;
+				const __m128 lutQ  = _mm_set1_ps((float)(tm.lutSize-1));
 				const Rgba32F expF = this->expF;
 
 
