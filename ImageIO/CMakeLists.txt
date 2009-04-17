@@ -29,6 +29,7 @@ set(SRCS
   RgbeIOPrivate.h
   sse_mathfun.h
   ToneMapper.h ToneMapper.cpp
+  PngIO.h PngIO.cpp
   ${LUT_DIRECTORY}/rgbeLUT.h
   Exception.h
   )
@@ -48,11 +49,12 @@ set(SRCS_PUBLIC
   ToneMapper.h
   StdAfx.h
   Exception.h
+  PngIO.h
   )
   
 add_library(ImageIO SHARED ${SRCS})
-target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES})
-include_directories(${TBB_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR})
+target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES} ${PNG_LIBRARIES})
+include_directories(${TBB_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${PNG_INCLUDE_DIR})
 
 set_target_properties(ImageIO PROPERTIES 
   PUBLIC_HEADER "${SRCS_PUBLIC}"

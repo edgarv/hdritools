@@ -213,9 +213,8 @@ namespace pcg {
 			// by the compiler. For this to work the type T must have a method:
 			//   T.set(unsigned char r, unsigned char g, unsigned char b)
 			void ToneMapKernel(const Rgba32F &srcPix, T &destPix, const Rgba32F &expF,
-				const __m128 &ones, const __m128 &zeros, const __m128 &lutQ) const {
-
-
+				const __m128 &ones, const __m128 &zeros, const __m128 &lutQ) const 
+			{
 				// Applies the exposure correction (note that we don't care about the alpha!)
 				Rgba32F pix = srcPix * expF;
 
@@ -240,12 +239,70 @@ namespace pcg {
 				destPix.set(lut[indexR], lut[indexG], lut[indexB]);
 			}
 
+			// Alternative kernel which doesn't use the LUT. It needs that the pixel type
+			// provided an integral typefed "pixel_t"
+			void ToneMapKernel_gamma(const Rgba32F &srcPix, T &destPix, const Rgba32F &expF,
+				const __m128 &ones, const __m128 &zeros, const Rgba32F &qFactor, const float invGamma) const 
+			{
+				// Applies the exposure correction (note that we don't care about the alpha!)
+				Rgba32F pix = srcPix * expF;
+
+				// Clamp the values to the interval [0,1]
+				pix = _mm_min_ps(ones, _mm_max_ps(zeros, pix));
+
+				// Hope that this gets vectorized!
+				pix.setR(powf(pix.r(), invGamma));
+				pix.setG(powf(pix.g(), invGamma));
+				pix.setB(powf(pix.b(), invGamma));
+
+
+				// Multiply the normalized number by the quantization value
+				pix *= qFactor;
+
+				// Convert to integral type and store
+				const __m128i valuesI = _mm_cvtps_epi32(pix);
+
+				const T::pixel_t r = (T::pixel_t)((const int*)&valuesI + 3);
+				const T::pixel_t g = (T::pixel_t)((const int*)&valuesI + 2);
+				const T::pixel_t b = (T::pixel_t)((const int*)&valuesI + 1);
+				destPix.set(r, g, b);
+			}
+
+			// Version without LUT, for sRGB
+			void ToneMapKernel_sRGB(const Rgba32F &srcPix, T &destPix, const Rgba32F &expF,
+				const __m128 &ones, const __m128 &zeros, const Rgba32F &qFactor) const 
+			{
+				// Applies the exposure correction (note that we don't care about the alpha!)
+				Rgba32F pix = srcPix * expF;
+
+				// Clamp the values to the interval [0,1]
+				pix = _mm_min_ps(ones, _mm_max_ps(zeros, pix));
+
+				// Hope that this gets vectorized!
+				for (int i = 0; i < 4; ++i) {
+					float &v = *((float*)&pix + i);
+					v = v > 0.0031308f ? 1.055f*powf(v, 1.0f/2.4f) - 0.055f: 12.92f*v;
+				}
+
+				// Multiply the normalized number by the quantization value
+				pix *= qFactor;
+
+				// Convert to integral type and store
+				const __m128i valuesI = _mm_cvtps_epi32(pix);
+
+				const T::pixel_t r = (T::pixel_t)(*((const int*)&valuesI + 3));
+				const T::pixel_t g = (T::pixel_t)(*((const int*)&valuesI + 2));
+				const T::pixel_t b = (T::pixel_t)(*((const int*)&valuesI + 1));
+				destPix.set(r, g, b);
+			}
+
 
 		public:
 
 			// Default constructor: initializes all the pointers and the exposure factor vector
-			ApplyToneMap(Image<T,S1> &dest, const Image<Rgba32F, S2> &src, const ToneMapper &tm) :
-			  dest(dest), src(src), tm(tm), expF(tm.exposureFactor), lut(tm.lut) {}
+			ApplyToneMap(Image<T,S1> &dest, const Image<Rgba32F, S2> &src, const ToneMapper &tm,
+				bool useLut) :
+			dest(dest), src(src), tm(tm), expF(tm.exposureFactor), lut(useLut ? tm.lut : NULL) {}
 
 			// Linear-style operator. This should only be used on files using the same scanline mode
 			void operator()(const blocked_range<int>& r) const {
@@ -256,8 +313,26 @@ namespace pcg {
 				const __m128 lutQ  = _mm_set1_ps((float)(tm.lutSize-1));
 				const Rgba32F expF = this->expF;
 
-				for (int i = r.begin(); i != r.end(); ++i) {
-					ToneMapKernel(src[i], dest[i], expF, ones, zeros, lutQ);
+				if (lut != NULL) {
+					for (int i = r.begin(); i != r.end(); ++i) {
+						ToneMapKernel(src[i], dest[i], expF, ones, zeros, lutQ);
+					}
+				}
+				else {
+
+					const Rgba32F qFactor((1<<(sizeof(T::pixel_t)<<3))-1);
+
+					if (tm.isSRGB()) {
+						for (int i = r.begin(); i != r.end(); ++i) {
+							ToneMapKernel_sRGB(src[i], dest[i], expF, ones, zeros, qFactor);
+						}
+					}
+					else {
+						for (int i = r.begin(); i != r.end(); ++i) {
+							ToneMapKernel_gamma(src[i], dest[i], expF, ones, zeros, qFactor, tm.InvGamma());
+						}
+					}
+
 				}
 			}
 
@@ -287,26 +362,27 @@ namespace pcg {
 		// the images must have the same size!
 		// This template gets instanciated when both images have the same scanline order
 		template<class T, ScanLineMode M>
-		void ToneMap(Image<T, M> &dest, const Image<Rgba32F, M> &src, const ToneMapper &tm) {
+		void ToneMap(Image<T, M> &dest, const Image<Rgba32F, M> &src, const ToneMapper &tm, bool useLut) {
 
 			if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
 				throw IllegalArgumentException("The images dimensions' don't match");
 			}			
 
 			const int numPixels = src.Size();
-			parallel_for(blocked_range<int>(0,numPixels), ApplyToneMap<T,M>(dest, src, tm), auto_partitioner());
+			parallel_for(blocked_range<int>(0,numPixels), 
+				ApplyToneMap<T,M>(dest, src, tm, useLut), auto_partitioner());
 		}
 
 		// The method to use when whe scanline order is different
 		template<class T, ScanLineMode M1, ScanLineMode M2>
-		void ToneMap(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, const ToneMapper &tm) {
+		void ToneMap(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, const ToneMapper &tm, bool useLut) {
 
 			if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
 				throw IllegalArgumentException("The images dimensions' don't match");
 			}
 
 			parallel_for(blocked_range2d<int>(0,src.Height(), 0,src.Width()), 
-				ApplyToneMap<T,M1,M2>(dest, src, tm), auto_partitioner());
+				ApplyToneMap<T,M1,M2>(dest, src, tm, useLut), auto_partitioner());
 		}
 
 	}
@@ -352,29 +428,43 @@ void ToneMapper::UpdateLUT() {
 // #################################################
 
 // Bgra8 pixels
-void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 
 // Rgba8 pixels
-void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this);
+void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+}
+
+// Rgba16 pixels
+void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+}
+void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+}
+void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+}
+void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }

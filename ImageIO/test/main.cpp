@@ -8,6 +8,7 @@
 #include <RgbeImage.h>
 #include <RgbeIO.h>
 #include <ToneMapper.h>
+#include <PngIO.h>
 
 #include <cmath>
 
@@ -365,7 +366,12 @@ int main(int argc, char** argv) {
 	//testConversion();
 
 	// Test loading/conversion from RGBE files
-	testRGBEImage();
+	try {
+		testRGBEImage();
+	}
+	catch(std::exception &e) {
+		cerr << "Opps! " << e.what() << endl;
+	}
 
 	Timer timer;
 	ToneMapper toneMapper(0xFFFF);
@@ -380,31 +386,85 @@ int main(int argc, char** argv) {
 
 	cout << "Time to setup the ToneMapper lut: " << timer.elapsedSeconds()/5 << endl;
 
-	// Loads the image converting on the fly
-	Image<Rgba32F, TopDown> floatImage;
-	RgbeIO::Load(floatImage, "horse.rgbe");
 
-	// Now let's tone map the Rgba32F image
-	Image<Bgra8> ldrImage(floatImage.Width(), floatImage.Height());
-	toneMapper.SetGamma(2.0f);
-	timer.reset();
-	toneMapper.ToneMap(ldrImage, floatImage);
-	timer.stop();
-	cout << "Time to tone map the image: " << timer.elapsedSeconds() << endl;
+	try {
 
-	// Create a QImage from the Argb8 Image and save as PNG
-	timer.reset();
-	/*
-	QImage qImage(reinterpret_cast<uchar *>(ldrImage.GetDataPointer()), ldrImage.Width(), ldrImage.Height(),
-		QImage::Format_RGB32);
-	timer.stop();
-	cout << "Time to wrap in a QImage: " << timer.elapsedSeconds() << endl;
-	timer.reset();
-	qImage.save("test-horse.png");
-	timer.stop();
-	cout << "Time to save as PNG from QImage: " << timer.elapsedSeconds() << endl;
-	cout << "Sanity: sizeof(long) " << sizeof(long) << endl;
-	*/
+		{
+			// Loads the image converting on the fly
+			Image<Rgba32F, TopDown> floatImage;
+			RgbeIO::Load(floatImage, "horse.rgbe");
+
+			// Now let's tone map the Rgba32F image
+			Image<Bgra8> ldrImage(floatImage.Width(), floatImage.Height());
+			toneMapper.SetGamma(2.0f);
+			timer.reset();
+			toneMapper.ToneMap(ldrImage, floatImage);
+			timer.stop();
+			cout << "Time to tone map the image: " << timer.elapsedSeconds() << endl;
+
+			// Create a png image from the Bgra8 image
+			timer.reset();
+			PngIO::Save(ldrImage, "test-horse-bgra8-g2.png", false, 1/2.0f);
+			timer.stop();
+			cout << "Time to save as PNG 8bpp: " << timer.elapsedSeconds() << endl;
+
+			// Tonemap again and save, but as sRGB
+			toneMapper.SetSRGB(true);
+			toneMapper.ToneMap(ldrImage, floatImage);
+			PngIO::Save(ldrImage, "test-horse-bgra8-srgb.png", true);
+
+
+			// Lets change the pixel order
+			Image<Rgba8> ldrImage2(floatImage.Width(), floatImage.Height());
+			toneMapper.ToneMap(ldrImage2, floatImage);
+			PngIO::Save(ldrImage2, "test-horse-rgba8-srgb.png", true);
+
+			// Tonemap without the LUT
+			timer.reset();
+			toneMapper.ToneMap(ldrImage2, floatImage, false);
+			timer.stop();
+			cout << "Time to tone map the image (no LUT): " << timer.elapsedSeconds() << endl;
+			PngIO::Save(ldrImage2, "test-horse-rgba8-srgb-noLUT.png", true);
+
+			// Lets try with the high resolution version
+			Image<Rgba16> ldrImage16(floatImage.Width(), floatImage.Height());
+			timer.reset();
+			toneMapper.ToneMap(ldrImage16, floatImage);
+			Rgba16 &px = ldrImage16.ElementAt(200,300);
+			cout << "High bpp pixel (200,300): " << px.r << ',' << px.g << ',' << px.b << endl;
+			timer.stop();
+			cout << "Time to tone map the 16bpp image (no LUT): " << timer.elapsedSeconds() << endl;
+
+			timer.reset();
+			PngIO::Save(ldrImage16, "test-horse-rgb16-srgb-noLUT.png", true);
+			timer.stop();
+			cout << "Time to save as PNG 16bpp: " << timer.elapsedSeconds() << endl;
+
+
+		}
+
+#if 0
+
+		// Create a QImage from the Argb8 Image and save as PNG
+		timer.reset();
+		
+		QImage qImage(reinterpret_cast<uchar *>(ldrImage.GetDataPointer()), ldrImage.Width(), ldrImage.Height(),
+			QImage::Format_RGB32);
+		timer.stop();
+		cout << "Time to wrap in a QImage: " << timer.elapsedSeconds() << endl;
+		timer.reset();
+		qImage.save("test-horse.png");
+		timer.stop();
+		cout << "Time to save as PNG from QImage: " << timer.elapsedSeconds() << endl;
+		cout << "Sanity: sizeof(long) " << sizeof(long) << endl;
+#endif
+		
+
+
+	}
+	catch(std::exception &e) {
+		cerr << "Opps! " << e.what() << endl;
+	}
 	
 
 

@@ -124,6 +124,9 @@ namespace pcg {
 		// Returns the gamma employed when sRGB is not used
 		float Gamma() const { return gamma; }
 
+		// Returns the inverse of the gamma, in case someone needs it
+		float InvGamma() const { return invGamma; }
+
 		// Returns the exposure
 		float Exposure() const { return exposure; }
 
@@ -131,17 +134,23 @@ namespace pcg {
 		bool isSRGB() const { return useSRGB; }
 
 
-		// The real tone mapping operations: support for the two types
-		// of LDR pixels, in the different type of scanline orders
-		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const;
-		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const;
-		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const;
-		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const;
+		// The real tone mapping operations: support for 
+		// LDR pixels, in the different type of scanline orders
+		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
 
-		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const;
-		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const;
-		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const;
-		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
+
+		// The 16-bit LDR pixels won't use the LUT
+		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const;
+		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const;
+		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const;
+		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const;
 
 	};
 }

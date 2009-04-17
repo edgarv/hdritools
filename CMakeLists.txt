@@ -73,7 +73,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
   
 # Sets the required zlib variables if we are using the bundled OpenEXR or if building the batch tonemapper
-if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
+if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
   if(USE_SYSTEM_ZLIB)
     find_package(ZLIB REQUIRED)
@@ -87,7 +87,7 @@ if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
     message(STATUS "Using the internal zlib.")
   endif(USE_SYSTEM_ZLIB)
   
-endif(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER)
+endif(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
 
 # We always need to use OpenEXR
 if(USE_SYSTEM_OPENEXR)
@@ -110,6 +110,23 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
   # ImageIO depends on TBB
   find_package(TBB 2.0 REQUIRED)
+  
+  # ImageIO requred libpng
+  option(USE_SYSTEM_PNG
+	"Use the system version of libpng instead of the bundled one."
+	${USE_SYSTEM_LIBS_DEFAULT})
+	
+  if(USE_SYSTEM_PNG)
+    find_package(PNG REQUIRED)
+  else(USE_SYSTEM_PNG)
+    set(PNG_IS_INTERNAL TRUE)
+    add_subdirectory(3rdparty/libpng)
+    get_filename_component(PNG_INCLUDE_DIR "3rdparty/libpng" ABSOLUTE)
+	set(PNG_INCLUDE_DIR ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
+    # PNG_LIBRARIES is set within the subdir with the proper target name, but it still depends on zlib
+	set(PNG_LIBRARIES ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
+    message(STATUS "Using the internal libpng.")
+  endif(USE_SYSTEM_PNG)
   
   # We need to build ImageIO
   add_subdirectory(ImageIO)
