@@ -16,8 +16,9 @@ using namespace std;
 string BatchToneMapper::defaultFormat;
 
 
-BatchToneMapper::BatchToneMapper(const vector<string>& files) :
-toneMapper(LUT_SIZE), offset(0), tokens(0), format(getDefaultFormat())
+BatchToneMapper::BatchToneMapper(const vector<string>& files, bool bpp16) :
+toneMapper(LUT_SIZE), offset(0), tokens(0), useBpp16(bpp16),
+format(!bpp16 ? getDefaultFormat() : "png")
 {
 	classifyFiles(files);
 
@@ -39,17 +40,27 @@ void BatchToneMapper::setupToneMapper(float exposure) {
 
 void BatchToneMapper::setFormat(const string & newFormat)
 {
-	// There are not many formats, so this is not that bad
-	const vector<string> & formats = Util::supportedWriteImageFormats();
-	for(vector<string>::const_iterator it = formats.begin();
-		it != formats.end(); ++it)
-	{
-		if (newFormat == *it) {
-			format = newFormat;
-			return;
+	if (!useBpp16) {
+		// There are not many formats, so this is not that bad
+		const vector<string> & formats = Util::supportedWriteImageFormats();
+		for(vector<string>::const_iterator it = formats.begin();
+			it != formats.end(); ++it)
+		{
+			if (newFormat == *it) {
+				format = newFormat;
+				return;
+			}
+		}
+		cerr << "Warning: unsupported format \"" << newFormat << "\"" << endl;
+	}
+	else {
+		// Only png is supported
+		if (newFormat != "png") {
+			cerr << "Warning: unsupported format for bpp16 \"" << newFormat 
+				 << "\". Using png." << endl;
+			format = "png";
 		}
 	}
-	cerr << "Warning: unsupported format \"" << newFormat << "\"" << endl;
 }
 
 
@@ -120,7 +131,7 @@ void BatchToneMapper::executeZip() const {
 	pipeline.add_filter(zipFilter);
 
 	// Adds the tone mapping filter
-	ToneMappingFilter toneFilter(toneMapper);
+	ToneMappingFilter toneFilter(toneMapper, useBpp16);
 	pipeline.add_filter(toneFilter);
 
 	
@@ -144,7 +155,7 @@ void BatchToneMapper::executeHdr() const {
 	pipeline.add_filter(loaderFilter);
 
 	// Adds the tone mapping filter
-	ToneMappingFilter toneFilter(toneMapper);
+	ToneMappingFilter toneFilter(toneMapper, useBpp16);
 	pipeline.add_filter(toneFilter);
 
 	pipeline.run(tokens);
@@ -170,6 +181,7 @@ ostream& operator<<(ostream& os, const BatchToneMapper& b)
 	}
 
 	os << "  Offset:    " << b.offset << endl
+	   << "  BPP:       " << (b.useBpp16 ? 16 : 8) << endl
 	   << "  Format:    " << b.format << endl;
 	if(b.zipFiles.size() > 0) {
 		os << "  Zip Files: ";

@@ -16,7 +16,7 @@ class BatchToneMapper {
 	friend std::ostream& operator<<(std::ostream& os, const BatchToneMapper& b);
 
 public:
-	BatchToneMapper(const std::vector<std::string> &files);
+	BatchToneMapper(const std::vector<std::string> &files, bool bpp16);
 
 	// Sets up the tonemapper with a specific gamma
 	void setupToneMapper(float exposure, float gamma);
@@ -59,6 +59,9 @@ private:
 
 	// Number of tokens in the pipeline
 	int tokens;
+
+	// Whether to use 16 bpp in the LDR files or the default 8
+	const bool useBpp16;
 
 	// Lists of files to process
 	vector<string> zipFiles;

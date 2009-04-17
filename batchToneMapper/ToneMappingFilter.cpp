@@ -2,15 +2,17 @@
 #include "ImageInfo.h"
 
 #include <QImage>
+#include <PngIO.h>
 
 #include <iostream>
 
 using std::cout;
 using std::cerr;
 
-ToneMappingFilter::ToneMappingFilter(const ToneMapper &toneMapper) : 
+ToneMappingFilter::ToneMappingFilter(const ToneMapper &toneMapper, bool useBpp16) : 
 	filter(/*is_serial=*/false),
-	toneMapper(toneMapper)
+	toneMapper(toneMapper),
+	useBpp16(useBpp16)
 {}
 
 void* ToneMappingFilter::operator()(void* item)
@@ -28,20 +30,32 @@ void* ToneMappingFilter::operator()(void* item)
 		const Image<Rgba32F> &floatImage = *(info->img);
 
 		// Allocates the LDR Image and tonemaps it
-		Image<Bgra8> ldrImage(floatImage.Width(), floatImage.Height());
-		toneMapper.ToneMap(ldrImage, floatImage);
+		if (!useBpp16) {
+			Image<Bgra8> ldrImage(floatImage.Width(), floatImage.Height());
+			toneMapper.ToneMap(ldrImage, floatImage);
 
-		// Finally wraps the ldrImage into a QImage and saves it with the specified name
-		QImage qImage(reinterpret_cast<uchar *>(ldrImage.GetDataPointer()), 
-			ldrImage.Width(), ldrImage.Height(), QImage::Format_RGB32);
+			// Finally wraps the ldrImage into a QImage and saves it with the specified name
+			QImage qImage(reinterpret_cast<uchar *>(ldrImage.GetDataPointer()), 
+				ldrImage.Width(), ldrImage.Height(), QImage::Format_RGB32);
 
-		// TODO: The name might contain a path, so should we create it if it doesn't exist?
-		if ( qImage.save((QString)info->filename.c_str()) ) {
-			cout << info->originalFile << " -> " << info->filename << endl;
+			// TODO: The name might contain a path, so should we create it if it doesn't exist?
+			if ( !qImage.save((QString)info->filename.c_str()) ) {
+				cerr << "Ooops! unable to save " << info->filename << ". Are you sure it's valid?" << endl;
+			}
 		}
 		else {
-			cerr << "Ooops! unable to save " << info->filename << ". Are you sure it's valid?";
+			Image<Rgba16> ldrImage(floatImage.Width(), floatImage.Height());
+			toneMapper.ToneMap(ldrImage, floatImage);
+
+			try {
+				PngIO::Save(ldrImage, info->filename.c_str(), toneMapper.isSRGB(), toneMapper.InvGamma());
+			}
+			catch (std::exception &e) {
+				cerr << "Ooops! unable to save " << info->filename << ": " << e.what() << endl;
+			}
 		}
+
+		cout << info->originalFile << " -> " << info->filename << endl;
 
 		// Deletes the info structure when it's done
 		delete info;

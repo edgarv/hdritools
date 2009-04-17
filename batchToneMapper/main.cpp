@@ -72,7 +72,8 @@ public:
 
 
 // Main parameter processing through TCLAP
-void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma, int &offset, 
+void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma, 
+			   bool &bpp16, int &offset, 
 			   string &format, vector<string> &files) 
 {
 	try {
@@ -105,6 +106,12 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 			"The pixels will be transformed according to the sRGB space after the exposure compensation.",
 			false);
 
+		// 16 bpp flag
+		TCLAP::SwitchArg bpp16Arg("",
+			"bpp16",
+			"Use 16 bpp instead of the default 8. With this option the only valid format is png.",
+			false);
+
 		// Offset to add to the numeric filenames
 		ValueArg<int> offsetArg("o", "offset",
 			"Filename offset. "
@@ -131,6 +138,7 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		// Adds the arguments to the command line (the unlabeled multi args must be the last ones!!)
 		cmdline.xorAdd(exposureArg, exposureMultiplierArg);
 		cmdline.xorAdd(srgbArg, gammaArg);
+		cmdline.add(bpp16Arg);
 		cmdline.add(offsetArg);
 		cmdline.add(formatArg);
 		cmdline.add(filesArg);
@@ -141,6 +149,7 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		// If we are here we are safe to recover the values
 		srgb = srgbArg.getValue();
 		gamma = gammaArg.getValue();
+		bpp16 = bpp16Arg.getValue();
 		if (exposureArg.isSet()) {
 			exposure = exposureArg.getValue();
 		}
@@ -171,15 +180,16 @@ int main(int argc, char* argv[])
 	int offset;
 	float exposure;
 	bool srgb;
+	bool bpp16;
 	float gamma;
 	string format;
 	vector<string> files;
 
 	// Parses the arguments, the process will setup the exposure exponent, gamma and the list of files
-        parseArgs(argc, argv, exposure, srgb, gamma, offset, format, files);
+        parseArgs(argc, argv, exposure, srgb, gamma, bpp16, offset, format, files);
 
 	// Creates the batch tone mapper with those arguments
-	BatchToneMapper batchToneMapper(files);
+	BatchToneMapper batchToneMapper(files, bpp16);
 	if (srgb) {
 		batchToneMapper.setupToneMapper(exposure);
 	}
