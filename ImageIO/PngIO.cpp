@@ -14,6 +14,11 @@
 #   define png_jmpbuf(png_ptr)  ((png_ptr)->jmpbuf)
 #endif
 
+// PNG_TRANSFORM_STRIP_FILLER_AFTER was added in libpng 1.2.34
+#ifndef PNG_TRANSFORM_STRIP_FILLER_AFTER
+#define PNG_TRANSFORM_STRIP_FILLER_AFTER 0x1000
+#endif
+
 namespace pcg {
 namespace pngio_internal {
 
@@ -61,7 +66,7 @@ namespace pngio_internal {
 			throw RuntimeException("Error: Couldn't setup the error handler.");
 		}
 
-		const int bitDepth = sizeof(T::pixel_t) * 8;
+		const int bitDepth = sizeof(typename T::pixel_t) * 8;
 		if (bitDepth != 8 && bitDepth != 16) {
 			fclose(fp);
 			png_destroy_write_struct(&pngPtr, &infoPtr);
@@ -95,23 +100,42 @@ namespace pngio_internal {
 			png_set_tIME(pngPtr, infoPtr, &pngtime);
 		}
 
-		
-
-		// Write the information header
-		png_write_info(pngPtr, infoPtr);
-
 		// Setup the scanlines pointers
 		png_bytep * rowPtr = new png_bytep[img.Height()];
 		assert(rowPtr);
 		for(int i = 0; i < img.Height(); ++i) {
 			rowPtr[i] = reinterpret_cast<png_byte*>(img.GetScanlinePointer(i, TopDown));
 		}
-		png_set_rows(pngPtr, infoPtr, rowPtr);
+		
+		
+#if (PNG_LIBPNG_VER >= 10234)
 
 		// Write the whole data, we do the stripping because we always use RGB only
+		png_set_rows(pngPtr, infoPtr, rowPtr);
 		png_write_png(pngPtr, infoPtr, transformFlags, NULL);
+
+#else 
+
+		// Write the information header
+		png_write_info(pngPtr, infoPtr);
+
+		// Ugly compatibility fixes
+		if (transformFlags & PNG_TRANSFORM_STRIP_FILLER_AFTER) {
+			png_set_filler(pngPtr, 0, PNG_FILLER_AFTER);
+		}
+		if (transformFlags & PNG_TRANSFORM_SWAP_ENDIAN) {
+			png_set_swap(pngPtr);
+
+		}
+		if (transformFlags & PNG_TRANSFORM_BGR) {
+			png_set_bgr(pngPtr);
+		}
+		
+		png_write_image(pngPtr, rowPtr);
 		png_write_end(pngPtr, NULL);
 
+#endif /* PNG_LIBPNG_VER >= 10234 */
+		
 		// clean up memory and structures
 		png_destroy_write_struct(&pngPtr, &infoPtr);
 		delete [] rowPtr;

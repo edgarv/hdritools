@@ -262,9 +262,9 @@ namespace pcg {
 				// Convert to integral type and store
 				const __m128i valuesI = _mm_cvtps_epi32(pix);
 
-				const T::pixel_t r = (T::pixel_t)((const int*)&valuesI + 3);
-				const T::pixel_t g = (T::pixel_t)((const int*)&valuesI + 2);
-				const T::pixel_t b = (T::pixel_t)((const int*)&valuesI + 1);
+				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
+				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
+				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
 				destPix.set(r, g, b);
 			}
 
@@ -290,9 +290,9 @@ namespace pcg {
 				// Convert to integral type and store
 				const __m128i valuesI = _mm_cvtps_epi32(pix);
 
-				const T::pixel_t r = (T::pixel_t)(*((const int*)&valuesI + 3));
-				const T::pixel_t g = (T::pixel_t)(*((const int*)&valuesI + 2));
-				const T::pixel_t b = (T::pixel_t)(*((const int*)&valuesI + 1));
+				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
+				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
+				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
 				destPix.set(r, g, b);
 			}
 
@@ -320,7 +320,7 @@ namespace pcg {
 				}
 				else {
 
-					const Rgba32F qFactor((1<<(sizeof(T::pixel_t)<<3))-1);
+					const Rgba32F qFactor((1<<(sizeof(typename T::pixel_t)<<3))-1);
 
 					if (tm.isSRGB()) {
 						for (int i = r.begin(); i != r.end(); ++i) {
