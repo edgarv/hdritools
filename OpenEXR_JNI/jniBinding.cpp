@@ -8,8 +8,6 @@
 #include <IlmThread.h>
 #include <IlmThreadPool.h>
 
-#include <ImfStdIO.h>
-
 #include <fstream>
 #include <cassert>
 
@@ -86,13 +84,12 @@ JNIEXPORT void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_read
 		}
 
 #if USE_JAVA_UTF8
-		Imf::StdIFStream imfIs(filename);
+		Imf::RgbaInputFile file(filename);
 #else
 		const jint filenameLen = env->GetStringLength(jfilename);
 		UnicodeIFStream imfIs(filename, filenameLen);
-#endif
 		Imf::RgbaInputFile file(imfIs);
-
+#endif
 		Imath::Box2i dw = file.dataWindow();
 		const int width  = dw.max.x - dw.min.x + 1;
 		const int height = dw.max.y - dw.min.y + 1;
@@ -148,14 +145,6 @@ JNIEXPORT void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_write
 		if (filename == NULL) {
 			throw JavaExc("Null filename.");
 		}
-
-		// If there is an error in creating the stream there won't be any conversions
-#if USE_JAVA_UTF8
-		Imf::StdOFStream omfOs(filename);
-#else
-		const jint filenameLen = env->GetStringLength(jfilename);
-		UnicodeOFStream omfOs(filename, filenameLen);
-#endif
 		
 		// Converted version of the memory
 		Imf::Array2D<Imf::Rgba> halfPixels(width, height);
@@ -200,7 +189,13 @@ JNIEXPORT void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_write
 		}
 
 		// Actually write the file
+#if USE_JAVA_UTF8
+		Imf::RgbaOutputFile file(filename, hd, channels);
+#else
+		const jint filenameLen = env->GetStringLength(jfilename);
+		UnicodeOFStream omfOs(filename, filenameLen);
 		Imf::RgbaOutputFile file(omfOs, hd, channels);
+#endif
 		file.setFrameBuffer(&halfPixels[0][0], 1, width);
 		file.writePixels(height);
 
