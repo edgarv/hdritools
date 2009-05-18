@@ -35,6 +35,21 @@ set(JNI_HEADERS
 # Of course this module needs Java and JNI
 find_package(Java REQUIRED)
 find_package(JNI REQUIRED)
+
+# Workaround for Cmake 2.6.0, as it doesn't set JNI_INCLUDE_DIRS
+if(NOT JNI_INCLUDE_DIRS)
+  set(JNI_INCLUDE_DIRS 
+      ${JAVA_INCLUDE_PATH} 
+      ${JAVA_INCLUDE_PATH2} 
+      ${JAVA_AWT_INCLUDE_PATH}
+  )
+endif(NOT JNI_INCLUDE_DIRS)
+
+# Another workaround: as of Cmake 2.6.3 FindJNI ignores the "REQUIRED" flag
+if(NOT JNI_INCLUDE_DIRS)
+  message(FATAL_ERROR "Could NOT find JNI (missing header files)")
+endif(NOT JNI_INCLUDE_DIRS)
+
 get_filename_component (JAVA_BIN_PATH "${JAVA_COMPILE}" PATH)
 find_program( JAVA_JAVAH javah PATHS ${JAVA_BIN_PATH} )
 mark_as_advanced( JAVA_BIN_PATH JAVA_JAVAH )
