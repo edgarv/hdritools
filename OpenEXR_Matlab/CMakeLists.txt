@@ -61,6 +61,9 @@ if(MSVC)
   set(MEX_LDFLAGS /export:mexFunction)
   # This variable is only used in gcc, but setting it here simplifies the checking
   set(MEX_MAPFILE "unused for MSVC")
+  
+  # Avoid secure warnings with exr headers
+  add_definitions(-D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_SIZEOF_VOID_P EQUAL 4)
