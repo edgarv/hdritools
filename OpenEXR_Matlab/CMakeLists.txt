@@ -11,15 +11,20 @@
 # Sets a default for MATLABROOT if it is not there. It looks for Matlab 7.x in the registry
 if(NOT MATLABROOT)
   if (WIN32)
-    foreach(m_minor RANGE 9 0 -1)
-      get_filename_component(THE_PATH
-        [HKEY_LOCAL_MACHINE\\SOFTWARE\\MathWorks\\MATLAB\\7.${m_minor};MATLABROOT] NAME)
-      if(EXISTS ${THE_PATH})
-        message(STATUS "Found Matlab 7.${m_minor} at ${THE_PATH}")
-	    SET(MATLABROOT ${THE_PATH} CACHE PATH "Matlab 7.x instalation directory.")
+    foreach(m_minor RANGE 20 0 -1)
+	  # get_filename_component doesn't handle the Wow6432Node registry issues, but find_* do
+	  find_path(MATLAB_BIN_DIR "matlab.exe" 
+	    PATHS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\MathWorks\\MATLAB\\7.${m_minor};MATLABROOT]" 
+		PATH_SUFFIXES "bin" 
+		DOC "Matlab binaries directory for Windows")
+      if(MATLAB_BIN_DIR)
+	    # The root directory is just the parent of this path
+		get_filename_component(MATLABROOT "${MATLAB_BIN_DIR}/../" ABSOLUTE CACHE)
+        message(STATUS "Found Matlab 7.${m_minor} at ${MATLABROOT}")
 	    break()
-      endif(EXISTS ${THE_PATH})
+      endif(MATLAB_BIN_DIR)
     endforeach()
+	mark_as_advanced(MATLAB_BIN_DIR MATLABROOT)
   else(WIN32)
     # Standard Unix directories
     set(MATLABROOT
