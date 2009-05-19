@@ -30,6 +30,8 @@ set(OPENEXRJNI_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni.jar)
 # The jni headers are generated with javah from the java sources
 set(JNI_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage.h
+  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_Channels.h
+  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_OpenEXRTo.h
   )
   
 # Of course this module needs Java and JNI
@@ -58,7 +60,7 @@ if(NOT JAVA_COMPILE OR NOT JAVA_ARCHIVE OR NOT JAVA_JAVAH)
 endif(NOT JAVA_COMPILE OR NOT JAVA_ARCHIVE OR NOT JAVA_JAVAH)
 
 
-# Builds the jar file
+# Commands to builds the jar file
 add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
   COMMAND ${JAVA_COMPILE} -target 1.5
      -d ${CMAKE_CURRENT_BINARY_DIR}
@@ -68,28 +70,18 @@ add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Compiling OpenEXR-JNI java files and builing jar..."
   )
+# Adds a target so that dependencies are properly tracked
+add_custom_target(openexrjni_jar DEPENDS ${OPENEXRJNI_JAR})
   
 # Build the jni headers using the jar
 add_custom_command(OUTPUT ${JNI_HEADERS}
   COMMAND ${JAVA_JAVAH} -classpath ${OPENEXRJNI_JAR} edu.cornell.graphics.exr.EXRSimpleImage
-  MAIN_DEPENDENCY ${OPENEXRJNI_JAR}
+  DEPENDS ${OPENEXRJNI_JAR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating OpenEXR JNI headers..."
   )
-  
-  
-# Also provide the jar as a custom command, so that it may be built with "make openexrjni.jar"
-add_custom_target(openexrjni.jar
-  ${JAVA_COMPILE} -target 1.5
-     -d ${CMAKE_CURRENT_BINARY_DIR}
-	 ${JAVA_SRCS}
-  COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_JAR} -C ${CMAKE_CURRENT_BINARY_DIR} edu
-  DEPENDS ${JAVA_SRCS}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "Compiling OpenEXR-JNI java files and builing jar..."
-  )
 
- 
+
 if(OpenEXR_DEFINITIONS)
   add_definitions(${OpenEXR_DEFINITIONS})
 endif(OpenEXR_DEFINITIONS)
@@ -117,7 +109,6 @@ endif(APPLE)
 
 
 # And installs the jar and jnilib
-# Installs this
 install(TARGETS openexrjni
   RUNTIME DESTINATION "bin"
   LIBRARY DESTINATION "lib"
