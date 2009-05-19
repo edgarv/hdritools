@@ -118,9 +118,11 @@ set(MATLAB_LIBRARIES
   ${MATLAB_MAT_LIBRARY}
 )
 
-# Super macro to create mex projects. All the arguments to the macro are the source files.
+# Super function to create mex projects. All the arguments to the macro are the source files.
 # Note that rpath is always enabled for mex files (this is what Matlab does)
-macro(add_mex name sources)
+function(add_mex name)
+  set(sources ${ARGV})
+  list(REMOVE_AT sources 0)
   add_library(${name} SHARED ${sources})
   set_target_properties(${name} PROPERTIES
     SUFFIX ".${MEX_EXT}"
@@ -131,11 +133,28 @@ macro(add_mex name sources)
   )
   target_link_libraries(${name} ${MATLAB_LIBRARIES})
   include_directories(${MATLAB_INCLUDE_DIR})
-endmacro(add_mex)
+endfunction(add_mex)
+
+# For automatic multithreading support, find out a way to get the number of CPUs
+# For non-msvc platforms try with the POSIX sysconf
+if(NOT MSVC)
+  include(CheckCSourceRuns)
+  CHECK_C_SOURCE_RUNS(
+    "#include <unistd.h>\n int main() { int n = sysconf(_SC_NPROCESSORS_ONLN); return 0;}\n" 
+    SYSCONF_WORKS
+  )
+  if(SYSCONF_WORKS)
+	add_definitions(-DUSE_SYSCONF=1)
+  else(SYSCONF_WORKS)
+    add_definitions(-DUSE_SYSCONF=0)
+  endif(SYSCONF_WORKS)
+else(NOT MSVC)
+  add_definitions(-DUSE_SYSCONF=0)
+endif(NOT MSVC)
 
 # Creates the projects
-add_mex(exrread  exrread.cpp)
-add_mex(exrwrite exrwrite.cpp)
+add_mex(exrread  exrread.cpp  init.cpp)
+add_mex(exrwrite exrwrite.cpp init.cpp)
 
 
 # Links them against OpenEXR
