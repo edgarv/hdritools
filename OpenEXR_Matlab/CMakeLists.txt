@@ -36,6 +36,28 @@ if(NOT MATLABROOT)
       /usr/local/matlab/
       $ENV{MATLABROOT}
     )
+
+    # In Linux and Mac the matlab binary found on the path should be
+    # symlink of to the actual binary location
+    if (UNIX)
+      find_program(MATLAB_BIN matlab)
+      find_program(READLINK_BIN readlink /bin /usr/bin /usr/local/bin /sbin)
+      mark_as_advanced(MATLAB_BIN READLINK_BIN)
+      if(MATLAB_BIN AND READLINK_BIN)
+        execute_process(COMMAND "${READLINK_BIN}" "${MATLAB_BIN}"
+          RESULT_VARIABLE out_ret
+          OUTPUT_VARIABLE out_tmp
+        )
+        if(NOT out_ret)
+          # At this point ${out_ret} should have the shape ${MATLABROOT}/bin/matlab,
+          # add that root to the beginning of the search path
+          get_filename_component(out_tmp "${out_tmp}" PATH)
+          get_filename_component(out_tmp "${out_tmp}/../" ABSOLUTE)
+          list(INSERT MATLABROOT 0 "${out_tmp}")
+        endif()
+      endif()
+    endif() 
+
   endif (WIN32)
 endif(NOT MATLABROOT)
 
@@ -59,21 +81,32 @@ if(MSVC)
 
   # Linker settings: it just avoids dll_export stuff
   set(MEX_LDFLAGS /export:mexFunction)
-  # This variable is only used in gcc, but setting it here simplifies the checking
+  # This variables are only used in gcc, but setting them here simplifies the checking
   set(MEX_MAPFILE "unused for MSVC")
+  set(MEX_VERSION_SRC "unused for MSVC")
   
   # Avoid secure warnings with exr headers
   add_definitions(-D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1)
 
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(UNIX)
   if(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # Regular x86
-    set(MATLAB_ARCH glnx86)
-    set(MEX_EXT "mexglx")
+    if(NOT APPLE)
+      set(MATLAB_ARCH glnx86)
+      set(MEX_EXT "mexglx")
+    else(NOT APPLE)
+      set(MATLAB_ARCH maci)
+      set(MEX_EXT "mexmaci")
+    endif(NOT APPLE)
   else(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # AMD64 aka EMT64 aka Intel64
-    set(MATLAB_ARCH glnxa64)
-    set(MEX_EXT "mexa64")
+    if(NOT APPLE)
+      set(MATLAB_ARCH glnxa64)
+      set(MEX_EXT "mexa64")
+    else(NOT APPLE)
+      set(MATLAB_ARCH maci64)
+      set(MEX_EXT "mexmaci64")
+    endif(NOT APPLE)
   endif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 
   set(MATLABLIB bin/${MATLAB_ARCH})
@@ -83,21 +116,45 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     DOC "gcc version script for mex files"
   )
 
+  # Also include the version information file
+  find_path(MEX_VERSION_SRC "mexversion.c"
+    PATHS ${MATLABROOT}
+    PATH_SUFFIXES extern/src
+    DOC "Matlab mex version source file"
+  )
+  mark_as_advanced(MEX_VERSION_SRC)
+
   # Whole set of linker flags
-  set(MEX_LDFLAGS "-pthread -Wl,--version-script,${MEX_MAPFILE} -Wl,--no-undefined")
+  if(NOT APPLE)
+    set(MEX_LDFLAGS "-pthread -Wl,--version-script,${MEX_MAPFILE} -Wl,--no-undefined")
+  else(NOT APPLE)
+   set(MEX_LDFLAGS "-Wl,-flat_namespace -undefined suppress")
+   set(MEX_LDFLAGS "${MEX_LDFLAGS} -Wl,-exported_symbols_list,${MEX_MAPFILE}")
+   add_definitions(-DMX_COMPAT_32)
+  endif(NOT APPLE)
 else(MSVC)
   message(FATAL_ERROR "TODO: Add support for the ${CMAKE_SYSTEM_NAME} platform!")
 endif(MSVC)
 
+# The mac uses a different type of library target
+if (NOT APPLE)
+  set(MEX_TARGET_TYPE "SHARED")
+else()
+  set(MEX_TARGET_TYPE "MODULE")
+endif()
+
 # Find the basic mex libraries
 find_library(MATLAB_MX_LIBRARY  NAMES mx libmx 
   PATHS ${MATLABROOT} PATH_SUFFIXES ${MATLABLIB} 
+  NO_DEFAULT_PATH
 )
 find_library(MATLAB_MEX_LIBRARY NAMES mex libmex
   PATHS ${MATLABROOT} PATH_SUFFIXES ${MATLABLIB} 
+  NO_DEFAULT_PATH
 )
 find_library(MATLAB_MAT_LIBRARY NAMES mat libmat
   PATHS ${MATLABROOT} PATH_SUFFIXES ${MATLABLIB} 
+  NO_DEFAULT_PATH
 )
 mark_as_advanced(MATLAB_MX_LIBRARY MATLAB_MEX_LIBRARY MATLAB_MAT_LIBRARY MEX_MAPFILE)
 
@@ -110,6 +167,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(MATLAB DEFAULT_MSG
   MATLAB_MEX_LIBRARY
   MATLAB_MAT_LIBRARY
   MEX_MAPFILE
+  MEX_VERSION_SRC
 )
 
 set(MATLAB_LIBRARIES
@@ -123,7 +181,7 @@ set(MATLAB_LIBRARIES
 function(add_mex name)
   set(sources ${ARGV})
   list(REMOVE_AT sources 0)
-  add_library(${name} SHARED ${sources})
+  add_library(${name} ${MEX_TARGET_TYPE} ${sources})
   set_target_properties(${name} PROPERTIES
     SUFFIX ".${MEX_EXT}"
     PREFIX ""
@@ -152,9 +210,19 @@ else(NOT MSVC)
   add_definitions(-DUSE_SYSCONF=0)
 endif(NOT MSVC)
 
-# Creates the projects
-add_mex(exrread  exrread.cpp  init.cpp)
-add_mex(exrwrite exrwrite.cpp init.cpp)
+# Creates the projects. Note that using init.cpp in Mac crashes Matlab
+if (MSVC)
+  set(COMMON_SRC init.cpp)
+elseif(UNIX)
+  if (NOT APPLE)
+    set(COMMON_SRC init.cpp ${MEX_VERSION_SRC})
+  else()
+    set(COMMON_SRC ${MEX_VERSION_SRC})
+  endif()
+endif()
+
+add_mex(exrread  exrread.cpp  ${COMMON_SRC})
+add_mex(exrwrite exrwrite.cpp ${COMMON_SRC})
 
 
 # Links them against OpenEXR
