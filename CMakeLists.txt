@@ -23,15 +23,16 @@ option(USE_SYSTEM_OPENEXR
   "Use the system version of OpenEXR instead of the bundled one."
   ${USE_SYSTEM_LIBS_DEFAULT})
 
-# In Linux, options for the RPATH
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# For UNIX-flavored systems, options for the RPATH
+if(UNIX)
   option(USE_FULL_RPATH
     "Use full RPATH information for the installed binaries." OFF)
 
   if(USE_FULL_RPATH)
     
-	# the RPATH to be used when installing
+    # the RPATH to be used when installing
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
     # add the automatically determined parts of the RPATH
     # which point to directories outside the build tree to the install RPATH
@@ -43,7 +44,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
   endif(USE_FULL_RPATH)
   
-endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+endif()
   
 # Options to select which components to build
 option(BUILD_OPENEXR_JNI 
