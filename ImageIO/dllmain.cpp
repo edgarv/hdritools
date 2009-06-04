@@ -69,7 +69,11 @@ void __attribute__ ((constructor)) pcg_imageio_load(void)
 
 	const int numThreads = (int)(1.5f*task_scheduler_init::default_num_threads());
 	assert(numThreads > 0);
+
+        // This is crashing on MacOS 10.5: pthread_mutex_lock dies
+        #if !defined(__APPLE__)
 	IlmThread::ThreadPool::globalThreadPool().setNumThreads(2*numThreads);
+        #endif
 }
 
 // Called when the library is unloaded and before dlclose()
