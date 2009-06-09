@@ -7,6 +7,7 @@
 #include <Image.h>
 #include <RgbeIO.h>
 #include <OpenEXRIO.h>
+#include <PfmIO.h>
 
 #include <QString>
 #include <QRegExp>
@@ -18,6 +19,7 @@ ImageInfo* FloatImageProcessor::load(const char *filenameStr, std::istream &is,
 	// Creates the used regular expressions
 	QRegExp rgbeRegex(".+\\.(rgbe|hdr)$", Qt::CaseInsensitive);
 	QRegExp exrRegex(".+\\.exr$", Qt::CaseInsensitive);
+	QRegExp pfmRegex(".+\\.pfm$", Qt::CaseInsensitive);
 
 	// Pointer with the result image
 	Image<Rgba32F> *floatImage = new Image<Rgba32F>();
@@ -36,6 +38,11 @@ ImageInfo* FloatImageProcessor::load(const char *filenameStr, std::istream &is,
 
 			// Loads the OpenEXR file
 			OpenEXRIO::Load(*floatImage, is);
+		}
+		else if (pfmRegex.exactMatch(filename)) {
+
+			// Loads the Pfm file
+			PfmIO::Load(*floatImage, is);
 		}
 		else {
 			cerr << "Ooops! Unrecognized file : " << filenameStr << endl;

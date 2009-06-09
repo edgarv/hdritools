@@ -22,3 +22,10 @@ Windows Registry Editor Version 5.00
 [HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.hdr\OpenWithProgids]
 "PCG.qt4Image.RadianceFile.1"=hex(0):
 
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.pfm]
+@="PCG.qt4Image.PBMFile.1"
+"PerceivedType"="Image"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.pfm\OpenWithProgids]
+"PCG.qt4Image.PBMFile.1"=hex(0):

@@ -66,6 +66,30 @@ Windows Registry Editor Version 5.00
 [HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.RGBEFile.1\shell\preview\command]
 @="\"${QT4_INSTALL_PATH}\" \"%1\""
 
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\DefaultIcon]
+@="${QT4_INSTALL_PATH},4"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\edit]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\edit\command]
+@="\"${QT4_INSTALL_PATH}\" \"%1\""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\open]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\open\command]
+@="\"${QT4_INSTALL_PATH}\" \"%1\""
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\preview]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\preview\command]
+@="\"${QT4_INSTALL_PATH}\" \"%1\""
+
+
 [HKEY_LOCAL_MACHINE\SOFTWARE\PCG\qt4Image]
 @="qt4Image"
 
@@ -78,6 +102,7 @@ Windows Registry Editor Version 5.00
 ".rgbe"="PCG.qt4Image.RGBEFile.1"
 ".exr"="PCG.qt4Image.OpenEXRFile.1"
 ".hdr"="PCG.qt4Image.RadianceFile.1"
+".pfm"="PCG.qt4Image.PBMFile.1"
 
 [HKEY_LOCAL_MACHINE\SOFTWARE\PCG\qt4Image\DefaultIcon]
 @="${QT4_INSTALL_PATH},0"

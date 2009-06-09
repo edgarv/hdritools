@@ -1,5 +1,9 @@
 #include "HDRImageDisplay.h"
 
+#include "RgbeIO.h"
+#include "OpenEXRIO.h"
+#include "PfmIO.h"
+
 #include <QFile>
 #include <QFileInfo>
 #include <QPainter>
@@ -121,6 +125,11 @@ bool HDRImageDisplay::loadHdr(const QString & fileName, Image<Rgba32F> &hdr)
 		// Loads from an OpenEXR Image
 		OpenEXRIO::Load(hdr, QFile::encodeName(fileName).constData());
 	}
+	else if (suffix.compare("pfm", Qt::CaseInsensitive) == 0)
+	{
+		// Loads the Debevec's Pfm file
+		PfmIO::Load(hdr, QFile::encodeName(fileName).constData());
+	}
 	else {
 		return false;
 	}
@@ -149,6 +158,11 @@ bool HDRImageDisplay::save(const QString & fileName)
 		{
 			// Saves an OpenEXR Image
 			OpenEXRIO::Save(hdrImage, QFile::encodeName(fileName).constData() );
+		}
+		else if (suffix.compare("pfm", Qt::CaseInsensitive) == 0)
+		{
+			// Saves a Pfm Image
+			PfmIO::Save(hdrImage, QFile::encodeName(fileName).constData() );
 		}
 		else {
 

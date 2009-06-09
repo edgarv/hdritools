@@ -3,3 +3,4 @@ Windows Registry Editor Version 5.00
 [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.exr]
 [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.rgbe]
 [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.hdr]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\.pfm]

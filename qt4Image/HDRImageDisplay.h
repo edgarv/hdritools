@@ -8,8 +8,6 @@
 #include "Rgba32F.h"
 #include "LDRPixels.h"
 #include "Image.h"
-#include "RgbeIO.h"
-#include "OpenEXRIO.h"
 #include "ImageComparator.h"
 
 #include "ToneMapper.h"

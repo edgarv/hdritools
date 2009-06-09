@@ -125,9 +125,10 @@ void MainWindow::saveAs()
 
 	// Filter for the ldr files: by default we save the images as PNG
 	static QString filter = 
-		tr("Image files (*.png *.bmp *.jpg *.tiff *.rgbe *.hdr *.exr);;"
+		tr("Image files (*.png *.bmp *.jpg *.tiff *.rgbe *.hdr *.exr *.pfm);;"
 		"PNG (*.png);;BMP (*.bmp);;JPEG (*.jpg;*.jpeg);;PPM (*.ppm);;TIFF (*.tiff);;"
-		"Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;All files (*.*)");
+		"Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;Portable floatmap (*.pfm);;"
+		"All files (*.*)");
 	static QString dir = QDir::currentPath();
 
 	QString file = QFileDialog::getSaveFileName(this,
@@ -199,8 +200,9 @@ void MainWindow::saveAs()
 QString MainWindow::chooseHDRFile(QString message) 
 {
 	// Our filter for files
-	static QString filter = tr("HDR Images (*.rgbe *.hdr *.exr);;"
-		"Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;All files (*.*)");
+	static QString filter = tr("HDR Images (*.rgbe *.hdr *.exr *.pfm);;"
+		"Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;Portable floatmap (*.pfm);;"
+		"All files (*.*)");
 
 	QString file = QFileDialog::getOpenFileName(this,
 		message, openFileDir, filter);
@@ -666,7 +668,8 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 			if (suffix.compare("rgbe", Qt::CaseInsensitive) == 0 ||
 				suffix.compare("hdr",  Qt::CaseInsensitive) == 0 ||
-				suffix.compare("exr",  Qt::CaseInsensitive) == 0 )
+				suffix.compare("exr",  Qt::CaseInsensitive) == 0 ||
+				suffix.compare("pfm",  Qt::CaseInsensitive) == 0)
 			{
 				qDebug() << "Accepting the event for:" << info.absoluteFilePath();
 				event->acceptProposedAction();

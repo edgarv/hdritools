@@ -32,6 +32,7 @@ set(SRCS
   PngIO.h PngIO.cpp
   ${LUT_DIRECTORY}/rgbeLUT.h
   Exception.h
+  PfmIO.h PfmIO.cpp
   )
   
 # Subset of the sources which are the public headers
@@ -50,6 +51,7 @@ set(SRCS_PUBLIC
   StdAfx.h
   Exception.h
   PngIO.h
+  PfmIO.h
   )
   
 add_library(ImageIO SHARED ${SRCS})

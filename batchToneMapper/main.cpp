@@ -132,7 +132,7 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 
 		// The unlabeled multiple arguments are the input zipfiles
 		UnlabeledMultiArg<string> filesArg("filenames", 
-			"HDR images (rgbe|hdr|exr) and Zip files with HDR images to tone map.", 
+			"HDR images (rgbe|hdr|exr|pfm) and Zip files with HDR images to tone map.", 
 			true, "filename");
 
 		// Adds the arguments to the command line (the unlabeled multi args must be the last ones!!)

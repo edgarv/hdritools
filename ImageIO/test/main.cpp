@@ -9,6 +9,7 @@
 #include <RgbeIO.h>
 #include <ToneMapper.h>
 #include <PngIO.h>
+#include <PfmIO.h>
 
 #include <cmath>
 
@@ -389,7 +390,7 @@ int main(int argc, char** argv) {
 
 	try {
 
-		{
+	if(0) {
 			// Loads the image converting on the fly
 			Image<Rgba32F, TopDown> floatImage;
 			RgbeIO::Load(floatImage, "horse.rgbe");
@@ -458,6 +459,36 @@ int main(int argc, char** argv) {
 		cout << "Time to save as PNG from QImage: " << timer.elapsedSeconds() << endl;
 		cout << "Sanity: sizeof(long) " << sizeof(long) << endl;
 #endif
+
+
+		// Pfm testing
+		if (true) {
+			
+			Image<Rgba32F> pfmImg(640, 480);
+			const Rgba32F zero(0.0f);
+			std::fill_n(pfmImg.GetDataPointer(), pfmImg.Size(), zero);
+			srand(0);
+			for(int i = 0; i < pfmImg.Size(); ++i) {
+				Rgba32F &px = pfmImg.GetDataPointer()[i];
+				const float f = 1.0f / (float)RAND_MAX;
+				px.set(rand()*f, rand()*f, rand()*f);
+			}
+
+			PfmIO::Save(pfmImg, "test.pfm");
+
+			// Now read back the image
+			Image<Rgba32F> img;
+			PfmIO::Load(img, "test.pfm");
+
+			assert(img.Width()  == pfmImg.Width());
+			assert(img.Height() == pfmImg.Height());
+			for(int i = 0; i < img.Size(); ++i) {
+				assert(img.GetDataPointer()[i] == pfmImg.GetDataPointer()[i]);
+			}
+
+			cout << "Pfm Image test OK" << endl;
+
+		}
 		
 
 

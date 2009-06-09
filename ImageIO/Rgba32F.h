@@ -158,6 +158,20 @@ namespace pcg {
 		friend Rgba32F operator |(const Rgba32F &a, const Rgba32F &b) { return _mm_or_ps (a,b); }
 		friend Rgba32F operator ^(const Rgba32F &a, const Rgba32F &b) { return _mm_xor_ps(a,b); }
 
+		/* Comparison Operators */
+		friend bool operator ==(const Rgba32F &a, const Rgba32F &b) { 
+			__m128 mask = _mm_cmpeq_ps(a, b);
+			const unsigned long long *ptr = 
+				reinterpret_cast<const unsigned long long *>(&mask);
+			return (~(ptr[0] & ptr[1])) == 0;
+		}
+		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) { 
+			__m128 mask = _mm_cmpeq_ps(a, b);
+			const unsigned long long *ptr = 
+				reinterpret_cast<const unsigned long long *>(&mask);
+			return (ptr[0] | ptr[1]) == 0;
+		}
+
 		///* Arithmetic Operators */
 		friend Rgba32F operator +(const Rgba32F &a, const Rgba32F &b) { return _mm_add_ps(a,b); }
 		friend Rgba32F operator -(const Rgba32F &a, const Rgba32F &b) { return _mm_sub_ps(a,b); }
