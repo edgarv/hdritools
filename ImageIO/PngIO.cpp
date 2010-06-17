@@ -87,7 +87,7 @@ namespace pngio_internal {
 				// From the png book, section 10.6:
 				// value 0 for perceptual, 1 for relative colorimetric, 
 				// 2 for saturation-preserving, and 3 for absolute colorimetric. 
-				png_set_sRGB(pngPtr, infoPtr, 1);
+				png_set_sRGB_gAMA_and_cHRM(pngPtr, infoPtr, PNG_sRGB_INTENT_ABSOLUTE);
 			}
 			else {
 				png_set_gAMA(pngPtr, infoPtr, invGamma);
