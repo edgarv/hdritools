@@ -79,7 +79,7 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 	try {
 
 		CmdLine cmdline("Tone maps all the HDR images from the input files "
-			" and those within the given zip files.", ' ', "0.0.2");
+			"and those within the given zip files.", ' ', "0.0.2");
 		ConstraintGreaterThan constraint(0.0f);
 
 		// Exposure
@@ -104,12 +104,6 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		TCLAP::SwitchArg srgbArg("",
 			"srgb",
 			"The pixels will be transformed according to the sRGB space after the exposure compensation.",
-			false);
-
-		// 16 bpp flag
-		TCLAP::SwitchArg bpp16Arg("",
-			"bpp16",
-			"Use 16 bpp instead of the default 8. With this option the only valid format is png.",
 			false);
 
 		// Offset to add to the numeric filenames
@@ -138,7 +132,6 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		// Adds the arguments to the command line (the unlabeled multi args must be the last ones!!)
 		cmdline.xorAdd(exposureArg, exposureMultiplierArg);
 		cmdline.xorAdd(srgbArg, gammaArg);
-		cmdline.add(bpp16Arg);
 		cmdline.add(offsetArg);
 		cmdline.add(formatArg);
 		cmdline.add(filesArg);
@@ -149,7 +142,6 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		// If we are here we are safe to recover the values
 		srgb = srgbArg.getValue();
 		gamma = gammaArg.getValue();
-		bpp16 = bpp16Arg.getValue();
 		if (exposureArg.isSet()) {
 			exposure = exposureArg.getValue();
 		}
@@ -159,6 +151,7 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		}
 		offset = offsetArg.getValue();
 		format = formatArg.getValue();
+		bpp16  = format == Util::PNG16_FORMAT_STR;
 		files  = filesArg.getValue();
 
 	}

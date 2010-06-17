@@ -1,5 +1,6 @@
 #include "Util.h"
 
+#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -30,11 +31,16 @@ volatile int Util::number_of_processors = 0;
 bool Util::hasPng = false;
 bool Util::hasJpg = false;
 
+string Util::PNG16_FORMAT_STR("png16");
+
 vector<string> Util::supported;
 
 const vector<string> & Util::supportedWriteImageFormats()
 {
 	if (supported.size() == 0) {
+
+		// Signal png with 16 bpp as a format
+		supported.push_back(PNG16_FORMAT_STR);
 
 		QList<QByteArray> list = QImageWriter::supportedImageFormats();
 		for (int i = 0; i < list.size(); ++i) {
@@ -48,6 +54,8 @@ const vector<string> & Util::supportedWriteImageFormats()
 			}
 			supported.push_back( format );
 		}
+
+		std::sort(supported.begin(), supported.end());
 	}
 
 	return supported;

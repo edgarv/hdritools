@@ -23,6 +23,9 @@ public:
 	// Returns the number of processor available in the system
 	static int numberOfProcessors();
 
+	// Format string for 16-bit png
+	static std::string PNG16_FORMAT_STR;
+
 private:
 	// Cache of the number of processors
 	static volatile int number_of_processors;
