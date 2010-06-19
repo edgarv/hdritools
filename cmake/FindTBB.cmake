@@ -78,7 +78,8 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
 elseif(APPLE)
   # Fixed path with the commercial-aligned binary release
-  set(TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/ia32/cc4.0.1_os10.4.9")
+  set(TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/lib" 
+                     "${TBB_PREFIX_PATH}/ia32/cc4.0.1_os10.4.9")
 
 endif()
 
@@ -86,9 +87,9 @@ include(FindReleaseAndDebug)
 
 # Tries to find the required libraries
 FIND_RELEASE_AND_DEBUG(TBB tbb tbb_debug 
-  "${TBB_LIB_SEARCH}" )
+  ${TBB_LIB_SEARCH} )
 FIND_RELEASE_AND_DEBUG(TBBMALLOC tbbmalloc tbbmalloc_debug
-  "${TBB_LIB_SEARCH}")
+  ${TBB_LIB_SEARCH})
 
 # Set the results
 if(TBB_INCLUDE_DIR AND TBB_LIBRARY AND TBBMALLOC_LIBRARY)
@@ -104,7 +105,8 @@ if(TBB_FOUND)
     message(STATUS "Found TBB.")
   endif()
 else()
-  set(TBB_PREFIX_PATH "${TBB_PREFIX_PATH}-NOTFOUND" CACHE PATH "Unknown TBB base location." FORCE)
+  set(TBB_PREFIX_PATH "${TBB_PREFIX_PATH}-NOTFOUND" CACHE PATH 
+      "TBB base installation location.")
   if(TBB_FIND_REQUIRED)
     message(FATAL_ERROR "TBB not found!")
   endif()
