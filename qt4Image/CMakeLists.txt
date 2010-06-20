@@ -1,4 +1,5 @@
-# Cmake specification for building qt4image. It assumes that Qt4 has been already found
+# Cmake specification for building qt4image. 
+# It assumes that Qt4 has been already found
 
 # The general sources
 # Headers to be moc-ified (a subset of the sources)
@@ -54,13 +55,32 @@ if(WIN32)
   set(QT_USE_QTMAIN 1)
   set(EXECUTABLE_TYPE "WIN32")
   list(APPEND SRCS "res/qt4Image.rc")
-endif(WIN32)
+endif()
+
+
+# Prepare the bundle for mac
+if(APPLE)
+  set(EXECUTABLE_TYPE "MACOSX_BUNDLE")
+  set(MACOSX_BUNDLE_BUNDLE_NAME "Qt4Image")
+  set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.cornell.graphics.Qt4Image")
+  set(MACOSX_BUNDLE_COPYRIGHT 
+    "Program of Computer Graphics, Cornell University")
+  # Set how it shows up in the Info.plists file
+  set(MACOSX_BUNDLE_ICON_FILE "app.icns")
+  # Set where in the bundle to put the icns file
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/res/app.icns
+    PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  # Include the icns file in the target
+  list(APPEND SRCS ${CMAKE_CURRENT_SOURCE_DIR}/res/app.icns)
+endif()
+
 
 # Load the QT configuration
 include(${QT_USE_FILE})
 
 # Creates the executable with all the stuff
-add_executable(qt4Image ${EXECUTABLE_TYPE} ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
+add_executable(qt4Image ${EXECUTABLE_TYPE} 
+  ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
 target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
 
 # Add the image plugins with the fancy macro
@@ -74,11 +94,13 @@ include_directories(../ImageIO)
 
 # Installs this
 install(TARGETS qt4Image
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin COMPONENT Runtime
+  LIBRARY DESTINATION lib COMPONENT Developer
+  BUNDLE  DESTINATION .   COMPONENT Runtime
   )
 
-# For windows we also generate and install .reg file to register the program with Vista's association mechanism.
+# For windows we also generate and install a .reg file to register the program 
+# with Vista's association mechanism.
 # This should be an option in the program, but for now this should do the trick
 if(WIN32)
   set(QT4_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/bin/qt4Image.exe")
@@ -102,3 +124,104 @@ if(WIN32)
 
 
 endif(WIN32)
+
+
+# Additional bunlde installation 
+set(plugin_dest_dir bin)
+set(qtconf_dest_dir bin)
+set(APPS "\${CMAKE_INSTALL_PREFIX}/bin/qt4Image")
+if(APPLE)
+  set(plugin_dest_dir "qt4Image.app/Contents")
+  set(qtconf_dest_dir "qt4Image.app/Contents/Resources")
+  set(APPS "\${CMAKE_INSTALL_PREFIX}/qt4Image.app")
+elseif(WIN32)
+  set(APPS "\${CMAKE_INSTALL_PREFIX}/bin/qt4Image.exe")
+endif()
+
+# Install the needed Qt plugins
+if(EXISTS "${QT_PLUGINS_DIR}/imageformats")
+  install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
+    DESTINATION ${plugin_dest_dir}/plugins
+    COMPONENT Runtime)
+endif()
+
+# The Cocoa version needs extra resources
+set(QTCOCOA_MENU_NIB ${QT_QTGUI_LIBRARY}/Resources/qt_menu.nib)
+if(QT_MAC_USE_COCOA AND EXISTS "${QTCOCOA_MENU_NIB}")
+
+  install(CODE "
+    message(STATUS \"Copying qt_menu.nib into the Bundle resources\")
+    file(MAKE_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}/${qtconf_dest_dir}/qt_menu.nib\")
+    execute_process(COMMAND \${CMAKE_COMMAND} -E copy_directory
+      \"${QTCOCOA_MENU_NIB}\" 
+      \"\${CMAKE_INSTALL_PREFIX}/${qtconf_dest_dir}/qt_menu.nib\")
+    " COMPONENT Runtime)
+endif()
+
+# Install a qt.conf file by running cmake code from the install script
+install(CODE "
+  file(WRITE \"\${CMAKE_INSTALL_PREFIX}/${qtconf_dest_dir}/qt.conf\" \"\")
+  " COMPONENT Runtime)
+
+# Use BundleUtils to get all other dependencies to work. For Windows and Linux
+# CMake 2.8 is required
+
+# Directories to look for dependencies
+set(DIRS ${QT_LIBRARY_DIR})
+
+# The default downloaded version of TBB seems to be problematic...
+if (EXISTS ${TBB_OPTIMIZED_LIBRARY})
+  get_filename_component(TBB_LIB_DIR ${TBB_OPTIMIZED_LIBRARY} PATH)
+  list(APPEND DIRS ${TBB_LIB_DIR})
+endif()
+
+install(CODE "
+  if(APPLE)
+  # gp_item_default_embedded_path item default_embedded_path_var
+  #
+  # Return the path that others should refer to the item by when the item
+  # is embedded inside a bundle.
+  #
+  # Override on a per-project basis by providing a project-specific
+  # gp_item_default_embedded_path_override function
+  #
+  function(gp_item_default_embedded_path_override item
+    default_embedded_path_var)
+    # The assumption here is that all executables in the bundle will be
+    # in the same-level-directories inside the bundle. The parent directory
+    # of an executable inside the bundle should be MacOS or a sibling of
+    # MacOS and all embedded paths returned from here will begin with
+    # \"@executable_path/../\" and will work from all executables in all
+    # such same-level-directories inside the bundle
+    #
+
+    # By default, embed things right next to the main bundle executable:
+    set(path \"@executable_path/../../Contents/MacOS\")
+
+    set(overriden FALSE)
+    
+    # Qt plugins must reside in the appropriate folders within Contents/plugins
+    set(qtplugin_regex \"(plugins[\\\\/][^\\\\/]+)[\\\\/][^\\\\/]+\\\\${CMAKE_SHARED_LIBRARY_SUFFIX}\$\")
+    if(item MATCHES \"\${qtplugin_regex}\")
+      set(path \"@executable_path/../\${CMAKE_MATCH_1}\")
+      set(overriden TRUE)
+    endif()
+
+    # Embed frameworks in the embedded Frameworks directory (sibling of MacOS)
+    if(NOT overriden)
+      if(item MATCHES \"[^/]+\\\\.framework/\")
+        set(path \"@executable_path/../Frameworks\")
+	set(overriden TRUE)
+      endif()
+    endif()
+
+    set(\${default_embedded_path_var} \"\${path}\" PARENT_SCOPE)
+  endfunction()
+  endif() # APPLE
+  
+  file(GLOB_RECURSE QTPLUGINS
+    \"\${CMAKE_INSTALL_PREFIX}/${plugin_dest_dir}/plugins/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
+  include(BundleUtilities)
+  fixup_bundle(\"${APPS}\" \"\${QTPLUGINS}\" \"${DIRS}\")
+  " COMPONENT Runtime)
+
