@@ -1,6 +1,15 @@
 # Cmake specification for building qt4image. 
 # It assumes that Qt4 has been already found
 
+# Offer an option to automatically bundle qt4image through BundleUtilities
+if(APPLE OR WIN32)
+  set(QT4IMAGE_BUNDLE_DEFAULT ON)
+else()
+  set(QT4IMAGE_BUNDLE_DEFAULT OFF)
+endif()
+option(QT4IMAGE_BUNDLE "Automatically bundle all qt4image dependencies." 
+  ${QT4IMAGE_BUNDLE_DEFAULT})
+
 # The general sources
 # Headers to be moc-ified (a subset of the sources)
 set(SRCS
@@ -59,7 +68,7 @@ endif()
 
 
 # Prepare the bundle for mac
-if(APPLE)
+if(APPLE AND QT4IMAGE_BUNDLE)
   set(EXECUTABLE_TYPE "MACOSX_BUNDLE")
   set(MACOSX_BUNDLE_BUNDLE_NAME "Qt4Image")
   set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.cornell.graphics.Qt4Image")
@@ -125,6 +134,19 @@ if(WIN32)
 
 endif(WIN32)
 
+# Stop further processing if there is no bundle-stuff
+if(NOT QT4IMAGE_BUNDLE)
+  return()
+endif()
+
+# Check CMake version before going further
+cmake_policy(PUSH)
+if (NOT APPLE)
+  cmake_minimum_required(VERSION 2.8.0 FATAL_ERROR)
+else()
+  cmake_minimum_required(VERSION 2.6.2 FATAL_ERROR)
+endif()
+cmake_policy(POP)
 
 # Additional bunlde installation 
 set(plugin_dest_dir bin)
