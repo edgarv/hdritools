@@ -150,3 +150,27 @@ endif(BUILD_BATCH_TONEMAPPER)
 if(BUILD_QT4IMAGE)
   add_subdirectory(qt4Image)
 endif(BUILD_QT4IMAGE)
+
+
+
+# Packaging with CPack
+
+# Currently set a faux version, based on the build date
+add_executable(getdate getdate.c)
+add_custom_command(
+  OUTPUT currentdate.txt 
+  COMMAND getdate currentdate.txt
+  DEPENDS getdate)
+add_custom_target(getdate_drive ALL DEPENDS currentdate.txt)
+file(READ ${CMAKE_CURRENT_BINARY_DIR}/currentdate.txt CURRENT_DATE_STR)
+if (CURRENT_DATE_STR MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+  message("Using package version: ${CURRENT_DATE_STR}")
+  set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
+  set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
+  set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
+endif()
+
+set(CPACK_PACKAGE_VENDOR "Cornell PCG")
+set(CPACK_DMG_FORMAT "UDBZ") # UDIF bzip2-compressed image (OS X 10.4+ only)
+
+include(CPack)
