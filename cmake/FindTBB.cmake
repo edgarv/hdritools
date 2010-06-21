@@ -28,19 +28,22 @@ if(WIN32)
     set(TBB_PLATFORM ia32)
   endif(CMAKE_CL_64)
   
-  if(MSVC71)
+  if(MSVC_VERSION EQUAL 1310)
     set(TBB_COMPILER "vc7.1")
-  elseif(MSVC80)
+  elseif(MSVC_VERSION EQUAL 1400)
     set(TBB_COMPILER "vc8")
-  elseif(MSVC90)
+  elseif(MSVC_VERSION EQUAL 1500)
     set(TBB_COMPILER "vc9")
+  elseif(MSVC_VERSION EQUAL 1600)
+    set(TBB_COMPILER "vc10")
   else()
 	# This case might happen when using the Intel Compiler
     # message(SEND_ERROR "Unsupported/Unknown MSVC version.")
   endif()
   
   foreach(platform IN LISTS TBB_PLATFORM)
-    list(APPEND TBB_LIB_SEARCH ${TBB_PREFIX_PATH}/${platform}/${TBB_COMPILER})
+    list(APPEND TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/${platform}/${TBB_COMPILER}")
+	list(APPEND TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/lib/${platform}/${TBB_COMPILER}")
   endforeach()
   
 endif()
@@ -87,9 +90,9 @@ include(FindReleaseAndDebug)
 
 # Tries to find the required libraries
 FIND_RELEASE_AND_DEBUG(TBB tbb tbb_debug 
-  ${TBB_LIB_SEARCH} )
+  "${TBB_LIB_SEARCH}" )
 FIND_RELEASE_AND_DEBUG(TBBMALLOC tbbmalloc tbbmalloc_debug
-  ${TBB_LIB_SEARCH})
+  "${TBB_LIB_SEARCH}")
 
 # Set the results
 if(TBB_INCLUDE_DIR AND TBB_LIBRARY AND TBBMALLOC_LIBRARY)
