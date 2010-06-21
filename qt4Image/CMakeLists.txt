@@ -139,10 +139,27 @@ elseif(WIN32)
 endif()
 
 # Install the needed Qt plugins
-if(EXISTS "${QT_PLUGINS_DIR}/imageformats")
-  install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
-    DESTINATION ${plugin_dest_dir}/plugins
-    COMPONENT Runtime)
+if(EXISTS "${QT_PLUGINS_DIR}/imageformats" AND NOT(QT_CONFIG MATCHES "static"))
+  if(NOT WIN32 OR NOT (QT_QTGUI_LIBRARY_RELEASE AND QT_QTGUI_LIBRARY_DEBUG))
+    install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
+      DESTINATION ${plugin_dest_dir}/plugins
+      COMPONENT Runtime
+	  REGEX "svg|mng|gif" EXCLUDE)
+  else()
+    # There are different plugins for release and debug
+	install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
+      DESTINATION ${plugin_dest_dir}/plugins
+      COMPONENT Runtime CONFIGURATIONS Debug
+	  REGEX ".+d4\\.dll$"
+	  REGEX "svg|mng|gif" EXCLUDE)
+	
+	install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
+      DESTINATION ${plugin_dest_dir}/plugins
+      COMPONENT Runtime CONFIGURATIONS Release MinSizeRel RelWithDebInfo
+	  REGEX ".+d4\\.dll$" EXCLUDE
+	  REGEX "svg|mng|gif" EXCLUDE)
+  endif()
+  
 endif()
 
 # The Cocoa version needs extra resources
@@ -168,15 +185,24 @@ install(CODE "
 
 # Directories to look for dependencies
 set(DIRS ${QT_LIBRARY_DIR})
+if (WIN32)
+  get_filename_component(QT_BINARY_DIR ${QT_QMAKE_EXECUTABLE} PATH)
+  list(APPEND DIRS ${QT_BINARY_DIR})
+endif()
 
 # The default downloaded version of TBB seems to be problematic...
 if (EXISTS ${TBB_OPTIMIZED_LIBRARY})
   get_filename_component(TBB_LIB_DIR ${TBB_OPTIMIZED_LIBRARY} PATH)
   list(APPEND DIRS ${TBB_LIB_DIR})
+  if (WIN32)
+    string(REGEX REPLACE "lib([/\\].+[.//].+)?[/\\]?$" "bin\\1"
+	  TBB_BIN_DIR ${TBB_LIB_DIR})
+	list(APPEND DIRS ${TBB_BIN_DIR})
+  endif()
 endif()
 
 install(CODE "
-  if(APPLE)
+  if(APPLE OR WIN32)
   # gp_item_default_embedded_path item default_embedded_path_var
   #
   # Return the path that others should refer to the item by when the item
@@ -196,14 +222,22 @@ install(CODE "
     #
 
     # By default, embed things right next to the main bundle executable:
-    set(path \"@executable_path/../../Contents/MacOS\")
+	if(APPLE)
+      set(path \"@executable_path/../../Contents/MacOS\")
+	elseif(WIN32)
+	  set(path \"@executable_path\")
+	endif()
 
     set(overriden FALSE)
     
     # Qt plugins must reside in the appropriate folders within Contents/plugins
     set(qtplugin_regex \"(plugins[\\\\/][^\\\\/]+)[\\\\/][^\\\\/]+\\\\${CMAKE_SHARED_LIBRARY_SUFFIX}\$\")
     if(item MATCHES \"\${qtplugin_regex}\")
-      set(path \"@executable_path/../\${CMAKE_MATCH_1}\")
+	  if(APPLE)
+        set(path \"@executable_path/../\${CMAKE_MATCH_1}\")
+	  elseif(WIN32)
+	    set(path \"@executable_path/\${CMAKE_MATCH_1}\")
+	  endif()
       set(overriden TRUE)
     endif()
 
@@ -217,7 +251,7 @@ install(CODE "
 
     set(\${default_embedded_path_var} \"\${path}\" PARENT_SCOPE)
   endfunction()
-  endif() # APPLE
+  endif() # APPLE OR WIN32
   
   file(GLOB_RECURSE QTPLUGINS
     \"\${CMAKE_INSTALL_PREFIX}/${plugin_dest_dir}/plugins/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
