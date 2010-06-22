@@ -20,7 +20,8 @@ using namespace pcg;
 
 
 
-MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : QMainWindow(parent), 
+MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : 
+    QMainWindow(parent), 
     app(application),
     scaleFactor(1.0f), minScaleFactor(1.0f/512), maxScaleFactor(64.0f),
     hdrDisplay(NULL), pixInfoDialog(NULL),
@@ -41,9 +42,9 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
     // We are also aware of drag and drop
     setAcceptDrops(true);
 
-    // Synchronizes the exposure and gamma controls, originally they are disabled
-    exposureConnect = new DoubleSpinSliderConnect(exposureSlider, exposureSpinBox);
-    gammaConnect    = new DoubleSpinSliderConnect(gammaSlider, gammaSpinBox);
+    // Synchronizes the exposure and gamma controls, initially they are disabled
+    exposureConnect=new DoubleSpinSliderConnect(exposureSlider,exposureSpinBox);
+    gammaConnect   =new DoubleSpinSliderConnect(gammaSlider, gammaSpinBox);
     exposureConnect->setEnabled(false);
     gammaConnect->setEnabled(false);
 
@@ -71,8 +72,10 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
     // Connections for the view menu
     connect( actionZoom_In,  SIGNAL(triggered()), this, SLOT(zoomIn()) );
     connect( actionZoom_Out, SIGNAL(triggered()), this, SLOT(zoomOut()) );
-    connect( action_Fit_on_Screen, SIGNAL(triggered()), this, SLOT(fitToWindow()) );
-    connect( action_Actual_Pixels, SIGNAL(triggered()), this, SLOT(actualPixels()) );
+    connect( action_Fit_on_Screen, SIGNAL(triggered()), 
+        this, SLOT(fitToWindow()) );
+    connect( action_Actual_Pixels, SIGNAL(triggered()), 
+        this, SLOT(actualPixels()) );
     connect( action_Pixel_Info, SIGNAL(triggered()), this, SLOT(pixelInfo()) );
 
     // For adjusting the window on request 
@@ -80,16 +83,20 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : Q
 
     // Connections for the pixel info dialog and receiving the files dropped
     connect( pixInfoDialog, SIGNAL(rejected()), this, SLOT(pixelInfoClosed()) );
-    connect( hdrDisplay, SIGNAL(mouseOverPixel(QPoint)), this, SLOT(mouseOverImage(QPoint)) );
-    connect( this, SIGNAL(requestPixelInfo(QPoint)), pixInfoDialog, SLOT(showInfo(QPoint)) );
+    connect( hdrDisplay, 
+        SIGNAL(mouseOverPixel(QPoint)), this, SLOT(mouseOverImage(QPoint)) );
+    connect( this, SIGNAL(requestPixelInfo(QPoint)), 
+        pixInfoDialog, SLOT(showInfo(QPoint)) );
 
     // Standard dialog for about
     connect( action_About,   SIGNAL(triggered()), this, SLOT(about()) );
     connect( actionAbout_Qt, SIGNAL(triggered()), this, SLOT(aboutQt()) );
 
     // Connects the gamma and exposure controls
-    connect( exposureConnect, SIGNAL(valueChanged(float)), this, SLOT(setExposure(float)) );
-    connect( gammaConnect,    SIGNAL(valueChanged(float)), this, SLOT(setGamma(float)) );
+    connect( exposureConnect, SIGNAL(valueChanged(float)), 
+        this, SLOT(setExposure(float)) );
+    connect( gammaConnect,    SIGNAL(valueChanged(float)), 
+        this, SLOT(setGamma(float)) );
 
     // Also connects the sRGB control
     connect( srgbChk, SIGNAL(stateChanged(int)), this, SLOT(setSRGB(int)) );
@@ -112,7 +119,8 @@ void MainWindow::saveAs()
     // Filter for the ldr files: by default we save the images as PNG
     static QString filter = 
         tr("Image files (*.png *.bmp *.jpg *.tiff *.rgbe *.hdr *.exr *.pfm);;"
-        "PNG (*.png);;BMP (*.bmp);;JPEG (*.jpg;*.jpeg);;PPM (*.ppm);;TIFF (*.tiff);;"
+        "PNG (*.png);;BMP (*.bmp);;JPEG (*.jpg;*.jpeg);;"
+        "PPM (*.ppm);;TIFF (*.tiff);;"
         "Radiance (*.rgbe *.hdr);;OpenEXR (*.exr);;Portable floatmap (*.pfm);;"
         "All files (*.*)");
     static QString dir = QDir::currentPath();
@@ -128,7 +136,8 @@ void MainWindow::saveAs()
         if (! hdrDisplay->save(file) ) {
             QApplication::restoreOverrideCursor();
             QMessageBox::warning(this, appTitle,
-                    tr("An error occurred while saving the tone mapped image %1.").arg(file));
+                tr("An error occurred while saving the tone mapped image %1.")
+                .arg(file));
         } else {
             QApplication::restoreOverrideCursor();
 
@@ -167,7 +176,8 @@ void MainWindow::open()
 
 
 
-void MainWindow::compareWith(ImageComparator::Type type, const QString & description)
+void MainWindow::compareWith(ImageComparator::Type type, 
+                             const QString & description)
 {
     QString fileName = chooseHDRFile(tr("Open file for comparison"));
     if (fileName.isEmpty()) {
@@ -240,7 +250,8 @@ void MainWindow::open(const QString &fileName, bool adjustSize)
         switch(result) {
             case HDRImageDisplay::UnknownType:
                 QMessageBox::warning(this, appTitle,
-                    tr("Unknown HDR format for the input file %1.").arg(fileName));
+                    tr("Unknown HDR format for the input file %1.")
+                    .arg(fileName));
                 break;
             default:
                 QMessageBox::warning(this, appTitle,
@@ -359,8 +370,10 @@ void MainWindow::adjustScrollBar(QScrollBar *scrollBar, float factor)
 
 void MainWindow::updateActions()
 {
-    actionZoom_In->setEnabled(  !action_Fit_on_Screen->isChecked() && scaleFactor < maxScaleFactor);
-    actionZoom_Out->setEnabled( !action_Fit_on_Screen->isChecked() && scaleFactor > minScaleFactor);
+    actionZoom_In->setEnabled(  !action_Fit_on_Screen->isChecked() && 
+                                scaleFactor < maxScaleFactor);
+    actionZoom_Out->setEnabled( !action_Fit_on_Screen->isChecked() && 
+                                scaleFactor > minScaleFactor);
     action_Actual_Pixels->setEnabled( !action_Fit_on_Screen->isChecked());
     action_AdjustSize->setEnabled( !action_Fit_on_Screen->isChecked());
 
@@ -383,7 +396,8 @@ void MainWindow::about()
         "<p>Version %2.<br/>"
         "Build date: %3.<br/>"
         "%1 is a simple, fast viewer for High Dynamic Range (HDR) images.</p>"
-        "<p>Copyright (C) 2008-2009 Program of Computer Graphics, Cornell University.</p>")
+        "<p>Copyright (C) 2008-2009 Program of Computer Graphics, "
+        "Cornell University.</p>")
             .arg(appTitle)
             .arg(tr("0.1.0"))
             .arg(tr(__DATE__)) );
@@ -443,7 +457,8 @@ void MainWindow::adjustSize()
     if (app != NULL) {
         QDesktopWidget *desktop = app->desktop();
         QRect available = desktop->availableGeometry(desktop->primaryScreen());
-        offset = offset.boundedTo(QSize(available.width(), available.height())*0.95);
+        offset = offset.boundedTo(QSize(available.width(), 
+            available.height())*0.95);
     }
 
     this->resize(offset);
@@ -480,8 +495,9 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void MainWindow::dropEvent(QDropEvent *event)
 {
-    // For the drop event we assume that we had previously accepted something that made sense,
-    // so we just convert the name to a local file and fire the signal
+    // For the drop event we assume that we had previously accepted something 
+    // that made sense, so we just convert the name to a local file and fire the 
+    // signal
     if (event->mimeData()->hasUrls() && event->mimeData()->urls().size() == 1) {
 
         QString filename = event->mimeData()->urls()[0].toLocalFile();
