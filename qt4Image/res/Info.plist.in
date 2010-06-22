@@ -6,17 +6,83 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeExtensions</key>
+			<key>LSItemContentTypes</key>
 			<array>
-				<string>exr</string>
-				<string>rgbe</string>
-				<string>pfm</string>
-				<string>hdr</string>
-			</array>
+				<string>com.ilm.openexr-image</string>
+				<string>edu.cornell.graphics.rgbe-image</string>
+				<string>public.radiance</string>
+				<string>public.pfm</string>
+			</array>	
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 		</dict>
 	</array>
+	
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.image</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Radiance</string>
+			<key>UTTypeIdentifier</key>
+			<string>public.radiance</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>pic</string>
+					<string>PIC</string>
+					<string>hdr</string>
+					<string>HDR</string>
+				</array>
+			</dict>
+		</dict>
+		
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.image</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>RGBE image</string>
+			<key>UTTypeIdentifier</key>
+			<string>edu.cornell.graphics.rgbe-image</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rgbe</string>
+					<string>RGBE</string>
+				</array>
+			</dict>
+		</dict>
+		
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.image</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Portable Floatmap</string>
+			<key>UTTypeIdentifier</key>
+			<string>public.pfm</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>pfm</string>
+					<string>PFM</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	
   
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
