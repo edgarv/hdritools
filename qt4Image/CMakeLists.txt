@@ -11,7 +11,6 @@ option(QT4IMAGE_BUNDLE "Automatically bundle all qt4image dependencies."
   ${QT4IMAGE_BUNDLE_DEFAULT})
 
 # The general sources
-# Headers to be moc-ified (a subset of the sources)
 set(SRCS
   DoubleSpinSliderConnect.h DoubleSpinSliderConnect.cpp
   HDRImageLabel.h HDRImageLabel.cpp
@@ -19,6 +18,7 @@ set(SRCS
   MainWindow.h MainWindow.cpp
   PixelInfoDialog.h PixelInfoDialog.cpp
   HDRImageDisplay.h HDRImageDisplay.cpp
+  ImageApp.h ImageApp.cpp
   main.cpp
   )
 
@@ -30,6 +30,7 @@ set(MOC_HEADERS
   MainWindow.h
   PixelInfoDialog.h
   HDRImageDisplay.h
+  ImageApp.h
   )
   
 # Run moc on the appropriate headers

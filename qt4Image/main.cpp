@@ -1,6 +1,7 @@
 #include <QApplication>
 
-#include "MainWindow.h"
+//#include "MainWindow.h"
+#include "ImageApp.h"
 
 // Required when building with the static Qt
 #if QT_STATICPLUGIN
@@ -17,20 +18,23 @@ Q_IMPORT_PLUGIN(qtiff)
 
 int main(int argc, char *argv[])
 {
-	// TODO: This is no longer required in windows, but how does it
-	// behave in Linux or Mac??
-	//tbb::task_scheduler_init init;
+    // TODO: This is no longer required in windows, but how does it
+    // behave in Linux or Mac??
+    //tbb::task_scheduler_init init;
 
-	QApplication app(argc, argv);
-	MainWindow mainWin(&app);
+    //QApplication app(argc, argv);
+    //MainWindow mainWin(&app);
+    ImageApp app(argc, argv);
 
-	// The application accepts for now one optional argument: the file to load
-	// (The first argument is the executable name)
-	QStringList args = app.arguments();
-	if (args.size() == 2) {
-		mainWin.open(args.at(1), true);
-	}
+    // The application accepts for now one optional argument: the file to load
+    // (The first argument is the executable name)
+    QStringList args = app.arguments();
+    if (args.size() == 2) {
+        //mainWin.open(args.at(1), true);
+	app.open(args.at(1), true);
+    }
 
-	mainWin.show();
-	return app.exec();
+    //mainWin.show();
+    app.show();
+    return app.exec();
 }
