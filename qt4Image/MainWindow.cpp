@@ -447,11 +447,12 @@ void MainWindow::adjustSize()
 {
     // First we need to know how big is the difference between the
     // window and our frame:
+    const int frameWidth = imgScrollFrame->frameWidth();
     QSize offset = this->size() - imgScrollFrame->size();
 
     // We add the actual size of the image and set that as our size 
-    // plus the small 1px border
-    offset += hdrDisplay->sizeOrig() + QSize(2,2);
+    // plus the frame border
+    offset += hdrDisplay->sizeOrig() + 2*QSize(frameWidth, frameWidth);
 
     // We will limit to the available geometry if we can know it by intersecting 
     // the regions
