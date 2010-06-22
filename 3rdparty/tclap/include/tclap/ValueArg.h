@@ -100,7 +100,7 @@ template<class T> class ValueExtractor
             int valuesRead = 0;
             while ( is.good() ) 
 			{
-                if ( is.peek() != EOF )
+                if ( is.peek() != std::char_traits<char>::eof() )
                     is >> _value;
                 else
                     break;

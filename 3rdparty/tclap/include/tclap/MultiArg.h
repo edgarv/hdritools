@@ -100,7 +100,7 @@ class ValueExtractor
     
 			while ( is.good() ) 
 			{
-				if ( is.peek() != EOF )
+				if ( is.peek() != std::char_traits<char>::eof() )
 					is >> temp; 
 				else
 					break;

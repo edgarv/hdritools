@@ -22,10 +22,6 @@
 #define USE_MEMALIGN 0
 #endif
 
-#if USE_MEMALIGN
-#define _XOPEN_SOURCE 600 /* For posix_memalign */
-#endif
-
 #include <cstdlib>
 #include <cassert>
 
