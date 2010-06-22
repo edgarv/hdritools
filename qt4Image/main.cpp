@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     QStringList args = app.arguments();
     if (args.size() == 2) {
         //mainWin.open(args.at(1), true);
-	app.open(args.at(1), true);
+        app.open(args.at(1), true);
     }
 
     //mainWin.show();

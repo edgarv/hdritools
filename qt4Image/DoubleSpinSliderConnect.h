@@ -14,39 +14,39 @@ class QDoubleSpinBox;
 
 class DoubleSpinSliderConnect : public QObject {
 
-	Q_OBJECT
+    Q_OBJECT
 
 protected slots:
 
-	void setSliderValue( double val );
-	void setSpinValue( int val );
+    void setSliderValue( double val );
+    void setSpinValue( int val );
 
 public slots:
 
-	// Sets the value of both the spiner and the slider
-	void setValue(float val);
+    // Sets the value of both the spiner and the slider
+    void setValue(float val);
 
-	// Signals cannot have access specifier
+    // Signals cannot have access specifier
 signals:
 
-	// Notifies of the new value of both the slider and the spinbox
-	void valueChanged(float newValue);
+    // Notifies of the new value of both the slider and the spinbox
+    void valueChanged(float newValue);
 
 
 protected:
 
-	// References to the objects which we want to synchronize
-	QAbstractSlider *slider;
-	QDoubleSpinBox  *spin;
+    // References to the objects which we want to synchronize
+    QAbstractSlider *slider;
+    QDoubleSpinBox  *spin;
 
-	// The actual value of this guy
-	float value;
+    // The actual value of this guy
+    float value;
 
 public:
-	DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin);
+    DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin);
 
-	// Utility function to enable/disable both components at the same time
-	void setEnabled(bool isEnabled);
+    // Utility function to enable/disable both components at the same time
+    void setEnabled(bool isEnabled);
 
 };
 

@@ -19,134 +19,134 @@ using namespace pcg;
 // Widget to encapsulate the loading and display of the tone mapped images
 class HDRImageDisplay : public QWidget {
 
-	Q_OBJECT
+    Q_OBJECT
 
 private:
 
-	// The internal representation of the HDR Image
-	Image<Rgba32F> hdrImage;
+    // The internal representation of the HDR Image
+    Image<Rgba32F> hdrImage;
 
-	// The tone mapped version of the Image
-	Image<Bgra8> ldrImage;
+    // The tone mapped version of the Image
+    Image<Bgra8> ldrImage;
 
-	// The abstraction to communicate information about the images
-	//ImageIODataProvider dataProvider;
+    // The abstraction to communicate information about the images
+    //ImageIODataProvider dataProvider;
 
-	// Our nice tonemapper
-	ToneMapper toneMapper;
+    // Our nice tonemapper
+    ToneMapper toneMapper;
 
-	// QImage version of the stuff, uses implicit sharing
-	QImage qImage;
+    // QImage version of the stuff, uses implicit sharing
+    QImage qImage;
 
-	// A data provider for querying info
-	ImageIODataProvider dataProvider;
+    // A data provider for querying info
+    ImageIODataProvider dataProvider;
 
-	// Internal cache of the size
-	QSize sizeAux;
+    // Internal cache of the size
+    QSize sizeAux;
 
 
 protected:
-	qreal scaleFactor;
-	bool needsToneMap;
+    qreal scaleFactor;
+    bool needsToneMap;
 
 
 public:
 
-	enum HdrResult {
-		NoError,
-		UnknownType,
-		ExceptionError,
-		SizeMissmatch,
-		IllegalState
-	};
+    enum HdrResult {
+        NoError,
+        UnknownType,
+        ExceptionError,
+        SizeMissmatch,
+        IllegalState
+    };
 
-	HDRImageDisplay(QWidget *parent);
+    HDRImageDisplay(QWidget *parent);
 
-	virtual QSize sizeHint() const {
+    virtual QSize sizeHint() const {
 
-		return scaleFactor*QSize(ldrImage.Width(), ldrImage.Height());
-	}
+        return scaleFactor*QSize(ldrImage.Width(), ldrImage.Height());
+    }
 
-	QSizePolicy sizePolicy () const {
-		return QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	}
-
-
-	bool open(const QString &fileName, HdrResult * result = 0);
-
-	bool compareTo(const QString &fileName, ImageComparator::Type compareMethod,
-		HdrResult * result = 0);
+    QSizePolicy sizePolicy () const {
+        return QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    }
 
 
-	bool save(const QString & fileName);
+    bool open(const QString &fileName, HdrResult * result = 0);
 
-	void setGamma(float gamma)
-	{
-		if (gamma != toneMapper.Gamma()) {
-			toneMapper.SetGamma(gamma);
-			needsToneMap = true;
-			update();
-		}
-	}
-
-	void setExposure(float exposure)
-	{
-		if (exposure != toneMapper.Exposure()) {
-			toneMapper.SetExposure(exposure);
-			needsToneMap = true;
-			update();
-		}
-	}
-
-	void setSRGB(bool enable)
-	{
-		if (enable != toneMapper.isSRGB()) {
-			toneMapper.SetSRGB(enable);
-			needsToneMap = true;
-			update();
-		}
-	}
+    bool compareTo(const QString &fileName, ImageComparator::Type compareMethod,
+        HdrResult * result = 0);
 
 
+    bool save(const QString & fileName);
 
-	void setScale(float scale)
-	{
-		Q_ASSERT(scale > 0);
-		scaleFactor = scale;
-		sizeAux = scale * sizeOrig();
-		resize(sizeAux);
-		needsToneMap = true;
-		update();
-	}
+    void setGamma(float gamma)
+    {
+        if (gamma != toneMapper.Gamma()) {
+            toneMapper.SetGamma(gamma);
+            needsToneMap = true;
+            update();
+        }
+    }
 
-	QSize sizeOrig() const 
-	{
-		return QSize(ldrImage.Width(), ldrImage.Height());
-	}
+    void setExposure(float exposure)
+    {
+        if (exposure != toneMapper.Exposure()) {
+            toneMapper.SetExposure(exposure);
+            needsToneMap = true;
+            update();
+        }
+    }
 
-	float scale() const
-	{
-		return scaleFactor;
-	}
+    void setSRGB(bool enable)
+    {
+        if (enable != toneMapper.isSRGB()) {
+            toneMapper.SetSRGB(enable);
+            needsToneMap = true;
+            update();
+        }
+    }
 
-	const ImageDataProvider & imageDataProvider() const {
-		return dataProvider;
-	}
 
-	void mouseMoveEvent(QMouseEvent * event);
+
+    void setScale(float scale)
+    {
+        Q_ASSERT(scale > 0);
+        scaleFactor = scale;
+        sizeAux = scale * sizeOrig();
+        resize(sizeAux);
+        needsToneMap = true;
+        update();
+    }
+
+    QSize sizeOrig() const 
+    {
+        return QSize(ldrImage.Width(), ldrImage.Height());
+    }
+
+    float scale() const
+    {
+        return scaleFactor;
+    }
+
+    const ImageDataProvider & imageDataProvider() const {
+        return dataProvider;
+    }
+
+    void mouseMoveEvent(QMouseEvent * event);
 
 protected:
-	virtual void paintEvent(QPaintEvent *event);
+    virtual void paintEvent(QPaintEvent *event);
 
 signals:
 
-	// This signal is like a "mouseOver" event, sending the 
-	// absolute TopDown position, taking into account any resizing
-	void mouseOverPixel( QPoint pos );
+    // This signal is like a "mouseOver" event, sending the 
+    // absolute TopDown position, taking into account any resizing
+    void mouseOverPixel( QPoint pos );
 
 private:
 
-	static bool loadHdr(const QString & fileName, Image<Rgba32F> &hdr);
+    static bool loadHdr(const QString & fileName, Image<Rgba32F> &hdr);
 
 };
 
