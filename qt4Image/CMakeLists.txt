@@ -77,6 +77,7 @@ if(APPLE AND QT4IMAGE_BUNDLE)
     "Program of Computer Graphics, Cornell University")
   # Set how it shows up in the Info.plists file
   set(MACOSX_BUNDLE_ICON_FILE "app.icns")
+  
   # Set where in the bundle to put the icns file
   set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/res/app.icns
     PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
@@ -95,6 +96,17 @@ target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
 
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( qt4Image )
+
+
+# Add the custom Info.plist to the target after configuring it
+if(APPLE AND QT4IMAGE_BUNDLE)
+  set(MACOSX_BUNDLE_EXECUTABLE_NAME "qt4Image")
+  configure_file(res/Info.plist.in "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+    set_target_properties(qt4Image PROPERTIES
+	  MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+endif()
+
+
 
 # uic generates header in the build directory which need to be found
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
