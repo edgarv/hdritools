@@ -19,10 +19,6 @@
 #include "ImageDataProvider.h"
 #include "HDRImageDisplay.h"
 
-#if 0
-#include "HDRImageLabel.h"
-#endif
-
 // Uses forward declarations
 class QLabel;
 class DoubleSpinSliderConnect;
@@ -40,10 +36,6 @@ class MainWindow : public QMainWindow, public Ui::MainWindow
 
 
 protected:
-#if 0
-    // The container for the image
-    HDRImageLabel *imageLabel;
-#endif
 
     // The actual widget with all the magic
     HDRImageDisplay *hdrDisplay;
@@ -62,36 +54,12 @@ protected:
     // A String with the current directory for the open dialog
     QString openFileDir;
 
-#if 0
-    // Helper function just to load an HDR file from a non-empty filename
-    // Returns true if it could open the file and load it into dest, false if
-    // it didn't recognize the HDR file. If the last parameter is not null,
-    // it will be set to the directory of the loaded filename.
-    // When something really bad occurs the
-    // method can throw an exception
-    static bool loadHdr(QString filename, Image<Rgba32F> &dest, QString *imgDir = NULL);
-#endif
-
     // This function updates the gui when a new file has been already loaded.
     // The parameter indicates the name to display in the title bar
     void updateForLoadedImage(QString imgName);
 
     // The actual comparison method
     void compareWith(ImageComparator::Type type, const QString & description);
-
-#if 0
-    // The internal representation of the HDR Image
-    Image<Rgba32F> hdrImage;
-
-    // The tone mapped version of the Image
-    Image<Bgra8> ldrImage;
-
-    // The abstraction to communicate information about the images
-    ImageIODataProvider dataProvider;
-
-    // Our nice tonemapper
-    ToneMapper toneMapper;
-#endif
 
     // The current scale factor
     float scaleFactor;
@@ -139,10 +107,12 @@ protected slots:
     void about();
     void aboutQt();
 
-    // Adjusts the size of the window so that the image doesn't require any scrollbars
+    // Adjusts the size of the window so that the image doesn't require any 
+    // scrollbars
     void adjustSize();
 
-    // Used to react when the user closes the pixel info window: we need to update the window gui
+    // Used to react when the user closes the pixel info window: we need to 
+    // update the window gui
     void pixelInfoClosed();
 
     // Receive raw "onMouseOver" events from the image label
