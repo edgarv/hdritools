@@ -80,6 +80,12 @@ public:
 
     bool save(const QString & fileName);
 
+    // Returns true if the component is currently empty
+    inline bool isEmpty() const {
+        Q_ASSERT(hdrImage.Width() >= 0 && hdrImage.Height() >= 0);
+        return hdrImage.Width() == 0 && hdrImage.Height() == 0;
+    }
+
     void setGamma(float gamma)
     {
         if (gamma != toneMapper.Gamma()) {

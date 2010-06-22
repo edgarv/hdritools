@@ -134,11 +134,17 @@ public:
 
     // Tries to load the given image into the GUI, and if requested it will
     // try to resize the window so that the image fits without scrollbars
-    void open(const QString &fileName, bool adjustSize = false);
+    bool open(const QString &fileName, bool adjustSize = false);
 
     // Events for dropping files into the window, so that we can open them
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
+
+    // Returns true if the hdr display is currently empty
+    inline bool isEmpty() const {
+        Q_ASSERT(hdrDisplay != NULL);
+        return hdrDisplay->isEmpty();
+    }
 };
 
 

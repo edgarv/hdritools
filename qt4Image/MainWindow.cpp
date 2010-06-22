@@ -35,6 +35,7 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     /* Ricorda: QScrollArea::setWidget(widget) causes the scroll area to
     /* take total control of the widget, including its destruction */ 
     hdrDisplay = new HDRImageDisplay(this);
+    Q_ASSERT(hdrDisplay->isEmpty());
     imgScrollFrame->setWidget(hdrDisplay);
 
     pixInfoDialog = new PixelInfoDialog(hdrDisplay->imageDataProvider(), this);
@@ -221,7 +222,7 @@ void MainWindow::compareWith(ImageComparator::Type type,
 
 
 
-void MainWindow::open(const QString &fileName, bool adjustSize)
+bool MainWindow::open(const QString &fileName, bool adjustSize)
 {
     
     HDRImageDisplay::HdrResult result;
@@ -242,22 +243,22 @@ void MainWindow::open(const QString &fileName, bool adjustSize)
         }
 
         QApplication::restoreOverrideCursor();
+        return true;
     }
     else {
         Q_ASSERT( result != HDRImageDisplay::NoError );
         QApplication::restoreOverrideCursor();
 
         switch(result) {
-            case HDRImageDisplay::UnknownType:
-                QMessageBox::warning(this, appTitle,
-                    tr("Unknown HDR format for the input file %1.")
-                    .arg(fileName));
-                break;
-            default:
-                QMessageBox::warning(this, appTitle,
-                    tr("An error occurred while loading %1.").arg(fileName));
+        case HDRImageDisplay::UnknownType:
+            QMessageBox::warning(this, appTitle,
+                tr("Unknown HDR format for the input file %1.").arg(fileName));
+            break;
+        default:
+            QMessageBox::warning(this, appTitle,
+                tr("An error occurred while loading %1.").arg(fileName));
         }
-
+        return false;
     }
 }
 
