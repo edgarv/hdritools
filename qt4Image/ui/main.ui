@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow" >
-  <property name="geometry" >
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,184 +10,184 @@
     <height>620</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>QT4Image</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="../res/icons.qrc" >
+  <property name="windowIcon">
+   <iconset resource="../res/icons.qrc">
     <normaloff>:/icons/app-48x48.png</normaloff>:/icons/app-48x48.png</iconset>
   </property>
-  <widget class="QWidget" name="centralwidget" >
-   <layout class="QVBoxLayout" >
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout">
     <item>
-     <widget class="QScrollArea" name="imgScrollFrame" >
-      <property name="frameShape" >
+     <widget class="QScrollArea" name="imgScrollFrame">
+      <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
-      <property name="frameShadow" >
+      <property name="frameShadow">
        <enum>QFrame::Plain</enum>
       </property>
      </widget>
     </item>
     <item>
-     <layout class="QGridLayout" >
-      <property name="horizontalSpacing" >
+     <layout class="QGridLayout">
+      <property name="horizontalSpacing">
        <number>6</number>
       </property>
-      <property name="verticalSpacing" >
+      <property name="verticalSpacing">
        <number>4</number>
       </property>
-      <item row="0" column="3" >
-       <widget class="QLabel" name="exponentLabel" >
-        <property name="layoutDirection" >
+      <item row="0" column="3">
+       <widget class="QLabel" name="exponentLabel">
+        <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>
-        <property name="text" >
+        <property name="text">
          <string>2 ^</string>
         </property>
-        <property name="alignment" >
+        <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
-      <item row="0" column="5" >
-       <widget class="QSlider" name="exposureSlider" >
-        <property name="minimum" >
+      <item row="0" column="5">
+       <widget class="QSlider" name="exposureSlider">
+        <property name="minimum">
          <number>-1000</number>
         </property>
-        <property name="maximum" >
+        <property name="maximum">
          <number>1000</number>
         </property>
-        <property name="singleStep" >
+        <property name="singleStep">
          <number>5</number>
         </property>
-        <property name="pageStep" >
+        <property name="pageStep">
          <number>50</number>
         </property>
-        <property name="orientation" >
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="tickPosition" >
+        <property name="tickPosition">
          <enum>QSlider::TicksBelow</enum>
         </property>
-        <property name="tickInterval" >
+        <property name="tickInterval">
          <number>50</number>
         </property>
        </widget>
       </item>
-      <item row="0" column="4" >
-       <widget class="QDoubleSpinBox" name="exposureSpinBox" >
-        <property name="accelerated" >
+      <item row="0" column="4">
+       <widget class="QDoubleSpinBox" name="exposureSpinBox">
+        <property name="accelerated">
          <bool>true</bool>
         </property>
-        <property name="correctionMode" >
+        <property name="correctionMode">
          <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
         </property>
-        <property name="prefix" >
+        <property name="prefix">
          <string/>
         </property>
-        <property name="suffix" >
+        <property name="suffix">
          <string/>
         </property>
-        <property name="minimum" >
+        <property name="minimum">
          <double>-20.000000000000000</double>
         </property>
-        <property name="maximum" >
+        <property name="maximum">
          <double>20.000000000000000</double>
         </property>
-        <property name="singleStep" >
+        <property name="singleStep">
          <double>0.020000000000000</double>
         </property>
        </widget>
       </item>
-      <item row="1" column="4" >
-       <widget class="QDoubleSpinBox" name="gammaSpinBox" >
-        <property name="enabled" >
+      <item row="1" column="4">
+       <widget class="QDoubleSpinBox" name="gammaSpinBox">
+        <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="correctionMode" >
+        <property name="correctionMode">
          <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
         </property>
-        <property name="minimum" >
+        <property name="minimum">
          <double>0.100000000000000</double>
         </property>
-        <property name="maximum" >
+        <property name="maximum">
          <double>5.000000000000000</double>
         </property>
-        <property name="singleStep" >
+        <property name="singleStep">
          <double>0.050000000000000</double>
         </property>
-        <property name="value" >
+        <property name="value">
          <double>2.200000000000000</double>
         </property>
        </widget>
       </item>
-      <item row="1" column="5" >
-       <widget class="QSlider" name="gammaSlider" >
-        <property name="enabled" >
+      <item row="1" column="5">
+       <widget class="QSlider" name="gammaSlider">
+        <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="minimum" >
+        <property name="minimum">
          <number>5</number>
         </property>
-        <property name="maximum" >
+        <property name="maximum">
          <number>250</number>
         </property>
-        <property name="singleStep" >
+        <property name="singleStep">
          <number>5</number>
         </property>
-        <property name="pageStep" >
+        <property name="pageStep">
          <number>5</number>
         </property>
-        <property name="value" >
+        <property name="value">
          <number>110</number>
         </property>
-        <property name="orientation" >
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="tickPosition" >
+        <property name="tickPosition">
          <enum>QSlider::TicksBelow</enum>
         </property>
-        <property name="tickInterval" >
+        <property name="tickInterval">
          <number>50</number>
         </property>
        </widget>
       </item>
-      <item row="1" column="3" >
-       <widget class="QLabel" name="gammaLabel" >
-        <property name="enabled" >
+      <item row="1" column="3">
+       <widget class="QLabel" name="gammaLabel">
+        <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="layoutDirection" >
+        <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>
-        <property name="text" >
+        <property name="text">
          <string>Gamma:</string>
         </property>
-        <property name="alignment" >
+        <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
-        <property name="buddy" >
+        <property name="buddy">
          <cstring>gammaSpinBox</cstring>
         </property>
        </widget>
       </item>
-      <item row="1" column="2" >
-       <widget class="QCheckBox" name="srgbChk" >
-        <property name="text" >
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="srgbChk">
+        <property name="text">
          <string>sRGB</string>
         </property>
-        <property name="checked" >
+        <property name="checked">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="0" column="2" >
-       <widget class="QLabel" name="exposureLabel" >
-        <property name="text" >
+      <item row="0" column="2">
+       <widget class="QLabel" name="exposureLabel">
+        <property name="text">
          <string>Exposure:</string>
         </property>
-        <property name="buddy" >
+        <property name="buddy">
          <cstring>exposureSpinBox</cstring>
         </property>
        </widget>
@@ -195,218 +196,228 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar" >
-   <property name="geometry" >
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
      <width>540</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_File" >
-    <property name="title" >
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
      <string>&amp;File</string>
     </property>
-    <widget class="QMenu" name="menuCompare" >
-     <property name="enabled" >
+    <widget class="QMenu" name="menuCompare">
+     <property name="enabled">
       <bool>false</bool>
      </property>
-     <property name="title" >
+     <property name="title">
       <string>Compare</string>
      </property>
-     <addaction name="actionAbsDifference" />
-     <addaction name="actionAdd" />
-     <addaction name="actionDivide" />
-     <addaction name="actionRelError" />
-     <addaction name="actionPosNegDifference" />
-     <addaction name="actionPosNegRelError" />
+     <addaction name="actionAbsDifference"/>
+     <addaction name="actionAdd"/>
+     <addaction name="actionDivide"/>
+     <addaction name="actionRelError"/>
+     <addaction name="actionPosNegDifference"/>
+     <addaction name="actionPosNegRelError"/>
     </widget>
-    <addaction name="action_Open" />
-    <addaction name="action_Save_as" />
-    <addaction name="separator" />
-    <addaction name="menuCompare" />
-    <addaction name="separator" />
-    <addaction name="actionE_xit" />
+    <addaction name="action_Open"/>
+    <addaction name="action_Close_window"/>
+    <addaction name="separator"/>
+    <addaction name="action_Save_as"/>
+    <addaction name="separator"/>
+    <addaction name="menuCompare"/>
+    <addaction name="separator"/>
+    <addaction name="actionE_xit"/>
    </widget>
-   <widget class="QMenu" name="menu_Help" >
-    <property name="title" >
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="action_About" />
-    <addaction name="actionAbout_Qt" />
+    <addaction name="action_About"/>
+    <addaction name="actionAbout_Qt"/>
    </widget>
-   <widget class="QMenu" name="menu_View" >
-    <property name="title" >
+   <widget class="QMenu" name="menu_View">
+    <property name="title">
      <string>&amp;View</string>
     </property>
-    <addaction name="actionZoom_In" />
-    <addaction name="actionZoom_Out" />
-    <addaction name="action_Fit_on_Screen" />
-    <addaction name="action_Actual_Pixels" />
-    <addaction name="separator" />
-    <addaction name="action_Pixel_Info" />
+    <addaction name="actionZoom_In"/>
+    <addaction name="actionZoom_Out"/>
+    <addaction name="action_Fit_on_Screen"/>
+    <addaction name="action_Actual_Pixels"/>
+    <addaction name="separator"/>
+    <addaction name="action_Pixel_Info"/>
    </widget>
-   <widget class="QMenu" name="menu_Window" >
-    <property name="title" >
+   <widget class="QMenu" name="menu_Window">
+    <property name="title">
      <string>&amp;Window</string>
     </property>
-    <addaction name="action_AdjustSize" />
+    <addaction name="action_AdjustSize"/>
    </widget>
-   <addaction name="menu_File" />
-   <addaction name="menu_View" />
-   <addaction name="menu_Window" />
-   <addaction name="menu_Help" />
+   <addaction name="menu_File"/>
+   <addaction name="menu_View"/>
+   <addaction name="menu_Window"/>
+   <addaction name="menu_Help"/>
   </widget>
-  <action name="action_Open" >
-   <property name="text" >
+  <action name="action_Open">
+   <property name="text">
     <string>&amp;Open...</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="action_Save_as" >
-   <property name="enabled" >
+  <action name="action_Save_as">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>&amp;Save as...</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="action_About" >
-   <property name="enabled" >
+  <action name="action_About">
+   <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>&amp;About QT4Image</string>
    </property>
-   <property name="menuRole" >
+   <property name="menuRole">
     <enum>QAction::AboutRole</enum>
    </property>
   </action>
-  <action name="actionE_xit" >
-   <property name="text" >
+  <action name="actionE_xit">
+   <property name="text">
     <string>E&amp;xit</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Esc</string>
    </property>
-   <property name="menuRole" >
+   <property name="menuRole">
     <enum>QAction::QuitRole</enum>
    </property>
   </action>
-  <action name="actionZoom_In" >
-   <property name="enabled" >
+  <action name="actionZoom_In">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Zoom in</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl++</string>
    </property>
   </action>
-  <action name="actionZoom_Out" >
-   <property name="enabled" >
+  <action name="actionZoom_Out">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Zoom out</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+-</string>
    </property>
   </action>
-  <action name="action_Fit_on_Screen" >
-   <property name="checkable" >
+  <action name="action_Fit_on_Screen">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="enabled" >
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>&amp;Fit on screen</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+0</string>
    </property>
   </action>
-  <action name="action_Actual_Pixels" >
-   <property name="enabled" >
+  <action name="action_Actual_Pixels">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>&amp;Actual pixels</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+Alt+0</string>
    </property>
   </action>
-  <action name="actionAbout_Qt" >
-   <property name="text" >
+  <action name="actionAbout_Qt">
+   <property name="text">
     <string>About Qt</string>
    </property>
-   <property name="menuRole" >
+   <property name="menuRole">
     <enum>QAction::AboutQtRole</enum>
    </property>
   </action>
-  <action name="action_Pixel_Info" >
-   <property name="checkable" >
+  <action name="action_Pixel_Info">
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="enabled" >
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Pixel &amp;info</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>F8</string>
    </property>
   </action>
-  <action name="action_AdjustSize" >
-   <property name="enabled" >
+  <action name="action_AdjustSize">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>&amp;Adjust to image size</string>
    </property>
-   <property name="shortcut" >
+   <property name="shortcut">
     <string>Ctrl+L</string>
    </property>
   </action>
-  <action name="actionAbsDifference" >
-   <property name="text" >
+  <action name="actionAbsDifference">
+   <property name="text">
     <string>Absolute difference with...</string>
    </property>
   </action>
-  <action name="actionAdd" >
-   <property name="text" >
+  <action name="actionAdd">
+   <property name="text">
     <string>Add with...</string>
    </property>
   </action>
-  <action name="actionDivide" >
-   <property name="text" >
+  <action name="actionDivide">
+   <property name="text">
     <string>Divide by...</string>
    </property>
   </action>
-  <action name="actionRelError" >
-   <property name="text" >
+  <action name="actionRelError">
+   <property name="text">
     <string>Relative error with...</string>
    </property>
   </action>
-  <action name="actionPosNegDifference" >
-   <property name="text" >
+  <action name="actionPosNegDifference">
+   <property name="text">
     <string>Positive/negative difference with...</string>
    </property>
   </action>
-  <action name="actionPosNegRelError" >
-   <property name="text" >
+  <action name="actionPosNegRelError">
+   <property name="text">
     <string>Positive/negative relative error with...</string>
+   </property>
+  </action>
+  <action name="action_Close_window">
+   <property name="text">
+    <string>&amp;Close window</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
    </property>
   </action>
  </widget>
@@ -417,7 +428,7 @@
   <tabstop>gammaSlider</tabstop>
  </tabstops>
  <resources>
-  <include location="../res/icons.qrc" />
+  <include location="../res/icons.qrc"/>
  </resources>
  <connections/>
 </ui>

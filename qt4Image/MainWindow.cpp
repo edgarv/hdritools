@@ -67,8 +67,9 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     connect( actionPosNegRelError, SIGNAL(triggered()), 
         this, SLOT(comparePosNegRelError()) );
 
-    // Connection for the close button
-    connect( actionE_xit, SIGNAL(triggered()), this, SLOT(close()) );
+    // Connection for the exit (Quit on Mac OS X) and close buttons
+    connect( actionE_xit, SIGNAL(triggered()), app, SLOT(closeAllWindows()) );
+    connect( action_Close_window, SIGNAL(triggered()), this, SLOT(close()) );
 
     // Connections for the view menu
     connect( actionZoom_In,  SIGNAL(triggered()), this, SLOT(zoomIn()) );
