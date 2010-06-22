@@ -13,6 +13,8 @@ class ImageApp : public QApplication
 public:
     ImageApp(int& argc, char **argv);
 
+    void open(const QString &filename);
+
     inline void show() {
         mainWin.show();
     }
@@ -20,11 +22,6 @@ public:
     inline void setVisible(bool visible) {
         mainWin.setVisible(visible);
     }
-
-    inline void open(const QString &filename, bool adjustSize = false) {
-        mainWin.open(filename, adjustSize);
-    }
-
 
 protected:
     virtual bool event(QEvent *);
