@@ -122,7 +122,7 @@ namespace pcg {
 			// Multiply everything by alpha. 
 			// The shuffle operation replicates the exponent into all components, then do a component-wise multiply
 			// rgba = {rgba.r, rgba.r, rgba.r, rgba.a} .* {rgba.a, rgba.a, rgba.a, rgba.a}
-			const Rgba32F alphaTemp = _mm_shuffle_ps(rgba,rgba,_MM_SHUFFLE(0,0,0,0));
+			const Rgba32F alphaTemp = _mm_shuffle_ps((__m128)rgba,(__m128)rgba,_MM_SHUFFLE(0,0,0,0));
 			const Rgba32F mask      = _mm_cmpneq_ss(*reinterpret_cast<const __m128*>(&alpha_zero_mask), alphaTemp);
 			*this *= alphaTemp;
 

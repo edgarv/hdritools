@@ -88,20 +88,20 @@ namespace pcg {
 				// TODO Use all square roots and then masks, or a single root and shuffle?
 				const Rgba32F d = _mm_sqrt_ps(dSqr);
 
-				const Rgba32F pn = hadd(v) & alphaKillMask;
+				const Rgba32F pn = ((Rgba32F) hadd(v)) & alphaKillMask;
 				const Rgba32F zero = _mm_setzero_ps();
 
 				// Part 1: pn < 0 (just r)
 				Rgba32F m1 = _mm_cmplt_ps(pn, zero);
-				m1 = _mm_shuffle_ps(m1, m1, _MM_SHUFFLE(3, 0, 0, 0));
+				m1 = _mm_shuffle_ps((__m128)m1, (__m128)m1, _MM_SHUFFLE(3, 0, 0, 0));
 
 				// Part 2: pn > 0 (just g)
 				Rgba32F m2 = _mm_cmpgt_ps(pn, zero);
-				m2 = _mm_shuffle_ps(m2, m2, _MM_SHUFFLE(0, 2, 0, 0));
+				m2 = _mm_shuffle_ps((__m128)m2, (__m128)m2, _MM_SHUFFLE(0, 2, 0, 0));
 
 				// Part 3: pn == 0 (just b)
 				Rgba32F m3 = _mm_cmpeq_ps(pn, zero);
-				m3 = _mm_shuffle_ps(m3, zero, _MM_SHUFFLE(0, 0, 1, 0));
+				m3 = _mm_shuffle_ps((__m128)m3, (__m128)zero, _MM_SHUFFLE(0, 0, 1, 0));
 
 				// And finally combine everything
 				// TODO: do something useful with the alpha

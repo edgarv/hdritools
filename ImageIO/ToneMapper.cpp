@@ -128,7 +128,7 @@ namespace pcg {
 				above -= srgbA;
 
 				// Select values according to the mask (to avoid conditionals)
-				values = (mask & below) | (_mm_andnot_ps(mask, above));
+				values = (mask & below) | ((Rgba32F) (_mm_andnot_ps(mask, above)));
 
 				
 				quantizeAndStore(i, values, qFactor);
@@ -320,7 +320,7 @@ namespace pcg {
 				}
 				else {
 
-					const Rgba32F qFactor((1<<(sizeof(typename T::pixel_t)<<3))-1);
+					const Rgba32F qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1));
 
 					if (tm.isSRGB()) {
 						for (int i = r.begin(); i != r.end(); ++i) {

@@ -32,8 +32,8 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
 
     appTitle = this->windowTitle();
 
-    /* Ricorda: QScrollArea::setWidget(widget) causes the scroll area to
-    /* take total control of the widget, including its destruction */ 
+    // Ricorda: QScrollArea::setWidget(widget) causes the scroll area to
+    // take total control of the widget, including its destruction
     hdrDisplay = new HDRImageDisplay(this);
     Q_ASSERT(hdrDisplay->isEmpty());
     imgScrollFrame->setWidget(hdrDisplay);

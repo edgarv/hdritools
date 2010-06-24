@@ -220,6 +220,10 @@ namespace pcg {
 		// ####################################################################
 		// ####         READING         #######################################
 		// ####################################################################
+		
+		// Forward declaration
+		template <class T>
+		int readPixels_RLE(istream&, T*, int, int);
 
 		// The basic utility methods for loading from an RGBE file which has
 		// already been successfully open. This handles the general case by going line by line
@@ -367,7 +371,10 @@ namespace pcg {
 		// ####################################################################
 		// ####         WRITING         #######################################
 		// ####################################################################
-
+		
+		// Forward declaration
+		template <class T>
+		int writePixels_RLE(ostream&, const T*, int, int);
 
 		// The basic utility methods for saving to an RGBE file which has
 		// already been successfully open. This handles the general case by going line by line
