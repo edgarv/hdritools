@@ -2,3 +2,6 @@ syntax: regexp
 \.DS_Store$
 \.swp$
 qt4Image\.aps$
+.+\..+~$
+.+\..+\.orig$
+
