@@ -18,6 +18,11 @@ Timer::Timer(bool inHardware) : mHardware(inHardware) {
 }
 
 
+/* Disable the "unreferenced format parameter" warning */
+#if defined(_MSC_VER)
+#pragma warning( disable : 4100 )
+#endif
+
 void Timer::calibrateCountPeriod(unsigned int inDelay, unsigned int inTimes)
 {
 #ifdef WIN32
