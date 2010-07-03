@@ -79,5 +79,8 @@ install(TARGETS ImageIO
   PUBLIC_HEADER DESTINATION "include"
   )
 
-# Finally adds the subdirectory with the tests
-add_subdirectory(test)
+# Finally adds the subdirectory with the tests if enabled
+option(IMAGEIO_BUILD_TEST "Build ImageIO unit test suite" OFF)
+if(IMAGEIO_BUILD_TEST)
+  add_subdirectory(test)
+endif()
