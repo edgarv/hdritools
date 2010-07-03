@@ -163,13 +163,10 @@ namespace pcg {
 			__m128 mask = _mm_cmpeq_ps(a, b);
 			const unsigned long long *ptr = 
 				reinterpret_cast<const unsigned long long *>(&mask);
-			return (~(ptr[0] & ptr[1])) == 0;
+			return (ptr[0] & ptr[1]) == ~0;
 		}
-		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) { 
-			__m128 mask = _mm_cmpeq_ps(a, b);
-			const unsigned long long *ptr = 
-				reinterpret_cast<const unsigned long long *>(&mask);
-			return (ptr[0] | ptr[1]) == 0;
+		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) {
+            return !(operator== (a, b));
 		}
 
 		///* Arithmetic Operators */
