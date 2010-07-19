@@ -109,8 +109,8 @@ public:
 };
 
 
-typedef pcg::Image<pcg::Rgba32F, pcg::ScanLineMode::TopDown>  Image;
-typedef pcg::Image<pcg::Rgba32F, pcg::ScanLineMode::BottomUp> ImageBU;
+typedef pcg::Image<pcg::Rgba32F, pcg::TopDown>  Image;
+typedef pcg::Image<pcg::Rgba32F, pcg::BottomUp> ImageBU;
 
 // Helper struct to define parametrized tests
 struct TestType
@@ -258,8 +258,8 @@ protected:
 
     const char* str (const pcg::ScanLineMode order) {
         switch (order) {
-        case pcg::ScanLineMode::TopDown:  return "TopDown";
-        case pcg::ScanLineMode::BottomUp: return "BottomUp";
+        case pcg::TopDown:  return "TopDown";
+        case pcg::BottomUp: return "BottomUp";
         default: return "unknown";
         }
     }
@@ -346,13 +346,13 @@ TEST_P(ImageComparatorTest, Compare)
         params.width, params.height);
 
     switch (params.scanlineorder) {
-    case pcg::ScanLineMode::TopDown:
-        compareTest<pcg::ScanLineMode::TopDown> (params.type, 
+    case pcg::TopDown:
+        compareTest<pcg::TopDown> (params.type, 
             params.width, params.height);
         break;
 
-    case pcg::ScanLineMode::BottomUp:
-        compareTest<pcg::ScanLineMode::BottomUp> (params.type, 
+    case pcg::BottomUp:
+        compareTest<pcg::BottomUp> (params.type, 
             params.width, params.height);
         break;
 
@@ -387,8 +387,8 @@ struct Generator
 
     Generator(const ImageComparator::Type type)
     {
-        pcg::ScanLineMode modes[] = { pcg::ScanLineMode::TopDown,
-            pcg::ScanLineMode::BottomUp };
+        pcg::ScanLineMode modes[] = { pcg::TopDown,
+            pcg::BottomUp };
         int sizes[] = {1, 480, 640, 512};
 
         for (const pcg::ScanLineMode *mode = const_begin(modes); 
