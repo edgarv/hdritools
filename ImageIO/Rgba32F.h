@@ -184,6 +184,25 @@ namespace pcg {
 		Rgba32F& operator |=(const Rgba32F &a) { return *this = _mm_or_ps (rgba,a); }
 		Rgba32F& operator ^=(const Rgba32F &a) { return *this = _mm_xor_ps(rgba,a); }
 
+        ///* new and delete, so that they provide the proper alignment */
+        static void* operator new (size_t size) {
+            void *ptr = pcg::alloc_align<Rgba32F> (16);
+            return ptr;
+        }
+
+        static void operator delete (void *p) {
+            pcg::free_align (p);
+        }
+
+        static void* operator new[] (size_t size) {
+            void *ptr = pcg::alloc_align<Rgba32F> (16, size);
+            return ptr;
+        }
+
+        static void operator delete[] (void* p) {
+            pcg::free_align (p);
+        }
+
 		// Absolute value, by clearing the sign on all four floats
 		static Rgba32F abs(const Rgba32F &a) {
 			return _mm_and_ps(a, (*reinterpret_cast<const __m128*>(&abs_mask)) );
