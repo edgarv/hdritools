@@ -16,9 +16,6 @@
 #include "ImageIO.h"
 #include "Image.h"
 
-#include <cmath>
-
-
 namespace pcg {
 
 	// RGBE enconded pixel in Watts/sr/m^2
@@ -37,7 +34,8 @@ namespace pcg {
 		Rgbe() : r(0), g(0), b(0), e(0) {}
 
 		// Explicit initialization from components
-		Rgbe(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char e) : 
+		Rgbe(const unsigned char r, const unsigned char g, 
+             const unsigned char b, const unsigned char e) : 
 			r(r), g(g), b(b), e(e) {}
 
 		// Construct from a full float pixel
@@ -50,47 +48,35 @@ namespace pcg {
 			set(pixel);
 		}
 
+        // Construct from explicit float RGB values
+        Rgbe(const float r, const float g, const float b) {
+            set(r, g, b);
+        }
+
 		
 		/* ########### Setters ########### */
 
 		// Set all values at once
-		inline void set(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char e = 128) {
+		inline void set(const unsigned char r, const unsigned char g, 
+                        const unsigned char b, const unsigned char e = 128) {
 			this->r = r;
 			this->g = g;
 			this->b = b;
 			this->e = e;
 		}
-
-		// One way of magic: set the value from a Rgba128.
-		// Assumes that the alpha has been previously applied!
-		inline void set(const Rgba32F &pixel) {
-			set(pixel.r(), pixel.g(), pixel.b());
-		}
+		
+        // Explicit setting each value
+        void IMAGEIO_API set(const float r, const float g, const float b);
 
 		// Convert directly from a Rgb96 pixel
 		inline void set(const Rgb32F &pixel) {
-			set(pixel.r, pixel.g, pixel.b);
+			Rgba32F px (pixel.r, pixel.g, pixel.b);
+            set (px);
 		}
 
-		// Explicit setting each value
-		inline void set(const float red, const float green, const float blue) {
-
-			float v = red;
-			if (green > v) v = green;
-			if (blue  > v) v = blue;
-			if (v < 1e-32f) {
-				r = g = b = e = 0;
-			}
-			else {
-				int e;
-				v = (frexp(v,&e) * 256.0f/v);
-
-				this->r = (unsigned char) (red   * v);
-				this->g = (unsigned char) (green * v);
-				this->b = (unsigned char) (blue  * v);
-				this->e = (unsigned char) (e + 128);
-			}
-		}
+		// One way of magic: set the value from a Rgba128.
+		// Assumes that the alpha has been previously applied!
+        void IMAGEIO_API set(const Rgba32F &pixel);
 
 		/* ########### Operators ########### */
 
@@ -114,7 +100,8 @@ namespace pcg {
 			return *this;
 		}
 
-		// This one does one way of magic: from RGBE to full float pixel by C++ casting
+		// This one does one way of magic: from RGBE to full float pixel by C++ 
+        // casting
 		operator Rgba32F() const	
 		{
 			Rgba32F rgba;
@@ -138,8 +125,8 @@ namespace pcg {
 			return rgb;
 		}
 
-		// Some applications require accessing the data as an array of unsigned chars,
-		// in the order rgbe
+		// Some applications require accessing the data as an array of unsigned
+		// chars, in the order rgbe
 		operator const unsigned char* () const
 		{
 			return reinterpret_cast<const unsigned char*>(this);

@@ -18,16 +18,50 @@
 #endif /* WIN32 */
 
 
-// This class is exported from the ImageIO.dll
-class IMAGEIO_API CImageIO {
-public:
-	CImageIO(void);
-	// TODO: add your methods here.
-};
+// For proper memory alignment
+#if defined(_MSC_VER)
+#define PCG_USE_MEMALIGN 0
+#include <malloc.h>
+#elif _XOPEN_SOURCE >= 600 || defined(__APPLE__)
+#define PCG_USE_MEMALIGN 1
+#include <cstdlib>
+#else
+#define PCG_USE_MEMALIGN 0
+#include <cstdlib>
+#endif
 
-extern IMAGEIO_API int nImageIO;
+namespace pcg {
 
-IMAGEIO_API int fnImageIO(void);
+template <typename T>
+inline T* alloc_align (size_t alignment, size_t size = sizeof(T))
+{
+    T* ptr = 0;
+#if PCG_USE_MEMALIGN
+    if (posix_memalign ((void**)&ptr, alignment, size) != 0) {
+		ptr = 0;
+    }
+#elif defined(_MSC_VER)
+    ptr = (T*) _aligned_malloc (size, alignment);
+#else
+    // warning: not actually aligned!
+    ptr = (T*) malloc (size);
+#endif
+    return ptr;
+}
+
+template <typename T>
+inline void free_align (T *ptr)
+{
+#if PCG_USE_MEMALIGN || !defined(_MSC_VER)
+    free (ptr);
+#else
+    _aligned_free (ptr);
+#endif
+}
+
+
+
+} // namespace pcg
 
 
 #endif

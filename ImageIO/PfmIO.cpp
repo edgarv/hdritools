@@ -5,8 +5,11 @@
 #include <iomanip>
 #include <ctype.h>
 #include <iostream>
+#include <memory>
 
 using namespace pcg;
+
+
 
 inline PfmIO::ByteOrder PfmIO::getNativeOrder()
 {
@@ -133,8 +136,10 @@ void PfmIO::Save(const Image<Rgba32F, BottomUp>  &img, ostream &os)
 inline void swapByteOrder(unsigned int *ptr, int count)
 {
 	for (int i = 0; i < count; ++i) {
-		ptr[i] = ((ptr[i] && 0xFF) << 24)    || ((ptr[i] && 0xFF00) << 8) || 
-			     ((ptr[i] && 0xFF0000) >> 8) || ((ptr[i] && 0xFF000000) >> 24);
+		ptr[i] = ((ptr[i] << 24) & 0xFF000000u) |
+                 ((ptr[i] <<  8) & 0xFF0000u) |
+                 ((ptr[i] >>  8) & 0x00FFu) |
+                 ((ptr[i] >> 24) & 0xFFu);
 	}
 }
 
@@ -144,33 +149,39 @@ template <ScanLineMode S>
 void Pfm_Load_data(Image<Rgba32F, S> &img, istream &is, 
 				   bool swapBytes, bool isColor)
 {
-	// TODO Properly read grayscale images
-	if (!isColor) {
-		throw PfmIOException("Grayscale data not yet supported");
-	}
+    const int numChannels = isColor ? 3 : 1;
 
 	// Allocate one full scanline
-	const size_t scanline_len = img.Width() * 3 * sizeof(float);
-	float *buffer = new float[scanline_len];
+	const size_t scanline_len = img.Width() * numChannels * sizeof(float);
+    float *buffer = new float[scanline_len];
+    if (buffer == NULL) {
+        throw PfmIOException("Couldn't allocate the temporary buffer.");
+    }
 
 	for (int h = 0; h < img.Height(); ++h) {
 		is.read((char*)buffer, scanline_len);
 		if ( is.fail() ) {
-			delete [] buffer;
-			throw PfmIOException("Couldn't read all the scanline data ");
+            delete [] buffer;
+			throw PfmIOException("Couldn't read all the scanline data.");
 		}
 
 		if (swapBytes) {
-			swapByteOrder((unsigned int *)buffer, img.Width() * 3);
+			swapByteOrder((unsigned int *)buffer, img.Width() * numChannels);
 		}
 
 		Rgba32F *ptr = img.GetScanlinePointer(h, BottomUp);
-		for (int i = 0; i < img.Width(); ++i) {
-			const int idx = i*3;
-			ptr[i].set(buffer[idx], buffer[idx+1], buffer[idx+2]);
-		}
+        if (isColor) {
+		    for (int i = 0; i < img.Width(); ++i) {
+			    const int idx = i*3;
+			    ptr[i].set(buffer[idx], buffer[idx+1], buffer[idx+2]);
+		    }
+        } else {
+            for (int i = 0; i < img.Width(); ++i) {
+			    const float v = buffer[i];
+                ptr[i].set(v,v,v);
+		    }
+        }
 	}
-
 	delete [] buffer;
 }
 

@@ -163,13 +163,10 @@ namespace pcg {
 			__m128 mask = _mm_cmpeq_ps(a, b);
 			const unsigned long long *ptr = 
 				reinterpret_cast<const unsigned long long *>(&mask);
-			return (~(ptr[0] & ptr[1])) == 0;
+			return (ptr[0] & ptr[1]) == ~0;
 		}
-		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) { 
-			__m128 mask = _mm_cmpeq_ps(a, b);
-			const unsigned long long *ptr = 
-				reinterpret_cast<const unsigned long long *>(&mask);
-			return (ptr[0] | ptr[1]) == 0;
+		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) {
+            return !(operator== (a, b));
 		}
 
 		///* Arithmetic Operators */
@@ -186,6 +183,25 @@ namespace pcg {
 		Rgba32F& operator &=(const Rgba32F &a) { return *this = _mm_and_ps(rgba,a); }
 		Rgba32F& operator |=(const Rgba32F &a) { return *this = _mm_or_ps (rgba,a); }
 		Rgba32F& operator ^=(const Rgba32F &a) { return *this = _mm_xor_ps(rgba,a); }
+
+        ///* new and delete, so that they provide the proper alignment */
+        static void* operator new (size_t size) {
+            void *ptr = pcg::alloc_align<Rgba32F> (16);
+            return ptr;
+        }
+
+        static void operator delete (void *p) {
+            pcg::free_align (p);
+        }
+
+        static void* operator new[] (size_t size) {
+            void *ptr = pcg::alloc_align<Rgba32F> (16, size);
+            return ptr;
+        }
+
+        static void operator delete[] (void* p) {
+            pcg::free_align (p);
+        }
 
 		// Absolute value, by clearing the sign on all four floats
 		static Rgba32F abs(const Rgba32F &a) {

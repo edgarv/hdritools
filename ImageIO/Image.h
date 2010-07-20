@@ -15,13 +15,6 @@
 	#define PCG_IMAGE_CRAZY_TEMPLATES 0
 #endif
 
-/* In Linux memory is not automagically align into 16-bytes */
-#if defined( __GNUC__ ) && !defined(__APPLE__)
-#define USE_MEMALIGN 1
-#else
-#define USE_MEMALIGN 0
-#endif
-
 #include <cstdlib>
 #include <cassert>
 
@@ -119,16 +112,14 @@ namespace pcg {
 
 #endif /* PCG_IMAGE_CRAZY_TEMPLATES */
 
-		// Helper function to allocate the memory: GCC's new does not respect
-		// the alignment as it should
+		// Helper function to allocate the memory. It assumes that the alignment
+        // is provided by T::operator new[] (size_t)
 		inline void alloc() {
-		#if USE_MEMALIGN
-			if (posix_memalign ((void**)&(this->d), 16, w*h*sizeof(T)) != 0) {
-				throw RuntimeException("Couldn't allocate the memory for the image");
-			}
-		#else
 			this->d = new T[w*h];
-		#endif
+            if (this->d == NULL) {
+                throw RuntimeException("Couldn't allocate the memory "
+                    "for the image");
+            }
 		}
 
 	public:
@@ -142,6 +133,7 @@ namespace pcg {
 		// Creates a new image allocating the required space
 		Image(int w, int h) : d(NULL), mode(S) {
 			assert(w > 0 && h > 0);
+            assert(((long long)w)*h <= 0x7fffffff);
 			this->w = w;
 			this->h = h;
 			alloc();
@@ -164,11 +156,7 @@ namespace pcg {
 		// Deallocates the memory and resets the image dimensions to 0
 		void Clear() {
 			if(d != NULL) {
-			#if USE_MEMALIGN
-				free(d);
-			#else
 				delete [] d;
-			#endif
 			}
 			d = 0;
 			w = h = 0;
@@ -181,12 +169,7 @@ namespace pcg {
 #if PCG_IMAGE_CRAZY_TEMPLATES
 			return ScanLineGetter<S>::ElementAt(i, j, mode, this);
 #else
-			if (mode == S) {
-				return d[w*j + i];
-			}
-			else {
-				return d[(h-j-1)*w + i];
-			}
+            return (mode == S) ? d[w*j + i] : d[(h-j-1)*w + i];
 #endif
 		}
 
@@ -236,7 +219,7 @@ namespace pcg {
 		ScanLineMode GetMode() const { return S; }
 
 		// Gets a pointer to the beginning of the j-th scanline in the specified mode.
-		// By default the mode is the same of the image. You should not use data throught
+		// By default the mode is the same of the image. You should not use data through
 		// this pointer for more than a scanline! Instead get a new pointer to the next
 		// scanline using this method
 		T* GetScanlinePointer(int j, ScanLineMode mode = S) const {
@@ -246,12 +229,7 @@ namespace pcg {
 			return ScanLineGetter<S>::GetScanline(j, mode, this);
 #else
 			// We only have two modes, so this works nicely
-			if (mode == S) {
-				return &(d[j * w]);
-			}
-			else {
-				return &(d[(h - j - 1) * w]);
-			}
+            return (mode == S) ? &(d[j * w]) : &(d[(h - j - 1) * w]);
 #endif
 		}
 
