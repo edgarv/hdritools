@@ -100,7 +100,7 @@ int rgbeions::readHeader(istream &is, int &width, int &height, rgbe_header_info 
 	}
 	else {
 		info.setValidProgramType(true);
-		for(i=0;i<sizeof(info.programtype)-1;i++) {
+		for(i=0; i < static_cast<int>(sizeof(info.programtype))-1; i++) {
 			if ((buf[i+2] == 0) || isspace(buf[i+2]))
 				break;
 			info.programtype[i] = buf[i+2];

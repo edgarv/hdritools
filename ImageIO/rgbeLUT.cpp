@@ -30,8 +30,8 @@ int main() {
 
 	for (int i = 0; i < iMax; i++)
 	{
-		float f = (float)i;
-		unsigned int val = *reinterpret_cast<unsigned int*>(&f);
+		union { float f; unsigned int val; };
+		f = static_cast<float>(i);
 		cout << "0x" << setfill ('0') << setw (8) << val << ", ";
 
 		if (i % 4 == 3)
@@ -52,8 +52,8 @@ int main() {
 
 	for (int i = 0; i < iMax; i++)
 	{
-		float f = i > 0 ? ldexp(1.0f,i-(128+8)) : 0.0f;
-		unsigned int val = *reinterpret_cast<unsigned int*>(&f);
+		union { float f; unsigned int val; };
+		f = i > 0 ? ldexp(1.0f,i-(128+8)) : 0.0f;
 		cout << "0x" << setfill ('0') << setw (8) << val << ", ";
 
 		if (i % 4 == 3)

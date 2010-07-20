@@ -13,9 +13,10 @@ using std::endl;
 ZipfileInputFilter::ZipfileInputFilter(const vector<string> &zipfiles, 
 									   const string &format, int filenameOffset) : 
 	filter(/*is_serial=*/true),
-	zipfiles(zipfiles), zipfile(NULL),
-	offset(filenameOffset),
-	formatStr(format.c_str())
+	zipfiles(zipfiles),
+	formatStr(format.c_str()),
+	zipfile(NULL),
+	offset(filenameOffset)
 {
 	filename = this->zipfiles.begin();
 }

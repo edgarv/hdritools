@@ -21,11 +21,11 @@ using namespace pcg;
 
 
 MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) : 
-    QMainWindow(parent), 
-    app(application),
-    scaleFactor(1.0f), minScaleFactor(1.0f/512), maxScaleFactor(64.0f),
+    QMainWindow(parent),
     hdrDisplay(NULL), pixInfoDialog(NULL),
-    openFileDir(QDir::currentPath())
+    openFileDir(QDir::currentPath()),
+    scaleFactor(1.0f), minScaleFactor(1.0f/512), maxScaleFactor(64.0f),
+    app(application)
 {
     // This method ONLY configures the GUI as in Qt Designer
     setupUi(this);

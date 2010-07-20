@@ -147,8 +147,15 @@ namespace pngio_internal {
 	// Helper functions
 	inline bool isLittleEndian()
 	{
-		const char swapTest[2] = { 1, 0 };
-		return (*reinterpret_cast<const short*>(swapTest)) == 1;
+#if (defined(_WIN32) || defined(__i386__) || defined(__x86_64__) || defined(__LITTLE_ENDIAN__))
+		return true;
+#elif defined(__BIG_ENDIAN__)
+		return false;
+#else
+		union { int i; char c[4]; };
+		i = 1;
+		return c[0] != 0;
+#endif
 	}
 
 }} /* End of private namespace */

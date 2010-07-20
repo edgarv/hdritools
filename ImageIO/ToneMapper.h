@@ -77,8 +77,8 @@ namespace pcg {
 		// Constructor which takes an specific exposure, and uses sRGB instead of a gamma curve.
 		// If sRGB is disabled afterwards, the default gamma is 2.2
 		ToneMapper(float exposure, unsigned short size) : lut(NULL), lutSize(size & (~0x3)),
-			useSRGB(true),
-			gamma(2.2f), invGamma(1.0f/2.2f)
+			gamma(2.2f), invGamma(1.0f/2.2f),
+			useSRGB(true)
 		{
 			if (lutSize == 0) {
 				throw IllegalArgumentException("Illegal LUT size of 0");

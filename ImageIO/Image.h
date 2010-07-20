@@ -136,11 +136,11 @@ namespace pcg {
 
 		// Default constructor: creates an empty image. To do anything
 		// useful afterwards you need to use the Alloc(int,int) method.
-		Image() : w(0), h(0), d(NULL), mode(S) {
+		Image() : d(NULL), w(0), h(0), mode(S) {
 		}
 
 		// Creates a new image allocating the required space
-		Image(int w, int h) : mode(S) {
+		Image(int w, int h) : d(NULL), mode(S) {
 			assert(w > 0 && h > 0);
 			this->w = w;
 			this->h = h;

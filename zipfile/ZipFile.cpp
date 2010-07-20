@@ -55,7 +55,7 @@ void ZipFile::close() {
 	if (isOpen) {
 		unzCloseCurrentFile(m_uzFile);
 
-		int nRet = unzClose(m_uzFile);
+		unzClose(m_uzFile);
 		m_uzFile = NULL;
 
 		if (zstreambuf != NULL) {
@@ -174,8 +174,8 @@ ZipEntry* ZipFile::GetNextEntry()
 	entry->method = uzfi.compression_method;
 	entry->size = uzfi.uncompressed_size;
 	entry->time = uzfi.dosDate;
-	entry->isDirectory = (uzfi.external_fa & FILE_ATTRIBUTE_DIRECTORY) == 
-		                 FILE_ATTRIBUTE_DIRECTORY;
+	entry->isDirectory = (uzfi.external_fa & (uLong)FILE_ATTRIBUTE_DIRECTORY) == 
+		                 (uLong)FILE_ATTRIBUTE_DIRECTORY;
 
 	return entry;
 }

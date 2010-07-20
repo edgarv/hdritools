@@ -4,9 +4,11 @@
 int main(int argc, char **argv)
 {
     time_t ltime;
-	struct tm *today;
-    struct tm timebuf;
+    struct tm *today;
     FILE *of;
+#if _MSC_VER >= 1400
+    struct tm timebuf;
+#endif
 
     if (argc != 2) {
         of = stdout;

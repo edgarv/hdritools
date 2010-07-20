@@ -12,8 +12,8 @@
 
 
 HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
-    scaleFactor(1), toneMapper(0.0f, 4096), needsToneMap(true),
-    dataProvider(hdrImage, ldrImage)
+    toneMapper(0.0f, 4096), dataProvider(hdrImage, ldrImage),
+    scaleFactor(1), needsToneMap(true)
 {
     // By default we want to receive events whenever the mouse moves around
     setMouseTracking(true);

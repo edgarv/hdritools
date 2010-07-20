@@ -124,13 +124,12 @@ namespace pcg {
 		public:
 			Comparator(ImageComparator::Type type, Image<Rgba32F, S> &dest, 
 				const Image<Rgba32F, S> &src1, const Image<Rgba32F, S> &src2) :
-				type(type), dest(dest), src1(src1), src2(src2) {}
+				src1(src1), src2(src2), dest(dest), type(type) {}
 
 			// Linear-style operator (one pixel after the other)
 			void operator()(const blocked_range<int>& r) const {
-
 				const __m128i alphaKillInt = _mm_set_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0);
-				const Rgba32F alphaKill = *(const Rgba32F*)&alphaKillInt;
+				const Rgba32F alphaKill = _mm_castsi128_ps(alphaKillInt);
 
 				// TODO Use templates to remove the conditional at compile-time
 				switch (type) {

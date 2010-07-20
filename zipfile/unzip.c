@@ -207,6 +207,7 @@ local int unzlocal_getShort (pzlib_filefunc_def,filestream,pX)
     int i;
     int err;
 
+    i = 0;
     err = unzlocal_getByte(pzlib_filefunc_def,filestream,&i);
     x = (uLong)i;
 
@@ -235,6 +236,7 @@ local int unzlocal_getLong (pzlib_filefunc_def,filestream,pX)
     int i;
     int err;
 
+    i = 0;
     err = unzlocal_getByte(pzlib_filefunc_def,filestream,&i);
     x = (uLong)i;
 
@@ -607,11 +609,12 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
 
 
     /* we check the magic */
-    if (err==UNZ_OK)
+    if (err==UNZ_OK) {
         if (unzlocal_getLong(&s->z_filefunc, s->filestream,&uMagic) != UNZ_OK)
             err=UNZ_ERRNO;
         else if (uMagic!=0x02014b50)
             err=UNZ_BADZIPFILE;
+    }
 
     if (unzlocal_getShort(&s->z_filefunc, s->filestream,&file_info.version) != UNZ_OK)
         err=UNZ_ERRNO;
@@ -687,11 +690,12 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
         else
             uSizeRead = extraFieldBufferSize;
 
-        if (lSeek!=0)
+        if (lSeek!=0) {
             if (ZSEEK(s->z_filefunc, s->filestream,lSeek,ZLIB_FILEFUNC_SEEK_CUR)==0)
                 lSeek=0;
             else
                 err=UNZ_ERRNO;
+	}
         if ((file_info.size_file_extra>0) && (extraFieldBufferSize>0))
             if (ZREAD(s->z_filefunc, s->filestream,extraField,uSizeRead)!=uSizeRead)
                 err=UNZ_ERRNO;
@@ -712,11 +716,12 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
         else
             uSizeRead = commentBufferSize;
 
-        if (lSeek!=0)
+        if (lSeek!=0) {
             if (ZSEEK(s->z_filefunc, s->filestream,lSeek,ZLIB_FILEFUNC_SEEK_CUR)==0)
                 lSeek=0;
             else
                 err=UNZ_ERRNO;
+	}
         if ((file_info.size_file_comment>0) && (commentBufferSize>0))
             if (ZREAD(s->z_filefunc, s->filestream,szComment,uSizeRead)!=uSizeRead)
                 err=UNZ_ERRNO;
@@ -976,11 +981,12 @@ local int unzlocal_CheckCurrentFileCoherencyHeader (s,piSizeVar,
         return UNZ_ERRNO;
 
 
-    if (err==UNZ_OK)
+    if (err==UNZ_OK) {
         if (unzlocal_getLong(&s->z_filefunc, s->filestream,&uMagic) != UNZ_OK)
             err=UNZ_ERRNO;
         else if (uMagic!=0x04034b50)
             err=UNZ_BADZIPFILE;
+    }
 
     if (unzlocal_getShort(&s->z_filefunc, s->filestream,&uData) != UNZ_OK)
         err=UNZ_ERRNO;
@@ -1534,7 +1540,6 @@ extern int ZEXPORT unzGetGlobalComment (file, szComment, uSizeBuf)
     char *szComment;
     uLong uSizeBuf;
 {
-    int err=UNZ_OK;
     unz_s* s;
     uLong uReadThis ;
     if (file==NULL)

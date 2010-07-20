@@ -89,9 +89,8 @@ void Attributes::setFloatAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
 	void (*attribMethod)(Imf::Header &, const float &) ) 
 {
 	assert(attribMethod != NULL);
-	jfloat val = env->GetFloatField(instance, fid);
-	// Getting the bits
-	const unsigned int & bits = *reinterpret_cast<unsigned int*>(&val);
+	union {jfloat val; unsigned int bits;};
+	val = env->GetFloatField(instance, fid);
 	// Add if the value is not NaN nor INFINITY
 	if (bits != 0x7fc00000 && bits != 0x7f800000 && bits != 0xff800000) {
 		(*attribMethod)(header, val);

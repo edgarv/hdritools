@@ -17,8 +17,8 @@ string BatchToneMapper::defaultFormat;
 
 
 BatchToneMapper::BatchToneMapper(const vector<string>& files, bool bpp16) :
-toneMapper(LUT_SIZE), offset(0), tokens(0), useBpp16(bpp16),
-format(!bpp16 ? getDefaultFormat() : "png")
+offset(0), format(!bpp16 ? getDefaultFormat() : "png"),
+toneMapper(LUT_SIZE), tokens(0), useBpp16(bpp16)
 {
 	classifyFiles(files);
 
