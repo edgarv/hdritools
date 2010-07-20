@@ -2,6 +2,8 @@
 #ifndef PCG_RANDOMMT_H
 #define PCG_RANDOMMT_H
 
+#include <cstddef>
+
 // Helper wrapper class to use dSFMT
 class RandomMT
 {
@@ -16,7 +18,7 @@ public:
     }
 
     template <size_t N>
-    RandomMT(const unsigned int (&init_data)[N]) : 
+    RandomMT(const unsigned int (&seed_data)[N]) : 
     m_data(0), m_haveNextNextGaussian(false) {
         init (seed_data, N);
     }
