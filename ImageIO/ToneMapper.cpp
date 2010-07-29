@@ -317,8 +317,7 @@ namespace pcg {
 					for (int i = r.begin(); i != r.end(); ++i) {
 						ToneMapKernel(src[i], dest[i], expF, ones, zeros, lutQ);
 					}
-				}
-				else {
+				} else {
 
 					const Rgba32F qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1));
 
@@ -326,13 +325,11 @@ namespace pcg {
 						for (int i = r.begin(); i != r.end(); ++i) {
 							ToneMapKernel_sRGB(src[i], dest[i], expF, ones, zeros, qFactor);
 						}
-					}
-					else {
+					} else {
 						for (int i = r.begin(); i != r.end(); ++i) {
 							ToneMapKernel_gamma(src[i], dest[i], expF, ones, zeros, qFactor, tm.InvGamma());
 						}
 					}
-
 				}
 			}
 
@@ -345,11 +342,33 @@ namespace pcg {
 				const __m128 lutQ  = _mm_set1_ps((float)(tm.lutSize-1));
 				const Rgba32F expF = this->expF;
 
+                if (lut != NULL) {
+				    for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+					    for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
+						    ToneMapKernel(src.ElementAt(i,j, dest.GetMode()), dest.ElementAt(i,j), 
+							    expF, ones, zeros, lutQ);
+					    }
+				    }
+                } else {
 
-				for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
-					for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
-						ToneMapKernel(src.ElementAt(i,j, dest.GetMode()), dest.ElementAt(i,j), 
-							expF, ones, zeros, lutQ);
+					const Rgba32F qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1));
+
+					if (tm.isSRGB()) {
+						for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+					        for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
+							    ToneMapKernel_sRGB(src.ElementAt(i,j, dest.GetMode()),
+                                    dest.ElementAt(i,j),
+                                    expF, ones, zeros, qFactor);
+                            }
+						}
+					}
+					else {
+						for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+					        for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
+							    ToneMapKernel_gamma(src.ElementAt(i,j, dest.GetMode()),
+                                    dest.ElementAt(i,j), expF, ones, zeros, qFactor, tm.InvGamma());
+                            }
+						}
 					}
 				}
 
@@ -428,43 +447,63 @@ void ToneMapper::UpdateLUT() {
 // #################################################
 
 // Bgra8 pixels
-void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,
+                         const Image<Rgba32F, TopDown> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,
+                         const Image<Rgba32F, BottomUp> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest,
+                         const Image<Rgba32F, TopDown> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest,
+                         const Image<Rgba32F, BottomUp> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 
 // Rgba8 pixels
-void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,
+                         const Image<Rgba32F, TopDown> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,
+                         const Image<Rgba32F, BottomUp> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest,
+                         const Image<Rgba32F, TopDown> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
-void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut) const {
+void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest,
+                         const Image<Rgba32F, BottomUp> &src,
+                         bool useLut) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 
 // Rgba16 pixels
-void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const {
+void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,
+                         const Image<Rgba32F, TopDown> &src) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
-void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const {
+void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,
+                         const Image<Rgba32F, BottomUp> &src) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
-void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const {
+void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest,
+                         const Image<Rgba32F, TopDown> &src) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
-void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const {
+void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest,
+                         const Image<Rgba32F, BottomUp> &src) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
