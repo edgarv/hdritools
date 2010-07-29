@@ -9,6 +9,7 @@ set(SRCS
   Rgba32F_test.cpp
   rgbe_test.cpp
   ImageComparator_test.cpp
+  ToneMapper_test.cpp
   
   Timer.h Timer.cpp
   
