@@ -16,11 +16,27 @@
 #include <limits>
 #include <vector>
 
+
+// Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
+#define USE_PACKED_LUT 0
+
+
+#if USE_PACKED_LUT
+#if __STDC_VERSION__>=199901 || defined(__GNUC__)
+#include <stdint.h>
+#elif defined (_MSC_VER)
+typedef signed __int64       int64_t;
+typedef unsigned __int64     uint64_t;
+#endif
+#endif // USE_PACKED_LUT
+
+
 #if defined(_WIN32) && defined(__INTEL_COMPILER)
 # include <mathimf.h>
 #else
 # include <cmath>
 # if defined (_MSC_VER)
+
 
 namespace {
 
@@ -63,14 +79,175 @@ inline unsigned int floatToBits(float x) {
     return data.bits;
 }
 
+typedef std::numeric_limits<float> float_limits;
+
 inline bool isInvalidLuminance(float x) {
     // True for denormalized values, NaNs and infinity
 #if !defined(_MSC_VER) || defined(__INTEL_COMPILER)
     return isless(x, std::numeric_limits<float>::min()) || !isfinite(x);
 #else
-    return floatToBits(x)>=0x7f800000u || x < std::numeric_limits<float>::min();
+    return floatToBits(x)>=0x7f800000u || x < float_limits::min();
 #endif
 }
+
+
+
+// Helper function to fill the array of luminances. It converts the invalid
+// values to zero and returns the maximum, minimum and number of invalid values
+void 
+computeLuminance_scalar (const Rgba32F * PCG_RESTRICT pixels, size_t count,
+                         afloat_t * PCG_RESTRICT Lw,
+                         size_t &zero_count, float &Lmin, float &Lmax)
+{
+    zero_count = 0;
+    Lmin =  float_limits::infinity();
+    Lmax = -float_limits::infinity();
+    
+    const Rgba32F luminance_vec(0.27f, 0.67f, 0.06f, 0.0f);
+    for (size_t i = 0; i < count; ++i) {
+        __m128 dot_tmp = pixels[i] * luminance_vec;
+        dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+        dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+        _mm_store_ss(&Lw[i], dot_tmp);
+        // Flush all negatives, denorms, NaNs and infinity values to 0.0
+        if (isInvalidLuminance(Lw[i])) {
+            Lw[i] = 0.0f;
+            ++zero_count;
+        } else {
+            Lmin = Lw[i] < Lmin ? Lw[i] : Lmin;
+            Lmax = Lw[i] > Lmax ? Lw[i] : Lmax;
+        }
+    }
+}
+
+// Taken from the Intrinsics Guide for AVX. The same technique was seen as
+// a contribution to gcc by Apple (I think). The original macro in MSVC++ uses
+// shuffle instead
+#define INTEL_MM_TRANSPOSE4_PS(row0, row1, row2, row3) {  \
+            __m128 tmp3, tmp2, tmp1, tmp0;                \
+                                                          \
+            tmp0   = _mm_unpacklo_ps((row0), (row1));     \
+            tmp2   = _mm_unpacklo_ps((row2), (row3));     \
+            tmp1   = _mm_unpackhi_ps((row0), (row1));     \
+            tmp3   = _mm_unpackhi_ps((row2), (row3));     \
+                                                          \
+            (row0) = _mm_movelh_ps(tmp0, tmp2);           \
+            (row1) = _mm_movehl_ps(tmp2, tmp0);           \
+            (row2) = _mm_movelh_ps(tmp1, tmp3);           \
+            (row3) = _mm_movehl_ps(tmp3, tmp1);           \
+        }
+
+
+
+// Idem, but with SSE, operating in 4 pixels at a time
+void
+computeLuminance (const Rgba32F * PCG_RESTRICT pixels, const size_t count,
+                  afloat_t * PCG_RESTRICT Lw,
+                  size_t &zero_count, float &Lmin, float &Lmax)
+{
+    // Factors for computing the luminance (decent compilers should inline this)
+    static const float LUM_R = 0.27f;
+    static const float LUM_G = 0.67f;
+    static const float LUM_B = 0.06f;
+
+    zero_count = 0;
+    Lmin =  float_limits::infinity();
+    Lmax = -float_limits::infinity();
+
+    // Helper data
+    static const Rgba32F vec_LUM_R = Rgba32F(LUM_R);
+    static const Rgba32F vec_LUM_G = Rgba32F(LUM_G);
+    static const Rgba32F vec_LUM_B = Rgba32F(LUM_B);
+    static const __m128i MASK_NAN  = _mm_set1_epi32 (0x7f800000);
+    static const __m128 vec_MINVAL = _mm_set1_ps(float_limits::min());
+    static const __m128 ZERO = _mm_setzero_ps();
+
+    // LUT for counting the number of zero-ed elements given the 4x32bit masks
+    // where a 0x0 means the element was converted to zero.
+    // The highest 4bits contain the count for 0xFF, the lowest for 0x0
+#if USE_PACKED_LUT
+    static const uint64_t packed_lut = 0x112122312232334ULL;
+#else
+    static const int LUT[] = { 4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0 };
+#endif
+
+    // Vector minimum and max
+    union { __m128 v; float f[4]; } vec_min;
+    union { __m128 v; float f[4]; } vec_max;
+    vec_min.v = _mm_set_ps1 (Lmin);
+    vec_max.v = _mm_set_ps1 (Lmax);
+
+    // Main SSE loop, doing groups of 4 pixels at a time
+    for (size_t off = 0; off < (count & ~0x3); off += 4)
+    {
+        // Load the next 4 pixels and transpose them
+        __m128 p0 = pixels[off];
+        __m128 p1 = pixels[off+1];
+        __m128 p2 = pixels[off+2];
+        __m128 p3 = pixels[off+3];
+        INTEL_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
+
+        // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
+        const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
+
+        // Create a mask to zero out invalid pixels
+        // !(vec_Lw < vec_MINVAL) ? 0xffffffff : 0x0
+        __m128 mask_min = _mm_cmpnlt_ps (vec_Lw, vec_MINVAL);
+
+        // (0x7f800000 > vec_Lw) ? 0xffff : 0, then expand to 32 bits
+        __m128 mask_nan = _mm_cmpneq_ps(ZERO, 
+            _mm_castsi128_ps(_mm_cmpgt_epi32(MASK_NAN,
+                             _mm_castps_si128(vec_Lw))));
+
+        // Combine the masks
+        __m128 mask = _mm_and_ps(mask_min, mask_nan);
+
+        // Apply the mask and store the result
+        const __m128 result = _mm_and_ps (vec_Lw, mask);
+        _mm_stream_ps (Lw + off, result);
+
+        // Add the number of zeros
+        const int lut_index =  _mm_movemask_ps (mask);
+#if USE_PACKED_LUT
+        zero_count += (packed_lut >> (lut_index*4)) & 0xF;
+#else
+        zero_count += LUT[lut_index];
+#endif
+
+        // Update the minimum and maximum vectors, only the valid elements
+        // SSE4.1 has a nice "blendps" instruction, but I can't use here
+        __m128 result_min = _mm_or_ps(result, _mm_andnot_ps(mask, vec_min.v));
+        vec_min.v = _mm_min_ps (vec_min.v, result_min);
+        __m128 result_max = _mm_or_ps(result, _mm_andnot_ps(mask, vec_max.v));
+        vec_max.v = _mm_max_ps (vec_max.v, result_max);
+    }
+
+    // Accumulate the result for min & max
+    for (int i = 0; i < 4; ++i) {
+        Lmin = std::min (Lmin, vec_min.f[i]);
+        Lmax = std::max (Lmax, vec_max.f[i]);
+    }
+
+    // Do the remaining pixels in the normal way
+    if ((count & 0x3) != 0) {
+        static const Rgba32F luminance_vec(LUM_R, LUM_G, LUM_B, 0.0f);
+        for (size_t i = (count & ~0x3); i < count; ++i) {
+            __m128 dot_tmp = pixels[i] * luminance_vec;
+            dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+            dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+            _mm_store_ss(Lw+i, dot_tmp);
+            // Flush all negatives, denorms, NaNs and infinity values to 0.0
+            if (!isInvalidLuminance(Lw[i])) {
+                Lmin = Lw[i] < Lmin ? Lw[i] : Lmin;
+                Lmax = Lw[i] > Lmax ? Lw[i] : Lmax;
+            } else {
+                Lw[i] = 0.0f;
+                ++zero_count;
+            }
+        }
+    }
+}
+
 
 } // namespace
 
@@ -88,25 +265,9 @@ Reinhard02::EstimateParams (const Rgba32F * pixels, size_t count)
     afloat_t * PCG_RESTRICT Lw = luminances;
 
     // Compute the luminance
-    size_t zero_count = 0;
-    float Lmin =  std::numeric_limits<float>::infinity();
-    float Lmax = -std::numeric_limits<float>::infinity();
-    
-    const Rgba32F luminance_vec(0.27f, 0.67f, 0.06f, 0.0f);
-    for (size_t i = 0; i < count; ++i) {
-        __m128 dot_tmp = pixels[i] * luminance_vec;
-        dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-        dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-        _mm_store_ss(&Lw[i], dot_tmp);
-        // Flush all negatives, denorms, NaNs and infinity values to 0.0
-        if (isInvalidLuminance(Lw[i])) {
-            Lw[i] = 0.0f;
-            ++zero_count;
-        } else {
-            Lmin = Lw[i] < Lmin ? Lw[i] : Lmin;
-            Lmax = Lw[i] > Lmax ? Lw[i] : Lmax;
-        }
-    }
+    size_t zero_count;
+    float Lmin, Lmax;
+    computeLuminance (pixels, count, Lw, zero_count, Lmin, Lmax);
 
     size_t nonzero_off = 0;
     if (zero_count == count) {
