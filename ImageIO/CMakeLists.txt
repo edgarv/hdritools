@@ -29,6 +29,7 @@ set(SRCS
   RgbeIOPrivate.h
   sse_mathfun.h
   ToneMapper.h ToneMapper.cpp
+  Reinhard02.h Reinhard02.cpp
   PngIO.h PngIO.cpp
   ${LUT_DIRECTORY}/rgbeLUT.h
   Exception.h
@@ -48,6 +49,7 @@ set(SRCS_PUBLIC
   RgbeImage.h
   RgbeIO.h
   ToneMapper.h
+  Reinhard02.h
   StdAfx.h
   Exception.h
   PngIO.h

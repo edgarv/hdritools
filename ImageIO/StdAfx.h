@@ -29,5 +29,19 @@
 #include <ostream>
 #include <cassert>
 
+typedef float ALIGN16_BEG afloat_t ALIGN16_END;
+
+#if (!defined(__STDC_VERSION__)|| __STDC_VERSION__<199901) && !defined(__INTEL_COMPILER)
+# if defined(_MSC_VER)
+#  define PCG_RESTRICT __restrict
+# elif defined(__GNUC__)
+#  define PCG_RESTRICT __restrict__
+# else
+#  define PCG_RESTRICT
+# endif
+#else
+# define PCG_RESTRICT restrict
+#endif
+
 
 #endif /* PCG_STDAFX_H */

@@ -10,6 +10,7 @@ set(SRCS
   rgbe_test.cpp
   ImageComparator_test.cpp
   ToneMapper_test.cpp
+  Reinhard02Params_test.cpp
   
   Timer.h Timer.cpp
   
