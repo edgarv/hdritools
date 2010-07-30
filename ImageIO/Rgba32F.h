@@ -174,6 +174,15 @@ namespace pcg {
 		friend Rgba32F operator *(const Rgba32F &a, const Rgba32F &b) { return _mm_mul_ps(a,b); }
 		friend Rgba32F operator /(const Rgba32F &a, const Rgba32F &b) { return _mm_div_ps(a,b); }
 
+        friend Rgba32F operator +(const Rgba32F &a, float b) { return _mm_add_ps(a, _mm_set_ps1(b)); }
+		friend Rgba32F operator -(const Rgba32F &a, float b) { return _mm_sub_ps(a, _mm_set_ps1(b)); }
+		friend Rgba32F operator *(const Rgba32F &a, float b) { return _mm_mul_ps(a, _mm_set_ps1(b)); }
+		friend Rgba32F operator /(const Rgba32F &a, float b) { return _mm_div_ps(a, _mm_set_ps1(b)); }
+        friend Rgba32F operator +(float a, const Rgba32F &b) { return _mm_add_ps(b, _mm_set_ps1(a)); }
+		friend Rgba32F operator -(float a, const Rgba32F &b) { return _mm_sub_ps(b, _mm_set_ps1(a)); }
+		friend Rgba32F operator *(float a, const Rgba32F &b) { return _mm_mul_ps(b, _mm_set_ps1(a)); }
+		friend Rgba32F operator /(float a, const Rgba32F &b) { return _mm_div_ps(b, _mm_set_ps1(a)); }
+
 		Rgba32F& operator =(const Rgba32F &p)    { rgba = p.rgba; return *this; }
 		Rgba32F& operator *=(const Rgba32F &a) { return *this = _mm_mul_ps(rgba,a); }
 		Rgba32F& operator +=(const Rgba32F &a) { return *this = _mm_add_ps(rgba,a); }
@@ -182,6 +191,11 @@ namespace pcg {
 		Rgba32F& operator &=(const Rgba32F &a) { return *this = _mm_and_ps(rgba,a); }
 		Rgba32F& operator |=(const Rgba32F &a) { return *this = _mm_or_ps (rgba,a); }
 		Rgba32F& operator ^=(const Rgba32F &a) { return *this = _mm_xor_ps(rgba,a); }
+        
+        Rgba32F& operator *=(float x) { return *this = _mm_mul_ps(rgba, _mm_set_ps1(x)); }
+        Rgba32F& operator +=(float x) { return *this = _mm_add_ps(rgba, _mm_set_ps1(x)); }
+        Rgba32F& operator -=(float x) { return *this = _mm_sub_ps(rgba, _mm_set_ps1(x)); }
+        Rgba32F& operator /=(float x) { return *this = _mm_div_ps(rgba, _mm_set_ps1(x)); }
 
         ///* new and delete, so that they provide the proper alignment */
         static void* operator new (size_t size) {

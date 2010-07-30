@@ -290,6 +290,22 @@ TEST_F(Rgba32FTest, ComparisonOperators)
                                                               \
             m op ## = n;                                      \
             ASSERT_EQ(res, m);                                \
+                                                              \
+            const float s = rnd.nextFloat() * 8.0f;           \
+            setRnd(m, static_cast<float>(rnd.nextInt(8)+1));  \
+            res = m op s;                                     \
+            ASSERT_EQ(m.r() op s, res.r());                   \
+            ASSERT_EQ(m.g() op s, res.g());                   \
+            ASSERT_EQ(m.b() op s, res.b());                   \
+            ASSERT_EQ(m.a() op s, res.a());                   \
+            res = s op m;                                     \
+            ASSERT_EQ(m.r() op s, res.r());                   \
+            ASSERT_EQ(m.g() op s, res.g());                   \
+            ASSERT_EQ(m.b() op s, res.b());                   \
+            ASSERT_EQ(m.a() op s, res.a());                   \
+                                                              \
+            m op ## = s;                                      \
+            ASSERT_EQ(res, m);                                \
         }                                                     \
     }  
 
