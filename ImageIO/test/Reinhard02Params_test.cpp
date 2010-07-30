@@ -187,7 +187,7 @@ TEST_F(Reinhard02ParamsTest, TwoValid)
         Reinhard02::Params p = Reinhard02::EstimateParams(img);
         if (prob > 0.1) {
             ASSERT_LT (p.l_w, p.l_white);
-            ASSERT_NEAR (0.18f, p.key, 1e-4f);
+            ASSERT_NEAR (0.18f, p.key, 5e-3f);
             ASSERT_GT (p.key, 0.0f);
             ASSERT_LT (p.key, 1.0f);
         } else {

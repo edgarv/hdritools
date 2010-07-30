@@ -15,6 +15,7 @@
 
 #include <limits>
 #include <vector>
+#include <memory>
 
 
 // Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
@@ -73,13 +74,30 @@ using namespace pcg;
 namespace
 {
 
+typedef std::numeric_limits<float> float_limits;
+
+
+// Super basic auto_ptr kind of thing for aligned float memory
+class auto_afloat_ptr : public std::auto_ptr<float>
+{
+public:
+    auto_afloat_ptr(float * ptr = NULL) : std::auto_ptr<float>(ptr) {}
+
+    ~auto_afloat_ptr() {
+        if (get() != NULL) {
+            free_align (release());
+        }
+    }
+};
+
+
+
 inline unsigned int floatToBits(float x) {
     union { float f; unsigned int bits; } data;
     data.f = x;
     return data.bits;
 }
 
-typedef std::numeric_limits<float> float_limits;
 
 inline bool isInvalidLuminance(float x) {
     // True for denormalized values, NaNs and infinity
@@ -95,7 +113,7 @@ inline bool isInvalidLuminance(float x) {
 // Helper function to fill the array of luminances. It converts the invalid
 // values to zero and returns the maximum, minimum and number of invalid values
 void 
-computeLuminance_scalar (const Rgba32F * PCG_RESTRICT pixels, size_t count,
+computeLuminance_scalar (const Rgba32F* PCG_RESTRICT const pixels, size_t count,
                          afloat_t * PCG_RESTRICT Lw,
                          size_t &zero_count, float &Lmin, float &Lmax)
 {
@@ -141,7 +159,7 @@ computeLuminance_scalar (const Rgba32F * PCG_RESTRICT pixels, size_t count,
 
 // Idem, but with SSE, operating in 4 pixels at a time
 void
-computeLuminance (const Rgba32F * PCG_RESTRICT pixels, const size_t count,
+computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
                   afloat_t * PCG_RESTRICT Lw,
                   size_t &zero_count, float &Lmin, float &Lmax)
 {
@@ -249,67 +267,52 @@ computeLuminance (const Rgba32F * PCG_RESTRICT pixels, const size_t count,
 }
 
 
-} // namespace
 
-
-
-Reinhard02::Params
-Reinhard02::EstimateParams (const Rgba32F * pixels, size_t count)
+// Helper function to compact an array, moving all the zeros together.
+// Returns the position of the first non-zero element.
+// NOTE: The function assumes there is at least one zero in the array
+size_t compactZeros (afloat_t * Lw, const size_t count)
 {
-    // Allocate the array with the luminances
-    float *luminances = alloc_align<float> (16, count*sizeof(float));  
-    if (luminances == NULL) {
-        throw RuntimeException("Couldn't allocate the memory for the "
-            "luminance buffer");
-    }
-    afloat_t * PCG_RESTRICT Lw = luminances;
-
-    // Compute the luminance
-    size_t zero_count;
-    float Lmin, Lmax;
-    computeLuminance (pixels, count, Lw, zero_count, Lmin, Lmax);
-
     size_t nonzero_off = 0;
-    if (zero_count == count) {
-        // Abort if all the values are zero
-        free_align (luminances);
-        return Params(0.0f, 0.0f, 0.0f);
-    } else if (zero_count != 0) {
-        // Compact the array
-        float *begin = Lw;
-        const float *end = Lw + count;
-        // Find the first-non zero element
-        while (*begin == 0.0f) {
+    float *begin = Lw;
+    const float *end = Lw + count;
+    
+    // Find the first-non zero element
+    while (*begin == 0.0f) {
+        ++begin;
+        assert (begin != end);
+    }
+    for (float *next = begin + 1 ; ; ) {
+        // Find the next zero
+        while (next != end && *next != 0.0f) ++next;
+        if (next == end) {
+            break;
+        } else {
+            // Swap and advance begin
+            std::swap(*begin, *next);
             ++begin;
             assert (begin != end);
         }
-        for (float *next = begin + 1 ; ; ) {
-            // Find the next zero
-            while (next != end && *next != 0.0f) ++next;
-            if (next == end) {
-                break;
-            } else {
-                // Swap and advance begin
-                std::swap(*begin, *next);
-                ++begin;
-                assert (begin != end);
-            }
-        }
-        assert (end - begin > 0);
-        nonzero_off = begin - Lw;
     }
+    assert (end - begin > 0);
+    nonzero_off = begin - Lw;
+    return nonzero_off;
+}
 
 
-    // Build a histogram to extract the key using percentiles 1 to 99
-    const float Lmin_log = logf (Lmin);
-    const float Lmax_log = logf (Lmax);
+
+// Accumulate the logarithm of the given array of luminances. It builds an
+// histogram and also stores the log-luminances corresponding to the 1 and 99
+// percentiles thresholds
+float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
+                              const float * PCG_RESTRICT Lw_end,
+                              const float Lmin_log, const float Lmax_log,
+                              float &L1, float &L99)
+{
     const int resolution = 100;
     const int dynrange = static_cast<int> (ceil(1e-5 + Lmax_log - Lmin_log));
     const int num_bins = resolution * dynrange;
     std::vector<size_t> histogram(num_bins, 0);
-
-    float L1  = Lmin_log;
-    float L99 = Lmax_log;
 
     // This makes sure that epsilon is large enough so that it is not necessary
     // to guard for the corner case where Lmax_log will be mapped to N
@@ -323,13 +326,13 @@ Reinhard02::EstimateParams (const Rgba32F * pixels, size_t count)
     float L_sum;
     float L_sum_c = 0.0f;
     {
-        const float log_lum = logf(*(Lw + nonzero_off));
+        const float log_lum = logf(*Lw);
         L_sum = log_lum;
         const int bin_idx = static_cast<int>(res_factor * (log_lum - Lmin_log));
         assert (bin_idx >= 0 && bin_idx < num_bins);
         ++histogram[bin_idx];
     }
-    for (float * PCG_RESTRICT lum = Lw+nonzero_off+1; lum != Lw+count; ++lum) {
+    for (const float * PCG_RESTRICT lum = Lw+1; lum != Lw_end; ++lum) {
         const float log_lum = logf(*lum);
         const float y = log_lum  - L_sum_c;
         const float t = L_sum + y;
@@ -341,6 +344,7 @@ Reinhard02::EstimateParams (const Rgba32F * pixels, size_t count)
     }
 
     const float inv_res = (epsilon + (Lmax_log - Lmin_log)) / num_bins;
+    const ptrdiff_t count = Lw_end - Lw;
     const ptrdiff_t threshold = static_cast<ptrdiff_t> (0.01 * count);
     for (ptrdiff_t sum = 0, i = histogram.size() - 1; i >= 0; --i) {
         sum += histogram[i];
@@ -359,47 +363,96 @@ Reinhard02::EstimateParams (const Rgba32F * pixels, size_t count)
         }
     }
 
+    return L_sum;
+}
+
+
+
+// Helper function: accumulates the log-luminance beyond a given threshold.
+// Returns the accumulation of those log-luminances and stores the number
+// of elements added
+float sumBeyondThreshold(const float * PCG_RESTRICT const Lw,
+                         const float * PCG_RESTRICT const Lw_end,
+                         const float lum_cutoff, ptrdiff_t &removed_count)
+{
+    removed_count = 0;
+    const ptrdiff_t count = Lw_end - Lw;
+    const ptrdiff_t threshold = static_cast<ptrdiff_t> (0.01 * count);
+
+    // Also use a Kahan summation
+    float removed_sum = 0.0f;
+    float removed_c = 0.0f;
+
+    const float * PCG_RESTRICT lum = Lw;
+    // Iterate until finding the first element
+    for ( ; lum != Lw_end && removed_count < threshold; ++lum) {
+        if (*lum > lum_cutoff) {
+             ++removed_count;
+             removed_sum = logf (*lum);
+             break;
+         }
+    }
+
+    // Continue using Kahan
+    for ( ; lum != Lw_end && removed_count < threshold; ++lum) {
+        if (*lum > lum_cutoff) {
+             ++removed_count;
+             const float val = logf (*lum);
+             const float y = val - removed_c;
+             const float t = removed_sum + y;
+             removed_c = (t - removed_sum) - y;
+             removed_sum = t;
+         }
+    }
+    return removed_sum;
+}
+
+
+} // namespace
+
+
+
+Reinhard02::Params
+Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
+{
+    // Allocate the array with the luminances
+    afloat_t * PCG_RESTRICT Lw = alloc_align<float> (16, count*sizeof(float));  
+    if (Lw == NULL) {
+        throw RuntimeException("Couldn't allocate the memory for the "
+            "luminance buffer");
+    }
+    // Use an special auto pointer to get rid of the aligned buffer
+    auto_afloat_ptr Lw_autoptr (Lw);
+
+    // Compute the luminance
+    size_t zero_count;
+    float Lmin, Lmax;
+    computeLuminance (pixels, count, Lw, zero_count, Lmin, Lmax);
+
+    // Abort if all the values are zero
+    if (zero_count == count) {
+        return Params(0.0f, 0.0f, 0.0f);
+    }
+    const size_t nonzero_off = zero_count==0 ? 0 : compactZeros(Lw, count);
+
+    // Build a histogram to extract the key using percentiles 1 to 99
+    const float Lmin_log = logf (Lmin);
+    const float Lmax_log = logf (Lmax);
+    float L1  = Lmin_log;
+    float L99 = Lmax_log;
+    float L_sum = accumulateWithHistogram(Lw + nonzero_off, Lw + count,
+        Lmin_log, Lmax_log, L1, L99);
+
     // Remove the value from the logaritmic total L_sum 
     // if log(luminance) > L99_real ---> luminance > exp(L99_real)
     // where L99_real = exp(L99)
     // We know for sure that all such values are in the last percentile, so
     // can avoid reading everything
     ptrdiff_t removed_count = 0;
-    {
-        const float lum_cutoff = expf (expf (L99));
-
-        // Also use a Kahan summation
-        float removed_sum = 0.0f;
-        float removed_c = 0.0f;
-
-        float * PCG_RESTRICT lum = Lw + nonzero_off;
-        // Iterate until finding the first element
-        for ( ; lum != Lw + count && removed_count < threshold; ++lum) {
-            if (*lum > lum_cutoff) {
-                 ++removed_count;
-                 removed_sum = logf (*lum);
-                 break;
-             }
-        }
-
-        // Continue using Kahan
-        for ( ; lum != Lw + count && removed_count < threshold; ++lum) {
-            if (*lum > lum_cutoff) {
-                 ++removed_count;
-                 const float val = logf (*lum);
-                 const float y = val - removed_c;
-                 const float t = removed_sum + y;
-                 removed_c = (t - removed_sum) - y;
-                 removed_sum = t;
-             }
-        }
-        L_sum -= removed_sum;
-    }
-
-    // The temporary buffer is no longer necessary
-    free_align (luminances);
-    luminances = NULL;
-    Lw = NULL;
+    const float lum_cutoff = expf (expf (L99));
+    const float removed_sum = sumBeyondThreshold (Lw + nonzero_off, Lw + count,
+        lum_cutoff, removed_count);
+    L_sum -= removed_sum;
 
     // Average log luminance (equation 1 of the JGT paper)
     const float Lw_log = L_sum / (count - nonzero_off - removed_count);
