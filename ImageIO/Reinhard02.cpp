@@ -189,14 +189,10 @@ computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
     static const int LUT[] = { 4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0 };
 #endif
 
-    // Vector minimum and max
-    union { __m128 v; float f[4]; } vec_min;
-    union { __m128 v; float f[4]; } vec_max;
-    vec_min.v = _mm_set_ps1 (Lmin);
-    vec_max.v = _mm_set_ps1 (Lmax);
+    const size_t count_sse = count & ~0x3;
 
-    // Main SSE loop, doing groups of 4 pixels at a time
-    for (size_t off = 0; off < (count & ~0x3); off += 4)
+    // Raw luminance SSE loop, doing groups of 4 pixels at a time
+    for (size_t off = 0; off < count_sse; off += 4)
     {
         // Load the next 4 pixels and transpose them
         __m128 p0 = pixels[off];
@@ -207,6 +203,19 @@ computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
 
         // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
         const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
+
+        // Store. Note that it contains NaN and Inf!
+        _mm_store_ps(Lw + off, vec_Lw);
+    }
+
+    // Validation and min/max update loop, doing groups of 4 pixels at a time
+    union { __m128 v; float f[4]; } vec_min;
+    union { __m128 v; float f[4]; } vec_max;
+    vec_min.v = _mm_set_ps1 (Lmin);
+    vec_max.v = _mm_set_ps1 (Lmax);
+    for (size_t off = 0; off < count_sse; off += 4)
+    {
+        const __m128 vec_Lw = _mm_load_ps(Lw + off);
 
         // Create a mask to zero out invalid pixels
         // !(vec_Lw < vec_MINVAL) ? 0xffffffff : 0x0
@@ -222,7 +231,7 @@ computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
 
         // Apply the mask and store the result
         const __m128 result = _mm_and_ps (vec_Lw, mask);
-        _mm_stream_ps (Lw + off, result);
+        _mm_store_ps (Lw + off, result);
 
         // Add the number of zeros
         const int lut_index =  _mm_movemask_ps (mask);
@@ -247,9 +256,9 @@ computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
     }
 
     // Do the remaining pixels in the normal way
-    if ((count & 0x3) != 0) {
+    if (count != count_sse) {
         static const Rgba32F luminance_vec(LUM_R, LUM_G, LUM_B, 0.0f);
-        for (size_t i = (count & ~0x3); i < count; ++i) {
+        for (size_t i = count_sse; i < count; ++i) {
             __m128 dot_tmp = pixels[i] * luminance_vec;
             dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
             dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
