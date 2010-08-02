@@ -310,6 +310,25 @@ size_t compactZeros (afloat_t * Lw, const size_t count)
 
 
 
+// This method only accumulates the logarithm of the luminance
+float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
+                            const float * PCG_RESTRICT Lw_end)
+{
+    // Use a Kahan summation
+    float L_sum   = 0.0f;
+    float L_sum_c = 0.0f;
+    for (const float * PCG_RESTRICT lum = Lw; lum != Lw_end; ++lum) {
+        const float log_lum = logf(*lum);
+        const float y = log_lum  - L_sum_c;
+        const float t = L_sum + y;
+        L_sum_c = (t - L_sum) - y;
+        L_sum = t;
+    }
+
+    return L_sum;
+}
+
+
 // Accumulate the logarithm of the given array of luminances. It builds an
 // histogram and also stores the log-luminances corresponding to the 1 and 99
 // percentiles thresholds
@@ -458,8 +477,9 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     const float Lmax_log = logf (Lmax);
     float L1  = Lmin_log;
     float L99 = Lmax_log;
-    float L_sum = accumulateWithHistogram(Lw + nonzero_off, Lw + count,
-        Lmin_log, Lmax_log, L1, L99);
+    float L_sum = (Lmax_log - Lmin_log) > 5e-8 ?
+        accumulateWithHistogram(Lw_nonzero, Lw_end, Lmin_log, Lmax_log, L1, L99)
+      : accumulateNoHistogram(Lw_nonzero, Lw_end);
 
     // Remove the value from the logaritmic total L_sum 
     // if log(luminance) > L99_real ---> luminance > exp(L99_real)
