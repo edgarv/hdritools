@@ -12,6 +12,7 @@ set(SRCS
   ToneMapper_test.cpp
   Reinhard02Params_test.cpp
   
+  tableau_f32.h tableau_f32.cpp
   Timer.h Timer.cpp
   
   # Helper MT components

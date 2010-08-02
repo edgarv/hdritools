@@ -10,6 +10,7 @@
 #include <limits>
 
 #include "dSFMT/RandomMT.h"
+#include "tableau_f32.h"
 
 
 class Reinhard02ParamsTest : public ::testing::Test
@@ -54,6 +55,20 @@ typedef pcg::Image<pcg::Rgba32F> FloatImage;
 typedef std::numeric_limits<float> float_limits;
 
 using pcg::Reinhard02;
+
+
+TEST_F(Reinhard02ParamsTest, Tableau)
+{
+    FloatImage img;
+    pcg::Tableau::fill (img);
+    Reinhard02::Params p = Reinhard02::EstimateParams(img);
+
+    // Values calculated in matlab
+    ASSERT_NEAR (p.key,      0.1977469f, 5e-6);
+    ASSERT_NEAR (p.l_white, 53.3945084f, 5e-6);
+    ASSERT_NEAR (p.l_w,      0.2085711f, 5e-6);
+}
+
 
 
 TEST_F(Reinhard02ParamsTest, Basic)
