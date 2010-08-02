@@ -114,6 +114,36 @@ TEST_F(Reinhard02ParamsTest, AllInvalid)
 
 
 
+TEST_F(Reinhard02ParamsTest, SomeInvalid)
+{
+    FloatImage img(IMG_W, IMG_H);
+    for (int k = 0; k < NUM_RUNS; ++k) {
+        fillImage (img);
+        int numBad=static_cast<int> ((1e-1 - 5e-2*rnd.nextDouble())*img.Size());
+        for (int i = 0; i < numBad; ++i) {
+            float val = 0.0f;
+            const double p = rnd.nextDouble();
+            if (p < 0.25) {
+                val = -rnd.nextFloat();
+            } else if (p < 0.5) {
+                val = float_limits::quiet_NaN();
+            } else if (p < 0.75) {
+                val = -float_limits::infinity();
+            } else if (p < 0.9) {
+                val = float_limits::infinity();
+            }
+            img[i].setAll (val);
+        }
+
+        Reinhard02::Params p = Reinhard02::EstimateParams(img);
+        ASSERT_LT (p.l_w, p.l_white);
+        ASSERT_GT (p.key, 0.1f);
+        ASSERT_LT (p.key, 0.4f);
+    }
+}
+
+
+
 TEST_F(Reinhard02ParamsTest, OneValid)
 {
     FloatImage img(IMG_W, IMG_H);
