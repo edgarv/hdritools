@@ -325,23 +325,16 @@ float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
 
     // This makes sure that epsilon is large enough so that it is not necessary
     // to guard for the corner case where Lmax_log will be mapped to N
-    // There must be an analytical way of doing this, but is decent enough
+    // There must be an analytical way of doing this, but this is decent enough
     float epsilon = 1.9073486328125e-6f;
     while (static_cast<int>((num_bins/(epsilon+(Lmax_log-Lmin_log))) * 
         (Lmax_log-Lmin_log)) >= num_bins) epsilon *= 2.0f;
 
     const float res_factor = num_bins / (epsilon + (Lmax_log - Lmin_log));
     // Use a Kahan summation
-    float L_sum;
+    float L_sum   = 0.0f;
     float L_sum_c = 0.0f;
-    {
-        const float log_lum = logf(*Lw);
-        L_sum = log_lum;
-        const int bin_idx = static_cast<int>(res_factor * (log_lum - Lmin_log));
-        assert (bin_idx >= 0 && bin_idx < num_bins);
-        ++histogram[bin_idx];
-    }
-    for (const float * PCG_RESTRICT lum = Lw+1; lum != Lw_end; ++lum) {
+    for (const float * PCG_RESTRICT lum = Lw; lum != Lw_end; ++lum) {
         const float log_lum = logf(*lum);
         const float y = log_lum  - L_sum_c;
         const float t = L_sum + y;
@@ -352,6 +345,9 @@ float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
         ++histogram[bin_idx];
     }
 
+    // Consult the histogram to get the L1 and L99 positions
+    _mm_prefetch ((char*)(&histogram[num_bins- 8]),   _MM_HINT_T0);
+    _mm_prefetch ((char*)(&histogram[num_bins - 16]), _MM_HINT_T0);
     const float inv_res = (epsilon + (Lmax_log - Lmin_log)) / num_bins;
     const ptrdiff_t count = Lw_end - Lw;
     const ptrdiff_t threshold = static_cast<ptrdiff_t> (0.01 * count);
@@ -363,6 +359,7 @@ float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
             break;
         }
     }
+    _mm_prefetch ((char*)(&histogram[0]), _MM_HINT_T0);
     for (ptrdiff_t sum = 0, i = 0; (size_t)i < histogram.size() ; ++i) {
         sum += histogram[i];
         if (sum > threshold) {
@@ -444,6 +441,18 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     }
     const size_t nonzero_off = zero_count==0 ? 0 : compactZeros(Lw, count);
 
+    // If necessary move some elements to keep the 16-bytes alignment
+    const size_t nonzero_delta = nonzero_off & 0x3;
+    _mm_prefetch ((char*)(Lw + nonzero_off - nonzero_delta), _MM_HINT_T0);
+    _mm_prefetch ((char*)(Lw + count - nonzero_delta), _MM_HINT_T0);
+    afloat_t * Lw_nonzero = Lw + nonzero_off;
+    float * Lw_end = Lw + count;
+    if (nonzero_delta != 0) {
+        for (size_t i = 0; i < nonzero_delta; ++i) {
+            *(--Lw_nonzero) = *(--Lw_end);
+        }
+    }
+
     // Build a histogram to extract the key using percentiles 1 to 99
     const float Lmin_log = logf (Lmin);
     const float Lmax_log = logf (Lmax);
@@ -459,7 +468,7 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     // can avoid reading everything
     ptrdiff_t removed_count = 0;
     const float lum_cutoff = expf (expf (L99));
-    const float removed_sum = sumBeyondThreshold (Lw + nonzero_off, Lw + count,
+    const float removed_sum = sumBeyondThreshold (Lw_nonzero, Lw_end,
         lum_cutoff, removed_count);
     L_sum -= removed_sum;
 
