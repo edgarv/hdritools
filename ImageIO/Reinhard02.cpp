@@ -10,6 +10,7 @@
 // http://www.cs.bris.ac.uk/~reinhard/papers/jgt_reinhard.pdf
 
 #include "Reinhard02.h"
+#include "Amaths.h"
 
 #include <cstddef>
 
@@ -107,131 +108,6 @@ inline bool isInvalidLuminance(float x) {
 #else
     return floatToBits(x)>=0x7f800000u || x < float_limits::min();
 #endif
-}
-
-
-
-// Intel AM constants
-#define _PS_CONST(Name, Val) \
-static const _MM_ALIGN16 float _ps_##Name[4] = { Val, Val, Val, Val }
-
-#define _PS_EXTERN_CONST(Name, Val) \
-const _MM_ALIGN16 float _ps_##Name[4] = { Val, Val, Val, Val }
-
-#define _PS_EXTERN_CONST_TYPE(Name, Type, Val) \
-const _MM_ALIGN16 Type _ps_##Name[4] = { Val, Val, Val, Val }; \
-
-#define _EPI32_CONST(Name, Val) \
-static const _MM_ALIGN16 __int32 _epi32_##Name[4] = { Val, Val, Val, Val }
-
-
-_PS_EXTERN_CONST(am_1, 1.0f);
-_PS_EXTERN_CONST_TYPE(am_min_norm_pos, __int32, 0x00800000);
-_PS_EXTERN_CONST_TYPE(am_inv_mant_mask, __int32, ~0x7f800000);
-
-_EPI32_CONST(0x7f, 0x7f);
-
-_PS_CONST(log_p0, -7.89580278884799154124e-1f);
-_PS_CONST(log_p1, 1.63866645699558079767e1f);
-_PS_CONST(log_p2, -6.41409952958715622951e1f);
-
-_PS_CONST(log_q0, -3.56722798256324312549e1f);
-_PS_CONST(log_q1, 3.12093766372244180303e2f);
-_PS_CONST(log_q2, -7.69691943550460008604e2f);
-
-_PS_CONST(log_c0, 0.693147180559945f);
-
-
-inline __m128 sse_load(const float (&arr)[4]) {
-    return _mm_load_ps (&arr[0]);
-}
-
-inline __m128 sse_load(const int (&arr)[4]) {
-    return _mm_load_ps (reinterpret_cast<const float*>(&arr[0]));
-}
-
-inline __m128i sse_load_epi32(const int (&arr)[4]) {
-    return _mm_load_si128 (reinterpret_cast<const __m128i*>(&arr[0]));
-}
-
-
-// Function from Intel Approximate Math library, rewritten using intrinsics
-__m128 am_log_eps(__m128 x)
-{
-    // Constants
-    const __m128 am_1          = sse_load(_ps_am_1);
-    const __m128 min_norm_pos  = sse_load(_ps_am_min_norm_pos);
-    const __m128 inv_mant_mask = sse_load(_ps_am_inv_mant_mask);
-    const __m128i epi32_0x7f   = sse_load_epi32(_epi32_0x7f);
-
-    const __m128 log_p0 = sse_load(_ps_log_p0);
-    const __m128 log_p1 = sse_load(_ps_log_p1);
-    const __m128 log_p2 = sse_load(_ps_log_p2);
-
-    const __m128 log_q0 = sse_load(_ps_log_q0);
-    const __m128 log_q1 = sse_load(_ps_log_q1);
-    const __m128 log_q2 = sse_load(_ps_log_q2);
-
-    const __m128 log_c0 = sse_load(_ps_log_c0);
-
-
-    // Use variables named like the registers to keep the code close
-    __m128 xmm0, xmm1, xmm2, xmm4, xmm5, xmm6, xmm7;
-    __m128i xmm3i;
-
-    xmm0 = _mm_max_ps(x, min_norm_pos); // cut off denormalized stuff
-    xmm1 = am_1;
-    xmm3i= _mm_castps_si128(xmm0);
-
-    xmm0 = _mm_and_ps(xmm0, inv_mant_mask);
-    xmm0 = _mm_or_ps (xmm0, xmm1);
-
-    xmm4 = xmm0;
-    xmm0 = _mm_sub_ps(xmm0, xmm1);
-    xmm4 = _mm_add_ps(xmm4, xmm1);
-
-    xmm3i= _mm_srli_epi32(xmm3i, 23);
-    xmm4 = _mm_rcp_ps(xmm4);
-    xmm0 = _mm_mul_ps(xmm0, xmm4);
-    xmm3i= _mm_sub_epi32(xmm3i, epi32_0x7f);
-    xmm0 = _mm_add_ps(xmm0, xmm0);
-
-    xmm2 = xmm0;
-    xmm0 = _mm_mul_ps(xmm0, xmm0);
-
-    xmm4 = log_p0;
-    xmm6 = log_q0;
-
-    xmm4 = _mm_mul_ps(xmm4, xmm0);
-    xmm5 = log_p1;
-    xmm6 = _mm_mul_ps(xmm6, xmm0);
-    xmm7 = log_q1;
-
-    xmm4 = _mm_add_ps(xmm4, xmm5);
-    xmm6 = _mm_add_ps(xmm6, xmm7);
-
-    xmm5 = log_p2;
-    xmm4 = _mm_mul_ps(xmm4, xmm0);
-    xmm7 = log_q2;
-    xmm6 = _mm_mul_ps(xmm6, xmm0);
-
-    xmm4 = _mm_add_ps(xmm4, xmm5);
-    xmm5 = log_c0;
-    xmm6 = _mm_add_ps(xmm6, xmm7);
-    xmm1 = _mm_cvtepi32_ps(xmm3i);
-
-    xmm0 = _mm_mul_ps(xmm0, xmm4);
-    xmm6 = _mm_rcp_ps(xmm6);
-
-    xmm0 = _mm_mul_ps(xmm0, xmm6);
-    xmm0 = _mm_mul_ps(xmm0, xmm2);
-
-    xmm1 = _mm_mul_ps(xmm1, xmm5);
-
-    xmm0 = _mm_add_ps(xmm0, xmm2);
-    xmm0 = _mm_add_ps(xmm0, xmm1);
-
-    return xmm0;
 }
 
 
@@ -449,7 +325,7 @@ float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
     for (ptrdiff_t off = 0; off < count_sse; off += 4)
     {
         const __m128 vec_lum = _mm_load_ps(Lw+off);
-        const Rgba32F vec_log_lum = ::am_log_eps (vec_lum);
+        const Rgba32F vec_log_lum = am::log_eps (vec_lum);
 
         // Update the sum with error compensation
         const Rgba32F y = vec_log_lum - vec_c;
@@ -493,7 +369,7 @@ float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
     assert (Lmax > Lmin);
     
     Rgba32F rangeHelper(Lmin, Lmax, 1.0);
-    rangeHelper = ::am_log_eps (rangeHelper);
+    rangeHelper = am::log_eps (rangeHelper);
     const float Lmin_log = std::min(rangeHelper.r(), logf(Lmin));
     const float Lmax_log = std::max(rangeHelper.g(), logf(Lmax));
 
@@ -527,7 +403,7 @@ float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
     for (ptrdiff_t off = 0; off < count_sse; off += 4)
     {
         const __m128 vec_lum = _mm_load_ps(Lw+off);
-        const Rgba32F vec_log_lum = ::am_log_eps (vec_lum);
+        const Rgba32F vec_log_lum = am::log_eps (vec_lum);
 
         // Update the sum with error compensation
         const Rgba32F y = vec_log_lum - vec_c;

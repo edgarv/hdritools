@@ -28,6 +28,7 @@ set(SRCS
   RgbeIO.h RgbeIO.cpp
   RgbeIOPrivate.h
   sse_mathfun.h
+  Amaths.h Amaths.cpp
   ToneMapper.h ToneMapper.cpp
   Reinhard02.h Reinhard02.cpp
   PngIO.h PngIO.cpp
