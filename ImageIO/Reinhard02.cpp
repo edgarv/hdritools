@@ -31,6 +31,11 @@ typedef unsigned __int64     uint64_t;
 #endif
 #endif // USE_PACKED_LUT
 
+namespace ssemath 
+{
+#include "sse_mathfun.h"
+}
+
 
 #if defined(_WIN32) && defined(__INTEL_COMPILER)
 # include <mathimf.h>
@@ -314,15 +319,42 @@ size_t compactZeros (afloat_t * Lw, const size_t count)
 float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
                             const float * PCG_RESTRICT Lw_end)
 {
-    // Use a Kahan summation
-    float L_sum   = 0.0f;
-    float L_sum_c = 0.0f;
-    for (const float * PCG_RESTRICT lum = Lw; lum != Lw_end; ++lum) {
-        const float log_lum = logf(*lum);
-        const float y = log_lum  - L_sum_c;
-        const float t = L_sum + y;
-        L_sum_c = (t - L_sum) - y;
-        L_sum = t;
+    // Will process first elements in SSE fashion, 4 at a time
+    const ptrdiff_t count_sse = (Lw_end - Lw) & ~0x3;
+    // Prepare Kahan summation with 4 elements
+    Rgba32F vec_sum = _mm_setzero_ps();
+    Rgba32F vec_c   = _mm_setzero_ps();
+
+    for (ptrdiff_t off = 0; off < count_sse; off += 4)
+    {
+        const __m128 vec_lum = _mm_load_ps(Lw+off);
+        const Rgba32F vec_log_lum = ssemath::log_ps (vec_lum);
+
+        // Update the sum with error compensation
+        const Rgba32F y = vec_log_lum - vec_c;
+        const Rgba32F t = vec_sum + y;
+        vec_c   = (t - vec_sum) - y;
+        vec_sum = t;
+    }
+
+    // Accumulate the sum and then add the rest of the values (0 up to 3)
+    float L_sum;
+    {
+        __m128 sum_tmp = _mm_hadd_ps(vec_sum, vec_sum);
+        sum_tmp = _mm_hadd_ps(sum_tmp, sum_tmp);
+        _mm_store_ss(&L_sum, sum_tmp);
+    }
+    if (count_sse != (Lw_end - Lw)) {
+        float c = 0.0f;
+        for (const float * lum = Lw+count_sse; lum != Lw_end; ++lum) {
+            const float log_lum = logf(*lum);
+
+            // Update the sum with error compensation
+            const float y = log_lum - c;
+            const float t = L_sum + y;
+            c     = (t - L_sum) - y;
+            L_sum = t;
+        }
     }
 
     return L_sum;
@@ -334,34 +366,95 @@ float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
 // percentiles thresholds
 float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
                               const float * PCG_RESTRICT Lw_end,
-                              const float Lmin_log, const float Lmax_log,
+                              const float Lmin, const float Lmax,
                               float &L1, float &L99)
 {
+    assert (Lmax > Lmin);
+    
+    Rgba32F rangeHelper(Lmin, Lmax, 1.0);
+    rangeHelper = ssemath::log_ps (rangeHelper);
+    const float Lmin_log = std::min(rangeHelper.r(), logf(Lmin));
+    const float Lmax_log = std::max(rangeHelper.g(), logf(Lmax));
+
     const int resolution = 100;
     const int dynrange = static_cast<int> (ceil(1e-5 + Lmax_log - Lmin_log));
-    const int num_bins = resolution * dynrange;
+    const int num_bins = std::min(resolution * dynrange, 0x7FFF);
     std::vector<size_t> histogram(num_bins, 0);
 
     // This makes sure that epsilon is large enough so that it is not necessary
     // to guard for the corner case where Lmax_log will be mapped to N
     // There must be an analytical way of doing this, but this is decent enough
     float epsilon = 1.9073486328125e-6f;
-    while (static_cast<int>((num_bins/(epsilon+(Lmax_log-Lmin_log))) * 
-        (Lmax_log-Lmin_log)) >= num_bins) epsilon *= 2.0f;
+    {
+        const float range = Lmax_log - Lmin_log;
+        while (static_cast<int>((num_bins/(epsilon+range)) * range) >= num_bins)
+            epsilon *= 2.0f;
+    }
 
     const float res_factor = num_bins / (epsilon + (Lmax_log - Lmin_log));
-    // Use a Kahan summation
-    float L_sum   = 0.0f;
-    float L_sum_c = 0.0f;
-    for (const float * PCG_RESTRICT lum = Lw; lum != Lw_end; ++lum) {
-        const float log_lum = logf(*lum);
-        const float y = log_lum  - L_sum_c;
-        const float t = L_sum + y;
-        L_sum_c = (t - L_sum) - y;
-        L_sum = t;
-        const int bin_idx = static_cast<int>(res_factor * (log_lum - Lmin_log));
-        assert (bin_idx >= 0 && bin_idx < num_bins);
-        ++histogram[bin_idx];
+
+    // Helpful constants
+    const Rgba32F vec_res_factor(res_factor);
+    const Rgba32F vec_Lmin_log(Lmin_log);
+
+    // Will process first elements in SSE fashion, 4 at a time
+    const ptrdiff_t count_sse = (Lw_end - Lw) & ~0x3;
+    // Prepare Kahan summation with 4 elements
+    Rgba32F vec_sum = _mm_setzero_ps();
+    Rgba32F vec_c   = _mm_setzero_ps();
+
+    for (ptrdiff_t off = 0; off < count_sse; off += 4)
+    {
+        const __m128 vec_lum = _mm_load_ps(Lw+off);
+        const Rgba32F vec_log_lum = ssemath::log_ps (vec_lum);
+
+        // Update the sum with error compensation
+        const Rgba32F y = vec_log_lum - vec_c;
+        const Rgba32F t = vec_sum + y;
+        vec_c   = (t - vec_sum) - y;
+        vec_sum = t;
+
+        // Update the histogram
+        __m128 idx_temp = vec_res_factor * (vec_log_lum - vec_Lmin_log);
+        const __m128i bin_idx = _mm_cvttps_epi32 (idx_temp);
+        const int index0 = _mm_extract_epi16(bin_idx, 0*2);
+        const int index1 = _mm_extract_epi16(bin_idx, 1*2);
+		const int index2 = _mm_extract_epi16(bin_idx, 2*2);
+		const int index3 = _mm_extract_epi16(bin_idx, 3*2);
+
+        assert (index0 >= 0 && index0 < num_bins);
+        assert (index1 >= 0 && index1 < num_bins);
+        assert (index2 >= 0 && index2 < num_bins);
+        assert (index3 >= 0 && index3 < num_bins);
+
+        ++histogram[index0];
+        ++histogram[index1];
+        ++histogram[index2];
+        ++histogram[index3];
+    }
+
+    // Accumulate the sum and then add the rest of the values (0 up to 3)
+    float L_sum;
+    {
+        __m128 sum_tmp = _mm_hadd_ps(vec_sum, vec_sum);
+        sum_tmp = _mm_hadd_ps(sum_tmp, sum_tmp);
+        _mm_store_ss(&L_sum, sum_tmp);
+    }
+    if (count_sse != (Lw_end - Lw)) {
+        float c = 0.0f;
+        for (const float * lum = Lw+count_sse; lum != Lw_end; ++lum) {
+            const float log_lum = logf(*lum);
+
+            // Update the sum with error compensation
+            const float y = log_lum - c;
+            const float t = L_sum + y;
+            c     = (t - L_sum) - y;
+            L_sum = t;
+
+            int bin_idx = static_cast<int>(res_factor * (log_lum - Lmin_log));
+            assert (bin_idx >= 0 && bin_idx < num_bins);
+            ++histogram[bin_idx];
+        }
     }
 
     // Consult the histogram to get the L1 and L99 positions
@@ -478,7 +571,7 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     float L1  = Lmin_log;
     float L99 = Lmax_log;
     float L_sum = (Lmax_log - Lmin_log) > 5e-8 ?
-        accumulateWithHistogram(Lw_nonzero, Lw_end, Lmin_log, Lmax_log, L1, L99)
+        accumulateWithHistogram(Lw_nonzero, Lw_end, Lmin, Lmax, L1, L99)
       : accumulateNoHistogram(Lw_nonzero, Lw_end);
 
     // Remove the value from the logaritmic total L_sum 
