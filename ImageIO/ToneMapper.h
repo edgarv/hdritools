@@ -13,6 +13,7 @@
 #include "LDRPixels.h"
 #include "ImageIO.h"
 #include "Exception.h"
+#include "Reinhard02.h"
 
 namespace pcg {
 
@@ -21,6 +22,8 @@ namespace pcg {
 		template <class T, ScanLineMode S1, ScanLineMode S2 = S1>
 		class ApplyToneMap;
 	}
+
+
 
 	class ToneMapper {
 
@@ -54,6 +57,9 @@ namespace pcg {
 		// A flag to know whether to use the simple gamma curve or the sRGB color space
 		bool useSRGB;
 
+        // Parameters for applying the global Reinhard02 tone mapper
+        Reinhard02::Params params_Reinhard02;
+
 		// The lut contains the values of:  round(255 * (p^(1/gamma))),
 		// where p is the pixel value after applying the exposure compensation
 		// and whose value is in the range [0,1]
@@ -62,12 +68,19 @@ namespace pcg {
 
 	public:
 
+        // Enum to flag which technique to use: the simple scaling, using the
+        // exposure settings, or the global version of Reinhard02
+        enum Technique {
+            EXPOSURE,
+            REINHARD02
+        };
+
 		// Creates a new Tone Mapper instance which will use a LUT of the given size to speed
 		// up the query of the gamma exponentiation. That LUT will be forced to have a size
 		// multiple of four, and of course if it's lenght is ridiculously small everything
 		// is likely to crash in terrible ways.
-		ToneMapper(unsigned short size = 2048) : lut(NULL), lutSize(size & (~0x3)), 
-			useSRGB(false) 
+		ToneMapper(unsigned short size = 2048) : 
+        lut(NULL), lutSize(size & (~0x3)), useSRGB(false) 
 		{
 			lut = new unsigned char[lutSize];
 			SetExposure(0.0f);
@@ -76,9 +89,9 @@ namespace pcg {
 
 		// Constructor which takes an specific exposure, and uses sRGB instead of a gamma curve.
 		// If sRGB is disabled afterwards, the default gamma is 2.2
-		ToneMapper(float exposure, unsigned short size) : lut(NULL), lutSize(size & (~0x3)),
-			gamma(2.2f), invGamma(1.0f/2.2f),
-			useSRGB(true)
+		ToneMapper(float exposure, unsigned short size) : 
+        lut(NULL), lutSize(size & (~0x3)),
+		gamma(2.2f), invGamma(1.0f/2.2f), useSRGB(true)
 		{
 			if (lutSize == 0) {
 				throw IllegalArgumentException("Illegal LUT size of 0");
@@ -100,6 +113,11 @@ namespace pcg {
 			this->exposure = exposure;
 			this->exposureFactor = pow(2.0f, exposure);
 		}
+
+        // Replaces the current set of parameters for the Reinhard02 TMO
+        void SetParams(const Reinhard02::Params &params) {
+            this->params_Reinhard02 = params;
+        }
 
 		// Sets the gamma correction. Each pixel's component p, after the exposure correction and clamping to
 		// the range [0,1] will be raised to the power of (1/gamma), thus the final value is p^(1/gamma).
@@ -130,28 +148,61 @@ namespace pcg {
 		// Returns the exposure
 		float Exposure() const { return exposure; }
 
+        // Returns a const reference to the Reinhard02 parameters
+        const Reinhard02::Params & ParamsReinhard02() const {
+            return params_Reinhard02;
+        }
+
+        // Returns a reference to the Reinhard02 parameters
+        Reinhard02::Params & ParamsReinhard02() {
+            return params_Reinhard02;
+        }
+
 		// Returns wheather it's using sRGB or nor
 		bool isSRGB() const { return useSRGB; }
 
 
 		// The real tone mapping operations: support for 
 		// LDR pixels, in the different type of scanline orders
-		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
-		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
-		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
-		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,
+            const Image<Rgba32F, TopDown> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,
+            const Image<Rgba32F, BottomUp> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest,
+            const Image<Rgba32F, TopDown> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest,
+            const Image<Rgba32F, BottomUp> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
 
-		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
-		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
-		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, TopDown> &src, bool useLut = true) const;
-		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src, bool useLut = true) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,
+            const Image<Rgba32F, TopDown> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,
+            const Image<Rgba32F, BottomUp> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest,
+            const Image<Rgba32F, TopDown> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest,
+            const Image<Rgba32F, BottomUp> &src,
+            bool useLut = true, Technique technique = EXPOSURE) const;
 
 		// The 16-bit LDR pixels won't use the LUT
-		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, TopDown> &src) const;
-		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,  const Image<Rgba32F, BottomUp> &src) const;
-		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, TopDown> &src) const;
-		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest, const Image<Rgba32F, BottomUp> &src) const;
-
+		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,
+            const Image<Rgba32F, TopDown> &src,
+            Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,
+            const Image<Rgba32F, BottomUp> &src,
+            Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest,
+            const Image<Rgba32F, TopDown> &src,
+            Technique technique = EXPOSURE) const;
+		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest,
+            const Image<Rgba32F, BottomUp> &src,
+            Technique technique = EXPOSURE) const;
 	};
 }
 

@@ -449,61 +449,65 @@ void ToneMapper::UpdateLUT() {
 // Bgra8 pixels
 void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 
 // Rgba8 pixels
 void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut) const {
+                         bool useLut, Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
 }
 
 // Rgba16 pixels
 void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,
-                         const Image<Rgba32F, TopDown> &src) const {
+                         const Image<Rgba32F, TopDown> &src,
+                         Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
 void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,
-                         const Image<Rgba32F, BottomUp> &src) const {
+                         const Image<Rgba32F, BottomUp> &src,
+                         Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
 void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest,
-                         const Image<Rgba32F, TopDown> &src) const {
+                         const Image<Rgba32F, TopDown> &src,
+                         Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
 void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest,
-                         const Image<Rgba32F, BottomUp> &src) const {
+                         const Image<Rgba32F, BottomUp> &src,
+                         Technique technique) const {
 	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
 }
