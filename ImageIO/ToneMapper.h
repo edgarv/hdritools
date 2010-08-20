@@ -17,9 +17,17 @@
 
 namespace pcg {
 
+    // Enum to flag which technique to use: the simple scaling, using the
+    // exposure settings, or the global version of Reinhard02
+    enum TmoTechnique {
+        EXPOSURE,
+        REINHARD02
+    };
+
 	// Forward declaration
 	namespace tonemapper_internal {
-		template <class T, ScanLineMode S1, ScanLineMode S2 = S1>
+        template <typename T, ScanLineMode S1, ScanLineMode S2 = S1, 
+            bool useLUT = true, bool isSRGB = true, TmoTechnique tmo = EXPOSURE>
 		class ApplyToneMap;
 	}
 
@@ -27,7 +35,8 @@ namespace pcg {
 
 	class ToneMapper {
 
-		template <class T, ScanLineMode S1, ScanLineMode>
+		template <class T, ScanLineMode S1, ScanLineMode S2, 
+            bool useLUT, bool isSRGB, TmoTechnique tmo>
 		friend class tonemapper_internal::ApplyToneMap;
 
 	protected:
@@ -67,13 +76,6 @@ namespace pcg {
 
 
 	public:
-
-        // Enum to flag which technique to use: the simple scaling, using the
-        // exposure settings, or the global version of Reinhard02
-        enum Technique {
-            EXPOSURE,
-            REINHARD02
-        };
 
 		// Creates a new Tone Mapper instance which will use a LUT of the given size to speed
 		// up the query of the gamma exponentiation. That LUT will be forced to have a size
@@ -166,43 +168,43 @@ namespace pcg {
 		// LDR pixels, in the different type of scanline orders
 		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,
             const Image<Rgba32F, TopDown> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Bgra8, TopDown> &dest,
             const Image<Rgba32F, BottomUp> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest,
             const Image<Rgba32F, TopDown> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Bgra8, BottomUp> &dest,
             const Image<Rgba32F, BottomUp> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 
 		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,
             const Image<Rgba32F, TopDown> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Rgba8, TopDown> &dest,
             const Image<Rgba32F, BottomUp> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest,
             const Image<Rgba32F, TopDown> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Rgba8, BottomUp> &dest,
             const Image<Rgba32F, BottomUp> &src,
-            bool useLut = true, Technique technique = EXPOSURE) const;
+            bool useLut = true, TmoTechnique technique = EXPOSURE) const;
 
 		// The 16-bit LDR pixels won't use the LUT
 		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,
             const Image<Rgba32F, TopDown> &src,
-            Technique technique = EXPOSURE) const;
+            TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Rgba16, TopDown> &dest,
             const Image<Rgba32F, BottomUp> &src,
-            Technique technique = EXPOSURE) const;
+            TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest,
             const Image<Rgba32F, TopDown> &src,
-            Technique technique = EXPOSURE) const;
+            TmoTechnique technique = EXPOSURE) const;
 		void IMAGEIO_API ToneMap(Image<Rgba16, BottomUp> &dest,
             const Image<Rgba32F, BottomUp> &src,
-            Technique technique = EXPOSURE) const;
+            TmoTechnique technique = EXPOSURE) const;
 	};
 }
 

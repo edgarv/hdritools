@@ -22,6 +22,20 @@ using namespace tbb;
 const Rgba32F ToneMapper::ZEROS = Rgba32F(0.0f);
 const Rgba32F ToneMapper::ONES  = Rgba32F(1.0f);
 
+namespace
+{
+
+// Helper function to set all fields in a vector with the same value
+template <int idx>
+inline __m128 broadcast_idx(const __m128 n)
+{
+    __m128 res = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(n), 
+        _MM_SHUFFLE(idx,idx,idx,idx)));
+    return res;
+}
+
+} // namespace
+
 
 namespace pcg {
 	namespace tonemapper_internal {
@@ -189,7 +203,9 @@ namespace pcg {
 		};
 
 		// The class to be used by TBB
-		template <class T, ScanLineMode S1, ScanLineMode S2/* = S1*/>
+        template <typename T, ScanLineMode S1, ScanLineMode S2/* = S1*/, 
+                  bool useLUT/* = true*/, bool isSRGB/* = true */,
+                  TmoTechnique tmo/* = EXPOSURE*/>
 		class ApplyToneMap {
 
 			// Pointer to the destination Image
@@ -300,9 +316,9 @@ namespace pcg {
 		public:
 
 			// Default constructor: initializes all the pointers and the exposure factor vector
-			ApplyToneMap(Image<T,S1> &dest, const Image<Rgba32F, S2> &src, const ToneMapper &tm,
-				bool useLut) :
-			dest(dest), src(src), tm(tm), expF(tm.exposureFactor), lut(useLut ? tm.lut : NULL) {}
+			ApplyToneMap(Image<T,S1> &dest, const Image<Rgba32F, S2> &src, 
+                const ToneMapper &tm) :
+			dest(dest), src(src), tm(tm), expF(tm.exposureFactor), lut(useLUT ? tm.lut : NULL) {}
 
 			// Linear-style operator. This should only be used on files using the same scanline mode
 			void operator()(const blocked_range<int>& r) const {
@@ -321,7 +337,7 @@ namespace pcg {
 
 					const Rgba32F qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1));
 
-					if (tm.isSRGB()) {
+					if (isSRGB) {
 						for (int i = r.begin(); i != r.end(); ++i) {
 							ToneMapKernel_sRGB(src[i], dest[i], expF, ones, zeros, qFactor);
 						}
@@ -353,7 +369,7 @@ namespace pcg {
 
 					const Rgba32F qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1));
 
-					if (tm.isSRGB()) {
+					if (isSRGB) {
 						for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
 					        for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
 							    ToneMapKernel_sRGB(src.ElementAt(i,j, dest.GetMode()),
@@ -377,32 +393,231 @@ namespace pcg {
 		};
 
 
-		// Tones map the given source image and stores the result in the given destination image.
-		// the images must have the same size!
-		// This template gets instanciated when both images have the same scanline order
-		template<class T, ScanLineMode M>
-		void ToneMap(Image<T, M> &dest, const Image<Rgba32F, M> &src, const ToneMapper &tm, bool useLut) {
 
-			if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
-				throw IllegalArgumentException("The images dimensions' don't match");
-			}			
+// Specialization of the ApplyToneMap class to handle Reinhard02
+template <typename T, ScanLineMode S1, ScanLineMode S2/* = S1*/, 
+    bool useLUT, bool isSRGB>
+class ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>
+{
+public:
+    // Default constructor: initializes all the pointers and the exposure factor vector
+	ApplyToneMap(Image<T,S1> &dest, const Image<Rgba32F, S2> &src, 
+        const ToneMapper &tm) :
+	dest(dest), src(src),
+    tm(tm), expF(tm.exposureFactor), lutQ(static_cast<float>(tm.lutSize-1)),
+    qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1)),
+    invGamma(tm.InvGamma()),
+    lut(useLUT ? tm.lut : NULL) {}
 
-			const int numPixels = src.Size();
-			parallel_for(blocked_range<int>(0,numPixels), 
-				ApplyToneMap<T,M>(dest, src, tm, useLut), auto_partitioner());
+    // Linear-style operator. This should only be used on files using the same scanline mode
+	void operator()(const blocked_range<int>& r) const
+    {
+        const int end_sse = r.end() & ~0x3;
+        for (int i = r.begin(); i < end_sse; i += 4) {
+            // 4 pixels kernel
+            ToneMapKernel(src[i],   dest[i]);
+            ToneMapKernel(src[i+1], dest[i+1]);
+            ToneMapKernel(src[i+2], dest[i+2]);
+            ToneMapKernel(src[i+3], dest[i+3]);
 		}
 
-		// The method to use when whe scanline order is different
-		template<class T, ScanLineMode M1, ScanLineMode M2>
-		void ToneMap(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, const ToneMapper &tm, bool useLut) {
+        for (int i = end_sse; i < r.end(); ++i) {
+            // 1 pixel kernel
+            ToneMapKernel(src[i], dest[i]);
+        }
+    }
 
-			if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
-				throw IllegalArgumentException("The images dimensions' don't match");
-			}
+    // 2D style operator. This guy is safe no mather which scanline mode is used
+	void operator()(const blocked_range2d<int>& r) const
+    {
+        const int end_sse = r.cols().end() & ~0x3;
+        for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+		    for (int i = r.cols().begin(); i != end_sse; i += 4) {
+                // 4 pixels kernel
+                ToneMapKernel(src.ElementAt(i,  j, dest.GetMode()), dest.ElementAt(i,  j));
+                ToneMapKernel(src.ElementAt(i+1,j, dest.GetMode()), dest.ElementAt(i+1,j));
+                ToneMapKernel(src.ElementAt(i+2,j, dest.GetMode()), dest.ElementAt(i+2,j));
+                ToneMapKernel(src.ElementAt(i+3,j, dest.GetMode()), dest.ElementAt(i+3,j));
+		    }
 
-			parallel_for(blocked_range2d<int>(0,src.Height(), 0,src.Width()), 
-				ApplyToneMap<T,M1,M2>(dest, src, tm, useLut), auto_partitioner());
-		}
+            for (int i = end_sse; i < r.cols().end(); ++i) {
+                // 1 pixel kernel
+                ToneMapKernel(src.ElementAt(i,j, dest.GetMode()), 
+                    dest.ElementAt(i,j));
+            }
+	    }
+    }
+
+
+
+private:
+
+    // For this to work the type T must have a method:
+	//   T.set(unsigned char r, unsigned char g, unsigned char b)
+    // Assumes that the compiler will use the templates to inline and
+    // generate decent code
+	void ToneMapKernel(const Rgba32F &srcPix, T &destPix) const 
+	{
+		// Applies the exposure correction (note that we don't care about the alpha!)
+		Rgba32F pix = srcPix * expF;
+
+		// Clamp the values to the interval [0,1]
+        pix = _mm_min_ps(ToneMapper::ONES, _mm_max_ps(ToneMapper::ZEROS, pix));
+
+        if (useLUT) {
+		    // Prepares for querying the LUT: multiplies by the (LUT size-1) and
+		    // converts to integer with rounding
+		    pix *= lutQ;
+		    const __m128i pixIndices = _mm_cvtps_epi32(pix);
+
+		    // After this conversion, each value is in the range [0, LUT size), which
+		    // by design is a 16 byte unsigned integer. Because of that we don't need
+		    // SSE4 to extract the elements from there, we can use the SSE2 _mm_extract_epi16
+		    // intrinsic to extract each element independently and query the lut from there
+		    // (remember, the indices refer to 16-bit integers!)
+		    const int indexR = _mm_extract_epi16(pixIndices, 3*2);
+		    const int indexG = _mm_extract_epi16(pixIndices, 2*2);
+		    const int indexB = _mm_extract_epi16(pixIndices, 1*2);
+
+		    // Finally sets the pixel values using the LUT
+		    destPix.set(lut[indexR], lut[indexG], lut[indexB]);
+        } 
+        else {
+            if (isSRGB) {
+                
+                // Hope that this gets vectorized!
+				for (int i = 0; i < 4; ++i) {
+					float &v = *((float*)&pix + i);
+					v = v > 0.0031308f ? 1.055f*powf(v, 1.0f/2.4f) - 0.055f: 12.92f*v;
+				}
+
+				// Multiply the normalized number by the quantization value
+				pix *= qFactor;
+
+				// Convert to integral type and store
+				const __m128i valuesI = _mm_cvtps_epi32(pix);
+
+				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
+				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
+				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
+				destPix.set(r, g, b);
+            } 
+            else {
+
+                // Hope that this gets vectorized!
+				pix.setR(powf(pix.r(), invGamma));
+				pix.setG(powf(pix.g(), invGamma));
+				pix.setB(powf(pix.b(), invGamma));
+
+
+				// Multiply the normalized number by the quantization value
+				pix *= qFactor;
+
+				// Convert to integral type and store
+				const __m128i valuesI = _mm_cvtps_epi32(pix);
+
+				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
+				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
+				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
+				destPix.set(r, g, b);
+            }
+        }
+	}
+
+
+
+    // Reference to the destination Image
+	Image<T,S1> &dest;
+
+	// Reference to the source image
+	const Image<Rgba32F, S2> &src;
+
+	// Reference to the tone mapper to use
+	const ToneMapper &tm;
+
+	// The exponent factor <2^exposure>{4}
+	const Rgba32F expF;
+
+    // Quantization factor for the LUT (lutsize-1)
+    const Rgba32F lutQ;
+
+    const Rgba32F qFactor;
+
+    const float invGamma;
+
+	// Read-only pointer to the tone mapper's LUT
+	const unsigned char *lut;
+};
+
+
+
+        // Helper method to instanciate the appropriate instance of the
+        // ApplyTonemaper
+        template <bool useLUT, bool isSRGB, 
+            typename T, ScanLineMode M1, ScanLineMode M2, typename R>
+        void ToneMapHelper(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, 
+            const ToneMapper &tm, TmoTechnique technique, 
+            const R &range)
+        {
+            if (dest.Width() != src.Width() || dest.Height() != dest.Height()) {
+                throw IllegalArgumentException("The images dimensions' "
+                    "don't match");
+            }
+
+            const auto_partitioner partitioner;
+            switch (technique) {
+            case /*EXPOSURE:*/REINHARD02:
+                parallel_for(range,
+                    ApplyToneMap<T,M1,M2,useLUT,isSRGB,REINHARD02>(dest,src,tm),
+                    partitioner);
+                break;
+            default:
+                parallel_for(range, 
+                    ApplyToneMap<T,M1,M2,useLUT,isSRGB>(dest,src,tm),
+                    partitioner);
+            }
+        }
+
+        template <typename T, ScanLineMode M1, ScanLineMode M2, typename R>
+        void ToneMapHelper(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, 
+            const ToneMapper &tm, bool useLut, TmoTechnique technique,
+            const R &range)
+        {
+            if (useLut) {
+                if (tm.isSRGB())
+                    ToneMapHelper<true,true>(dest, src, tm, technique, range);
+                else
+                    ToneMapHelper<true,false>(dest, src, tm, technique, range);
+            } else {
+                if (tm.isSRGB())
+                    ToneMapHelper<false,true>(dest, src, tm, technique, range);
+                else
+                    ToneMapHelper<false,false>(dest, src, tm, technique, range);
+            }
+        }
+
+
+        // Tones map the given source image and stores the result in the given destination image.
+        // the images must have the same size!
+        // This template gets instanciated when both images have the same scanline order
+        template<class T, ScanLineMode M>
+        void ToneMap(Image<T, M> &dest, const Image<Rgba32F, M> &src, 
+            const ToneMapper &tm, bool useLut, TmoTechnique technique) 
+        {
+            const int numPixels = src.Size();
+            const blocked_range<int> range = blocked_range<int>(0,numPixels);
+            ToneMapHelper(dest, src, tm, useLut, technique, range);
+        }
+
+        // The method to use when whe scanline order is different
+        template<class T, ScanLineMode M1, ScanLineMode M2>
+        void ToneMap(Image<T, M1> &dest, const Image<Rgba32F, M2> &src, 
+            const ToneMapper &tm, bool useLut, TmoTechnique technique) 
+        {
+            const blocked_range2d<int> range = 
+                blocked_range2d<int>(0,src.Height(), 0,src.Width());
+            ToneMapHelper(dest, src, tm, useLut, technique, range);
+        }
 
 	}
 }
@@ -449,65 +664,65 @@ void ToneMapper::UpdateLUT() {
 // Bgra8 pixels
 void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 void ToneMapper::ToneMap(Image<Bgra8, TopDown> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 void ToneMapper::ToneMap(Image<Bgra8, BottomUp> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 
 // Rgba8 pixels
 void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 void ToneMapper::ToneMap(Image<Rgba8, TopDown> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 void ToneMapper::ToneMap(Image<Rgba8, BottomUp> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         bool useLut, Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut);
+                         bool useLut, TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, useLut, technique);
 }
 
 // Rgba16 pixels
 void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+                         TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false, technique);
 }
 void ToneMapper::ToneMap(Image<Rgba16, TopDown> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+                         TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false, technique);
 }
 void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest,
                          const Image<Rgba32F, TopDown> &src,
-                         Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+                         TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false, technique);
 }
 void ToneMapper::ToneMap(Image<Rgba16, BottomUp> &dest,
                          const Image<Rgba32F, BottomUp> &src,
-                         Technique technique) const {
-	pcg::tonemapper_internal::ToneMap(dest, src, *this, false);
+                         TmoTechnique technique) const {
+	pcg::tonemapper_internal::ToneMap(dest, src, *this, false, technique);
 }
