@@ -478,7 +478,7 @@ public:
 
 private:
 
-    inline Rgba32F reinhard02(const Rgba32F &pix) const
+    FORCEINLINE_BEG Rgba32F reinhard02(const Rgba32F &pix) const FORCEINLINE_END
     {
         const float Lw = dot_float(pix, vec_LUM);
         const float Ls = partA + partB / (Lwp + key*Lw);
@@ -715,7 +715,7 @@ using namespace pcg::tonemapper_internal;
 void ToneMapper::UpdateLUT() {
 
 	const float stepSize = 1.0f/lutSize;
-	const float halfStep = stepSize/2.0f;
+	const float halfStep = 0.5f/lutSize;
 
 	// At each group i, we wil fill the LUT for (i*base+delta), i = 0,4,8,...
 	const Rgba32F base4(4.0f * stepSize);
@@ -736,12 +736,34 @@ void ToneMapper::UpdateLUT() {
 	else {
 		parallel_for(blocked_range<int>(0,numIter),
 			ToneMapperLUTBody<false>(lutPtr, base4, delta, qFactor, invGamma) );
-
-		// However the first one is always 0
-		lut[0] = 0;
 	}
-
 }
+
+
+
+int ToneMapper::MaxLUTError() const
+{
+    const bool srgb = isSRGB();
+    int res = 0;
+
+    for (int i = 0, low = 0; i < lutSize; ++i) {
+        float x = static_cast<float>(i+1) / static_cast<float>(lutSize);
+        if (srgb) {
+            x = (x>0.0031308f) ? (1.055f)*powf(x, 1.0f/2.4f)-0.055f : 12.92f*x;
+        } else {
+            x = pow(x, invGamma);
+        }
+        const int hi = static_cast<int> (255.0f * x);
+        const int lutVal = lut[i];
+        res = std::max(res, std::max (abs(hi-lutVal), abs(low-lutVal)));
+
+        // Prepare for the next iteration
+        low = hi;
+    }
+    return res;
+}
+
+
 
 
 // #################################################

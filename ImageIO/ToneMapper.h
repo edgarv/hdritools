@@ -163,6 +163,10 @@ namespace pcg {
 		// Returns wheather it's using sRGB or nor
 		bool isSRGB() const { return useSRGB; }
 
+        // Returns the maximum error in the LUT: the max among all values.
+        // This method doesn't cache any values, so use with care!
+        int IMAGEIO_API MaxLUTError() const;
+
 
 		// The real tone mapping operations: support for 
 		// LDR pixels, in the different type of scanline orders
