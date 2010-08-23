@@ -34,6 +34,25 @@ inline __m128 broadcast_idx(const __m128 n)
     return res;
 }
 
+// Helper function to calculate a dot product
+inline Rgba32F dot_sse(Rgba32F a, Rgba32F b)
+{
+    Rgba32F dot_tmp = a * b;
+    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+    return dot_tmp;
+}
+
+inline float dot_float(Rgba32F a, Rgba32F b)
+{
+    float res;
+    Rgba32F dot_tmp = a * b;
+    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+    _mm_store_ss(&res, dot_tmp);
+    return res;
+}
+
 } // namespace
 
 
@@ -407,7 +426,14 @@ public:
     tm(tm), expF(tm.exposureFactor), lutQ(static_cast<float>(tm.lutSize-1)),
     qFactor(static_cast<float>((1<<(sizeof(typename T::pixel_t)<<3))-1)),
     invGamma(tm.InvGamma()),
-    lut(useLUT ? tm.lut : NULL) {}
+    Lwhite2(tm.ParamsReinhard02().l_white * tm.ParamsReinhard02().l_white),
+    Lwp(tm.ParamsReinhard02().l_w),
+    key(tm.ParamsReinhard02().key),
+    partA(Lwp / (key * Lwhite2)),
+    partB((key*key*Lwhite2 - Lwp*Lwp) / (key * Lwhite2)),
+    lut(useLUT ? tm.lut : NULL)
+    {
+    }
 
     // Linear-style operator. This should only be used on files using the same scanline mode
 	void operator()(const blocked_range<int>& r) const
@@ -452,14 +478,26 @@ public:
 
 private:
 
+    inline Rgba32F reinhard02(const Rgba32F &pix) const
+    {
+        const float Lw = dot_float(pix, vec_LUM);
+        const float Ls = partA + partB / (Lwp + key*Lw);
+
+        const Rgba32F res = pix * Ls;
+        return res;
+    }
+
     // For this to work the type T must have a method:
 	//   T.set(unsigned char r, unsigned char g, unsigned char b)
     // Assumes that the compiler will use the templates to inline and
     // generate decent code
-	void ToneMapKernel(const Rgba32F &srcPix, T &destPix) const 
+	inline void ToneMapKernel(const Rgba32F &srcPix, T &destPix) const 
 	{
 		// Applies the exposure correction (note that we don't care about the alpha!)
 		Rgba32F pix = srcPix * expF;
+
+        // Does the actual Reinhard02 mapping for a single pixel
+        pix = reinhard02(pix);
 
 		// Clamp the values to the interval [0,1]
         pix = _mm_min_ps(ToneMapper::ONES, _mm_max_ps(ToneMapper::ZEROS, pix));
@@ -545,9 +583,58 @@ private:
 
     const float invGamma;
 
+    // White point squared
+    const float Lwhite2;
+
+    // Average log-intensity
+    const float Lwp;
+
+    // Key
+    const float key;
+
+    // Helper constant parts of the computations
+    const float partA;
+    const float partB;
+
 	// Read-only pointer to the tone mapper's LUT
 	const unsigned char *lut;
+
+    // Helper Constants
+    static const float LUM_R;
+    static const float LUM_G;
+    static const float LUM_B;
+
+    static const Rgba32F vec_LUM_R;
+    static const Rgba32F vec_LUM_G;
+    static const Rgba32F vec_LUM_B;
+    static const Rgba32F vec_LUM;
 };
+
+// Initialize the class constants
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_R = 0.27f;
+
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_G = 0.67f;
+
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_B = 0.06f;
+
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const Rgba32F
+ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::vec_LUM_R(LUM_R);
+
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const Rgba32F
+ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::vec_LUM_G(LUM_G);
+
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const Rgba32F
+ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::vec_LUM_B(LUM_B);
+
+template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
+const Rgba32F
+ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::vec_LUM(LUM_R, LUM_G, LUM_B, 0.0f);
 
 
 
@@ -566,7 +653,7 @@ private:
 
             const auto_partitioner partitioner;
             switch (technique) {
-            case /*EXPOSURE:*/REINHARD02:
+            case REINHARD02:
                 parallel_for(range,
                     ApplyToneMap<T,M1,M2,useLUT,isSRGB,REINHARD02>(dest,src,tm),
                     partitioner);

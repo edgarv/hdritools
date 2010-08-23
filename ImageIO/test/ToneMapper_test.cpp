@@ -69,6 +69,22 @@ inline int abs_diff (T a, T b)
     return abs(static_cast<int>(a) - static_cast<int>(b));
 }
 
+// Applies the Reinhard02 operations to the given pixel (inout parameter)
+void applyReinhard02(pcg::Rgba32F &p, const pcg::Reinhard02::Params &params)
+{
+    const float Lwhite2 = params.l_white * params.l_white;
+    const float &Lwp = params.l_w;
+    const float &a = params.key;
+    const float Lw = 0.27f*p.r() + 0.67f*p.g() + 0.06f*p.b();
+
+    const float partA = Lwp / (a * Lwhite2);
+    const float partB = (a*a*Lwhite2 - Lwp*Lwp) / (a * Lwhite2);
+    const float Ls = partA + partB / (Lwp + a*Lw);
+
+    const pcg::Rgba32F res = p * Ls;
+    p = res;
+}
+
 
 template <typename T>
 struct TypeHelper {
@@ -127,14 +143,15 @@ public:
 
 
     // Helper struct to create tests for gamma and exposure
-    template <typename M, pcg::ScanLineMode Src_m, pcg::ScanLineMode Dest_m>
+    template <typename M, pcg::ScanLineMode Src_m, pcg::ScanLineMode Dest_m,
+        pcg::TmoTechnique technique = pcg::EXPOSURE>
     struct TestHelper
     {
     private:
         template <typename N>
         struct RunHelper {
             static void run(TestHelper &t, bool useLut) {
-                t.tm.ToneMap (t.dest, t.src, useLut);
+                t.tm.ToneMap (t.dest, t.src, useLut, technique);
             }
         };
 
@@ -142,13 +159,50 @@ public:
         struct RunHelper<pcg::Rgba16> {
             static void run(TestHelper &t, bool useLut) {
                 if (!useLut) {
-                    t.tm.ToneMap (t.dest, t.src);
+                    t.tm.ToneMap (t.dest, t.src, technique);
                 } else {
                     throw std::exception("Rgba16 never uses the LUT!");
                 }
 
             }
         };
+
+        // Helper method to run the actual code
+        template <bool isSRGB>
+        void doToneMap(const float scaleFactor, const float invGamma = 1.0f)
+        {
+            if (technique == pcg::REINHARD02) {
+                pcg::Reinhard02::Params params = 
+                        pcg::Reinhard02::EstimateParams(src);
+                    tm.SetParams(params);
+            }
+
+            for (int h = 0; h < IMG_H; ++h) {
+                pcg::Rgba32F * src_ptr = 
+                    src.GetScanlinePointer (h, pcg::TopDown);
+                M * dest_ptr = 
+                    reference.GetScanlinePointer (h, pcg::TopDown);
+                
+                if (technique == pcg::REINHARD02) {
+
+                    for (int w = 0; w < IMG_W; ++w) {
+                        pcg::Rgba32F pix = src_ptr[w] * scaleFactor;
+                        ::applyReinhard02(pix, tm.ParamsReinhard02());
+                        if (isSRGB)
+                            ::applySRGB(pix, dest_ptr[w]);
+                        else
+                            ::applyGamma(pix, invGamma, dest_ptr[w]);
+                    }
+                } else {
+                    for (int w = 0; w < IMG_W; ++w) {
+                        if (isSRGB)
+                            ::applySRGB(src_ptr[w], dest_ptr[w], scaleFactor);
+                        else
+                            ::applyGamma(src_ptr[w], invGamma, dest_ptr[w],scaleFactor);
+                    }
+                }
+            }
+        }
 
     public:
 
@@ -172,18 +226,10 @@ public:
             tm.SetGamma(gamma);
             tm.SetSRGB(false);
 
-            // Setup the reference image, scanline by scanline
-            const float invGamma = static_cast<float>(1.0/gamma);
+            // Run the reference
             const float scaleFactor = powf(2.0f, exposure);
-            for (int h = 0; h < IMG_H; ++h) {
-                pcg::Rgba32F * src_ptr = 
-                    src.GetScanlinePointer (h, pcg::TopDown);
-                M * dest_ptr = 
-                    reference.GetScanlinePointer (h, pcg::TopDown);
-                for (int w = 0; w < IMG_W; ++w) {
-                    ::applyGamma(src_ptr[w], invGamma, dest_ptr[w],scaleFactor);
-                }
-            }
+            const float invGamma = static_cast<float>(1.0/gamma);
+            doToneMap<false> (scaleFactor, invGamma);
         }
 
 
@@ -202,15 +248,7 @@ public:
 
             // Setup the reference image, scanline by scanline
             const float scaleFactor = powf(2.0f, exposure);
-            for (int h = 0; h < IMG_H; ++h) {
-                pcg::Rgba32F * src_ptr = 
-                    src.GetScanlinePointer (h, pcg::TopDown);
-                M * dest_ptr = 
-                    reference.GetScanlinePointer (h, pcg::TopDown);
-                for (int w = 0; w < IMG_W; ++w) {
-                    ::applySRGB(src_ptr[w], dest_ptr[w], scaleFactor);
-                }
-            }
+            doToneMap<true> (scaleFactor);
         }
 
         void toneMap(bool useLut) {
@@ -218,6 +256,16 @@ public:
             RunHelper<M>::run(*this, useLut);
         }
     };
+};
+
+
+
+// Helper stuff to create tests combining types and TMOs
+template <typename T, pcg::TmoTechnique technique>
+struct TmoTest
+{
+    typedef typename T pix_t;
+
 };
 
 
@@ -232,9 +280,9 @@ namespace
 template <typename T>
 struct Comparator {
     template <typename M,
-              pcg::ScanLineMode Src_m, pcg::ScanLineMode Dest_m>
+        pcg::ScanLineMode Src_m, pcg::ScanLineMode Dest_m, pcg::TmoTechnique tmo>
     static void
-    compare(typename ToneMapperTest<T>::TestHelper<M, Src_m, Dest_m> &test,
+    compare(typename ToneMapperTest<T>::TestHelper<M, Src_m, Dest_m, tmo> &test,
             int tolerance)
     {
         // Compare the reference and the destination
@@ -375,6 +423,23 @@ TYPED_TEST(ToneMapperTest, TT_SRGB_EXP_3M)
 TYPED_TEST(ToneMapperTest, BB_SRGB_EXP_25M)
 {
     TestHelper<TypeParam, BottomUp, BottomUp> test(*this, -2.5f, LUT_SIZE);
+
+    // Without the LUT
+    test.toneMap(false);
+    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    
+    // Run with LUT
+    if (! ::TypeHelper<TypeParam>::isRgba16()) {
+        test.toneMap(true);
+        ::Comparator<TypeParam>::compare (test, LUT_TOL);
+    }
+}
+
+
+
+TYPED_TEST(ToneMapperTest, REINHARD02_DUMMY)
+{
+    TestHelper<TypeParam, BottomUp, BottomUp, pcg::REINHARD02> test(*this, -2.5f, LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
