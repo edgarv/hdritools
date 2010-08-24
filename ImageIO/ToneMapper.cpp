@@ -6,6 +6,22 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
+
+#if _WIN32||_WIN64
+// define the parts of stdint.h that are needed
+typedef __int8 int8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef __int64 int64_t;
+typedef unsigned __int8 uint8_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+#else
+#include <stdint.h>
+#endif
+
+
 // FIXME Make this a setup flag
 #define USE_SSE_POW 0
 
@@ -53,26 +69,32 @@ inline float dot_float(Rgba32F a, Rgba32F b)
     return res;
 }
 
+
+// Helper LUT to translate from the 4-bit mask of _mm_movemask_ps to a 32-bit 
+const uint32_t MOVEMASK_LUT[] = {
+           0x0,
+          0xff,
+        0xff00,
+        0xffff,
+      0xff0000,
+      0xff00ff,
+      0xffff00,
+      0xffffff,
+    0xff000000,
+    0xff0000ff,
+    0xff00ff00,
+    0xff00ffff,
+    0xffff0000,
+    0xffff00ff,
+    0xffffff00,
+    0xffffffff
+};
+
 } // namespace
 
 
 namespace pcg {
 	namespace tonemapper_internal {
-
-		#if _WIN32||_WIN64
-		// define the parts of stdint.h that are needed
-		typedef __int8 int8_t;
-		typedef __int16 int16_t;
-		typedef __int32 int32_t;
-		typedef __int64 int64_t;
-		typedef unsigned __int8 uint8_t;
-		typedef unsigned __int16 uint16_t;
-		typedef unsigned __int32 uint32_t;
-		typedef unsigned __int64 uint64_t;
-		#else
-		#include <stdint.h>
-		#endif
-
 
 		// Helper class for the TBB version of the LUT update
 		template < bool useSRGB >
@@ -239,6 +261,9 @@ namespace pcg {
 			// The exponent factor <2^exposure>{4}
 			const Rgba32F expF;
 
+            // Helper value to know when to ignore the lut and set the value to zero
+            const Rgba32F threshold;
+
 			// Read-only pointer to the tone mapper's LUT
 			const unsigned char *lut;
 
@@ -256,6 +281,10 @@ namespace pcg {
 				// Clamp the values to the interval [0,1]
 				pix = _mm_min_ps(ones, _mm_max_ps(zeros, pix));
 
+                // Extract the mask
+                const uint32_t mask =
+                    MOVEMASK_LUT[_mm_movemask_ps(_mm_cmpgt_ps (pix, threshold))];
+
 				// Prepares for querying the LUT: multiplies by the (LUT size-1) and
 				// converts to integer with rounding
 				pix *= lutQ;
@@ -270,8 +299,15 @@ namespace pcg {
 				const int indexG = _mm_extract_epi16(pixIndices, 2*2);
 				const int indexB = _mm_extract_epi16(pixIndices, 1*2);
 
-				// Finally sets the pixel values using the LUT
-				destPix.set(lut[indexR], lut[indexG], lut[indexB]);
+                // Temporarly copy the values here so that the mask may be applied
+                union { unsigned char vec[4]; uint32_t val; } result;
+                result.vec[3] = lut[indexR];
+                result.vec[2] = lut[indexG];
+                result.vec[1] = lut[indexB];
+                result.val &= mask;
+
+		        // Finally sets the pixel values using the LUT
+		        destPix.set(result.vec[3], result.vec[2], result.vec[1]);
 			}
 
 			// Alternative kernel which doesn't use the LUT. It needs that the pixel type
@@ -337,7 +373,9 @@ namespace pcg {
 			// Default constructor: initializes all the pointers and the exposure factor vector
 			ApplyToneMap(Image<T,S1> &dest, const Image<Rgba32F, S2> &src, 
                 const ToneMapper &tm) :
-			dest(dest), src(src), tm(tm), expF(tm.exposureFactor), lut(useLUT ? tm.lut : NULL) {}
+			dest(dest), src(src), tm(tm), expF(tm.exposureFactor), 
+            threshold(isSRGB ? (1.0f/(12.92f*512.0f)) : pow(1.0f/512.0f, tm.Gamma())),
+            lut(useLUT ? tm.lut : NULL) {}
 
 			// Linear-style operator. This should only be used on files using the same scanline mode
 			void operator()(const blocked_range<int>& r) const {
@@ -431,6 +469,7 @@ public:
     key(tm.ParamsReinhard02().key),
     partA(Lwp / (key * Lwhite2)),
     partB((key*key*Lwhite2 - Lwp*Lwp) / (key * Lwhite2)),
+    threshold(isSRGB ? (1.0f/(12.92f*512.0f)) : pow(1.0f/512.0f, tm.Gamma())),
     lut(useLUT ? tm.lut : NULL)
     {
     }
@@ -456,7 +495,7 @@ public:
     // 2D style operator. This guy is safe no mather which scanline mode is used
 	void operator()(const blocked_range2d<int>& r) const
     {
-        const int end_sse = r.cols().end() & ~0x3;
+        const int end_sse = r.cols().begin() + r.cols().size() & ~0x3;
         for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
 		    for (int i = r.cols().begin(); i != end_sse; i += 4) {
                 // 4 pixels kernel
@@ -503,6 +542,11 @@ private:
         pix = _mm_min_ps(ToneMapper::ONES, _mm_max_ps(ToneMapper::ZEROS, pix));
 
         if (useLUT) {
+
+            // Extract the mask
+            const uint32_t mask =
+                MOVEMASK_LUT[_mm_movemask_ps(_mm_cmpgt_ps (pix, threshold))];
+
 		    // Prepares for querying the LUT: multiplies by the (LUT size-1) and
 		    // converts to integer with rounding
 		    pix *= lutQ;
@@ -517,8 +561,15 @@ private:
 		    const int indexG = _mm_extract_epi16(pixIndices, 2*2);
 		    const int indexB = _mm_extract_epi16(pixIndices, 1*2);
 
+            // Temporarly copy the values here so that the mask may be applied
+            union { unsigned char vec[4]; uint32_t val; } result;
+            result.vec[3] = lut[indexR];
+            result.vec[2] = lut[indexG];
+            result.vec[1] = lut[indexB];
+            result.val &= mask;
+
 		    // Finally sets the pixel values using the LUT
-		    destPix.set(lut[indexR], lut[indexG], lut[indexB]);
+		    destPix.set(result.vec[3], result.vec[2], result.vec[1]);
         } 
         else {
             if (isSRGB) {
@@ -595,6 +646,9 @@ private:
     // Helper constant parts of the computations
     const float partA;
     const float partB;
+
+    // Helper value to know when to ignore the lut and set the value to zero
+    const Rgba32F threshold;
 
 	// Read-only pointer to the tone mapper's LUT
 	const unsigned char *lut;
