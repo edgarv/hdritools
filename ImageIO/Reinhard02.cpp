@@ -140,23 +140,6 @@ computeLuminance_scalar (const Rgba32F* PCG_RESTRICT const pixels, size_t count,
     }
 }
 
-// Taken from the Intrinsics Guide for AVX. The same technique was seen as
-// a contribution to gcc by Apple (I think). The original macro in MSVC++ uses
-// shuffle instead
-#define INTEL_MM_TRANSPOSE4_PS(row0, row1, row2, row3) {  \
-            __m128 tmp3, tmp2, tmp1, tmp0;                \
-                                                          \
-            tmp0   = _mm_unpacklo_ps((row0), (row1));     \
-            tmp2   = _mm_unpacklo_ps((row2), (row3));     \
-            tmp1   = _mm_unpackhi_ps((row0), (row1));     \
-            tmp3   = _mm_unpackhi_ps((row2), (row3));     \
-                                                          \
-            (row0) = _mm_movelh_ps(tmp0, tmp2);           \
-            (row1) = _mm_movehl_ps(tmp2, tmp0);           \
-            (row2) = _mm_movelh_ps(tmp1, tmp3);           \
-            (row3) = _mm_movehl_ps(tmp3, tmp1);           \
-        }
-
 
 
 // Idem, but with SSE, operating in 4 pixels at a time
@@ -201,7 +184,7 @@ computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
         __m128 p1 = pixels[off+1];
         __m128 p2 = pixels[off+2];
         __m128 p3 = pixels[off+3];
-        INTEL_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
+        PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
 
         // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
         const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
