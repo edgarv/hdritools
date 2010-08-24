@@ -469,6 +469,8 @@ public:
     key(tm.ParamsReinhard02().key),
     partA(Lwp / (key * Lwhite2)),
     partB((key*key*Lwhite2 - Lwp*Lwp) / (key * Lwhite2)),
+    vec_Lwp(Lwp), vec_key(key),
+    vec_partA(partA), vec_partB(partB),
     threshold(isSRGB ? (1.0f/(12.92f*512.0f)) : pow(1.0f/512.0f, tm.Gamma())),
     lut(useLUT ? tm.lut : NULL)
     {
@@ -477,38 +479,31 @@ public:
     // Linear-style operator. This should only be used on files using the same scanline mode
 	void operator()(const blocked_range<int>& r) const
     {
-        const int end_sse = r.end() & ~0x3;
+        const int end_sse = r.begin() + (r.size() & ~0x3);
+        assert (end_sse <= r.end());
         for (int i = r.begin(); i < end_sse; i += 4) {
-            // 4 pixels kernel
-            ToneMapKernel(src[i],   dest[i]);
-            ToneMapKernel(src[i+1], dest[i+1]);
-            ToneMapKernel(src[i+2], dest[i+2]);
-            ToneMapKernel(src[i+3], dest[i+3]);
+            ToneMapKernel4 (&src[i], &dest[i]);
 		}
 
         for (int i = end_sse; i < r.end(); ++i) {
-            // 1 pixel kernel
-            ToneMapKernel(src[i], dest[i]);
+            ToneMapKernel (src[i], dest[i]);
         }
     }
 
     // 2D style operator. This guy is safe no mather which scanline mode is used
 	void operator()(const blocked_range2d<int>& r) const
     {
-        const int end_sse = r.cols().begin() + r.cols().size() & ~0x3;
+        const int end_sse = r.cols().begin() + (r.cols().size() & ~0x3);
+        assert (end_sse <= r.cols().end());
         for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+            const Rgba32F * srcPtr = src.GetScanlinePointer(j, dest.GetMode());
+            T * destPtr = dest.GetScanlinePointer(j);
 		    for (int i = r.cols().begin(); i != end_sse; i += 4) {
-                // 4 pixels kernel
-                ToneMapKernel(src.ElementAt(i,  j, dest.GetMode()), dest.ElementAt(i,  j));
-                ToneMapKernel(src.ElementAt(i+1,j, dest.GetMode()), dest.ElementAt(i+1,j));
-                ToneMapKernel(src.ElementAt(i+2,j, dest.GetMode()), dest.ElementAt(i+2,j));
-                ToneMapKernel(src.ElementAt(i+3,j, dest.GetMode()), dest.ElementAt(i+3,j));
+                ToneMapKernel4 (srcPtr+i, destPtr+i);
 		    }
 
             for (int i = end_sse; i < r.cols().end(); ++i) {
-                // 1 pixel kernel
-                ToneMapKernel(src.ElementAt(i,j, dest.GetMode()), 
-                    dest.ElementAt(i,j));
+                ToneMapKernel (srcPtr[i], destPtr[i]);
             }
 	    }
     }
@@ -526,20 +521,13 @@ private:
         return res;
     }
 
-    // For this to work the type T must have a method:
-	//   T.set(unsigned char r, unsigned char g, unsigned char b)
-    // Assumes that the compiler will use the templates to inline and
-    // generate decent code
-	inline void ToneMapKernel(const Rgba32F &srcPix, T &destPix) const 
-	{
-		// Applies the exposure correction (note that we don't care about the alpha!)
-		Rgba32F pix = srcPix * expF;
-
-        // Does the actual Reinhard02 mapping for a single pixel
-        pix = reinhard02(pix);
-
-		// Clamp the values to the interval [0,1]
-        pix = _mm_min_ps(ToneMapper::ONES, _mm_max_ps(ToneMapper::ZEROS, pix));
+    // After the pixel is properly mapped into the LDR range (ie after exposure
+    // or applying any curve) converts into the LDR type
+    inline void PixelToLDR(const Rgba32F &src, T &dest) const
+    {
+        // Clamp the values to the interval [0,1]
+        Rgba32F pix = _mm_min_ps(ToneMapper::ONES, 
+            _mm_max_ps(ToneMapper::ZEROS, src));
 
         if (useLUT) {
 
@@ -569,7 +557,7 @@ private:
             result.val &= mask;
 
 		    // Finally sets the pixel values using the LUT
-		    destPix.set(result.vec[3], result.vec[2], result.vec[1]);
+		    dest.set(result.vec[3], result.vec[2], result.vec[1]);
         } 
         else {
             if (isSRGB) {
@@ -589,7 +577,7 @@ private:
 				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
 				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
 				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
-				destPix.set(r, g, b);
+				dest.set(r, g, b);
             } 
             else {
 
@@ -608,10 +596,62 @@ private:
 				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
 				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
 				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
-				destPix.set(r, g, b);
+				dest.set(r, g, b);
             }
         }
+    }
+
+    // For this to work the type T must have a method:
+	//   T.set(unsigned char r, unsigned char g, unsigned char b)
+    // Assumes that the compiler will use the templates to inline and
+    // generate decent code
+	inline void ToneMapKernel(const Rgba32F &srcPix, T &destPix) const 
+	{
+		// Applies the exposure correction (note that we don't care about the alpha!)
+		Rgba32F pix = srcPix * expF;
+
+        // Does the actual Reinhard02 mapping for a single pixel
+        pix = reinhard02(pix);
+
+        PixelToLDR (pix, destPix);
 	}
+
+
+    // Kernel which handled groups of 4 contiguous pixels
+    inline void ToneMapKernel4(const Rgba32F * PCG_RESTRICT src, 
+        T * PCG_RESTRICT dest) const 
+    {
+         // Load the next 4 pixels and transpose them (after expore)
+        Rgba32F pix0 = src[0] * expF;
+        Rgba32F pix1 = src[1] * expF;
+        Rgba32F pix2 = src[2] * expF;
+        Rgba32F pix3 = src[3] * expF;
+        Rgba32F p0 = pix0, p1 = pix1, p2 = pix2, p3 = pix3;
+        PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
+
+        // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
+        const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
+
+        // Apply the Reinhard02 scalling on the vector
+        Rgba32F vec_Ls = vec_partA + vec_partB/(vec_Lwp + vec_key*vec_Lw);
+
+        // Scale each pixel by the appropriate value
+        const Rgba32F Ls0 = broadcast_idx<0> (vec_Ls);
+        const Rgba32F Ls1 = broadcast_idx<1> (vec_Ls);
+        const Rgba32F Ls2 = broadcast_idx<2> (vec_Ls);
+        const Rgba32F Ls3 = broadcast_idx<3> (vec_Ls);
+
+        pix0 *= Ls0;
+        pix1 *= Ls1;
+        pix2 *= Ls2;
+        pix3 *= Ls3;
+
+        // Finish each pixel individually
+        PixelToLDR (pix0, dest[0]);
+        PixelToLDR (pix1, dest[1]);
+        PixelToLDR (pix2, dest[2]);
+        PixelToLDR (pix3, dest[3]);
+    }
 
 
 
@@ -646,6 +686,12 @@ private:
     // Helper constant parts of the computations
     const float partA;
     const float partB;
+
+    // Vector version of the helper constants
+    const Rgba32F vec_Lwp;
+    const Rgba32F vec_key;
+    const Rgba32F vec_partA;
+    const Rgba32F vec_partB;
 
     // Helper value to know when to ignore the lut and set the value to zero
     const Rgba32F threshold;
@@ -746,7 +792,7 @@ ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::vec_LUM(LUM_R, LUM_G, LUM_B
             const ToneMapper &tm, bool useLut, TmoTechnique technique) 
         {
             const int numPixels = src.Size();
-            const blocked_range<int> range = blocked_range<int>(0,numPixels);
+            const blocked_range<int> range = blocked_range<int>(0,numPixels,4);
             ToneMapHelper(dest, src, tm, useLut, technique, range);
         }
 
@@ -756,7 +802,7 @@ ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::vec_LUM(LUM_R, LUM_G, LUM_B
             const ToneMapper &tm, bool useLut, TmoTechnique technique) 
         {
             const blocked_range2d<int> range = 
-                blocked_range2d<int>(0,src.Height(), 0,src.Width());
+                blocked_range2d<int>(0,src.Height(),1, 0,src.Width(),4);
             ToneMapHelper(dest, src, tm, useLut, technique, range);
         }
 
