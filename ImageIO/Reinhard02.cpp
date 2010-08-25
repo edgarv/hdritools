@@ -20,8 +20,7 @@
 
 #include <tbb/parallel_reduce.h>
 #include <tbb/blocked_range.h>
-#include <tbb/concurrent_vector.h>
-#include <tbb/atomic.h>
+#include <tbb/enumerable_thread_specific.h>
 
 
 // Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
@@ -493,14 +492,12 @@ float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
 
 struct AccumulateHistogramFunctor
 {
-    typedef std::vector< tbb::atomic<int>, 
-        tbb::cache_aligned_allocator< tbb::atomic<int>> > hist_t;
+    typedef std::vector<int, tbb::cache_aligned_allocator<int> > hist_t;
+    typedef tbb::enumerable_thread_specific<hist_t> threadhist_t;
 
     // Structure to hold all the common parameters
     struct Params
-    {
-        hist_t histogram;
-        
+    {   
         const float res_factor;
         const float Lmin_log;
         const float Lmax_log;
@@ -513,14 +510,36 @@ struct AccumulateHistogramFunctor
         // the maximum and minimum [lineal] luminance
         static Params init(float Lmin, float Lmax);
 
+        // Returns a reference to the thread local histogram
+        hist_t & localHistogram() {
+            return tls_histogram.local();
+        }
+
+        // Accumulates all the local histograms. After using this method this
+        // set of params should be read only!!
+        hist_t & flatHistogram() {
+            for (threadhist_t::const_iterator it = tls_histogram.begin(); 
+                 it != tls_histogram.end(); ++it) {
+
+                 const hist_t & curr = *it;
+                 for (size_t i = 0; i < histogram.size(); ++i) {
+                     histogram[i] += curr[i];
+                 }
+            }
+            return histogram;
+        }
+
     private:
-        Params(hist_t::size_type count, const tbb::atomic<int> & zero,
-            float res_factor_, float Lmin_log_,float Lmax_log_, float inv_res_):
-        histogram(count, zero),
+        Params(hist_t::size_type count, float res_factor_,
+            float Lmin_log_, float Lmax_log_, float inv_res_):
         res_factor(res_factor_), Lmin_log(Lmin_log_), Lmax_log(Lmax_log_),
         inv_res(inv_res_),
-        vec_res_factor(res_factor_), vec_Lmin_log(Lmin_log_)
+        vec_res_factor(res_factor_), vec_Lmin_log(Lmin_log_),
+        histogram(count, 0), tls_histogram(histogram)
         {}
+
+        hist_t histogram;
+        threadhist_t tls_histogram;
     };
 
     // Keep the pointer to the luminance vector
@@ -549,22 +568,24 @@ struct AccumulateHistogramFunctor
     // Method invoked by TBB: accumulates the data for the subrange
     void operator() (const tbb::blocked_range<size_t> & r)
     {
+        hist_t & histogram = params.localHistogram();
+
         // Handle a nasty corner case
         if (r.size() < 4) {
-            accumulateScalar(r.begin(), r.end());
+            accumulateScalar(r.begin(), r.end(), histogram);
             return;
         }
 
         // Process the first, non-aligned elements (if any)
         const size_t begin_sse = (r.begin() + 3) & ~static_cast<size_t>(0x3);
-        accumulateScalar(r.begin(), begin_sse);
+        accumulateScalar(r.begin(), begin_sse, histogram);
 
         // Do the 4x, SSE part
         const size_t end_sse = r.end() & ~static_cast<size_t>(0x3);
-        accumulateSSE(begin_sse, end_sse);
+        accumulateSSE(begin_sse, end_sse, histogram);
 
         // Process the rest, also in a scalar way
-        accumulateScalar(end_sse, r.end());
+        accumulateScalar(end_sse, r.end(), histogram);
     }
 
 
@@ -576,7 +597,7 @@ struct AccumulateHistogramFunctor
 
 
 private:
-    inline void accumulateScalar (size_t begin, size_t end)
+    inline void accumulateScalar (size_t begin, size_t end, hist_t & histogram)
     {
         assert(begin <= end);
         float c = 0.0f;
@@ -591,12 +612,12 @@ private:
 
             int bin_idx = static_cast<int> (params.res_factor * 
                 (log_lum - params.Lmin_log));
-            assert (bin_idx >= 0 && bin_idx < params.histogram.size());
-            params.histogram[bin_idx]++;
+            assert (bin_idx >= 0 && bin_idx < histogram.size());
+            histogram[bin_idx]++;
         }
     }
 
-    inline void accumulateSSE (size_t begin, size_t end)
+    inline void accumulateSSE (size_t begin, size_t end, hist_t & histogram)
     {
         assert(begin <= end);
         assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
@@ -617,22 +638,23 @@ private:
             vec_sum = t;
 
             // Update the histogram
-            __m128 idx_temp = params.vec_res_factor * (vec_log_lum - params.vec_Lmin_log);
+            __m128 idx_temp = params.vec_res_factor * 
+                (vec_log_lum - params.vec_Lmin_log);
             const __m128i bin_idx = _mm_cvttps_epi32 (idx_temp);
             const int index0 = _mm_extract_epi16(bin_idx, 0*2);
             const int index1 = _mm_extract_epi16(bin_idx, 1*2);
 		    const int index2 = _mm_extract_epi16(bin_idx, 2*2);
 		    const int index3 = _mm_extract_epi16(bin_idx, 3*2);
 
-            assert (index0 >= 0 && index0 < params.histogram.size());
-            assert (index1 >= 0 && index1 < params.histogram.size());
-            assert (index2 >= 0 && index2 < params.histogram.size());
-            assert (index3 >= 0 && index3 < params.histogram.size());
+            assert (index0 >= 0 && index0 < histogram.size());
+            assert (index1 >= 0 && index1 < histogram.size());
+            assert (index2 >= 0 && index2 < histogram.size());
+            assert (index3 >= 0 && index3 < histogram.size());
 
-            params.histogram[index0]++;
-            params.histogram[index1]++;
-            params.histogram[index2]++;
-            params.histogram[index3]++;
+            histogram[index0]++;
+            histogram[index1]++;
+            histogram[index2]++;
+            histogram[index3]++;
         }
 
         // Accumulate the horizontal result
@@ -672,9 +694,7 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
     const float inv_res = (epsilon + (Lmax_log - Lmin_log)) / num_bins;
 
     // Construct and return the object
-    tbb::atomic<int> zero;
-    zero = 0;
-    Params p (num_bins, zero, res_factor, Lmin_log, Lmax_log, inv_res);
+    Params p (num_bins, res_factor, Lmin_log, Lmax_log, inv_res);
     return p;
 }
 
@@ -691,7 +711,7 @@ AccumulateHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
 
     tbb::parallel_reduce (tbb::blocked_range<size_t>(0, Lw_end-Lw, 4), acc);
 
-    AccumulateHistogramFunctor::hist_t & histogram = params.histogram;
+    AccumulateHistogramFunctor::hist_t & histogram = params.flatHistogram();
     const float & Lmin_log = params.Lmin_log;
     const float & inv_res  = params.inv_res;
 

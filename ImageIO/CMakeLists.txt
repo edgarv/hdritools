@@ -69,6 +69,11 @@ set_target_properties(ImageIO PROPERTIES
 # TODO This should be done only when building it as a shared library in Windows
 add_definitions(-DIMAGEIO_EXPORTS)
 
+# Per Appendix C of the TBB documentation, make windows.h not to define min/max
+if(WIN32)
+  add_definitions(-DNOMINMAX)
+endif()
+
 # OpenEXR definitions (only used in windows dll anyway)
 if(OpenEXR_DEFINITIONS)
   add_definitions(${OpenEXR_DEFINITIONS})
