@@ -280,3 +280,33 @@ TEST_F(Reinhard02ParamsTest, HistogramKey)
         ASSERT_LT (p.key, 0.35f);
     }
 }
+
+
+
+TEST_F(Reinhard02ParamsTest, Benchmark)
+{
+    {
+        FloatImage img;
+        pcg::Tableau::fill (img);
+        for (int i = 0; i < NUM_RUNS; ++i) {
+            Reinhard02::Params p = Reinhard02::EstimateParams(img);
+
+            // Values calculated in matlab
+            ASSERT_NEAR (p.key,      0.1977469f, 5e-6);
+            ASSERT_NEAR (p.l_white, 53.3945084f, 5e-6);
+            ASSERT_NEAR (p.l_w,      0.2085711f, 5e-6);
+        }
+    }
+
+    {
+        FloatImage img(IMG_W*4, IMG_H*4);
+        fillImage(img);
+        for (int i = 0; i < NUM_RUNS; ++i) {
+            Reinhard02::Params p = Reinhard02::EstimateParams(img);
+
+            ASSERT_LT (p.l_w, p.l_white);
+            ASSERT_GT (p.key, 0.0f);
+            ASSERT_LT (p.key, 1.0f);
+        }
+    }
+}
