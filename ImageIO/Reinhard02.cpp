@@ -743,43 +743,94 @@ AccumulateHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
 
 
 
+// Helper for Kahan summations. Does sum += val, using and updating the
+// given compensation variable
+template <typename T>
+inline void kahanAdd(T val, T & sum, T & compensation)
+{
+    const T y = val - compensation;
+    const T t = sum + y;
+    compensation = (t - sum) - y;
+    sum = t;
+}
+
+
+// Functor for accumulating the log-luminance beyond a threshold
+struct SumThresholdFunctor
+{
+    // Range type
+    typedef tbb::blocked_range<const float *> range_t;
+
+    // Max number of expected elements
+    const float lum_cutoff;
+    const ptrdiff_t threshold;
+
+    // Values to be returned
+    float removed_sum;
+    ptrdiff_t removed_count;
+
+    // Initial constructor
+    SumThresholdFunctor (float lum_cutoff_, ptrdiff_t threshold_) :
+    lum_cutoff(lum_cutoff_), threshold(threshold_),
+    removed_sum(0.0f), removed_count(0), sum_c(0.0f) {}
+
+    // Splitting constructor
+    SumThresholdFunctor (SumThresholdFunctor &s, tbb::split) :
+    lum_cutoff(s.lum_cutoff), threshold(s.threshold),
+    removed_sum(0.0f), removed_count(0), sum_c(0.0f) {}
+
+    // Accumulate
+    void operator() (const range_t &range)
+    {
+        // Use a Kahan summation
+        ptrdiff_t removed_count = 0;
+        float removed_sum = 0.0f;
+        float removed_c = 0.0f;
+
+        // Continue using Kahan
+        for (const float * PCG_RESTRICT lum = range.begin(); 
+             lum != range.end() && removed_count < threshold; ++lum) {
+            if (*lum > lum_cutoff) {
+                 ++removed_count;
+                 const float val = logf (*lum);
+                 const float y = val - removed_c;
+                 const float t = removed_sum + y;
+                 removed_c = (t - removed_sum) - y;
+                 removed_sum = t;
+             }
+        }
+        kahanAdd (removed_sum, this->removed_sum, this->sum_c);
+        this->removed_count += removed_count;
+    }
+
+    // Merge
+    void join (SumThresholdFunctor &rhs)
+    {
+        kahanAdd (rhs.removed_sum, removed_sum, sum_c);
+        removed_count += rhs.removed_count;
+    }
+
+private:
+    // Compensation value
+    float sum_c;
+};
+
+
+
 // Helper function: accumulates the log-luminance beyond a given threshold.
 // Returns the accumulation of those log-luminances and stores the number
 // of elements added
-float sumBeyondThreshold(const float * PCG_RESTRICT const Lw,
-                         const float * PCG_RESTRICT const Lw_end,
+float sumBeyondThreshold(const float * Lw, const float * Lw_end,
                          const float lum_cutoff, ptrdiff_t &removed_count)
 {
-    removed_count = 0;
     const ptrdiff_t count = Lw_end - Lw;
     const ptrdiff_t threshold = static_cast<ptrdiff_t> (0.01 * count);
 
-    // Also use a Kahan summation
-    float removed_sum = 0.0f;
-    float removed_c = 0.0f;
-
-    const float * PCG_RESTRICT lum = Lw;
-    // Iterate until finding the first element
-    for ( ; lum != Lw_end && removed_count < threshold; ++lum) {
-        if (*lum > lum_cutoff) {
-             ++removed_count;
-             removed_sum = logf (*lum);
-             break;
-         }
-    }
-
-    // Continue using Kahan
-    for ( ; lum != Lw_end && removed_count < threshold; ++lum) {
-        if (*lum > lum_cutoff) {
-             ++removed_count;
-             const float val = logf (*lum);
-             const float y = val - removed_c;
-             const float t = removed_sum + y;
-             removed_c = (t - removed_sum) - y;
-             removed_sum = t;
-         }
-    }
-    return removed_sum;
+    // Run in parallel
+    SumThresholdFunctor stf(lum_cutoff, threshold);
+    tbb::parallel_reduce(SumThresholdFunctor::range_t(Lw, Lw_end, 4), stf);
+    removed_count = stf.removed_count;
+    return stf.removed_sum;
 }
 
 
