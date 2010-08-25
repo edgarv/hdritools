@@ -18,6 +18,9 @@
 #include <vector>
 #include <memory>
 
+#include <tbb/parallel_reduce.h>
+#include <tbb/blocked_range.h>
+
 
 // Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
 #define USE_PACKED_LUT 0
@@ -112,58 +115,30 @@ inline bool isInvalidLuminance(float x) {
 
 
 
-// Helper function to fill the array of luminances. It converts the invalid
+// TBB functor object to fill the array of luminances. It converts the invalid
 // values to zero and returns the maximum, minimum and number of invalid values
-void 
-computeLuminance_scalar (const Rgba32F* PCG_RESTRICT const pixels, size_t count,
-                         afloat_t * PCG_RESTRICT Lw,
-                         size_t &zero_count, float &Lmin, float &Lmax)
+struct LuminanceFunctor
 {
-    zero_count = 0;
-    Lmin =  float_limits::infinity();
-    Lmax = -float_limits::infinity();
-    
-    const Rgba32F luminance_vec(0.27f, 0.67f, 0.06f, 0.0f);
-    for (size_t i = 0; i < count; ++i) {
-        __m128 dot_tmp = pixels[i] * luminance_vec;
-        dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-        dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-        _mm_store_ss(&Lw[i], dot_tmp);
-        // Flush all negatives, denorms, NaNs and infinity values to 0.0
-        if (isInvalidLuminance(Lw[i])) {
-            Lw[i] = 0.0f;
-            ++zero_count;
-        } else {
-            Lmin = Lw[i] < Lmin ? Lw[i] : Lmin;
-            Lmax = Lw[i] > Lmax ? Lw[i] : Lmax;
-        }
-    }
-}
+    // Original data
+    const Rgba32F * PCG_RESTRICT const pixels;
+    afloat_t * PCG_RESTRICT Lw;
 
+    // Data to be reduced
+    size_t zero_count;
+    float Lmin;
+    float Lmax;
 
-
-// Idem, but with SSE, operating in 4 pixels at a time
-void
-computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
-                  afloat_t * PCG_RESTRICT Lw,
-                  size_t &zero_count, float &Lmin, float &Lmax)
-{
-    // Factors for computing the luminance (decent compilers should inline this)
-    static const float LUM_R = 0.27f;
-    static const float LUM_G = 0.67f;
-    static const float LUM_B = 0.06f;
-
-    zero_count = 0;
-    Lmin =  float_limits::infinity();
-    Lmax = -float_limits::infinity();
-
-    // Helper data
-    static const Rgba32F vec_LUM_R = Rgba32F(LUM_R);
-    static const Rgba32F vec_LUM_G = Rgba32F(LUM_G);
-    static const Rgba32F vec_LUM_B = Rgba32F(LUM_B);
-    static const __m128i MASK_NAN  = _mm_set1_epi32 (0x7f800000);
-    static const __m128 vec_MINVAL = _mm_set1_ps(float_limits::min());
-    static const __m128 ZERO = _mm_setzero_ps();
+    // Helper constants
+    static const float LUM_R;
+    static const float LUM_G;
+    static const float LUM_B;
+    static const Rgba32F vec_LUM;
+    static const Rgba32F vec_LUM_R;
+    static const Rgba32F vec_LUM_G;
+    static const Rgba32F vec_LUM_B;
+    static const Rgba32F vec_MINVAL;
+    static const Rgba32F ZERO;
+    static const __m128i MASK_NAN;
 
     // LUT for counting the number of zero-ed elements given the 4x32bit masks
     // where a 0x0 means the element was converted to zero.
@@ -171,94 +146,142 @@ computeLuminance (const Rgba32F * PCG_RESTRICT const pixels, const size_t count,
 #if USE_PACKED_LUT
     static const uint64_t packed_lut = 0x112122312232334ULL;
 #else
-    static const int LUT[] = { 4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0 };
+    static const int LUT[];
 #endif
 
-    const size_t count_sse = count & ~0x3;
+    // Constructor for the initial phase
+    LuminanceFunctor (const Rgba32F * const pixels_, afloat_t * Lw_) :
+    pixels(pixels_), Lw(Lw_), zero_count(0), 
+    Lmin(float_limits::infinity()), Lmax(-float_limits::infinity()) {}
 
-    // Raw luminance SSE loop, doing groups of 4 pixels at a time
-    for (size_t off = 0; off < count_sse; off += 4)
+    // Constructor for each split
+    LuminanceFunctor (LuminanceFunctor & l, tbb::split) :
+    pixels(l.pixels), Lw(l.Lw), zero_count(0), 
+    Lmin(float_limits::infinity()), Lmax(-float_limits::infinity()) {}
+
+    // TBB method: joins this functor with the given one
+    void join (LuminanceFunctor & rhs)
     {
-        // Load the next 4 pixels and transpose them
-        __m128 p0 = pixels[off];
-        __m128 p1 = pixels[off+1];
-        __m128 p2 = pixels[off+2];
-        __m128 p3 = pixels[off+3];
-        PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
-
-        // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
-        const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
-
-        // Store. Note that it contains NaN and Inf!
-        _mm_store_ps(Lw + off, vec_Lw);
+        zero_count += rhs.zero_count;
+        Lmin = std::min (Lmin, rhs.Lmin);
+        Lmax = std::max (Lmax, rhs.Lmax);
     }
 
-    // Validation and min/max update loop, doing groups of 4 pixels at a time
-    union { __m128 v; float f[4]; } vec_min;
-    union { __m128 v; float f[4]; } vec_max;
-    vec_min.v = _mm_set_ps1 (Lmin);
-    vec_max.v = _mm_set_ps1 (Lmax);
-    for (size_t off = 0; off < count_sse; off += 4)
+    // Method invoked by TBB: accumulates the data for the subrange
+    void operator() (const tbb::blocked_range<size_t> & r)
     {
-        const __m128 vec_Lw = _mm_load_ps(Lw + off);
+        // Process the first, non-aligned elements (if any)
+        const size_t begin_sse = (r.begin() + 3) & ~static_cast<size_t>(0x3);
+        computeScalar(r.begin(), begin_sse);
 
-        // Create a mask to zero out invalid pixels
-        // !(vec_Lw < vec_MINVAL) ? 0xffffffff : 0x0
-        __m128 mask_min = _mm_cmpnlt_ps (vec_Lw, vec_MINVAL);
+        // Do the 4x, SSE part
+        const size_t end_sse = r.end() & ~static_cast<size_t>(0x3);
+        computeSSE(begin_sse, end_sse);
 
-        // (0x7f800000 > vec_Lw) ? 0xffff : 0, then expand to 32 bits
-        __m128 mask_nan = _mm_cmpneq_ps(ZERO, 
-            _mm_castsi128_ps(_mm_cmpgt_epi32(MASK_NAN,
-                             _mm_castps_si128(vec_Lw))));
-
-        // Combine the masks
-        __m128 mask = _mm_and_ps(mask_min, mask_nan);
-
-        // Apply the mask and store the result
-        const __m128 result = _mm_and_ps (vec_Lw, mask);
-        _mm_store_ps (Lw + off, result);
-
-        // Add the number of zeros
-        const int lut_index =  _mm_movemask_ps (mask);
-#if USE_PACKED_LUT
-        zero_count += (packed_lut >> (lut_index*4)) & 0xF;
-#else
-        zero_count += LUT[lut_index];
-#endif
-
-        // Update the minimum and maximum vectors, only the valid elements
-        // SSE4.1 has a nice "blendps" instruction, but I can't use here
-        __m128 result_min = _mm_or_ps(result, _mm_andnot_ps(mask, vec_min.v));
-        vec_min.v = _mm_min_ps (vec_min.v, result_min);
-        __m128 result_max = _mm_or_ps(result, _mm_andnot_ps(mask, vec_max.v));
-        vec_max.v = _mm_max_ps (vec_max.v, result_max);
+        // Process the rest, also in a scalar way
+        computeScalar(end_sse, r.end());
     }
 
-    // Accumulate the result for min & max
-    for (int i = 0; i < 4; ++i) {
-        Lmin = std::min (Lmin, vec_min.f[i]);
-        Lmax = std::max (Lmax, vec_max.f[i]);
-    }
-
-    // Do the remaining pixels in the normal way
-    if (count != count_sse) {
-        static const Rgba32F luminance_vec(LUM_R, LUM_G, LUM_B, 0.0f);
-        for (size_t i = count_sse; i < count; ++i) {
-            __m128 dot_tmp = pixels[i] * luminance_vec;
+private:
+    inline void computeScalar(size_t begin, size_t end) {
+        for (size_t i = begin; i < end; ++i) {
+            __m128 dot_tmp = pixels[i] * vec_LUM;
             dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
             dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
             _mm_store_ss(Lw+i, dot_tmp);
             // Flush all negatives, denorms, NaNs and infinity values to 0.0
             if (!isInvalidLuminance(Lw[i])) {
-                Lmin = Lw[i] < Lmin ? Lw[i] : Lmin;
-                Lmax = Lw[i] > Lmax ? Lw[i] : Lmax;
+                Lmin = std::min (Lw[i], Lmin);
+                Lmax = std::max (Lw[i], Lmax);
             } else {
                 Lw[i] = 0.0f;
                 ++zero_count;
             }
         }
     }
-}
+
+    inline void computeSSE(size_t begin, size_t end) {
+
+        // Raw luminance SSE loop, doing groups of 4 pixels at a time
+        assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
+
+        union { __m128 v; float f[4]; } vec_min;
+        union { __m128 v; float f[4]; } vec_max;
+        vec_min.v = _mm_set_ps1 (Lmin);
+        vec_max.v = _mm_set_ps1 (Lmax);
+
+        for (size_t off = begin; off < end; off += 4)
+        {
+            // Load the next 4 pixels and transpose them
+            __m128 p0 = pixels[off];
+            __m128 p1 = pixels[off+1];
+            __m128 p2 = pixels[off+2];
+            __m128 p3 = pixels[off+3];
+            PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
+
+            // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
+            const Rgba32F vec_Lw = 
+                (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
+
+
+            ////////////////////////////////////////////////////////////////////
+            // Validation and min/max update, doing groups of 4 pixels at a time
+            ////////////////////////////////////////////////////////////////////
+
+            // Create a mask to zero out invalid pixels
+            // !(vec_Lw < vec_MINVAL) ? 0xffffffff : 0x0
+            __m128 mask_min = _mm_cmpnlt_ps (vec_Lw, vec_MINVAL);
+
+            // (0x7f800000 > vec_Lw) ? 0xffff : 0, then expand to 32 bits
+            __m128 mask_nan = _mm_cmpneq_ps(ZERO, 
+                _mm_castsi128_ps(_mm_cmpgt_epi32(MASK_NAN,
+                                 _mm_castps_si128(vec_Lw))));
+
+            // Combine the masks
+            __m128 mask = _mm_and_ps(mask_min, mask_nan);
+
+            // Apply the mask and store the result
+            const __m128 result = _mm_and_ps (vec_Lw, mask);
+            _mm_store_ps (Lw + off, result);
+
+            // Add the number of zeros
+            const int lut_index =  _mm_movemask_ps (mask);
+    #if USE_PACKED_LUT
+            zero_count += (packed_lut >> (lut_index*4)) & 0xF;
+    #else
+            zero_count += LUT[lut_index];
+    #endif
+
+            // Update the minimum and maximum vectors, only the valid elements
+            // SSE4.1 has a nice "blendps" instruction, but I can't it here
+            __m128 result_min=_mm_or_ps(result, _mm_andnot_ps(mask, vec_min.v));
+            vec_min.v = _mm_min_ps (vec_min.v, result_min);
+            __m128 result_max=_mm_or_ps(result, _mm_andnot_ps(mask, vec_max.v));
+            vec_max.v = _mm_max_ps (vec_max.v, result_max);
+        }
+
+        // Accumulate the result for min & max
+        for (int i = 0; i < 4; ++i) {
+            Lmin = std::min (Lmin, vec_min.f[i]);
+            Lmax = std::max (Lmax, vec_max.f[i]);
+        }
+    }
+};
+
+const float LuminanceFunctor::LUM_R = 0.27f;
+const float LuminanceFunctor::LUM_G = 0.67f;
+const float LuminanceFunctor::LUM_B = 0.06f;
+const Rgba32F LuminanceFunctor::vec_LUM(LUM_R, LUM_G, LUM_B, 0.0f);
+const Rgba32F LuminanceFunctor::vec_LUM_R(LUM_R);
+const Rgba32F LuminanceFunctor::vec_LUM_G(LUM_G);
+const Rgba32F LuminanceFunctor::vec_LUM_B(LUM_B);
+const Rgba32F LuminanceFunctor::vec_MINVAL(float_limits::min());
+const Rgba32F LuminanceFunctor::ZERO(0.0f);
+const __m128i LuminanceFunctor::MASK_NAN(_mm_set1_epi32 (0x7f800000));
+#if !USE_PACKED_LUT
+const int LuminanceFunctor::LUT[] = 
+    { 4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0 };
+#endif
 
 
 
@@ -525,7 +548,11 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     // Compute the luminance
     size_t zero_count;
     float Lmin, Lmax;
-    computeLuminance (pixels, count, Lw, zero_count, Lmin, Lmax);
+    LuminanceFunctor lumFunctor(pixels, Lw);
+    tbb::parallel_reduce(tbb::blocked_range<size_t>(0, count, 4), lumFunctor);
+    zero_count = lumFunctor.zero_count;
+    Lmin       = lumFunctor.Lmin;
+    Lmax       = lumFunctor.Lmax;
 
     // Abort if all the values are zero
     if (zero_count == count) {
