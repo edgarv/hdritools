@@ -10,7 +10,6 @@
 // http://www.cs.bris.ac.uk/~reinhard/papers/jgt_reinhard.pdf
 
 #include "Reinhard02.h"
-#include "Amaths.h"
 
 #include <cstddef>
 
@@ -25,6 +24,18 @@
 
 // Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
 #define USE_PACKED_LUT 0
+
+// Flag to use Intel's fast log routine. Very fast but has a terrible accuracy
+// but makes the whole process run about 4x faster (in MSVC++ 2008)
+#define USE_AM_LOG 0
+
+#if USE_AM_LOG
+#include "Amaths.h"
+#else
+namespace ssemath {
+#include "sse_mathfun.h"
+}
+#endif
 
 
 #if USE_PACKED_LUT
@@ -206,11 +217,6 @@ private:
         // Raw luminance SSE loop, doing groups of 4 pixels at a time
         assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
 
-        union { __m128 v; float f[4]; } vec_min;
-        union { __m128 v; float f[4]; } vec_max;
-        vec_min.v = _mm_set_ps1 (Lmin);
-        vec_max.v = _mm_set_ps1 (Lmax);
-
         for (size_t off = begin; off < end; off += 4)
         {
             // Load the next 4 pixels and transpose them
@@ -224,10 +230,22 @@ private:
             const Rgba32F vec_Lw = 
                 (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
 
+            // Store. Note that it contains NaN and Inf!
+            _mm_store_ps(Lw + off, vec_Lw);
+        }
 
-            ////////////////////////////////////////////////////////////////////
-            // Validation and min/max update, doing groups of 4 pixels at a time
-            ////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
+        // Validation and min/max update, doing groups of 4 pixels at a time
+        ////////////////////////////////////////////////////////////////////////
+
+        union { __m128 v; float f[4]; } vec_min;
+        union { __m128 v; float f[4]; } vec_max;
+        vec_min.v = _mm_set_ps1 (Lmin);
+        vec_max.v = _mm_set_ps1 (Lmax);
+
+        for (size_t off = begin; off < end; off += 4)
+        {
+            const __m128 vec_Lw = _mm_load_ps(Lw + off);
 
             // Create a mask to zero out invalid pixels
             // !(vec_Lw < vec_MINVAL) ? 0xffffffff : 0x0
@@ -332,8 +350,11 @@ float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
     for (ptrdiff_t off = 0; off < count_sse; off += 4)
     {
         const __m128 vec_lum = _mm_load_ps(Lw+off);
+#if USE_AM_LOG
         const Rgba32F vec_log_lum = am::log_eps (vec_lum);
-
+#else
+        const Rgba32F vec_log_lum = ssemath::log_ps (vec_lum);  
+#endif
         // Update the sum with error compensation
         const Rgba32F y = vec_log_lum - vec_c;
         const Rgba32F t = vec_sum + y;
@@ -368,128 +389,6 @@ float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
 // Accumulate the logarithm of the given array of luminances. It builds an
 // histogram and also stores the log-luminances corresponding to the 1 and 99
 // percentiles thresholds
-float accumulateWithHistogram(const float * PCG_RESTRICT Lw,
-                              const float * PCG_RESTRICT Lw_end,
-                              const float Lmin, const float Lmax,
-                              float &L1, float &L99)
-{
-    assert (Lmax > Lmin);
-    
-    Rgba32F rangeHelper(Lmin, Lmax, 1.0);
-    rangeHelper = am::log_eps (rangeHelper);
-    const float Lmin_log = std::min(rangeHelper.r(), logf(Lmin));
-    const float Lmax_log = std::max(rangeHelper.g(), logf(Lmax));
-
-    const int resolution = 100;
-    const int dynrange = static_cast<int> (ceil(1e-5 + Lmax_log - Lmin_log));
-    const int num_bins = std::min(resolution * dynrange, 0x7FFF);
-    std::vector<size_t> histogram(num_bins, 0);
-
-    // This makes sure that epsilon is large enough so that it is not necessary
-    // to guard for the corner case where Lmax_log will be mapped to N
-    // There must be an analytical way of doing this, but this is decent enough
-    float epsilon = 1.9073486328125e-6f;
-    {
-        const float range = Lmax_log - Lmin_log;
-        while (static_cast<int>((num_bins/(epsilon+range)) * range) >= num_bins)
-            epsilon *= 2.0f;
-    }
-
-    const float res_factor = num_bins / (epsilon + (Lmax_log - Lmin_log));
-
-    // Helpful constants
-    const Rgba32F vec_res_factor(res_factor);
-    const Rgba32F vec_Lmin_log(Lmin_log);
-
-    // Will process first elements in SSE fashion, 4 at a time
-    const ptrdiff_t count_sse = (Lw_end - Lw) & ~0x3;
-    // Prepare Kahan summation with 4 elements
-    Rgba32F vec_sum = _mm_setzero_ps();
-    Rgba32F vec_c   = _mm_setzero_ps();
-
-    for (ptrdiff_t off = 0; off < count_sse; off += 4)
-    {
-        const __m128 vec_lum = _mm_load_ps(Lw+off);
-        const Rgba32F vec_log_lum = am::log_eps (vec_lum);
-
-        // Update the sum with error compensation
-        const Rgba32F y = vec_log_lum - vec_c;
-        const Rgba32F t = vec_sum + y;
-        vec_c   = (t - vec_sum) - y;
-        vec_sum = t;
-
-        // Update the histogram
-        __m128 idx_temp = vec_res_factor * (vec_log_lum - vec_Lmin_log);
-        const __m128i bin_idx = _mm_cvttps_epi32 (idx_temp);
-        const int index0 = _mm_extract_epi16(bin_idx, 0*2);
-        const int index1 = _mm_extract_epi16(bin_idx, 1*2);
-		const int index2 = _mm_extract_epi16(bin_idx, 2*2);
-		const int index3 = _mm_extract_epi16(bin_idx, 3*2);
-
-        assert (index0 >= 0 && index0 < num_bins);
-        assert (index1 >= 0 && index1 < num_bins);
-        assert (index2 >= 0 && index2 < num_bins);
-        assert (index3 >= 0 && index3 < num_bins);
-
-        ++histogram[index0];
-        ++histogram[index1];
-        ++histogram[index2];
-        ++histogram[index3];
-    }
-
-    // Accumulate the sum and then add the rest of the values (0 up to 3)
-    float L_sum;
-    {
-        __m128 sum_tmp = _mm_hadd_ps(vec_sum, vec_sum);
-        sum_tmp = _mm_hadd_ps(sum_tmp, sum_tmp);
-        _mm_store_ss(&L_sum, sum_tmp);
-    }
-    if (count_sse != (Lw_end - Lw)) {
-        float c = 0.0f;
-        for (const float * lum = Lw+count_sse; lum != Lw_end; ++lum) {
-            const float log_lum = logf(*lum);
-
-            // Update the sum with error compensation
-            const float y = log_lum - c;
-            const float t = L_sum + y;
-            c     = (t - L_sum) - y;
-            L_sum = t;
-
-            int bin_idx = static_cast<int>(res_factor * (log_lum - Lmin_log));
-            assert (bin_idx >= 0 && bin_idx < num_bins);
-            ++histogram[bin_idx];
-        }
-    }
-
-    // Consult the histogram to get the L1 and L99 positions
-    _mm_prefetch ((char*)(&histogram[num_bins- 8]),   _MM_HINT_T0);
-    _mm_prefetch ((char*)(&histogram[num_bins - 16]), _MM_HINT_T0);
-    const float inv_res = (epsilon + (Lmax_log - Lmin_log)) / num_bins;
-    const ptrdiff_t count = Lw_end - Lw;
-    const ptrdiff_t threshold = static_cast<ptrdiff_t> (0.01 * count);
-    for (ptrdiff_t sum = 0, i = histogram.size() - 1; i >= 0; --i) {
-        sum += histogram[i];
-        if (sum > threshold) {
-            L99 = static_cast<float>(i)*inv_res + Lmin_log;
-            assert (Lmin_log <= L99 && L99 <= Lmax_log);
-            break;
-        }
-    }
-    _mm_prefetch ((char*)(&histogram[0]), _MM_HINT_T0);
-    for (ptrdiff_t sum = 0, i = 0; (size_t)i < histogram.size() ; ++i) {
-        sum += histogram[i];
-        if (sum > threshold) {
-            L1 = static_cast<float>(i)*inv_res + Lmin_log;
-            assert (Lmin_log <= L1 && L1 <= Lmax_log && L1 <= L99);
-            break;
-        }
-    }
-
-    return L_sum;
-}
-
-
-
 struct AccumulateHistogramFunctor
 {
     typedef std::vector<int, tbb::cache_aligned_allocator<int> > hist_t;
@@ -549,16 +448,20 @@ struct AccumulateHistogramFunctor
     Params & params;
 
     // Variable which is part of the reduce operation
+#if USE_AM_LOG
     float L_sum;
+#else
+    double L_sum;
+#endif
 
 
     // Constructor for the initial phase
     AccumulateHistogramFunctor (const afloat_t * const Lw_, Params & params_) :
-    Lw(Lw_), params(params_), L_sum(0.0f) {}
+    Lw(Lw_), params(params_), L_sum(0) {}
 
     // Constructor for each split
     AccumulateHistogramFunctor (AccumulateHistogramFunctor & ach, tbb::split) :
-    Lw(ach.Lw), params(ach.params), L_sum(0.0f) {}
+    Lw(ach.Lw), params(ach.params), L_sum(0) {}
 
     // TBB method: joins this functor with the given one
     void join (AccumulateHistogramFunctor & rhs) {
@@ -600,15 +503,9 @@ private:
     inline void accumulateScalar (size_t begin, size_t end, hist_t & histogram)
     {
         assert(begin <= end);
-        float c = 0.0f;
         for (const float * lum = Lw+begin; lum != Lw+end; ++lum) {
-            const float log_lum = logf(*lum);
-
-            // Update the sum with error compensation
-            const float y = log_lum - c;
-            const float t = L_sum + y;
-            c     = (t - L_sum) - y;
-            L_sum = t;
+            const double log_lum = log (static_cast<double> (*lum));
+            L_sum += log_lum;
 
             int bin_idx = static_cast<int> (params.res_factor * 
                 (log_lum - params.Lmin_log));
@@ -629,7 +526,11 @@ private:
         for (size_t off = begin; off != end; off += 4)
         {
             const __m128 vec_lum = _mm_load_ps(Lw+off);
+#if USE_AM_LOG
             const Rgba32F vec_log_lum = am::log_eps (vec_lum);
+#else
+            const Rgba32F vec_log_lum = ssemath::log_ps (vec_lum);
+#endif
 
             // Update the sum with error compensation
             const Rgba32F y = vec_log_lum - vec_c;
@@ -673,7 +574,11 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
     assert (Lmax > Lmin);
 
     Rgba32F rangeHelper(Lmin, Lmax, 1.0);
+#if USE_AM_LOG
     rangeHelper = am::log_eps (rangeHelper);
+#else
+    rangeHelper = ssemath::log_ps (rangeHelper);
+#endif
     const float Lmin_log = std::min(rangeHelper.r(), logf(Lmin));
     const float Lmax_log = std::max(rangeHelper.g(), logf(Lmax));
 
@@ -738,21 +643,13 @@ AccumulateHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
         }
     }
 
+#if USE_AM_LOG
     return acc.L_sum;
+#else
+    return static_cast<float> (acc.L_sum);
+#endif
 }
 
-
-
-// Helper for Kahan summations. Does sum += val, using and updating the
-// given compensation variable
-template <typename T>
-inline void kahanAdd(T val, T & sum, T & compensation)
-{
-    const T y = val - compensation;
-    const T t = sum + y;
-    compensation = (t - sum) - y;
-    sum = t;
-}
 
 
 // Functor for accumulating the log-luminance beyond a threshold
@@ -766,47 +663,37 @@ struct SumThresholdFunctor
     const ptrdiff_t threshold;
 
     // Values to be returned
-    float removed_sum;
+    double removed_sum;
     ptrdiff_t removed_count;
 
     // Initial constructor
     SumThresholdFunctor (float lum_cutoff_, ptrdiff_t threshold_) :
     lum_cutoff(lum_cutoff_), threshold(threshold_),
-    removed_sum(0.0f), removed_count(0), sum_c(0.0f) {}
+    removed_sum(0.0f), removed_count(0) {}
 
     // Splitting constructor
     SumThresholdFunctor (SumThresholdFunctor &s, tbb::split) :
     lum_cutoff(s.lum_cutoff), threshold(s.threshold),
-    removed_sum(0.0f), removed_count(0), sum_c(0.0f) {}
+    removed_sum(0.0f), removed_count(0) {}
 
     // Accumulate
     void operator() (const range_t &range)
     {
-        // Use a Kahan summation
-        ptrdiff_t removed_count = 0;
-        float removed_sum = 0.0f;
-        float removed_c = 0.0f;
-
         // Continue using Kahan
         for (const float * PCG_RESTRICT lum = range.begin(); 
              lum != range.end() && removed_count < threshold; ++lum) {
             if (*lum > lum_cutoff) {
                  ++removed_count;
-                 const float val = logf (*lum);
-                 const float y = val - removed_c;
-                 const float t = removed_sum + y;
-                 removed_c = (t - removed_sum) - y;
-                 removed_sum = t;
+                 const double log_lum = log (static_cast<double> (*lum));
+                 removed_sum += log_lum;
              }
         }
-        kahanAdd (removed_sum, this->removed_sum, this->sum_c);
-        this->removed_count += removed_count;
     }
 
     // Merge
     void join (SumThresholdFunctor &rhs)
     {
-        kahanAdd (rhs.removed_sum, removed_sum, sum_c);
+        removed_sum   += rhs.removed_sum;
         removed_count += rhs.removed_count;
     }
 
@@ -830,7 +717,7 @@ float sumBeyondThreshold(const float * Lw, const float * Lw_end,
     SumThresholdFunctor stf(lum_cutoff, threshold);
     tbb::parallel_reduce(SumThresholdFunctor::range_t(Lw, Lw_end, 4), stf);
     removed_count = stf.removed_count;
-    return stf.removed_sum;
+    return static_cast<float> (stf.removed_sum);
 }
 
 
