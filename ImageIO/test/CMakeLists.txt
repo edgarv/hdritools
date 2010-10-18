@@ -4,6 +4,9 @@ find_package(GTest REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
+# Hard-coded Mersenne Twister definitions
+add_definitions (-DDSFMT_DO_NOT_USE_OLD_NAMES -DDHAVE_SSE2=1 -DDSFMT_MEXP=19937)
+
 set(SRCS
   main.cpp
   Rgba32F_test.cpp
@@ -35,7 +38,7 @@ target_link_libraries(ImageIO_Test ImageIO ${GTEST_LIBRARIES})
 # Enable explicitly SSE2 in linux
 if(NOT MSVC)
 set_target_properties(ImageIO_Test PROPERTIES 
-  COMPILE_FLAGS "-msse -msse2 -ftree-vectorizer-verbose=5"
+  COMPILE_FLAGS "-msse -msse2"
   )
 endif(NOT MSVC)
 
@@ -43,3 +46,4 @@ endif(NOT MSVC)
 # Run the executable with CTest
 enable_testing()
 add_test(ImageIOUnitTests ImageIO_Test)
+

@@ -1,10 +1,5 @@
 #include "RandomMT.h"
 
-// Hard-coded Mersenne Twister definitions
-#define DSFMT_DO_NOT_USE_OLD_NAMES
-#define DHAVE_SSE2 1 
-#define DSFMT_MEXP 19937
-
 #ifdef __cplusplus
 extern "C" {
 #endif
