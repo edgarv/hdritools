@@ -6,6 +6,14 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
+// SSE3 functions are only available as intrinsic in MSVC
+#if defined(_MSC_VER)
+#include <intrin.h>
+#pragma intrinsic ( _mm_hadd_ps )
+#else
+#include <pmmintrin.h>
+#endif // _MSC_VER
+
 
 #if _WIN32||_WIN64
 // define the parts of stdint.h that are needed
@@ -333,9 +341,9 @@ namespace pcg {
 				// Convert to integral type and store
 				const __m128i valuesI = _mm_cvtps_epi32(pix);
 
-				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
-				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
-				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
+				const typename T::pixel_t r = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 3*2));
+				const typename T::pixel_t g = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 2*2));
+				const typename T::pixel_t b = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 1*2));
 				destPix.set(r, g, b);
 			}
 
@@ -361,9 +369,9 @@ namespace pcg {
 				// Convert to integral type and store
 				const __m128i valuesI = _mm_cvtps_epi32(pix);
 
-				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
-				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
-				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
+				const typename T::pixel_t r = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 3*2));
+				const typename T::pixel_t g = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 2*2));
+				const typename T::pixel_t b = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 1*2));
 				destPix.set(r, g, b);
 			}
 
@@ -574,9 +582,9 @@ private:
 				// Convert to integral type and store
 				const __m128i valuesI = _mm_cvtps_epi32(pix);
 
-				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
-				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
-				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
+				const typename T::pixel_t r = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 3*2));
+				const typename T::pixel_t g = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 2*2));
+				const typename T::pixel_t b = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 1*2));
 				dest.set(r, g, b);
             } 
             else {
@@ -593,9 +601,9 @@ private:
 				// Convert to integral type and store
 				const __m128i valuesI = _mm_cvtps_epi32(pix);
 
-				const typename T::pixel_t r = (typename T::pixel_t)(*((const int*)&valuesI + 3));
-				const typename T::pixel_t g = (typename T::pixel_t)(*((const int*)&valuesI + 2));
-				const typename T::pixel_t b = (typename T::pixel_t)(*((const int*)&valuesI + 1));
+				const typename T::pixel_t r = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 3*2));
+				const typename T::pixel_t g = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 2*2));
+				const typename T::pixel_t b = static_cast<typename T::pixel_t> (_mm_extract_epi16(valuesI, 1*2));
 				dest.set(r, g, b);
             }
         }
