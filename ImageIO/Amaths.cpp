@@ -25,27 +25,33 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "Amaths.h"
+#include "StdAfx.h"
 
 #include <emmintrin.h>
+
+#if defined(_MSC_VER)
+typedef __int32 int32_t;
+#else
+#include <stdint.h>
+#endif
 
 
 // Intel AM constants
 #define _PS_CONST(Name, Val) \
-static const _MM_ALIGN16 float _ps_##Name[4] = { Val, Val, Val, Val }
+static const ALIGN16_BEG float _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
 
 #define _PS_EXTERN_CONST(Name, Val) \
-const _MM_ALIGN16 float _ps_##Name[4] = { Val, Val, Val, Val }
+const ALIGN16_BEG float _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
 
 #define _PS_EXTERN_CONST_TYPE(Name, Type, Val) \
-const _MM_ALIGN16 Type _ps_##Name[4] = { Val, Val, Val, Val }; \
+const ALIGN16_BEG Type _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }; \
 
 #define _EPI32_CONST(Name, Val) \
-static const _MM_ALIGN16 __int32 _epi32_##Name[4] = { Val, Val, Val, Val }
-
+static const ALIGN16_BEG int32_t _epi32_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
 
 _PS_EXTERN_CONST(am_1, 1.0f);
-_PS_EXTERN_CONST_TYPE(am_min_norm_pos, __int32, 0x00800000);
-_PS_EXTERN_CONST_TYPE(am_inv_mant_mask, __int32, ~0x7f800000);
+_PS_EXTERN_CONST_TYPE(am_min_norm_pos, int32_t, 0x00800000);
+_PS_EXTERN_CONST_TYPE(am_inv_mant_mask, int32_t, ~0x7f800000);
 
 _EPI32_CONST(0x7f, 0x7f);
 
