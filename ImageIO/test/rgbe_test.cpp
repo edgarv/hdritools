@@ -49,7 +49,7 @@ public:
     void update(const T& value)
     {
         const int *ptr = reinterpret_cast<const int*>((const void*)&value);
-        for (int i = 0; i < sizeof(T)/sizeof(int); ++i) {
+        for (size_t i = 0; i < sizeof(T)/sizeof(int); ++i) {
             m_data += M * ptr[i];
         }
     }
