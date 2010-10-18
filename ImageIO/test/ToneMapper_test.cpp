@@ -8,6 +8,8 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <stdexcept>
+#include <string>
 
 
 // Helper functions
@@ -25,11 +27,14 @@ inline T clamp (T x, T min_val, T max_val) {
 template <typename T>
 inline void quantize (float r, float g, float b, T &out)
 {
-    const float qFactor = static_cast<float>((1<<(sizeof(T::pixel_t) * 8)) - 1);
+    const float qFactor = static_cast<float>((1<<(sizeof(typename T::pixel_t) * 8)) - 1);
 
-    const T::pixel_t rQ = static_cast<T::pixel_t>(clamp(r,0.0f,1.0f) * qFactor);
-    const T::pixel_t gQ = static_cast<T::pixel_t>(clamp(g,0.0f,1.0f) * qFactor);
-    const T::pixel_t bQ = static_cast<T::pixel_t>(clamp(b,0.0f,1.0f) * qFactor);
+    const typename T::pixel_t rQ =
+        static_cast<typename T::pixel_t>(clamp(r,0.0f,1.0f) * qFactor);
+    const typename T::pixel_t gQ =
+        static_cast<typename T::pixel_t>(clamp(g,0.0f,1.0f) * qFactor);
+    const typename T::pixel_t bQ =
+        static_cast<typename T::pixel_t>(clamp(b,0.0f,1.0f) * qFactor);
 
     out.set (rQ, gQ, bQ);
 }
@@ -146,7 +151,7 @@ public:
     struct TestHelper
     {
     private:
-        template <typename N>
+        template <typename N, int dummy=0>
         struct RunHelper {
             static void run(TestHelper &t, bool useLut, 
                 pcg::TmoTechnique technique) {
@@ -154,14 +159,15 @@ public:
             }
         };
 
-        template <>
-        struct RunHelper<pcg::Rgba16> {
+        template <int dummy>
+        struct RunHelper<pcg::Rgba16, dummy> {
             static void run(TestHelper &t, bool useLut, 
                 pcg::TmoTechnique technique) {
                 if (!useLut) {
                     t.tm.ToneMap (t.dest, t.src, technique);
                 } else {
-                    throw std::exception("Rgba16 never uses the LUT!");
+                    const std::string msg("Rgba16 never uses the LUT!");
+                    throw std::runtime_error(msg);
                 }
 
             }
@@ -207,7 +213,7 @@ public:
         template <bool isSRGB>
         void doToneMap(const float scaleFactor, const float invGamma = 1.0f)
         {
-            // Call the appropriate methdo
+            // Call the appropriate method
             switch (T::tmo()) {
             case pcg::REINHARD02:
                 doToneMapActual<isSRGB, pcg::REINHARD02> (scaleFactor,invGamma);
@@ -278,7 +284,7 @@ public:
 template <typename T, pcg::TmoTechnique technique>
 struct TmoTest
 {
-    typedef typename T pix_t;
+    typedef T pix_t;
 
     static pcg::TmoTechnique tmo() {
         return technique;
@@ -310,7 +316,7 @@ template <typename T>
 struct Comparator {
     template <typename M, pcg::ScanLineMode Src_m, pcg::ScanLineMode Dest_m>
     static void
-    compare(typename ToneMapperTest<T>::TestHelper<M, Src_m, Dest_m> &test,
+    compare(typename ToneMapperTest<T>::template TestHelper<M, Src_m, Dest_m> & test,
             int tolerance = -1)
     {
         if (tolerance < 0) {
@@ -336,11 +342,14 @@ using pcg::BottomUp;
 
 TYPED_TEST(ToneMapperTest, TT_Gamma22_EXP_0)
 {
-    TestHelper<TypeParam::pix_t, TopDown, TopDown> test(*this, 2.2f, 0.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, TopDown, TopDown>
+      test(*this, 2.2f, 0.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -353,11 +362,14 @@ TYPED_TEST(ToneMapperTest, TT_Gamma22_EXP_0)
 
 TYPED_TEST(ToneMapperTest, BB_Gamma10_EXP_M2)
 {
-    TestHelper<TypeParam::pix_t, BottomUp, BottomUp> test(*this, 1.f, -2.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, BottomUp, BottomUp>
+      test(*this, 1.f, -2.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -370,11 +382,14 @@ TYPED_TEST(ToneMapperTest, BB_Gamma10_EXP_M2)
 
 TYPED_TEST(ToneMapperTest, TB_Gamma22_EXP_0)
 {
-    TestHelper<TypeParam::pix_t, TopDown, BottomUp> test(*this, 2.2f, 0.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, TopDown, BottomUp>
+      test(*this, 2.2f, 0.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -387,11 +402,14 @@ TYPED_TEST(ToneMapperTest, TB_Gamma22_EXP_0)
 
 TYPED_TEST(ToneMapperTest, BT_Gamma10_EXP_M2)
 {
-    TestHelper<TypeParam::pix_t, BottomUp, TopDown> test(*this, 1.f, -2.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, BottomUp, TopDown>
+      test(*this, 1.f, -2.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -404,11 +422,14 @@ TYPED_TEST(ToneMapperTest, BT_Gamma10_EXP_M2)
 
 TYPED_TEST(ToneMapperTest, TB_SRGB_EXP_M2)
 {
-    TestHelper<TypeParam::pix_t, TopDown, BottomUp> test(*this, -2.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, TopDown, BottomUp>
+      test(*this, -2.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -418,13 +439,17 @@ TYPED_TEST(ToneMapperTest, TB_SRGB_EXP_M2)
 }
 
 
+
 TYPED_TEST(ToneMapperTest, BT_SRGB_EXP_0)
 {
-    TestHelper<TypeParam::pix_t, BottomUp, TopDown> test(*this, 0.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, BottomUp, TopDown>
+      test(*this, 0.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -437,11 +462,14 @@ TYPED_TEST(ToneMapperTest, BT_SRGB_EXP_0)
 
 TYPED_TEST(ToneMapperTest, TT_SRGB_EXP_3M)
 {
-    TestHelper<TypeParam::pix_t, TopDown, TopDown> test(*this, -3.0f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, TopDown, TopDown>
+      test(*this, -3.0f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -454,11 +482,14 @@ TYPED_TEST(ToneMapperTest, TT_SRGB_EXP_3M)
 
 TYPED_TEST(ToneMapperTest, BB_SRGB_EXP_25M)
 {
-    TestHelper<TypeParam::pix_t, BottomUp, BottomUp> test(*this, -2.5f, LUT_SIZE);
+    typedef ToneMapperTest<TypeParam> test_t;
+    typename test_t::template
+      TestHelper<typename TypeParam::pix_t, BottomUp, BottomUp>
+      test(*this, -2.5f, test_t::LUT_SIZE);
 
     // Without the LUT
     test.toneMap(false);
-    ::Comparator<TypeParam>::compare (test, NON_LUT_TOL);
+    ::Comparator<TypeParam>::compare (test, test_t::NON_LUT_TOL);
     
     // Run with LUT
     if (!TypeParam::isRgba16()) {
@@ -466,3 +497,4 @@ TYPED_TEST(ToneMapperTest, BB_SRGB_EXP_25M)
         ::Comparator<TypeParam>::compare (test);
     }
 }
+
