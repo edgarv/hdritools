@@ -184,14 +184,26 @@ struct LuminanceFunctor
     {
         // Process the first, non-aligned elements (if any)
         const size_t begin_sse = (r.begin() + 3) & ~static_cast<size_t>(0x3);
-        computeScalar(r.begin(), begin_sse);
+        if (begin_sse >= r.end()) {
+            computeScalar(r.begin(), r.end());
+            return;
+        } else if (begin_sse != r.begin()) {
+            assert (r.begin() < begin_sse);
+            computeScalar(r.begin(), begin_sse);
+        }
 
         // Do the 4x, SSE part
         const size_t end_sse = r.end() & ~static_cast<size_t>(0x3);
-        computeSSE(begin_sse, end_sse);
+        if (end_sse != begin_sse) {
+            assert (begin_sse < end_sse);
+            computeSSE(begin_sse, end_sse);
+        }
 
         // Process the rest, also in a scalar way
-        computeScalar(end_sse, r.end());
+        if (end_sse != r.end()) {
+            assert (end_sse < r.end());
+            computeScalar(end_sse, r.end());
+        }
     }
 
 private:
@@ -213,9 +225,9 @@ private:
     }
 
     inline void computeSSE(size_t begin, size_t end) {
-
         // Raw luminance SSE loop, doing groups of 4 pixels at a time
         assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
+        assert ((end - begin) % 4 == 0);
 
         for (size_t off = begin; off < end; off += 4)
         {
@@ -473,22 +485,28 @@ struct AccumulateHistogramFunctor
     {
         hist_t & histogram = params.localHistogram();
 
-        // Handle a nasty corner case
-        if (r.size() < 4) {
-            accumulateScalar(r.begin(), r.end(), histogram);
-            return;
-        }
-
         // Process the first, non-aligned elements (if any)
         const size_t begin_sse = (r.begin() + 3) & ~static_cast<size_t>(0x3);
-        accumulateScalar(r.begin(), begin_sse, histogram);
+        if (begin_sse >= r.end()) {
+            accumulateScalar(r.begin(), r.end(), histogram);
+            return;
+        } else if (begin_sse != r.begin()) {
+            assert (r.begin() < begin_sse);
+            accumulateScalar(r.begin(), begin_sse, histogram);
+        }
 
         // Do the 4x, SSE part
         const size_t end_sse = r.end() & ~static_cast<size_t>(0x3);
-        accumulateSSE(begin_sse, end_sse, histogram);
+        if (end_sse != begin_sse) {
+            assert (begin_sse < end_sse);
+            accumulateSSE(begin_sse, end_sse, histogram);
+        }
 
         // Process the rest, also in a scalar way
-        accumulateScalar(end_sse, r.end(), histogram);
+        if (end_sse != r.end()) {
+            assert (end_sse < r.end());
+            accumulateScalar(end_sse, r.end(), histogram);
+        }
     }
 
 
@@ -742,6 +760,7 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     float Lmin, Lmax;
     LuminanceFunctor lumFunctor(pixels, Lw);
     tbb::parallel_reduce(tbb::blocked_range<size_t>(0, count, 4), lumFunctor);
+    assert (lumFunctor.zero_count <= count);
     zero_count = lumFunctor.zero_count;
     Lmin       = lumFunctor.Lmin;
     Lmax       = lumFunctor.Lmax;
