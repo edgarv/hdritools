@@ -9,6 +9,10 @@
 // Erik Reinhard, Journal of Graphics Tools Volume 7, Issue 1 (Nov 2002)
 // http://www.cs.bris.ac.uk/~reinhard/papers/jgt_reinhard.pdf
 
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#endif
+
 #include "Reinhard02.h"
 
 #include <cstddef>
@@ -49,9 +53,7 @@ typedef unsigned __int64     uint64_t;
 
 
 
-#if defined(_WIN32) && defined(__INTEL_COMPILER)
-# include <mathimf.h>
-#else
+#if !defined(_WIN32) || !defined(__INTEL_COMPILER)
 # include <cmath>
 # if defined (_MSC_VER)
 
@@ -69,7 +71,7 @@ inline float exp2f(float x) {
 #endif
 
 // SSE3 functions are only available as intrinsic in MSVC
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic ( _mm_hadd_ps )
 #else
