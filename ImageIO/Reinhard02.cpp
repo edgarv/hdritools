@@ -76,16 +76,7 @@ inline float exp2f(float x) {
 #pragma intrinsic ( _mm_hadd_ps )
 #else
 #include <pmmintrin.h>
-#endif /* _MSC_VER */
-
-namespace pcg
-{
-
-
-
-
-} // namespace pcg
-
+#endif // _MSC_VER
 
 
 using namespace pcg;
