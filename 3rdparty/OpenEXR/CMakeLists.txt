@@ -28,28 +28,15 @@ else(OPENEXR_SHARED_LIBS)
   set(OPENEXR_LIBTYPE "STATIC")
 endif(OPENEXR_SHARED_LIBS)
  
-# We use awk to extract the version string from the VERSION file
-if(WIN32)
-  set(GNUWIN32_PATH "win32")
-endif(WIN32)
-find_program(AWK "awk" ${GNUWIN32_PATH})
-if(NOT AWK)
-  message(FATAL_ERROR "awk was not found!")
-else(NOT AWK)
-  mark_as_advanced(AWK)
-endif(NOT AWK)
-
 # Small macro to set the LIBNAME_VERSION variable accoring to the contents of the VERSION
 macro(GET_VERSION libname)
   string(TOUPPER "${libname}" libname_upper)
   if(NOT ${libname_upper}_VERSION)
-    execute_process(COMMAND "${AWK}" 
-      "toupper($1) ~ /^${libname_upper}/ { print $3 }"
-	  "${CMAKE_CURRENT_SOURCE_DIR}/VERSION"
-	  OUTPUT_VARIABLE AUX_VERSION
-	  OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    set(${libname_upper}_VERSION "${AUX_VERSION}" 
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" AUX_VERSION)
+    string(REGEX MATCH "${libname} - ([0-9]+\\.[0-9]+\\.[0-9]+)"
+      AUX_VERSION "${AUX_VERSION}")
+    unset(AUX_VERSION)
+    set(${libname_upper}_VERSION ${CMAKE_MATCH_1} 
       CACHE STRING 
 	  "Version number for ${libname} as defined in the VERSION file.")
     mark_as_advanced(${libname_upper}_VERSION)
