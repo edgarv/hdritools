@@ -2,13 +2,18 @@
 # It assumes that Qt4 has been already found
 
 # Offer an option to automatically bundle qt4image through BundleUtilities
+include(CMakeDependentOption)
 if(APPLE OR WIN32)
   set(QT4IMAGE_BUNDLE_DEFAULT ON)
 else()
   set(QT4IMAGE_BUNDLE_DEFAULT OFF)
 endif()
-option(QT4IMAGE_BUNDLE "Automatically bundle all qt4image dependencies." 
-  ${QT4IMAGE_BUNDLE_DEFAULT})
+if(NOT "${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_LESS "2.8")
+  set(HAS_BUNDLE_SUPPORT TRUE)
+endif()
+CMAKE_DEPENDENT_OPTION(QT4IMAGE_BUNDLE
+  "Automatically bundle all qt4image dependencies." ${QT4IMAGE_BUNDLE_DEFAULT}
+  "HAS_BUNDLE_SUPPORT" OFF)
 
 # The general sources
 set(SRCS

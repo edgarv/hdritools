@@ -41,9 +41,9 @@ if(WIN32)
     # message(SEND_ERROR "Unsupported/Unknown MSVC version.")
   endif()
   
-  foreach(platform IN LISTS TBB_PLATFORM)
+  foreach(platform ${TBB_PLATFORM})
     list(APPEND TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/${platform}/${TBB_COMPILER}")
-	list(APPEND TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/lib/${platform}/${TBB_COMPILER}")
+    list(APPEND TBB_LIB_SEARCH "${TBB_PREFIX_PATH}/lib/${platform}/${TBB_COMPILER}")
   endforeach()
   
 endif()
