@@ -1,5 +1,5 @@
 # - Finds both release and debug versions of a library
-# FIND_RELEASE_AND_DEBUG_NEW(<prefix> NAMES <library names> [DEFAULT_SUFFIXES | DBG_SUFFIXES <suffixes> ] [PATHS <search paths>])
+# FIND_RELEASE_AND_DEBUG(<prefix> NAMES <library names> [DEFAULT_SUFFIXES | DBG_SUFFIXES <suffixes> ] [PATHS <search paths>])
 # Help in finding distinct release and debug versions of a library so that
 # the appropriate version is selected according to the build configuration.
 # Assumes that the name of the debug version is that of the release version
@@ -61,60 +61,10 @@
 # THE SOFTWARE.
 #=============================================================================
 
-# This is the old, deprecated version of the macro
-macro(FIND_RELEASE_AND_DEBUG LIBPREFIX 
-      LIBNAME_RELEASE LIBNAME_DEBUG SEARCH_PATHS)
-  message(AUTHOR_WARNING "This syntax is deprecated")
-
-  find_library(${LIBPREFIX}_OPTIMIZED_LIBRARY 
-    NAMES ${LIBNAME_RELEASE}
-    HINTS ${SEARCH_PATHS}
-    PATH_SUFFIXES lib
-  )
-  find_library(${LIBPREFIX}_DEBUG_LIBRARY 
-    NAMES ${LIBNAME_DEBUG}
-    HINTS ${SEARCH_PATHS}	
-    PATH_SUFFIXES lib
-  )
-  
-  # Sets up the found version: either release and or debug
-  if(${LIBPREFIX}_OPTIMIZED_LIBRARY AND ${LIBPREFIX}_DEBUG_LIBRARY)
-  # Use both debug and release versions if supported, otherwise default to release
-    if (CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE)
-      set(${LIBPREFIX}_LIBRARY 
-        optimized "${${LIBPREFIX}_OPTIMIZED_LIBRARY}"
-        debug "${${LIBPREFIX}_DEBUG_LIBRARY}"
-      )
-    else()
-	  set(${LIBPREFIX}_LIBRARY "${${LIBPREFIX}_OPTIMIZED_LIBRARY}")
-	endif()
-  elseif(${LIBPREFIX}_OPTIMIZED_LIBRARY)
-    set(${LIBPREFIX}_LIBRARY "${${LIBPREFIX}_OPTIMIZED_LIBRARY}")
-  elseif(${LIBPREFIX}_OPTIMIZED_LIBRARY)
-    set(${LIBPREFIX}_LIBRARY "${${LIBPREFIX}_DEBUG_LIBRARY}")
-  endif()
-  
-  if(${LIBPREFIX}_LIBRARY)
-    set(${LIBPREFIX}_LIBRARY ${${LIBPREFIX}_LIBRARY} 
-      CACHE FILEPATH "The ${LIBPREFIX} library"
-	  )
-  endif()
-
-  # We don't want to pollute the gui with non-user friendly entries
-  mark_as_advanced(${LIBPREFIX}_LIBRARY
-    ${LIBPREFIX}_OPTIMIZED_LIBRARY ${LIBPREFIX}_DEBUG_LIBRARY)
-  
-endmacro()
-
-
-# FIND_RELEASE_AND_DEBUG(<prefix> NAMES <library names> [DEFAULT_SUFFIXES | DBG_SUFFIXES suffix1 ... ] [PATHS <search paths>])
-# Uses the SelectLibraryConfigurations from CMake 2.8+ to select appropriate
-# release and debug values for a given library
-
 include(SelectLibraryConfigurations)
 include(CMakeParseArguments)
 
-macro(FIND_RELEASE_AND_DEBUG_NEW)
+macro(FIND_RELEASE_AND_DEBUG)
   
   # Parse the options. The syntax of the macro is:
   # CMAKE_PARSE_ARGUMENTS(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
