@@ -11,7 +11,7 @@
 #  OpenEXR_INCLUDE_DIR
 # OpenEXR_LIBRARIES
 # OpenEXR_DEFINITIONS
-# OpenEXR_FOUND
+# OPENEXR_FOUND
 
 if(NOT OPENEXR_IS_INTERNAL)
   project(OpenEXR)
@@ -273,7 +273,7 @@ add_subdirectory(IlmImf)
 # And defines the extra variables if it is internal
 if(OPENEXR_IS_INTERNAL)
 
-  set(OpenEXR_FOUND 1 PARENT_SCOPE)
+  set(OPENEXR_FOUND 1 PARENT_SCOPE)
   
   # Sets the libraries only to IlmImf: cmake will automatically all the transitive dependencies
   set(OpenEXR_LIBRARIES IlmImf PARENT_SCOPE)
