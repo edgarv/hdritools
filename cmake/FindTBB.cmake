@@ -77,7 +77,7 @@ if(WIN32)
 endif()
 
 # On linux the paths are slightly different
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(TBB_LINUX)
   # To match the TBB makefile, find the output of uname -m (cmake provides uname -p)
   execute_process(COMMAND uname -m
     OUTPUT_VARIABLE UNAME_M
@@ -103,9 +103,20 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  foreach(platform IN LISTS TBB_PLATFORM)
-    list(APPEND TBB_LIB_SEARCH ${TBB_ROOT_DIR}/${platform}/${TBB_RUNTIME})
+  foreach(platform ${TBB_PLATFORM})
+    list(APPEND TBB_LIB_SEARCH "${TBB_ROOT_DIR}/${platform}/${TBB_RUNTIME}")
+    list(APPEND TBB_LIB_SEARCH "${TBB_ROOT_DIR}/lib/${platform}/${TBB_RUNTIME}")
   endforeach()
+
+  # Also add the default build locations
+  if (EXISTS "${TBB_ROOT_DIR}/build")
+    foreach(platform ${TBB_PLATFORM})
+      list(APPEND TBB_LIB_SEARCH ${TBB_ROOT_DIR}/build/linux_${platform}_icc_${TBB_RUNTIME}_release)
+      list(APPEND TBB_LIB_SEARCH ${TBB_ROOT_DIR}/build/linux_${platform}_icc_${TBB_RUNTIME}_debug)
+      list(APPEND TBB_LIB_SEARCH ${TBB_ROOT_DIR}/build/linux_${platform}_gcc_${TBB_RUNTIME}_release)
+      list(APPEND TBB_LIB_SEARCH ${TBB_ROOT_DIR}/build/linux_${platform}_gcc_${TBB_RUNTIME}_debug)
+    endforeach()
+  endif()
 
 elseif(APPLE)
   # Fixed path with the commercial-aligned binary release
