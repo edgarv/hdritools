@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>329</width>
-    <height>244</height>
+    <width>336</width>
+    <height>262</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -32,6 +32,12 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="minimumSize">
       <size>
        <width>260</width>
@@ -41,11 +47,11 @@
      <property name="title">
       <string>Parameters</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>0</number>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
       </property>
-      <item>
+      <item row="0" column="0">
        <layout class="QVBoxLayout" name="whitePointLyt">
         <property name="spacing">
          <number>6</number>
@@ -67,6 +73,12 @@
           </item>
           <item>
            <widget class="QLineEdit" name="whitePointTxt">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="maxLength">
              <number>127</number>
             </property>
@@ -117,20 +129,7 @@
         </item>
        </layout>
       </item>
-      <item>
-       <spacer name="verticalSpacer_1">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>12</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
+      <item row="2" column="0">
        <layout class="QVBoxLayout" name="keyLyt">
         <property name="spacing">
          <number>6</number>
@@ -141,7 +140,7 @@
            <widget class="QLabel" name="keyLbl">
             <property name="minimumSize">
              <size>
-              <width>59</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
@@ -202,9 +201,15 @@
            <layout class="QHBoxLayout" name="keySldrLyt">
             <item>
              <widget class="QLabel" name="darkLbl">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimumSize">
                <size>
-                <width>40</width>
+                <width>0</width>
                 <height>0</height>
                </size>
               </property>
@@ -212,7 +217,7 @@
                <string>Dark</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
@@ -246,9 +251,15 @@
             </item>
             <item>
              <widget class="QLabel" name="brightLbl">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimumSize">
                <size>
-                <width>44</width>
+                <width>0</width>
                 <height>0</height>
                </size>
               </property>
@@ -256,7 +267,7 @@
                <string>Bright</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
@@ -276,28 +287,27 @@
         </item>
        </layout>
       </item>
-      <item>
-       <spacer name="verticalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>12</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
+      <item row="4" column="0">
        <layout class="QHBoxLayout" name="autoLyt">
         <item>
          <widget class="QLabel" name="autoDescLbl">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
-           <string>Estimate the most appropriate values accordig to the image.</string>
+           <string>Estimate appropriate values</string>
+          </property>
+          <property name="scaledContents">
+           <bool>false</bool>
           </property>
           <property name="wordWrap">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="buddy">
+           <cstring>pushButton</cstring>
           </property>
          </widget>
         </item>
@@ -322,6 +332,32 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item row="1" column="0">
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>10</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="0">
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>10</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
