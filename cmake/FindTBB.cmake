@@ -42,8 +42,8 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 
 find_path(TBB_INCLUDE_DIR tbb/task.h
-  PATHS ${TBB_ROOT_DIR}/include
-        /usr/include
+  HINTS ${TBB_ROOT_DIR}/include
+  PATHS /usr/include
         /opt/include
   )
 mark_as_advanced(TBB_INCLUDE_DIR)
