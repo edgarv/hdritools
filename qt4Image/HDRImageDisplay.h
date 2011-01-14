@@ -147,6 +147,8 @@ public:
         return dataProvider;
     }
 
+    Reinhard02::Params reinhard02Params() const;
+
     void mouseMoveEvent(QMouseEvent * event);
 
 protected:

@@ -226,3 +226,8 @@ void HDRImageDisplay::mouseMoveEvent(QMouseEvent * event)
         (int)floor(event->pos().y()/scaleFactor)));
 }
 
+Reinhard02::Params HDRImageDisplay::reinhard02Params() const
+{
+    Reinhard02::Params result = reinhardFuture->result();
+    return result;
+}
