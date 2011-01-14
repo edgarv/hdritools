@@ -206,13 +206,7 @@ bool HDRImageDisplay::save(const QString & fileName)
 void HDRImageDisplay::paintEvent(QPaintEvent *event) 
 {
     if (needsToneMap && hdrImage.Width() > 0 && hdrImage.Height() > 0) {
-#if 0
         toneMapper.ToneMap(ldrImage, hdrImage);
-#else
-        Reinhard02::Params params = reinhardFuture->result();
-        toneMapper.SetParams(params);
-        toneMapper.ToneMap(ldrImage, hdrImage, true, pcg::REINHARD02);
-#endif
         needsToneMap = false;
     }
 
