@@ -9,10 +9,12 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QtDebug>
+#include <QtConcurrentRun>
 
 
 HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
     toneMapper(0.0f, 4096), dataProvider(hdrImage, ldrImage),
+    reinhardFuture(NULL),
     scaleFactor(1), needsToneMap(true)
 {
     // By default we want to receive events whenever the mouse moves around
@@ -24,6 +26,20 @@ HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent),
     resize(sizeAux);
     */
 }
+
+
+
+HDRImageDisplay::~HDRImageDisplay()
+{
+    if (reinhardFuture != NULL) {
+        if (!reinhardFuture->isFinished()) {
+            reinhardFuture->waitForFinished();
+            delete reinhardFuture;
+        }
+    }
+}
+
+
 
 bool HDRImageDisplay::open(const QString &fileName, HdrResult * result) 
 {
@@ -41,6 +57,15 @@ bool HDRImageDisplay::open(const QString &fileName, HdrResult * result)
 
         // At this point we must have a valid HDR image loaded
         Q_ASSERT(hdrImage.Width() > 0 && hdrImage.Height() > 0);
+
+        // Asynchronously calculate the Reinhard parameters
+        if (reinhardFuture != NULL) {
+            reinhardFuture->waitForFinished();
+            delete reinhardFuture;
+        }
+        reinhardFuture = new QFuture<Reinhard02::Params>;
+        *reinhardFuture = QtConcurrent::run(reinhardParams, this);
+
 
         // Updates the size of the LDR image, also a tone map will be needed.
         ldrImage.Alloc(hdrImage.Width(), hdrImage.Height());
@@ -181,7 +206,13 @@ bool HDRImageDisplay::save(const QString & fileName)
 void HDRImageDisplay::paintEvent(QPaintEvent *event) 
 {
     if (needsToneMap && hdrImage.Width() > 0 && hdrImage.Height() > 0) {
+#if 0
         toneMapper.ToneMap(ldrImage, hdrImage);
+#else
+        Reinhard02::Params params = reinhardFuture->result();
+        toneMapper.SetParams(params);
+        toneMapper.ToneMap(ldrImage, hdrImage, true, pcg::REINHARD02);
+#endif
         needsToneMap = false;
     }
 

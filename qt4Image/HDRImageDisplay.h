@@ -2,15 +2,17 @@
 #define HDRIMAGEDISPLAY_H
 
 #include <QWidget>
+#include <QFuture>
 
 // ImageIO includes
-#include "rgbe.h"
-#include "Rgba32F.h"
-#include "LDRPixels.h"
-#include "Image.h"
-#include "ImageComparator.h"
+#include <rgbe.h>
+#include <Rgba32F.h>
+#include <LDRPixels.h>
+#include <Image.h>
+#include <ImageComparator.h>
 
-#include "ToneMapper.h"
+#include <Reinhard02.h>
+#include <ToneMapper.h>
 
 #include "ImageDataProvider.h"
 
@@ -44,6 +46,11 @@ private:
     // Internal cache of the size
     QSize sizeAux;
 
+    // Parameters for Reinhard02
+    QFuture<Reinhard02::Params> *reinhardFuture;
+    static Reinhard02::Params reinhardParams(const HDRImageDisplay *instance) {
+        return Reinhard02::EstimateParams(instance->hdrImage);
+    }
 
 protected:
     qreal scaleFactor;
@@ -61,6 +68,7 @@ public:
     };
 
     HDRImageDisplay(QWidget *parent);
+    virtual ~HDRImageDisplay();
 
     virtual QSize sizeHint() const {
 
