@@ -760,7 +760,7 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
 
     // Abort if all the values are zero
     if (zero_count == count) {
-        return Params(0.0f, 0.0f, 0.0f);
+        return Params(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     }
     const size_t nonzero_off = zero_count==0 ? 0 : compactZeros(Lw, count);
 
@@ -820,5 +820,5 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
         (1.5f * exp2f(full_range - 5.0f)) : (1.5f * expf(Lmax_log));
     assert (l_white >= l_w);
    
-    return Params(key, l_white, l_w);
+    return Params(key, l_white, l_w, Lmin, Lmax);
 }

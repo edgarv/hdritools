@@ -25,10 +25,17 @@ public:
         // Log average luminance, "L_{w}"
         float l_w;
 
-        Params() : key(0.18f), l_white(1.0f), l_w(0.18f) {}
+        // Minimum luminance
+        float l_min;
 
-        Params(float a, float Lwhite, float Lw) : 
-        key(a), l_white(Lwhite), l_w(Lw) {}
+        // Maximum luminance
+        float l_max;
+
+        Params() :
+        key(0.18f), l_white(1.0f), l_w(0.18f), l_min(0.0f), l_max(1.0f) {}
+
+        Params(float a, float Lwhite, float Lw, float Lmin, float Lmax) : 
+        key(a), l_white(Lwhite), l_w(Lw), l_min(Lmin), l_max(Lmax) {}
     };
 
 
