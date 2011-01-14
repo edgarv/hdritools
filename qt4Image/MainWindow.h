@@ -18,6 +18,7 @@
 #include "PixelInfoDialog.h"
 #include "ImageDataProvider.h"
 #include "HDRImageDisplay.h"
+#include "ToneMapDialog.h"
 
 // Uses forward declarations
 class QLabel;
@@ -74,6 +75,9 @@ protected:
     // A copy of the original window tittle
     QString appTitle;
 
+    // The tone mapping window
+    ToneMapDialog *toneMapDialog;
+
     // Utility functions related to the scaling of the image
     void scaleImage(float factor);
     void adjustScrollBar(QScrollBar *scrollBar, float factor);
@@ -122,6 +126,9 @@ protected slots:
     void setGamma(float gamma);
     void setExposure(float exposure);
     void setSRGB(int value);
+
+    // Display the tone mapping window
+    void toneMap();
 
 
 

@@ -39,6 +39,7 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     imgScrollFrame->setWidget(hdrDisplay);
 
     pixInfoDialog = new PixelInfoDialog(hdrDisplay->imageDataProvider(), this);
+    toneMapDialog = new ToneMapDialog(this);
 
     // We are also aware of drag and drop
     setAcceptDrops(true);
@@ -79,6 +80,7 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     connect( action_Actual_Pixels, SIGNAL(triggered()), 
         this, SLOT(actualPixels()) );
     connect( action_Pixel_Info, SIGNAL(triggered()), this, SLOT(pixelInfo()) );
+    connect( actionTone_mapping, SIGNAL(triggered()), this, SLOT(toneMap()) );
 
     // For adjusting the window on request 
     connect( action_AdjustSize, SIGNAL(triggered()), this, SLOT(adjustSize()) );
@@ -382,6 +384,7 @@ void MainWindow::updateActions()
     const bool enableTone = !(hdrDisplay->size().isEmpty());
     exposureConnect->setEnabled(enableTone);
     srgbChk->setEnabled(enableTone);
+    actionTone_mapping->setEnabled(enableTone);
 
     const bool enableGamma = enableTone && !srgbChk->isChecked();
     gammaConnect->setEnabled(enableGamma);
@@ -567,4 +570,10 @@ void MainWindow::comparePosNegDifference() {
 void MainWindow::comparePosNegRelError() {
     compareWith(ImageComparator::PositiveNegativeRelativeError, 
         tr("Positive/negative relative error"));
+}
+
+
+void MainWindow::toneMap()
+{
+    this->toneMapDialog->show();
 }
