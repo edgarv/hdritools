@@ -113,6 +113,12 @@
           </item>
           <item>
            <widget class="QSlider" name="whitePointSldr">
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>50</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>

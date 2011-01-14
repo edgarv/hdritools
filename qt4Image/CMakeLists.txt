@@ -24,6 +24,7 @@ set(SRCS
   PixelInfoDialog.h PixelInfoDialog.cpp
   HDRImageDisplay.h HDRImageDisplay.cpp
   ImageApp.h ImageApp.cpp
+  ToneMapDialog.h ToneMapDialog.cpp
   main.cpp
   )
 
@@ -36,6 +37,7 @@ set(MOC_HEADERS
   PixelInfoDialog.h
   HDRImageDisplay.h
   ImageApp.h
+  ToneMapDialog.h
   )
   
 # Run moc on the appropriate headers
@@ -45,6 +47,7 @@ QT4_WRAP_CPP(MOC_SRCS ${MOC_HEADERS})
 set(UI_FILES
   ui/info.ui
   ui/main.ui
+  ui/tonemap.ui
   )
   
 # Prepare the ui files
