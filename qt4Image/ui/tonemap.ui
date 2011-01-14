@@ -230,13 +230,13 @@
                </size>
               </property>
               <property name="maximum">
-               <number>110</number>
+               <number>88</number>
               </property>
               <property name="pageStep">
-               <number>10</number>
+               <number>8</number>
               </property>
               <property name="value">
-               <number>54</number>
+               <number>44</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -245,7 +245,7 @@
                <enum>QSlider::TicksBelow</enum>
               </property>
               <property name="tickInterval">
-               <number>10</number>
+               <number>8</number>
               </property>
              </widget>
             </item>
