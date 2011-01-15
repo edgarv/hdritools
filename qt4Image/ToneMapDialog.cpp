@@ -36,11 +36,17 @@ l_min(0.0f), l_max(1.0f)
     darkLbl->setMinimumWidth(minLbl->sizeHint().width());
     brightLbl->setMinimumWidth(maxLbl->sizeHint().width());
 
-    // Connect the slider's signals
+    // Connect the sliders' signals
     connect ( whitePointSldr, SIGNAL(valueChanged(int)), 
               this,           SLOT(whitePointSliderChanged(int)) );
     connect ( keySldr, SIGNAL(valueChanged(int)), 
               this,    SLOT(keySliderChanged(int)) );
+    // Connect the text fields' signals
+    connect ( whitePointTxt, SIGNAL(editingFinished(void)),
+              this,          SLOT(whitePointTxtEdited(void)) );
+    connect ( keyTxt, SIGNAL(editingFinished(void)),
+              this,   SLOT(keyTxtEdited(void)) );
+
 
     // Configure the validators
     whitePointTxt->setValidator(&whitePointValidator);
@@ -67,8 +73,18 @@ void ToneMapDialog::keySliderChanged(int rawValue)
     qDebug() << "Key value: " << rawValue << " zone: " << (rawValue >> 3);
 }
 
+void ToneMapDialog::keyTxtEdited()
+{
+    qDebug() << "Key text: " << keyTxt->text();
+}
+
 void ToneMapDialog::whitePointSliderChanged(int rawValue)
 {
     qDebug() << "White point: " << rawValue;
 
+}
+
+void ToneMapDialog::whitePointTxtEdited()
+{
+    qDebug() << "White text: " << whitePointTxt->text();
 }

@@ -38,11 +38,14 @@ signals:
     void keyUpdate(float value);
 
 private slots:
-    // React to the key slider
+    // React to a key change
     void keySliderChanged(int rawValue);
+    void keyTxtEdited();
 
-    // React to the white point slider
+    // React to a white point change
     void whitePointSliderChanged(int rawValue);
+    void whitePointTxtEdited();
+
 
 private:
     QDoubleValidator whitePointValidator;
