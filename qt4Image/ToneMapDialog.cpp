@@ -50,7 +50,9 @@ l_min(0.0f), l_max(1.0f)
 
     // Configure the validators
     whitePointTxt->setValidator(&whitePointValidator);
+    whitePointValidator.setParent(whitePointTxt);
     keyTxt->setValidator(&keyValidator);
+    keyValidator.setParent(keyTxt);
 }
 
 void ToneMapDialog::updateData(float whitePoint, float key,

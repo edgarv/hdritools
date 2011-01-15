@@ -6,7 +6,7 @@
 
 #include <ui_tonemap.h>
 
-#include <QDoubleValidator>
+#include "QFixupDoubleValidator.h"
 
 
 // Define the window form using the multiple inheritance approach
@@ -48,8 +48,8 @@ private slots:
 
 
 private:
-    QDoubleValidator whitePointValidator;
-    QDoubleValidator keyValidator;
+    QFixupDoubleValidator whitePointValidator;
+    QFixupDoubleValidator keyValidator;
     float l_min;
     float l_max;
 };

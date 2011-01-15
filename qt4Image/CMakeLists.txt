@@ -25,6 +25,7 @@ set(SRCS
   HDRImageDisplay.h HDRImageDisplay.cpp
   ImageApp.h ImageApp.cpp
   ToneMapDialog.h ToneMapDialog.cpp
+  QFixupDoubleValidator.h QFixupDoubleValidator.cpp
   main.cpp
   )
 
@@ -38,6 +39,7 @@ set(MOC_HEADERS
   HDRImageDisplay.h
   ImageApp.h
   ToneMapDialog.h
+  QFixupDoubleValidator.h
   )
   
 # Run moc on the appropriate headers
