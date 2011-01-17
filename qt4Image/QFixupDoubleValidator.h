@@ -16,5 +16,5 @@ public:
     virtual void fixup (QString & input) const;
 
 private:
-    bool m_isTopAccurate;
+    QString m_topFixup;
 };

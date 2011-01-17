@@ -60,16 +60,20 @@ void editShowBalloonTip(QObject *qobject,
 }
 #endif // USE_BALLOONTIP
 
-union QDoubleBits {
-    double d;
-    quint64 i;
-};
-
-inline bool has6MantissaBits(double n)
+inline void createTop(QString &str, const double top)
 {
-    QDoubleBits bits;
-    bits.d = n;
-    return (bits.i & 0xfc00000000000) == 0;
+    double delta = 1e-6 * top;
+    bool isValid = false;
+    str.setNum(top);
+    double value = str.toDouble(&isValid);
+    Q_ASSERT(isValid);
+    while (value > top) {
+        value -= delta;
+        delta *= 8.0;
+        str.setNum(value);
+        value = str.toDouble(&isValid);
+        Q_ASSERT(isValid);
+    }
 }
 
 } // namespace
@@ -77,9 +81,9 @@ inline bool has6MantissaBits(double n)
 
 QFixupDoubleValidator::QFixupDoubleValidator(double bottom, double top,
                                              int decimals, QObject * parent) :
-QDoubleValidator(bottom, top, decimals, parent), m_isTopAccurate(false)
+QDoubleValidator(bottom, top, decimals, parent)
 {
-    m_isTopAccurate = has6MantissaBits(top);
+    createTop(m_topFixup, top);
 }
 
 
@@ -88,7 +92,7 @@ void QFixupDoubleValidator::setRange(double minimum, double maximum,
                                      int decimals)
 {
     QDoubleValidator::setRange(minimum, maximum, decimals);
-    m_isTopAccurate = has6MantissaBits(maximum);
+    createTop(m_topFixup, maximum);
 }
 
 
@@ -110,26 +114,7 @@ void QFixupDoubleValidator::fixup (QString & input) const
 
     // Fixup numbers by clamping them to the proper limit
     if (value > this->top()) {
-        if (m_isTopAccurate) {
-            input.setNum(this->top());
-        } else {
-            QDoubleBits bits;
-            bits.d = this->top();
-            --bits.i;
-            input.setNum(bits.d);
-            // Ultra inefficient, but warranties the fixed-up value
-            // is bellow the limit after conversion to string
-            double value = input.toDouble(&isValid);
-            double delta = 1e-6 * this->top();
-            Q_ASSERT(isValid);
-            while (value > this->top()) {
-                value -= delta;
-                delta *= 8.0;
-                input.setNum(value);
-                value = input.toDouble(&isValid);
-                Q_ASSERT(isValid);
-            }
-        }
+        input = m_topFixup;
     } else if (value < this->bottom()) {
         input.setNum(this->bottom());
     } else {
