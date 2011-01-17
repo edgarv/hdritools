@@ -9,9 +9,12 @@ public:
     QDoubleValidator(parent) {}
 
     QFixupDoubleValidator(double bottom, double top, int decimals,
-        QObject * parent) :
-    QDoubleValidator(bottom, top, decimals, parent) {}
+        QObject * parent);
     ~QFixupDoubleValidator() {}
 
+    virtual void setRange(double minimum, double maximum, int decimals = 0);
     virtual void fixup (QString & input) const;
+
+private:
+    bool m_isTopAccurate;
 };

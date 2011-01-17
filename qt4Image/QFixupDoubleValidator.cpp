@@ -59,12 +59,44 @@ void editShowBalloonTip(QObject *qobject,
 #endif // !defined(_WIN32)
 }
 #endif // USE_BALLOONTIP
+
+union QDoubleBits {
+    double d;
+    quint64 i;
+};
+
+inline bool has6MantissaBits(double n)
+{
+    QDoubleBits bits;
+    bits.d = n;
+    return (bits.i & 0xfc00000000000) == 0;
+}
+
 } // namespace
+
+
+QFixupDoubleValidator::QFixupDoubleValidator(double bottom, double top,
+                                             int decimals, QObject * parent) :
+QDoubleValidator(bottom, top, decimals, parent), m_isTopAccurate(false)
+{
+    m_isTopAccurate = has6MantissaBits(top);
+}
+
+
+
+void QFixupDoubleValidator::setRange(double minimum, double maximum,
+                                     int decimals)
+{
+    QDoubleValidator::setRange(minimum, maximum, decimals);
+    m_isTopAccurate = has6MantissaBits(maximum);
+}
+
+
 
 void QFixupDoubleValidator::fixup (QString & input) const
 {
     bool isValid = false;
-    const double value = input.toFloat(&isValid);
+    const double value = input.toDouble(&isValid);
     if (!isValid) {
         return;
     }
@@ -78,9 +110,28 @@ void QFixupDoubleValidator::fixup (QString & input) const
 
     // Fixup numbers by clamping them to the proper limit
     if (value > this->top()) {
-        input = QString::number(this->top());
+        if (m_isTopAccurate) {
+            input.setNum(this->top());
+        } else {
+            QDoubleBits bits;
+            bits.d = this->top();
+            --bits.i;
+            input.setNum(bits.d);
+            // Ultra inefficient, but warranties the fixed-up value
+            // is bellow the limit after conversion to string
+            double value = input.toDouble(&isValid);
+            double delta = 1e-6 * this->top();
+            Q_ASSERT(isValid);
+            while (value > this->top()) {
+                value -= delta;
+                delta *= 8.0;
+                input.setNum(value);
+                value = input.toDouble(&isValid);
+                Q_ASSERT(isValid);
+            }
+        }
     } else if (value < this->bottom()) {
-        input = QString::number(this->bottom());
+        input.setNum(this->bottom());
     } else {
         qFatal("Strange state!");
     }
