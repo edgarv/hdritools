@@ -45,6 +45,7 @@ mark_as_advanced(OpenEXR_INCLUDE_DIR)
 
 # Finds the five openexr libraries libraries
 include(FindReleaseAndDebug)
+include(FindPackageHandleStandardArgs)
 set(SEARCH_PATH /usr/lib64 /opt/local)
 
 FIND_RELEASE_AND_DEBUG(OpenEXR_HALF NAMES Half DEFAULT_SUFFIXES
@@ -60,8 +61,6 @@ FIND_RELEASE_AND_DEBUG(OpenEXR_ILMIMF NAMES IlmImf DEFAULT_SUFFIXES
 
 
 # Handle the result
-include(FindReleaseAndDebug)
-
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(OpenEXR DEFAULT_MSG OpenEXR_INCLUDE_DIR
   OpenEXR_HALF_LIBRARY OpenEXR_IEX_LIBRARY OpenEXR_IMATH_LIBRARY
   OpenEXR_ILMTHREAD_LIBRARY OpenEXR_ILMIMF_LIBRARY)
