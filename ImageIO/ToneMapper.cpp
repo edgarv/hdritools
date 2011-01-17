@@ -59,14 +59,6 @@ inline __m128 broadcast_idx(const __m128 n)
 }
 
 // Helper function to calculate a dot product
-inline Rgba32F dot_sse(Rgba32F a, Rgba32F b)
-{
-    Rgba32F dot_tmp = a * b;
-    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-    return dot_tmp;
-}
-
 inline float dot_float(Rgba32F a, Rgba32F b)
 {
     float res;

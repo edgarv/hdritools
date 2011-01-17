@@ -101,12 +101,13 @@ public:
 };
 
 
-
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 inline unsigned int floatToBits(float x) {
     union { float f; unsigned int bits; } data;
     data.f = x;
     return data.bits;
 }
+#endif
 
 
 inline bool isInvalidLuminance(float x) {
@@ -225,10 +226,10 @@ private:
         for (size_t off = begin; off < end; off += 4)
         {
             // Load the next 4 pixels and transpose them
-            __m128 p0 = pixels[off];
-            __m128 p1 = pixels[off+1];
-            __m128 p2 = pixels[off+2];
-            __m128 p3 = pixels[off+3];
+            Rgba32F p0 = pixels[off];
+            Rgba32F p1 = pixels[off+1];
+            Rgba32F p2 = pixels[off+2];
+            Rgba32F p3 = pixels[off+3];
             PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
 
             // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
