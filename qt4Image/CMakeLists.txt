@@ -27,6 +27,7 @@ set(SRCS
   ToneMapDialog.h ToneMapDialog.cpp
   QFixupDoubleValidator.h QFixupDoubleValidator.cpp
   QInterpolator.h QInterpolator.cpp
+  QLightness88Interpolator.h QLightness88Interpolator.cpp
   main.cpp
   )
 
@@ -42,6 +43,7 @@ set(MOC_HEADERS
   ToneMapDialog.h
   QFixupDoubleValidator.h
   QInterpolator.h
+  QLightness88Interpolator.h
   )
   
 # Run moc on the appropriate headers
