@@ -26,6 +26,7 @@ set(SRCS
   ImageApp.h ImageApp.cpp
   ToneMapDialog.h ToneMapDialog.cpp
   QFixupDoubleValidator.h QFixupDoubleValidator.cpp
+  QInterpolator.h QInterpolator.cpp
   main.cpp
   )
 
@@ -40,6 +41,7 @@ set(MOC_HEADERS
   ImageApp.h
   ToneMapDialog.h
   QFixupDoubleValidator.h
+  QInterpolator.h
   )
   
 # Run moc on the appropriate headers
