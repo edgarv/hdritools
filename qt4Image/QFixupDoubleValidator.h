@@ -16,5 +16,6 @@ public:
     virtual void fixup (QString & input) const;
 
 private:
+    QString m_bottomFixup;
     QString m_topFixup;
 };

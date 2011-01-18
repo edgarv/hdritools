@@ -60,15 +60,16 @@ void editShowBalloonTip(QObject *qobject,
 }
 #endif // USE_BALLOONTIP
 
-inline void createTop(QString &str, const double top)
+template <bool greaterThan>
+inline void createBoundary(QString &str, const double n)
 {
-    double delta = 1e-6 * top;
+    double delta = 1e-6 * n;
     bool isValid = false;
-    str.setNum(top);
+    str.setNum(n);
     double value = str.toDouble(&isValid);
     Q_ASSERT(isValid);
-    while (value > top) {
-        value -= delta;
+    while (greaterThan ? value > n : value < n) {
+        value += greaterThan ? -delta : delta;
         delta *= 8.0;
         str.setNum(value);
         value = str.toDouble(&isValid);
@@ -83,7 +84,8 @@ QFixupDoubleValidator::QFixupDoubleValidator(double bottom, double top,
                                              int decimals, QObject * parent) :
 QDoubleValidator(bottom, top, decimals, parent)
 {
-    createTop(m_topFixup, top);
+    createBoundary</*LT*/false>(m_bottomFixup, bottom);
+    createBoundary</*GT*/true> (m_topFixup, top);
 }
 
 
@@ -92,7 +94,8 @@ void QFixupDoubleValidator::setRange(double minimum, double maximum,
                                      int decimals)
 {
     QDoubleValidator::setRange(minimum, maximum, decimals);
-    createTop(m_topFixup, maximum);
+    createBoundary</*LT*/false>(m_bottomFixup, minimum);
+    createBoundary</*GT*/true> (m_topFixup, maximum);
 }
 
 
@@ -116,7 +119,7 @@ void QFixupDoubleValidator::fixup (QString & input) const
     if (value > this->top()) {
         input = m_topFixup;
     } else if (value < this->bottom()) {
-        input.setNum(this->bottom());
+        input = m_bottomFixup;
     } else {
         qFatal("Strange state!");
     }
