@@ -40,9 +40,9 @@ void ImageIODataProvider::update()
 
     // Get also the tone mapping settings
     Reinhard02::Params params = Reinhard02::EstimateParams(hdr);
-    setWhitePointRange(params.l_min, 2.0*qMax(params.l_max, params.l_white));
     whitePoint = params.l_white;
     key = params.key;
+    setWhitePointRange(params.l_min, 2.0*qMax(params.l_max, params.l_white));
 }
 
 
