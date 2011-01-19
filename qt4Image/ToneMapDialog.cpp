@@ -1,4 +1,5 @@
 #include "ToneMapDialog.h"
+#include "QLightness88Interpolator.h"
 #include <QDebug>
 
 // Static array with the label for the zones. The last one is just to avoid
@@ -25,8 +26,8 @@ const QString zones_txt[] = {
 
 ToneMapDialog::ToneMapDialog(QWidget *parent) :
 QDialog(parent, Qt::Dialog),
-whitePointValidator(0.0, 1.0, 16, this), keyValidator(0.0, 1.0, 16, this),
-l_min(0.0f), l_max(1.0f)
+//l_min(0.0f), l_max(1.0f)
+m_zoneIdx(0)
 {
     // Setup things as in the designer
     setupUi(this);
@@ -36,23 +37,13 @@ l_min(0.0f), l_max(1.0f)
     darkLbl->setMinimumWidth(minLbl->sizeHint().width());
     brightLbl->setMinimumWidth(maxLbl->sizeHint().width());
 
-    // Connect the sliders' signals
-    connect ( whitePointSldr, SIGNAL(valueChanged(int)), 
-              this,           SLOT(whitePointSliderChanged(int)) );
     connect ( keySldr, SIGNAL(valueChanged(int)), 
               this,    SLOT(keySliderChanged(int)) );
-    // Connect the text fields' signals
-    connect ( whitePointTxt, SIGNAL(editingFinished(void)),
-              this,          SLOT(whitePointTxtEdited(void)) );
-    connect ( keyTxt, SIGNAL(editingFinished(void)),
-              this,   SLOT(keyTxtEdited(void)) );
 
-
-    // Configure the validators
-    whitePointTxt->setValidator(&whitePointValidator);
-    whitePointValidator.setParent(whitePointTxt);
-    keyTxt->setValidator(&keyValidator);
-    keyValidator.setParent(keyTxt);
+    // Configure the interpolators
+    whitePointInterpolator = new QLinearInterpolator(0.0, 1.0,
+        whitePointSldr, whitePointTxt, this);
+    keyInterpolator = new QLightness88Interpolator(keySldr, keyTxt, this);
 }
 
 void ToneMapDialog::updateData(float whitePoint, float key,
@@ -65,28 +56,17 @@ void ToneMapDialog::updateData(float whitePoint, float key,
     // Set the new values and ranges
     whitePointTxt->setText(QString::number(whitePoint));
     keyTxt->setText(QString::number(key));
-    l_min = minimum;
-    l_max = 2.0f * qMax(maximum, whitePoint);
-    qDebug() << "white: " << whitePoint << " min: " << l_min << " max: " << l_max;
+    const double l_min = minimum;
+    const double l_max = 2.0f * qMax(maximum, whitePoint);
+    whitePointInterpolator->setRange(l_min, l_max);
 }
 
 void ToneMapDialog::keySliderChanged(int rawValue)
 {
-    qDebug() << "Key value: " << rawValue << " zone: " << (rawValue >> 3);
-}
-
-void ToneMapDialog::keyTxtEdited()
-{
-    qDebug() << "Key text: " << keyTxt->text();
-}
-
-void ToneMapDialog::whitePointSliderChanged(int rawValue)
-{
-    qDebug() << "White point: " << rawValue;
-
-}
-
-void ToneMapDialog::whitePointTxtEdited()
-{
-    qDebug() << "White text: " << whitePointTxt->text();
+    Q_ASSERT(keySldr->minimum() == 0 && keySldr->maximum() == 88);
+    const int idx = rawValue >> 3;
+    if (m_zoneIdx != idx) {
+        m_zoneIdx = idx;
+        zoneLbl->setText(zones_txt[idx]);
+    }
 }

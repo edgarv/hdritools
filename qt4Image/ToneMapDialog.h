@@ -6,7 +6,8 @@
 
 #include <ui_tonemap.h>
 
-#include "QFixupDoubleValidator.h"
+#include <QPointer>
+#include "QInterpolator.h"
 
 
 // Define the window form using the multiple inheritance approach
@@ -40,18 +41,12 @@ signals:
 private slots:
     // React to a key change
     void keySliderChanged(int rawValue);
-    void keyTxtEdited();
-
-    // React to a white point change
-    void whitePointSliderChanged(int rawValue);
-    void whitePointTxtEdited();
 
 
 private:
-    QFixupDoubleValidator whitePointValidator;
-    QFixupDoubleValidator keyValidator;
-    float l_min;
-    float l_max;
+    QPointer<QInterpolator> whitePointInterpolator;
+    QPointer<QInterpolator> keyInterpolator;
+    int m_zoneIdx;
 };
 
 
