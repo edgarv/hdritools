@@ -39,7 +39,7 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     imgScrollFrame->setWidget(hdrDisplay);
 
     pixInfoDialog = new PixelInfoDialog(hdrDisplay->imageDataProvider(), this);
-    toneMapDialog = new ToneMapDialog(this);
+    toneMapDialog = new ToneMapDialog(hdrDisplay->imageDataProvider(), this);
 
     // We are also aware of drag and drop
     setAcceptDrops(true);
