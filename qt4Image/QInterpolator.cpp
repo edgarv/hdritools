@@ -29,6 +29,7 @@ const void QInterpolator::setRange(double minimum, double maximum)
     Q_ASSERT(minimum < maximum);
     m_validator.setRange(minimum, maximum, m_validator.decimals());
     updateState(minimum, maximum, m_slider->minimum(), m_slider->maximum());
+    setValue(qBound(minimum, value(), maximum));
 }
 
 
