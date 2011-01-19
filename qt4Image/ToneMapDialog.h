@@ -37,6 +37,9 @@ private slots:
     // React to the white point range from the data provider
     void updateWhitePointRange(double minimum, double maximum);
 
+    // When the automatic values are requested
+    void autoClicked();
+
 
 private:
     const ImageDataProvider &dataProvider;

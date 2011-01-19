@@ -46,6 +46,8 @@ m_isSet(false)
               this,    SLOT(keySliderChanged(int)) );
     connect ( &dataProvider, SIGNAL(whitePointRangeChanged(double,double)),
               this,          SLOT(updateWhitePointRange(double,double)) );
+    connect ( this->autoBtn, SIGNAL(clicked()),
+              this,          SLOT(autoClicked()) );
 }
 
 
@@ -79,4 +81,13 @@ void ToneMapDialog::keySliderChanged(int rawValue)
         m_zoneIdx = idx;
         zoneLbl->setText(zones_txt[idx]);
     }
+}
+
+
+void ToneMapDialog::autoClicked()
+{
+    double whitePoint, key;
+    dataProvider.getToneMapDefaults(whitePoint, key);
+    whitePointInterpolator->setValue(whitePoint);
+    keyInterpolator->setValue(key);
 }

@@ -313,7 +313,7 @@
            <bool>false</bool>
           </property>
           <property name="buddy">
-           <cstring>pushButton</cstring>
+           <cstring>autoBtn</cstring>
           </property>
          </widget>
         </item>
@@ -331,7 +331,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="autoBtn">
           <property name="text">
            <string>Auto</string>
           </property>
@@ -376,7 +376,7 @@
   <tabstop>whitePointSldr</tabstop>
   <tabstop>keyTxt</tabstop>
   <tabstop>keySldr</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>autoBtn</tabstop>
  </tabstops>
  <resources/>
  <connections>
