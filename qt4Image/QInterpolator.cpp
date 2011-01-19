@@ -40,6 +40,10 @@ void QInterpolator::sliderRangeChanged(int minimum, int maximum)
 
 void QInterpolator::sliderChanged(int sliderValue)
 {
+    // Don't update the text if its current value would map to the same pos
+    if (sliderValue == toSliderValue(m_edit->text().toDouble())) {
+        return;
+    }
     const double value = toValue(sliderValue);
     Q_ASSERT(bottom() <= value && value <= top());
     QString text = QString::number(value);
@@ -50,9 +54,7 @@ void QInterpolator::sliderChanged(int sliderValue)
     }
     state = m_validator.validate(text, position);
     Q_ASSERT(state == QValidator::Acceptable);
-    const bool blocked = m_edit->blockSignals(true);
     m_edit->setText(text);
-    m_edit->blockSignals(blocked);
 
     emit valueChanged(value);
 }
@@ -64,10 +66,8 @@ void QInterpolator::textEdited()
     const double value = m_edit->text().toDouble(&ok);
     if (!ok) return;
     const int pos = toSliderValue(value);
-    const bool blocked = m_slider->blockSignals(true);
     Q_ASSERT(m_slider->minimum() <= pos && pos <= m_slider->maximum());
     m_slider->setValue(pos);
-    m_slider->blockSignals(blocked);
 
     emit valueChanged(value);
 }
