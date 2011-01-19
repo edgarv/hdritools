@@ -19,6 +19,11 @@ public:
 
     const void setRange(double minimum, double maximum);
 
+    const void setValue(double value);
+    inline double value() const {
+        return m_value;
+    }
+
 
 protected:
 
@@ -69,6 +74,7 @@ private:
     QPointer<QAbstractSlider> m_slider;
     QPointer<QLineEdit> m_edit;
     QFixupDoubleValidator m_validator;
+    double m_value;
 };
 
 
