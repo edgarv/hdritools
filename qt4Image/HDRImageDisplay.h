@@ -46,13 +46,7 @@ private:
     // Internal cache of the size
     QSize sizeAux;
 
-    // Parameters for Reinhard02
-    QFuture<Reinhard02::Params> *reinhardFuture;
-    static Reinhard02::Params reinhardParams(const HDRImageDisplay *instance) {
-        return Reinhard02::EstimateParams(instance->hdrImage);
-    }
-
-protected:
+    // Internal state variables
     qreal scaleFactor;
     bool needsToneMap;
 
@@ -146,8 +140,6 @@ public:
     const ImageDataProvider & imageDataProvider() const {
         return dataProvider;
     }
-
-    Reinhard02::Params reinhard02Params() const;
 
     void mouseMoveEvent(QMouseEvent * event);
 
