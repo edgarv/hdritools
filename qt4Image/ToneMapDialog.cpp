@@ -24,10 +24,10 @@ const QString zones_txt[] = {
 
 
 
-ToneMapDialog::ToneMapDialog(QWidget *parent) :
-QDialog(parent, Qt::Dialog),
-//l_min(0.0f), l_max(1.0f)
-m_zoneIdx(0)
+ToneMapDialog::ToneMapDialog(const ImageDataProvider &imgDataProvider,
+                             QWidget *parent) :
+QDialog(parent, Qt::Dialog), dataProvider(imgDataProvider), m_zoneIdx(0),
+m_isSet(false)
 {
     // Setup things as in the designer
     setupUi(this);
@@ -37,29 +37,39 @@ m_zoneIdx(0)
     darkLbl->setMinimumWidth(minLbl->sizeHint().width());
     brightLbl->setMinimumWidth(maxLbl->sizeHint().width());
 
-    connect ( keySldr, SIGNAL(valueChanged(int)), 
-              this,    SLOT(keySliderChanged(int)) );
-
     // Configure the interpolators
     whitePointInterpolator = new QLinearInterpolator(0.0, 1.0,
         whitePointSldr, whitePointTxt, this);
     keyInterpolator = new QLightness88Interpolator(keySldr, keyTxt, this);
+
+    connect ( keySldr, SIGNAL(valueChanged(int)), 
+              this,    SLOT(keySliderChanged(int)) );
+    connect ( &dataProvider, SIGNAL(whitePointRangeChanged(double,double)),
+              this,          SLOT(updateWhitePointRange(double,double)) );
 }
 
-void ToneMapDialog::updateData(float whitePoint, float key,
-                               float minimum, float maximum)
+
+void ToneMapDialog::updateWhitePointRange(double minimum, double maximum)
 {
     // Don't allow to enable if the values are sense-less
-    this->reinhard02Chk->setEnabled(!(minimum > maximum ||
-        qFuzzyCompare(minimum, maximum) || whitePoint < minimum));
+    double whitePoint, key;
+    dataProvider.getToneMapDefaults(whitePoint, key);
+    bool isValid = minimum < maximum && (0.0 <= key && key <= 1.0) && 
+        (minimum <= whitePoint && whitePoint <= maximum);
+    this->reinhard02Chk->setEnabled(isValid);
+    if (!isValid) {
+        qDebug() << "TODO do something else when the tonemapping settings don't make sense";
+        return;
+    }
 
-    // Set the new values and ranges
-    whitePointTxt->setText(QString::number(whitePoint));
-    keyTxt->setText(QString::number(key));
-    const double l_min = minimum;
-    const double l_max = 2.0f * qMax(maximum, whitePoint);
-    whitePointInterpolator->setRange(l_min, l_max);
+    whitePointInterpolator->setRange(minimum, maximum);
+    if (!m_isSet) {
+        whitePointInterpolator->setValue(whitePoint);
+        keyInterpolator->setValue(key);
+        m_isSet = true;
+    }
 }
+
 
 void ToneMapDialog::keySliderChanged(int rawValue)
 {

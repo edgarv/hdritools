@@ -8,6 +8,7 @@
 
 #include <QPointer>
 #include "QInterpolator.h"
+#include "ImageDataProvider.h"
 
 
 // Define the window form using the multiple inheritance approach
@@ -17,19 +18,9 @@ class ToneMapDialog : public QDialog, public Ui::ToneMapDialog
     Q_OBJECT
 
 public:
-    /// Transfer object used to set up the dialog
-    struct Data {
-        float whitePoint;
-        float key;
-        float minimum;
-        float maximum;
-    };
-
     // Basic constructor, it initializes all the elements of the window
-    ToneMapDialog(QWidget *parent = 0);
-
-    // Update the GUI values
-    void updateData(float whitePoint, float key, float minimum, float maximum);
+    ToneMapDialog(const ImageDataProvider &imgDataProvider,
+        QWidget *parent = 0);
 
 signals:
     // Emmit the request for a new white point
@@ -38,15 +29,21 @@ signals:
     // Emmit the new key value
     void keyUpdate(float value);
 
+
 private slots:
     // React to a key change
     void keySliderChanged(int rawValue);
 
+    // React to the white point range from the data provider
+    void updateWhitePointRange(double minimum, double maximum);
+
 
 private:
+    const ImageDataProvider &dataProvider;
     QPointer<QInterpolator> whitePointInterpolator;
     QPointer<QInterpolator> keyInterpolator;
     int m_zoneIdx;
+    bool m_isSet;
 };
 
 
