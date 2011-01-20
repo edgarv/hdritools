@@ -123,9 +123,12 @@ protected slots:
     void mouseOverImage( QPoint pos );
 
     // TODO Should these slots belong here or in the HDRDisplay widget?
-    void setGamma(float gamma);
-    void setExposure(float exposure);
+    void setGamma(float value);
+    void setExposure(float value);
     void setSRGB(int value);
+    void setWhitePoint(double value);
+    void setKey(double value);
+    void setReinhard02(bool enabled);
 
     // Display the tone mapping window
     void toneMap();

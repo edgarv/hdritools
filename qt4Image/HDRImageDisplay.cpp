@@ -202,6 +202,27 @@ void HDRImageDisplay::paintEvent(QPaintEvent *event)
 
 }
 
+
+
+void HDRImageDisplay::setWhitePoint(double value)
+{
+    qDebug() << "White point: " << value;
+}
+
+
+void HDRImageDisplay::setKey(double value)
+{
+    qDebug() << "Key: " << value;
+}
+
+
+void HDRImageDisplay::setReinhard02(bool enabled)
+{
+    qDebug() << "Enable Reinhard02? " << enabled;
+}
+
+
+
 void HDRImageDisplay::mouseMoveEvent(QMouseEvent * event)
 {
     // The position of the event is relative to the image: this means that we

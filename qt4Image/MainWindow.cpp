@@ -96,11 +96,17 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     connect( action_About,   SIGNAL(triggered()), this, SLOT(about()) );
     connect( actionAbout_Qt, SIGNAL(triggered()), this, SLOT(aboutQt()) );
 
-    // Connects the gamma and exposure controls
+    // Connects the gamma, exposure and tone mapping controls
     connect( exposureConnect, SIGNAL(valueChanged(float)), 
         this, SLOT(setExposure(float)) );
     connect( gammaConnect,    SIGNAL(valueChanged(float)), 
         this, SLOT(setGamma(float)) );
+    connect( toneMapDialog, SIGNAL(whitePointChanged(double)),
+        this, SLOT(setWhitePoint(double)) );
+    connect( toneMapDialog, SIGNAL(keyChanged(double)),
+        this, SLOT(setKey(double)) );
+    connect( toneMapDialog, SIGNAL(toggled(bool)),
+        this, SLOT(setReinhard02(bool)) );
 
     // Also connects the sRGB control
     connect( srgbChk, SIGNAL(stateChanged(int)), this, SLOT(setSRGB(int)) );
@@ -514,16 +520,33 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 
 // ### This should go in a different class, shouldn't it?
-void MainWindow::setGamma(float gamma)
+void MainWindow::setGamma(float value)
 {
-    hdrDisplay->setGamma(gamma);
+    hdrDisplay->setGamma(value);
 }
 
 
-
-void MainWindow::setExposure(float exposure)
+void MainWindow::setExposure(float value)
 {
-    hdrDisplay->setExposure(exposure);
+    hdrDisplay->setExposure(value);
+}
+
+
+void MainWindow::setWhitePoint(double value)
+{
+    hdrDisplay->setWhitePoint(value);
+}
+
+
+void MainWindow::setKey(double value)
+{
+    hdrDisplay->setKey(value);
+}
+
+
+void MainWindow::setReinhard02(bool enabled)
+{
+    hdrDisplay->setReinhard02(enabled);
 }
 
 

@@ -142,6 +142,10 @@ public:
     }
 
     void mouseMoveEvent(QMouseEvent * event);
+    
+    void setWhitePoint(double value);
+    void setKey(double value);
+    void setReinhard02(bool enabled);
 
 protected:
     virtual void paintEvent(QPaintEvent *event);
