@@ -12,23 +12,6 @@
 
 
 
-namespace
-{
-inline void updateReinhard02Params(Reinhard02::Params &params,
-                                   ImageDataProvider &provider)
-{
-    double whitePoint, key;
-    provider.getToneMapDefaults(whitePoint, key);
-    
-    params.l_w     = static_cast<float>(provider.avgLogLuminance());
-    params.l_white = static_cast<float>(whitePoint);
-    params.key     = static_cast<float>(key);
-}
-
-} // namespace
-
-
-
 HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
     toneMapper(0.0f, 4096), dataProvider(hdrImage, ldrImage),
     scaleFactor(1), needsToneMap(true), technique(EXPOSURE)
@@ -76,7 +59,9 @@ bool HDRImageDisplay::open(const QString &fileName, HdrResult * result)
         
         resize(ldrImage.Width(), ldrImage.Height());
         dataProvider.update();
-        updateReinhard02Params(reinhard02Params, dataProvider);
+        // Keep the white point and key specified by the GUI (signal-updated)
+        reinhard02Params.l_w = 
+            static_cast<float>(dataProvider.avgLogLuminance());
         toneMapper.SetParams(reinhard02Params);
 
         needsToneMap = true;
