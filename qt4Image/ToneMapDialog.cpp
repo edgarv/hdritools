@@ -38,7 +38,7 @@ m_isSet(false)
     brightLbl->setMinimumWidth(maxLbl->sizeHint().width());
 
     // Configure the interpolators
-    whitePointInterpolator = new QLinearInterpolator(0.0, 1.0,
+    whitePointInterpolator = new QPowerInterpolator(8.0, 0.0, 1.0,
         whitePointSldr, whitePointTxt, this);
     keyInterpolator = new QLightness88Interpolator(keySldr, keyTxt, this);
 

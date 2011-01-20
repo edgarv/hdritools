@@ -1,6 +1,8 @@
 #include "QInterpolator.h"
 #include <QDebug>
 
+#include <cmath>
+
 QInterpolator::QInterpolator(double minimum, double maximum,
                              QAbstractSlider *slider, QLineEdit *edit,
                              QObject *parent):
@@ -126,3 +128,57 @@ double QLinearInterpolator::toValue(int sliderValue)
     double value = m_slope*static_cast<double>(sliderValue) + m_intercept;
     return value;
 }
+
+
+
+QPowerInterpolator::QPowerInterpolator(double exponent, double minimum,
+                                       double maximum, QAbstractSlider *slider,
+                                       QLineEdit *edit, QObject *parent)
+: QInterpolator(minimum, maximum, slider, edit, parent),
+  m_exponent(exponent), m_exponentInv(1.0/exponent),
+  m_valueRange(maximum-minimum), m_valueRangeInv(1.0/(maximum-minimum)),
+  m_valueMin(minimum), m_sliderRange(slider->maximum()-slider->minimum()),
+  m_sliderRangeInv(1.0/(slider->maximum()-slider->minimum())),
+  m_sliderMin(slider->minimum())
+{
+    // C++ doesn't like virtual functions inside constructors
+    updateState(minimum, maximum, slider->minimum(), slider->maximum());
+}
+
+
+void QPowerInterpolator::setExponent(double value)
+{
+    m_exponent    = value;
+    m_exponentInv = 1.0 / value;
+    updateState(bottom(), top(), sliderMinimum(), sliderMaximum());
+}
+
+
+void QPowerInterpolator::updateState(double minimum, double maximum,
+                                     int sliderMinimum, int sliderMaximum)
+{
+    m_valueRange     = maximum-minimum;
+    m_valueRangeInv  = 1.0 / m_valueRange;
+    m_valueMin       = minimum;
+    m_sliderRange    = static_cast<double>(sliderMaximum - sliderMinimum);
+    m_sliderRangeInv = 1.0 / m_sliderRange;
+    m_sliderMin      = static_cast<double>(sliderMinimum);
+}
+
+
+int QPowerInterpolator::toSliderValue(double value)
+{
+    const double v1 = (value - m_valueMin) * m_valueRangeInv;
+    const double v2 = pow(v1, m_exponentInv) * m_sliderRange + m_sliderMin;
+    const int pos = qRound(v2);
+    return pos;
+}
+
+
+double QPowerInterpolator::toValue(int sliderValue)
+{
+    const double v1 = (sliderValue - m_sliderMin) * m_sliderRangeInv;
+    const double v2 = pow(v1, m_exponent) * m_valueRange + m_valueMin;
+    return v2;
+}
+
