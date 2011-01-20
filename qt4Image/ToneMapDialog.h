@@ -23,11 +23,14 @@ public:
         QWidget *parent = 0);
 
 signals:
-    // Emmit the request for a new white point
-    void whitePointUpdate(float value);
+    // Notify a new white point
+    void whitePointChanged(double value);
 
-    // Emmit the new key value
-    void keyUpdate(float value);
+    // Notify a new key value
+    void keyChanged(double value);
+
+    // Notify when the overall dialog is toggled
+    void toggled(bool enabled);
 
 
 private slots:

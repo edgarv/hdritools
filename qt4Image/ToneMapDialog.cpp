@@ -48,6 +48,14 @@ m_isSet(false)
               this,          SLOT(updateWhitePointRange(double,double)) );
     connect ( this->autoBtn, SIGNAL(clicked()),
               this,          SLOT(autoClicked()) );
+
+    // Relay the private objects' signals
+    connect ( whitePointInterpolator, SIGNAL(valueChanged(double)),
+              this,                   SIGNAL(whitePointChanged(double)) );
+    connect ( keyInterpolator, SIGNAL(valueChanged(double)),
+              this,            SIGNAL(keyChanged(double)) );
+    connect ( this->reinhard02Chk, SIGNAL(toggled(bool)),
+              this,                SIGNAL(toggled(bool)) );
 }
 
 
