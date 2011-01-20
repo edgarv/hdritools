@@ -64,11 +64,13 @@ void ToneMapDialog::updateWhitePointRange(double minimum, double maximum)
     // Don't allow to enable if the values are sense-less
     double whitePoint, key;
     dataProvider.getToneMapDefaults(whitePoint, key);
-    bool isValid = minimum < maximum && (0.0 <= key && key <= 1.0) && 
+    const bool isValid = minimum < maximum && (0.0 <= key && key <= 1.0) && 
         (minimum <= whitePoint && whitePoint <= maximum);
     this->reinhard02Chk->setEnabled(isValid);
     if (!isValid) {
-        qDebug() << "TODO do something else when the tonemapping settings don't make sense";
+        // Disable the tone mapping
+        reinhard02Chk->setChecked(false);
+        this->reinhard02Chk->setEnabled(false);
         return;
     }
 
