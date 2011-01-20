@@ -9,12 +9,29 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QtDebug>
-#include <QtConcurrentRun>
+
+
+
+namespace
+{
+inline void updateReinhard02Params(Reinhard02::Params &params,
+                                   ImageDataProvider &provider)
+{
+    double whitePoint, key;
+    provider.getToneMapDefaults(whitePoint, key);
+    
+    params.l_w     = static_cast<float>(provider.avgLogLuminance());
+    params.l_white = static_cast<float>(whitePoint);
+    params.key     = static_cast<float>(key);
+}
+
+} // namespace
+
 
 
 HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
     toneMapper(0.0f, 4096), dataProvider(hdrImage, ldrImage),
-    scaleFactor(1), needsToneMap(true)
+    scaleFactor(1), needsToneMap(true), technique(EXPOSURE)
 {
     // By default we want to receive events whenever the mouse moves around
     setMouseTracking(true);
@@ -59,6 +76,8 @@ bool HDRImageDisplay::open(const QString &fileName, HdrResult * result)
         
         resize(ldrImage.Width(), ldrImage.Height());
         dataProvider.update();
+        updateReinhard02Params(reinhard02Params, dataProvider);
+        toneMapper.SetParams(reinhard02Params);
 
         needsToneMap = true;
         update();
@@ -190,7 +209,7 @@ bool HDRImageDisplay::save(const QString & fileName)
 void HDRImageDisplay::paintEvent(QPaintEvent *event) 
 {
     if (needsToneMap && hdrImage.Width() > 0 && hdrImage.Height() > 0) {
-        toneMapper.ToneMap(ldrImage, hdrImage);
+        toneMapper.ToneMap(ldrImage, hdrImage, true, technique);
         needsToneMap = false;
     }
 
@@ -206,19 +225,41 @@ void HDRImageDisplay::paintEvent(QPaintEvent *event)
 
 void HDRImageDisplay::setWhitePoint(double value)
 {
-    qDebug() << "White point: " << value;
+    const float l_white = static_cast<float>(value);
+    if (!qFuzzyCompare(l_white, reinhard02Params.l_white)) {
+        reinhard02Params.l_white = l_white;
+        toneMapper.SetParams(reinhard02Params);
+        if (technique == REINHARD02) {
+            needsToneMap = true;
+            update();
+        }
+    }
 }
 
 
 void HDRImageDisplay::setKey(double value)
 {
-    qDebug() << "Key: " << value;
+    const float key = static_cast<float>(value);
+    if (!qFuzzyCompare(key, reinhard02Params.key)) {
+        reinhard02Params.key = key;
+        toneMapper.SetParams(reinhard02Params);
+        if (technique == REINHARD02) {
+            needsToneMap = true;
+            update();
+        }
+    }
 }
 
 
 void HDRImageDisplay::setReinhard02(bool enabled)
 {
-    qDebug() << "Enable Reinhard02? " << enabled;
+    const TmoTechnique newTechnique = enabled ? REINHARD02 : EXPOSURE;
+    if (newTechnique != technique) {
+        technique = newTechnique;
+        toneMapper.SetParams(reinhard02Params);
+        needsToneMap = true;
+        update();
+    }
 }
 
 

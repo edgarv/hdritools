@@ -49,6 +49,8 @@ private:
     // Internal state variables
     qreal scaleFactor;
     bool needsToneMap;
+    TmoTechnique technique;
+    Reinhard02::Params reinhard02Params;
 
 
 public:

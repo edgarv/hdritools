@@ -62,6 +62,8 @@ public:
     // This function will get sane tone mapping defaults
     virtual void getToneMapDefaults(double &whitePointOut, double &keyOut) const = 0;
 
+    // Returns the average log luminance
+    virtual double avgLogLuminance() const = 0;
 };
 
 
@@ -82,6 +84,7 @@ protected:
     // Good tone mapping defaults
     double whitePoint;
     double key;
+    double lw;
 
 public:
     // The constructor just stores the references to the images
@@ -95,6 +98,9 @@ public:
 
     // Gets sane tone mapping defaults
     virtual void getToneMapDefaults(double &whitePointOut, double &keyOut) const;
+
+    // Returns the average log luminance
+    virtual double avgLogLuminance() const;
 
 public slots:
     // Request to update the size of the provider from the backing images.

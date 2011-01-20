@@ -22,7 +22,7 @@ void ImageDataProvider::setWhitePointRange( const range_t &otherRange ) {
 
 ImageIODataProvider::ImageIODataProvider(const Image<Rgba32F> &hdrImage,
                                          const Image<Bgra8> &ldrImage)
-: hdr(hdrImage), ldr(ldrImage), whitePoint(0.0), key(0.0)
+: hdr(hdrImage), ldr(ldrImage), whitePoint(0.0), key(0.0), lw(0.0)
 {
     update();
 }
@@ -42,6 +42,7 @@ void ImageIODataProvider::update()
     Reinhard02::Params params = Reinhard02::EstimateParams(hdr);
     whitePoint = params.l_white;
     key = params.key;
+    lw  = params.l_w;
     setWhitePointRange(params.l_min, 2.0*qMax(params.l_max, params.l_white));
 }
 
@@ -71,4 +72,10 @@ void ImageIODataProvider::getToneMapDefaults(double &whitePointOut,
 {
     whitePointOut = whitePoint;
     keyOut = key;
+}
+
+
+double ImageIODataProvider::avgLogLuminance() const
+{
+    return lw;
 }
