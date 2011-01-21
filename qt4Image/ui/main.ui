@@ -249,7 +249,7 @@
     <addaction name="action_Actual_Pixels"/>
     <addaction name="separator"/>
     <addaction name="action_Pixel_Info"/>
-    <addaction name="actionTone_mapping"/>
+    <addaction name="action_Tone_mapping"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -421,12 +421,15 @@
     <string>Ctrl+W</string>
    </property>
   </action>
-  <action name="actionTone_mapping">
+  <action name="action_Tone_mapping">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Tone mapping</string>
+    <string>&amp;Tone mapping</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>

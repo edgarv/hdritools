@@ -126,6 +126,8 @@ protected slots:
 
     // Display the tone mapping window
     void toneMap();
+    // To be used when the tone mapping dialog is closed, to update the GUI
+    void toneMapClosed();
 
 
 

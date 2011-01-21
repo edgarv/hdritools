@@ -26,7 +26,7 @@ const QString zones_txt[] = {
 
 ToneMapDialog::ToneMapDialog(const ImageDataProvider &imgDataProvider,
                              QWidget *parent) :
-QDialog(parent, Qt::Dialog), dataProvider(imgDataProvider), m_zoneIdx(0),
+QDialog(parent, Qt::Tool), dataProvider(imgDataProvider), m_zoneIdx(0),
 m_isSet(false)
 {
     // Setup things as in the designer

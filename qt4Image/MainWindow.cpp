@@ -86,13 +86,14 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     connect( action_Actual_Pixels, SIGNAL(triggered()), 
         this, SLOT(actualPixels()) );
     connect( action_Pixel_Info, SIGNAL(triggered()), this, SLOT(pixelInfo()) );
-    connect( actionTone_mapping, SIGNAL(triggered()), this, SLOT(toneMap()) );
+    connect( action_Tone_mapping, SIGNAL(triggered()), this, SLOT(toneMap()) );
 
     // For adjusting the window on request 
-    connect( action_AdjustSize, SIGNAL(triggered()), this, SLOT(adjustSize()) );
+    connect( action_AdjustSize, SIGNAL(triggered()), this, SLOT(adjustSize()));
 
-    // Connections for the pixel info dialog and receiving the files dropped
-    connect( pixInfoDialog, SIGNAL(rejected()), this, SLOT(pixelInfoClosed()) );
+    // Connections for the pixinfo/TMO dialogs and receiving the files dropped
+    connect( pixInfoDialog, SIGNAL(rejected()), this, SLOT(pixelInfoClosed()));
+    connect( toneMapDialog, SIGNAL(rejected()), this, SLOT(toneMapClosed()) );
     connect( hdrDisplay, 
         SIGNAL(mouseOverPixel(QPoint)), this, SLOT(mouseOverImage(QPoint)) );
     connect( this, SIGNAL(requestPixelInfo(QPoint)), 
@@ -396,7 +397,7 @@ void MainWindow::updateActions()
     const bool enableTone = !(hdrDisplay->size().isEmpty());
     exposureConnect->setEnabled(enableTone);
     srgbChk->setEnabled(enableTone);
-    actionTone_mapping->setEnabled(enableTone);
+    action_Tone_mapping->setEnabled(enableTone);
 
     const bool enableGamma = enableTone && !srgbChk->isChecked();
     gammaConnect->setEnabled(enableGamma);
@@ -434,8 +435,7 @@ void MainWindow::pixelInfo()
     const bool showPixInfo = action_Pixel_Info->isChecked();
     if (showPixInfo) {
         pixInfoDialog->show();
-    }
-    else {
+    } else {
         pixInfoDialog->hide();
     }
 }
@@ -572,5 +572,16 @@ void MainWindow::comparePosNegRelError() {
 
 void MainWindow::toneMap()
 {
-    this->toneMapDialog->show();
+    const bool showToneMap = action_Tone_mapping->isChecked();
+    if (showToneMap) {
+        toneMapDialog->show();
+    } else {
+        toneMapDialog->hide();
+    }
+}
+
+
+void MainWindow::toneMapClosed()
+{
+    action_Tone_mapping->setChecked(false);
 }
