@@ -18,12 +18,6 @@ HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent),
 {
     // By default we want to receive events whenever the mouse moves around
     setMouseTracking(true);
-/*
-    sizeAux.setWidth(ldrImage.Width());
-    sizeAux.setHeight(ldrImage.Height());
-
-    resize(sizeAux);
-    */
 }
 
 

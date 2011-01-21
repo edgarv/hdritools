@@ -43,9 +43,6 @@ private:
     // A data provider for querying info
     ImageIODataProvider dataProvider;
 
-    // Internal cache of the size
-    QSize sizeAux;
-
     // Internal state variables
     qreal scaleFactor;
     bool needsToneMap;
@@ -123,7 +120,7 @@ public:
     {
         Q_ASSERT(scale > 0);
         scaleFactor = scale;
-        sizeAux = scale * sizeOrig();
+        QSize sizeAux = scale * sizeOrig();
         resize(sizeAux);
         needsToneMap = true;
         update();
