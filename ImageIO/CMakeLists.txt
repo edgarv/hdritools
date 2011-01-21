@@ -63,6 +63,7 @@ include_directories(${TBB_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${PNG_INCLUDE_DIR}
 
 set_target_properties(ImageIO PROPERTIES 
   PUBLIC_HEADER "${SRCS_PUBLIC}"
+  OUTPUT_NAME "pcgImageIO"
   DEBUG_POSTFIX "d"
   )
   
@@ -81,10 +82,10 @@ endif(OpenEXR_DEFINITIONS)
 
 # Installs this
 install(TARGETS ImageIO
-  RUNTIME DESTINATION "bin"
-  LIBRARY DESTINATION "lib"
-  ARCHIVE DESTINATION "lib"
-  PUBLIC_HEADER DESTINATION "include"
+  RUNTIME DESTINATION "bin"  COMPONENT Runtime
+  LIBRARY DESTINATION "lib"  COMPONENT Runtime
+  ARCHIVE DESTINATION "lib"  COMPONENT Developer
+  PUBLIC_HEADER DESTINATION "include/pcg"  COMPONENT Developer
   )
 
 # Finally adds the subdirectory with the tests if enabled
