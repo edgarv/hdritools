@@ -102,10 +102,6 @@ public:
         pcg::Rgba32F result (r,g,b,a);
         return result;
     }
-
-    ImageComparator::Type type() const {
-        return T;
-    }
 };
 
 

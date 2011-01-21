@@ -35,15 +35,7 @@ remove_definitions(-DIMAGEIO_EXPORTS)
 add_executable(ImageIO_Test ${SRCS})
 target_link_libraries(ImageIO_Test ImageIO ${GTEST_LIBRARIES})
 
-# Enable explicitly SSE2 in linux
-if(NOT MSVC)
-set_target_properties(ImageIO_Test PROPERTIES 
-  COMPILE_FLAGS "-msse -msse2"
-  )
-endif(NOT MSVC)
-
 
 # Run the executable with CTest
 enable_testing()
 add_test(ImageIOUnitTests ImageIO_Test)
-
