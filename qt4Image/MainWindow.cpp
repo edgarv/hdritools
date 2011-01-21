@@ -1,6 +1,12 @@
 // Implementation of the main window stuff
 #include "MainWindow.h"
 
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#else
+# include <cmath>
+#endif
+
 // This is the easiest way to solve the includes, altough it must be defining much
 // more stuff than it's actually needed
 #include <QtGui>
@@ -357,7 +363,7 @@ void MainWindow::scaleImage(float factor)
     scaleFactor *= factor;
 
     // Correct from floating point errors close to 1
-    if (abs(scaleFactor - 1.0f) < 1e-3f) {
+    if (fabsf(scaleFactor - 1.0f) < 1e-3f) {
         scaleFactor = 1.0f;
     }
     adjustScrollBar(imgScrollFrame->horizontalScrollBar(), factor);

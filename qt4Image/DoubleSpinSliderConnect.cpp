@@ -2,7 +2,12 @@
 
 #include "DoubleSpinSliderConnect.h"
 #include <QtGui>
-#include <cmath>
+
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#else
+# include <cmath>
+#endif
 
 DoubleSpinSliderConnect::DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin) :
     value(0.0f)

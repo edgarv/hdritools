@@ -5,9 +5,6 @@
 #if !defined(PCG_TONEMAPPER_H)
 #define PCG_TONEMAPPER_H
 
-#include <cmath>
-#include <emmintrin.h>
-
 #include "Image.h"
 #include "Rgba32F.h"
 #include "LDRPixels.h"
@@ -111,10 +108,7 @@ public:
     }
 
     // Sets the exposure. Each pixel will be scaled by 2^exposure prior to gamma correction
-    void SetExposure(float exposure) {
-        this->exposure = exposure;
-        this->exposureFactor = pow(2.0f, exposure);
-    }
+    void SetExposure(float exposure);
 
     // Replaces the current set of parameters for the Reinhard02 TMO
     void SetParams(const Reinhard02::Params &params) {

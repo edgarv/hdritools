@@ -1,7 +1,11 @@
 #include "QInterpolator.h"
 #include <QDebug>
 
-#include <cmath>
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#else
+# include <cmath>
+#endif
 
 QInterpolator::QInterpolator(double minimum, double maximum,
                              QAbstractSlider *slider, QLineEdit *edit,

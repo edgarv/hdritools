@@ -1,5 +1,10 @@
 #include "ToneMapper.h"
 
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#else
+# include <cmath>
+#endif
 
 // Intel Threading Blocks 2.0
 #include <tbb/blocked_range.h>
@@ -817,6 +822,12 @@ void ToneMap(Image<T, M1> &dest, const Image<Rgba32F, M2> &src,
 } // namespace pcg
 
 using namespace pcg::tonemapper_internal;
+
+
+void ToneMapper::SetExposure(float exposure) {
+    this->exposure = exposure;
+    this->exposureFactor = pow(2.0f, exposure);
+}
 
 
 void ToneMapper::UpdateLUT() {

@@ -5,7 +5,11 @@
 #include <QtGui>
 #include <QtDebug>
 
-#include <cmath>
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#else
+# include <cmath>
+#endif
 
 HDRImageLabel::HDRImageLabel(QWidget *parent, Qt::WindowFlags f) : QLabel(parent, f)
 {
