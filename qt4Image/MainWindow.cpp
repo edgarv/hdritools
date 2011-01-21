@@ -104,21 +104,21 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
 
     // Connects the gamma, exposure and tone mapping controls
     connect( exposureConnect, SIGNAL(valueChanged(float)), 
-        this, SLOT(setExposure(float)) );
+        hdrDisplay, SLOT(setExposure(float)) );
     connect( gammaConnect,    SIGNAL(valueChanged(float)), 
-        this, SLOT(setGamma(float)) );
+        hdrDisplay, SLOT(setGamma(float)) );
     connect( toneMapDialog, SIGNAL(whitePointChanged(double)),
-        this, SLOT(setWhitePoint(double)) );
+        hdrDisplay, SLOT(setWhitePoint(double)) );
     connect( toneMapDialog, SIGNAL(keyChanged(double)),
-        this, SLOT(setKey(double)) );
+        hdrDisplay, SLOT(setKey(double)) );
     connect( toneMapDialog, SIGNAL(toggled(bool)),
-        this, SLOT(setReinhard02(bool)) );
+        hdrDisplay, SLOT(setReinhard02(bool)) );
 
     // Also connects the sRGB control
-    connect( srgbChk, SIGNAL(stateChanged(int)), this, SLOT(setSRGB(int)) );
+    connect( srgbChk, SIGNAL(toggled(bool)), this, SLOT(setSRGB(bool)) );
 
     // Initial values for the tone mapper
-    setExposure(0.0f);
+    hdrDisplay->setExposure(0.0f);
     setSRGB(true);
 
     // Finally we activate both the window's layout and the central widget's layout
@@ -525,41 +525,9 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 
 
-// ### This should go in a different class, shouldn't it?
-void MainWindow::setGamma(float value)
+void MainWindow::setSRGB(bool enabled)
 {
-    hdrDisplay->setGamma(value);
-}
-
-
-void MainWindow::setExposure(float value)
-{
-    hdrDisplay->setExposure(value);
-}
-
-
-void MainWindow::setWhitePoint(double value)
-{
-    hdrDisplay->setWhitePoint(value);
-}
-
-
-void MainWindow::setKey(double value)
-{
-    hdrDisplay->setKey(value);
-}
-
-
-void MainWindow::setReinhard02(bool enabled)
-{
-    hdrDisplay->setReinhard02(enabled);
-}
-
-
-
-void MainWindow::setSRGB(int value)
-{
-    hdrDisplay->setSRGB(value != Qt::Unchecked);
+    hdrDisplay->setSRGB(enabled);
     updateActions();
 }
 

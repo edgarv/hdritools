@@ -202,6 +202,34 @@ void HDRImageDisplay::paintEvent(QPaintEvent *event)
 
 
 
+void HDRImageDisplay::setGamma(float gamma)
+{
+    if (gamma != toneMapper.Gamma()) {
+        toneMapper.SetGamma(gamma);
+        needsToneMap = true;
+        update();
+    }
+}
+
+void HDRImageDisplay::setExposure(float exposure)
+{
+    if (exposure != toneMapper.Exposure()) {
+        toneMapper.SetExposure(exposure);
+        needsToneMap = true;
+        update();
+    }
+}
+
+void HDRImageDisplay::setSRGB(bool enable)
+{
+    if (enable != toneMapper.isSRGB()) {
+        toneMapper.SetSRGB(enable);
+        needsToneMap = true;
+        update();
+    }
+}
+
+
 void HDRImageDisplay::setWhitePoint(double value)
 {
     const float l_white = static_cast<float>(value);

@@ -82,7 +82,6 @@ protected:
     void scaleImage(float factor);
     void adjustScrollBar(QScrollBar *scrollBar, float factor);
     void updateActions();
-
     
 
 protected slots:
@@ -122,13 +121,8 @@ protected slots:
     // Receive raw "onMouseOver" events from the image label
     void mouseOverImage( QPoint pos );
 
-    // TODO Should these slots belong here or in the HDRDisplay widget?
-    void setGamma(float value);
-    void setExposure(float value);
-    void setSRGB(int value);
-    void setWhitePoint(double value);
-    void setKey(double value);
-    void setReinhard02(bool enabled);
+    // React to the change of the sRGB checkbox
+    void setSRGB(bool enabled);
 
     // Display the tone mapping window
     void toneMap();

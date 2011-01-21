@@ -87,34 +87,6 @@ public:
         return hdrImage.Width() == 0 && hdrImage.Height() == 0;
     }
 
-    void setGamma(float gamma)
-    {
-        if (gamma != toneMapper.Gamma()) {
-            toneMapper.SetGamma(gamma);
-            needsToneMap = true;
-            update();
-        }
-    }
-
-    void setExposure(float exposure)
-    {
-        if (exposure != toneMapper.Exposure()) {
-            toneMapper.SetExposure(exposure);
-            needsToneMap = true;
-            update();
-        }
-    }
-
-    void setSRGB(bool enable)
-    {
-        if (enable != toneMapper.isSRGB()) {
-            toneMapper.SetSRGB(enable);
-            needsToneMap = true;
-            update();
-        }
-    }
-
-
 
     void setScale(float scale)
     {
@@ -141,7 +113,13 @@ public:
     }
 
     void mouseMoveEvent(QMouseEvent * event);
-    
+
+
+    // Slots related to the tone mapping settings
+public slots:
+    void setGamma(float gamma);
+    void setExposure(float exposure);
+    void setSRGB(bool enable);
     void setWhitePoint(double value);
     void setKey(double value);
     void setReinhard02(bool enabled);
