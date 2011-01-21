@@ -17,9 +17,9 @@ public:
     QInterpolator(double minimum, double maximum,
         QAbstractSlider *slider, QLineEdit *edit, QObject *parent = 0);
 
-    const void setRange(double minimum, double maximum);
+    void setRange(double minimum, double maximum);
 
-    const void setValue(double value);
+    void setValue(double value);
     inline double value() const {
         return m_value;
     }
@@ -44,19 +44,19 @@ protected:
     // the value it maps to
     virtual double toValue(int sliderValue) = 0;
 
-    inline const double top() {
+    inline double top() {
         return m_validator.top();
     }
 
-    inline const double bottom() {
+    inline double bottom() {
         return m_validator.bottom();
     }
 
-    inline const int sliderMinimum() {
+    inline int sliderMinimum() {
         return !m_slider.isNull() ? m_slider->minimum() : -1;
     }
 
-    inline const int sliderMaximum() {
+    inline int sliderMaximum() {
         return !m_slider.isNull() ? m_slider->maximum() : -1;
     }
 
@@ -111,7 +111,7 @@ public:
     QPowerInterpolator(double exponent, double minimum, double maximum,
         QAbstractSlider *slider, QLineEdit *edit, QObject *parent = 0);
 
-    inline double exponent() {
+    inline double exponent() const {
         return m_exponent;
     }
 

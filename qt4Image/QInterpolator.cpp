@@ -26,7 +26,7 @@ m_value(0.0)
 }
 
 
-const void QInterpolator::setRange(double minimum, double maximum)
+void QInterpolator::setRange(double minimum, double maximum)
 {
     Q_ASSERT(minimum < maximum);
     m_validator.setRange(minimum, maximum, m_validator.decimals());
@@ -37,7 +37,7 @@ const void QInterpolator::setRange(double minimum, double maximum)
 }
 
 
-const void QInterpolator::setValue(double value)
+void QInterpolator::setValue(double value)
 {
     value = qBound(bottom(), value, top());
     if (!qFuzzyCompare(value, m_value)) {
