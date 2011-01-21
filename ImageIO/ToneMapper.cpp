@@ -95,6 +95,14 @@ const uint32_t MOVEMASK_LUT[] = {
     0xffffffff
 };
 
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+inline float exp2f(float x)
+{
+    return powf(2.0f, x);
+}
+#endif
+
 } // namespace
 
 
@@ -826,7 +834,7 @@ using namespace pcg::tonemapper_internal;
 
 void ToneMapper::SetExposure(float exposure) {
     this->exposure = exposure;
-    this->exposureFactor = pow(2.0f, exposure);
+    this->exposureFactor = exp2f(exposure);
 }
 
 

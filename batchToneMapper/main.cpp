@@ -11,6 +11,12 @@
 //   - Check/implement support for zip files with directories.
 //
 
+#if defined(__INTEL_COMPILER)
+# include <mathimf.h>
+#else
+# include <cmath>
+#endif
+
 #include <iostream>
 
 #include <tclap/CmdLine.h>
@@ -41,6 +47,18 @@ Q_IMPORT_PLUGIN(qico)
 Q_IMPORT_PLUGIN(qtiff)
 
 #endif /* QT_STATICPLUGIN */
+
+
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+namespace
+{
+inline float log2f(float x)
+{
+    return logf(x) * 1.44269504088896340736f /* 1/logf(2.0f) */;
+}
+} // namespace
+#endif
 
 
 // Basically we have one constraint: for the exposure multiplier and gamma we want them to be greater than zero
@@ -147,7 +165,7 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		}
 		else if (exposureMultiplierArg.isSet()) {
 			// Yes, is not that accurate but for our purposes it's enough
-			exposure = log(exposureMultiplierArg.getValue())/log(2.0f);
+			exposure = log2f(exposureMultiplierArg.getValue());
 		}
 		offset = offsetArg.getValue();
 		format = formatArg.getValue();

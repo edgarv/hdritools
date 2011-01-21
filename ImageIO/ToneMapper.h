@@ -108,7 +108,7 @@ public:
     }
 
     // Sets the exposure. Each pixel will be scaled by 2^exposure prior to gamma correction
-    void SetExposure(float exposure);
+    void IMAGEIO_API SetExposure(float exposure);
 
     // Replaces the current set of parameters for the Reinhard02 TMO
     void SetParams(const Reinhard02::Params &params) {
