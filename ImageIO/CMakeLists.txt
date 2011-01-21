@@ -87,9 +87,3 @@ install(TARGETS ImageIO
   ARCHIVE DESTINATION "lib"  COMPONENT Developer
   PUBLIC_HEADER DESTINATION "include/pcg"  COMPONENT Developer
   )
-
-# Finally adds the subdirectory with the tests if enabled
-option(IMAGEIO_BUILD_TEST "Build ImageIO unit test suite" OFF)
-if(IMAGEIO_BUILD_TEST)
-  add_subdirectory(test)
-endif()

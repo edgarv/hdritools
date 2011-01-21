@@ -6,6 +6,7 @@ project(HDRImageTools)
 
 
 cmake_minimum_required(VERSION 2.6.4)
+enable_testing()
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -135,6 +136,13 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
   # We need to build ImageIO
   add_subdirectory(ImageIO)
+  
+  # Add the subdirectory with the tests if enabled
+  option(IMAGEIO_BUILD_TEST "Build ImageIO unit test suite" OFF)
+  if(IMAGEIO_BUILD_TEST)
+    add_subdirectory(ImageIO_test)
+  endif()
+  
 endif(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
 # With the basic configuration options, proceed to the individual configuration

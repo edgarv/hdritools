@@ -3,6 +3,7 @@
 find_package(GTest REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})
+include_directories(../ImageIO)
 
 # Hard-coded Mersenne Twister definitions
 add_definitions (-DDSFMT_DO_NOT_USE_OLD_NAMES -DDHAVE_SSE2=1 -DDSFMT_MEXP=19937)
@@ -37,5 +38,4 @@ target_link_libraries(ImageIO_Test ImageIO ${GTEST_LIBRARIES})
 
 
 # Run the executable with CTest
-enable_testing()
 add_test(ImageIOUnitTests ImageIO_Test)
