@@ -111,15 +111,15 @@ inline unsigned int floatToBits(float x) {
 
 
 inline bool isInvalidLuminance(float x) {
-    // True for denormalized values, NaNs and infinity
-#if !defined(_MSC_VER)
-# if defined(__INTEL_COMPILER)
-    return isnormalf(x) == 0;
-# else
-    return isnormal(x) == 0;
-# endif
+    // True for negatives, denormalized values, NaNs and infinity
+#if defined(__INTEL_COMPILER)
+    return (isgreaterf(x, 0.0f) == 0) || (isnormalf(x) == 0);
 #else
+# if !defined(_MSC_VER)
+    return (isgreater(x, 0.0f) == 0) || (isnormal(x) == 0);
+# else
     return floatToBits(x)>=0x7f800000u || x < float_limits::min();
+# endif
 #endif
 }
 
