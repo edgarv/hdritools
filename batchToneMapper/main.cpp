@@ -97,7 +97,8 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 	try {
 
 		CmdLine cmdline("Tone maps all the HDR images from the input files "
-			"and those within the given zip files.", ' ', "0.0.2");
+            "and those within the given zip files.", ' ',
+            BatchToneMapper::getVersion());
 		ConstraintGreaterThan constraint(0.0f);
 
 		// Exposure

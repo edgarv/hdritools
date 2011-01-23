@@ -10,10 +10,14 @@
 #include "ZipfileInputFilter.h"
 #include "ToneMappingFilter.h"
 
+#include <HDRITools_version.h>
+#include <QString>
+
 using namespace std;
 
 
 string BatchToneMapper::defaultFormat;
+string BatchToneMapper::version;
 
 
 BatchToneMapper::BatchToneMapper(const vector<string>& files, bool bpp16) :
@@ -94,6 +98,22 @@ const string & BatchToneMapper::getDefaultFormat() {
 	}
 
 	return defaultFormat;
+}
+
+
+const string & BatchToneMapper::getVersion()
+{
+    if (version.empty()) {
+#if HDRITOOLS_HAS_VALID_REV
+        QString qversion = QString("%1-hg%2")
+            .arg(pcg::version::versionString())
+            .arg(pcg::version::globalRevision());
+        version = qversion.toStdString();
+#else
+        version = pcg::version::versionString();
+#endif
+    }
+    return version;
 }
 
 void BatchToneMapper::classifyFiles(const vector<string> & files) {

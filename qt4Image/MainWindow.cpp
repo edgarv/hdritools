@@ -1,5 +1,6 @@
 // Implementation of the main window stuff
 #include "MainWindow.h"
+#include <HDRITools_version.h>
 
 #if defined(__INTEL_COMPILER)
 # include <mathimf.h>
@@ -408,17 +409,24 @@ void MainWindow::updateActions()
 
 void MainWindow::about()
 {
-    // TODO Parametrize the version and update it automatically somehow
     QMessageBox::about(this, tr("About %1").arg(appTitle), 
         tr("<p><b>%1</b></p>"
-        "<p>Version %2.<br/>"
+        "<p>Version %2"
+#if HDRITOOLS_HAS_VALID_REV
+        ", hg revision %4"
+#endif
+        ".<br/>"
         "Build date: %3.<br/>"
         "%1 is a simple, fast viewer for High Dynamic Range (HDR) images.</p>"
-        "<p>Copyright (C) 2008-2009 Program of Computer Graphics, "
+        "<p>Copyright &copy; 2008-2011 Program of Computer Graphics, "
         "Cornell University.</p>")
             .arg(appTitle)
-            .arg(tr("0.1.0"))
-            .arg(tr(__DATE__)) );
+            .arg(tr(pcg::version::versionString()))
+            .arg(tr(__DATE__))
+#if HDRITOOLS_HAS_VALID_REV
+            .arg(pcg::version::globalRevision())
+#endif
+    );
 }
 
 

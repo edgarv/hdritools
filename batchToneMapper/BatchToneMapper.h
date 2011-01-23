@@ -46,6 +46,9 @@ public:
 	// Gets the default format string
 	static const std::string & getDefaultFormat();
 
+    // Gets the version string
+    static const std::string & getVersion();
+
 private:
 
 	const static int LUT_SIZE = 8192;
@@ -69,6 +72,9 @@ private:
 
 	// Cache the default format
 	static std::string defaultFormat;
+
+    // Cache the version string
+    static std::string version;
 
 
 	// Utility method to separate the elements from a raw file list into a

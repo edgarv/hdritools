@@ -35,6 +35,9 @@ set(SRCS
   ${LUT_DIRECTORY}/rgbeLUT.h
   Exception.h
   PfmIO.h PfmIO.cpp
+  
+  # Also include the version header, defined in the root directory
+  "${HDRITOOLS_VERSION_FILENAME}"
   )
   
 # Subset of the sources which are the public headers
@@ -55,6 +58,9 @@ set(SRCS_PUBLIC
   Exception.h
   PngIO.h
   PfmIO.h
+  
+  # Also include the version header, defined in the root directory
+  "${HDRITOOLS_VERSION_FILENAME}"
   )
   
 add_library(ImageIO SHARED ${SRCS})

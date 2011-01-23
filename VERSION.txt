@@ -1,0 +1,2 @@
+hdritools - 0.2.0
+openexrjni - 2.0.0

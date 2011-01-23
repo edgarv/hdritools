@@ -15,6 +15,18 @@ if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSIO
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat")
 endif()
 
+
+# Set the version-related variables
+include(HDRIToolsGetVersionInfo)
+HDRITOOLS_GET_VERSION_INFO()
+
+# Create the version header
+set(HDRITOOLS_VERSION_FILENAME
+  "${CMAKE_CURRENT_BINARY_DIR}/headers/HDRITools_version.h")
+configure_file(HDRITools_version.h.cmake "${HDRITOOLS_VERSION_FILENAME}")
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/headers")
+
+
 # Options on how to use zlib and openexr
 if(WIN32)
   set(USE_SYSTEM_LIBS_DEFAULT OFF)
@@ -167,24 +179,16 @@ endif(BUILD_QT4IMAGE)
 
 # Packaging with CPack
 
-# Currently set a faux version, based on the build date
-add_executable(getdate getdate.c)
-add_custom_command(
-  OUTPUT currentdate.txt 
-  COMMAND getdate currentdate.txt
-  DEPENDS getdate)
-add_custom_target(getdate_drive ALL DEPENDS currentdate.txt)
-if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/currentdate.txt)
-  file(READ ${CMAKE_CURRENT_BINARY_DIR}/currentdate.txt CURRENT_DATE_STR)
-  if (CURRENT_DATE_STR MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
-    message(STATUS "Using package version: ${CURRENT_DATE_STR}")
-    set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
-    set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
-    set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
-  endif()
+if (HDRITOOLS_HAS_VALID_REV)
+  set (CPACK_PACKAGE_VERSION ${HDRITOOLS_VERSION}-hg${HDRITOOLS_REV_ID})
+else()
+  set (CPACK_PACKAGE_VERSION ${HDRITOOLS_VERSION})
 endif()
-
+message(STATUS "HDRITools package version: ${CPACK_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_NAME   "HDRITools")
 set(CPACK_PACKAGE_VENDOR "Cornell PCG")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+  "Set of simple tools to view, tone-map and manipulate HDR images.") 
 set(CPACK_DMG_FORMAT "UDBZ") # UDIF bzip2-compressed image (OS X 10.4+ only)
 
 include(CPack)
