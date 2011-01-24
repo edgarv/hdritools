@@ -26,7 +26,7 @@ The projects use the meta-build system CMake to create the actual build
 files. To generate the build files using `cmake` one can just execute, 
 from the directory where the build files will be created: 
 
-    $ cmake –G "Generator Name" PATH_TO_MODULE
+    $ cmake -G "Generator Name" PATH_TO_MODULE
 
 Where `Generator Name` is the name of the desired generator as shown by 
 executing `cmake` without arguments. `PATH_TO_MODULE` is the path (relative
