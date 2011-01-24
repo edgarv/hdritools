@@ -125,7 +125,7 @@ if(NOT M_LIBRARY AND NOT WIN32)
 endif(NOT M_LIBRARY AND NOT WIN32)
 
 # NOW BUILD OUR TARGET
-include_directories(${PNG_SOURCE_DIR} ${ZLIB_INCLUDE_DIR})
+include_directories(${PNG_SOURCE_DIR} ${ZLIB_INCLUDE_DIRS})
 
 if(PNG_SHARED_LIB)
  add_library(${PNG_LIB_NAME} SHARED ${libpng_sources})

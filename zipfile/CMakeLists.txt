@@ -11,4 +11,4 @@ set(SRCS
 add_library(zipfile STATIC ${SRCS})
 
 # Note that it's not linked here!
-include_directories(${ZLIB_INCLUDE_DIR})
+include_directories(${ZLIB_INCLUDE_DIRS})

@@ -107,7 +107,7 @@ ADD_OPENEXR_LIBRARY(IlmImf ILMIMF_HEADERS ILMIMF_SOURCES
   ${OPENEXR_VERSION} "2002" ${ZLIB_EXTRA_ARG})
 
 # Link against zlib as it was found in the top level CMakeLists.txt
-include_directories("${ZLIB_INCLUDE_DIR}")
+include_directories(${ZLIB_INCLUDE_DIRS})
 target_link_libraries(IlmImf Half Iex IlmThread "${ZLIB_LIBRARIES}")
 
 # Disable recurrent warnings in MSVC
