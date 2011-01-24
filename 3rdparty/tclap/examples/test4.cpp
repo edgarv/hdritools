@@ -1,6 +1,8 @@
 
 
 #include "tclap/CmdLine.h"
+#include "tclap/DocBookOutput.h"
+#include "tclap/ZshCompletionOutput.h"
 #include <iostream>
 #include <string>
 
@@ -16,8 +18,10 @@ class MyOutput : public StdOutput
 
 		virtual void failure(CmdLineInterface& c, ArgException& e)
 		{
+			static_cast<void>(c); // Ignore input, don't warn
 			cerr << "my failure message: " << endl
 			     << e.what() << endl;
+			exit(1);
 		}
 
 		virtual void usage(CmdLineInterface& c)
@@ -31,6 +35,7 @@ class MyOutput : public StdOutput
 
 		virtual void version(CmdLineInterface& c)
 		{
+			static_cast<void>(c); // Ignore input, don't warn
 			cout << "my version message: 0.1" << endl;
 		}
 };
@@ -62,6 +67,8 @@ void parseOptions(int argc, char** argv)
 
 	// set the output
 	MyOutput my;
+	//ZshCompletionOutput my;
+	//DocBookOutput my;
 	cmd.setOutput(&my);
 
 	//

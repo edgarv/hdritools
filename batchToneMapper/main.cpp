@@ -61,7 +61,8 @@ inline float log2f(float x)
 #endif
 
 
-// Basically we have one constraint: for the exposure multiplier and gamma we want them to be greater than zero
+// Basically we have one constraint: for the exposure multiplier and gamma we
+// want them to be greater than zero
 class ConstraintGreaterThan : public Constraint<float> {
 
 	const float minVal;
@@ -69,7 +70,9 @@ class ConstraintGreaterThan : public Constraint<float> {
 	const string short_id;
 
 public:
-	ConstraintGreaterThan(float mininum) : minVal(mininum), short_id("greaterThan") {
+	ConstraintGreaterThan(float mininum) : 
+	minVal(mininum), short_id(mininum == 0.0f ? "possitive float" : "greaterThan")
+	{
 		ostringstream s;
 		s << "The value must be greater than " << minVal << ".";
 		desc = s.str();
@@ -85,6 +88,24 @@ public:
 		return value > minVal;
 	}
 
+};
+
+
+// The format list is large, so we customize the builtin TCLAP constraint
+class FormatConstraint : public ValuesConstraint<string>
+{
+public:
+	FormatConstraint(vector<string> &allowed) :
+	ValuesConstraint<string>(allowed), m_shortID("format_id")
+	{
+	}
+
+	virtual string shortID() const {
+		return m_shortID;
+	}
+	
+private:
+	const string m_shortID;
 };
 
 
@@ -111,13 +132,13 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		ValueArg<float> exposureMultiplierArg("m", "expmult",
 			"Exposure compensation multiplier. "
 			"The pixels will be multiplied by this value prior to gamma correction (default 1).",
-			false, 1.0f, "possitive float", &constraint);
+			false, 1.0f, &constraint);
 
 		// Gamma value
 		ValueArg<float> gammaArg("g", "gamma",
 			"Gamma correction. "
 			"The pixels will be raised to the power of 1/gamma after the exposure compensation (default 2.2).",
-			false, 2.2f, "possitive float", &constraint);
+			false, 2.2f, &constraint);
 
 		// sRGB flag
 		TCLAP::SwitchArg srgbArg("",
@@ -134,14 +155,14 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		// Output format constraint
 		vector<string> supportedFormats = 
 			Util::supportedWriteImageFormats();
-		ValuesConstraint<string> formatConstraint(supportedFormats);
+		FormatConstraint formatConstraint(supportedFormats);
 		string defaultFormat = BatchToneMapper::getDefaultFormat();
 
 		string formatArgDesc("Image format for the tone mapped images. It must be one of: ");
 		formatArgDesc += formatConstraint.description() + ". The default is " + defaultFormat + ".";
 		ValueArg<string> formatArg("f", "format",
 			formatArgDesc, 
-			false, defaultFormat, "string", &formatConstraint);
+			false, defaultFormat, &formatConstraint);
 
 		// The unlabeled multiple arguments are the input zipfiles
 		UnlabeledMultiArg<string> filesArg("filenames", 
