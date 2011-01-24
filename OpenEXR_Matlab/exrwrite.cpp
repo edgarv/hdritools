@@ -64,7 +64,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mexErrMsgTxt("Too many output arguments.");
     }
     
-	int width, height;
+	int width = 0, height = 0;
    
 	const mwSize nd = mxGetNumberOfDimensions(prhs[0]);
 	if(nd==2)

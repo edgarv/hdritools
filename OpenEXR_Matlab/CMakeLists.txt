@@ -116,7 +116,7 @@ elseif(UNIX)
     DOC "gcc version script for mex files"
   )
 
-  # Also include the version information file
+  # Also include the version information file (this was removed on R2009a)
   find_path(MEX_VERSION_SRC "mexversion.c"
     PATHS ${MATLABROOT}
     PATH_SUFFIXES extern/src
@@ -130,7 +130,6 @@ elseif(UNIX)
   else(NOT APPLE)
    set(MEX_LDFLAGS "-Wl,-flat_namespace -undefined suppress")
    set(MEX_LDFLAGS "${MEX_LDFLAGS} -Wl,-exported_symbols_list,${MEX_MAPFILE}")
-   add_definitions(-DMX_COMPAT_32)
   endif(NOT APPLE)
 else(MSVC)
   message(FATAL_ERROR "TODO: Add support for the ${CMAKE_SYSTEM_NAME} platform!")
@@ -167,7 +166,6 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(MATLAB DEFAULT_MSG
   MATLAB_MEX_LIBRARY
   MATLAB_MAT_LIBRARY
   MEX_MAPFILE
-  MEX_VERSION_SRC
 )
 
 set(MATLAB_LIBRARIES
@@ -215,9 +213,10 @@ if (MSVC)
   set(COMMON_SRC init.cpp)
 elseif(UNIX)
   if (NOT APPLE)
-    set(COMMON_SRC init.cpp ${MEX_VERSION_SRC})
-  else()
-    set(COMMON_SRC ${MEX_VERSION_SRC})
+    set(COMMON_SRC init.cpp)
+  endif()
+  if (MEX_VERSION_SRC)
+    list(APPEND COMMON_SRC ${MEX_VERSION_SRC})
   endif()
 endif()
 
