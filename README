@@ -1,68 +1,110 @@
-HDR Image Tools – 0.1
-April 17 2009
-(c) Program of Computer Graphics, Cornell University 2008-2009
-Edgar Velázquez-Armendariz  -  eva5 _at_ cs.cornell.edu
+<!-- -*- markdown -*- -->
+PCG HDRITools
+=============
+HDR Image Tools 0.2.0
+---------------------
+&copy; 2008-2011
+[Program of Computer Graphics](http://www.graphics.cornell.edu),
+[Cornell University](http://www.cornell.edu) <br />
+[Edgar Velázquez-Armendáriz](http://www.cs.cornell.edu/~eva5/) -
+eva5 _at_ cs~cornell~edu
 
-This module provides a set of simple tools to manipulate HDR images in 
-the Radiance (.rgbe;.hdr) and OpenEXR (.exr) formats. They include a 
-viewer, a batch tonemapper, the OpenEXR JNI file for RTGI and Matlab 
-extensions to read and save OpenEXR files. 
+
+Overview
+--------
+
+This package provides a set of simple tools to manipulate HDR images in 
+the [Radiance](http://radsite.lbl.gov/radiance/refer/filefmts.pdf) 
+(.pic;.rgbe;.hdr), [OpenEXR](http://www.openexr.com) (.exr) and 
+[Portable Float Map](http://gl.ict.usc.edu/HDRShop/PFM/PFM_Image_File_Format.html) (.pfm)
+formats. They include a viewer, a batch tonemapper, and OpenEXR bindings for
+Java (using JNI) and Matlab (using MEX files.) 
 
 The projects use the meta-build system CMake to create the actual build 
-files. To generate the build files using cmake one can just execute, 
+files. To generate the build files using `cmake` one can just execute, 
 from the directory where the build files will be created: 
 
-$ cmake –G “Generator Name” PATH_TO_MODULE
+    $ cmake –G “Generator Name” PATH_TO_MODULE
 
-Where “Generator Name” is the name of the desired generator as shown by 
-executing cmake without arguments. PATH_TO_MODULE is the path (relative 
-or absolute) to the directory where the CMakeLists.txt file at the top 
-of the module is located. More details about how to invoke cmake may be 
-consulted online. 
+Where `Generator Name` is the name of the desired generator as shown by 
+executing `cmake` without arguments. `PATH_TO_MODULE` is the path (relative
+or absolute) to the directory where the `CMakeLists.txt` file at the top of
+the module is located. More details about how to invoke cmake may be consulted
+on its online documentation. An easier way might be to use either the ncurses
+variant `ccmake` or the Qt based one, `cmake-gui` instead.
 
-The module provides the following:
-- OpenEXR_JNI – The JNI implementation for RTGI. 
 
-- OpenEXR_Matlab – Matlab extensions to read and save OpenEXR files. 
+Package contents
+---------------
 
-- ImageIO – Parallel C++ library to manipulate HDR files in the Radiance 
-and OpenEXR files. It is tuned for speed, using templates, SSE/SSE2 
-intrinsics. It can also write PNGs of integral type pixels at 8 and 16
-bits per pixel.
+The HDRITools package provides the following:
 
-- batchToneMapper – a parallel command line utility to tone map HDR 
+- *OpenEXR_JNI* – The Java JNI bindings for OpenEXR.
+
+- *OpenEXR_Matlab* – Matlab MEX extensions to read and save OpenEXR files.
+
+- *ImageIO* – Parallel C++ library to manipulate HDR files in the Radiance,
+OpenEXR and Portable Float Map files. It is (allegedly) tuned for speed, using
+templates and SSE/SSE2/SSE3 intrinsics. It can also write PNGs of integral-type
+pixels at 8 and 16 bits per pixel.
+
+- *batchToneMapper* – a parallel command line utility to tone map HDR 
 files using exposure and gamma correction. It can also read the HDR 
-files contained in a zip file directly. It is based on ImageIO. 
+files contained in a zip file directly. It is based on ImageIO.
 
-- qt4Image – HDR file viewer to tone map, zoom and compare files, using 
+- *qt4Image* – HDR file viewer to tone map, zoom and compare files, using 
 amenities such as drag-and-drop. This is meant to be a modern 
-replacement of the venerable glimage. 
+replacement of the venerable `glimage` created by Mahesh Ramasubramanian
+back in 1998. 
 
 
-Required extra stuff:
-* CMake >=2.6 (www.cmake.org) – to create the build files. 
-* Thread Building Blocks >=2.0 (www.threadingbuildingblocks.org) – used 
-  for the parallelization. 
-* Qt >=4.4 (trolltech.com/products/qt/) – for batchToneMapper and 
-  qt4Image. 
+Required external components
+----------------------------
 
-Build options:
-The options are documented in cmake, use a GUI or ncurses version so see 
+- [CMake](http://www.cmake.org) >=2.6 – to create the build files. 
+- [Threading Building Blocks](http://www.threadingbuildingblocks.org) >=2.0 –
+  used for the parallelization. 
+- [Qt](http://qt.nokia.com) >=4.4 – for batchToneMapper and qt4Image.
+- [GTest]() >= 1.5 - used for the optional unit tests.
+
+
+Build options
+-------------
+The options are documented in cmake, use the GUI or ncurses version to see 
 their description. However the defaults should be decent enough. 
 
-Issues:
-When compiling against a static Qt4 in windows, you might need to link 
-manually batchToneMapper and qt4Image to a DirectX library contained in 
-the SKD if you receive the error “error LNK2001: unresolved external 
-symbol IID_ID3DXEffectStateManager”: 
+
+Known issues
+------------
+When compiling against a static Qt4 in windows, if you receive the error:
+
+    error LNK2001: unresolved external symbol IID_ID3DXEffectStateManager
+
+Then you might need to link manually `batchToneMapper` and `qt4Image` to a
+DirectX library contained in the SKD:
  
-“$(DXSDK_DIR)\Lib\x64\dxguid.lib” (for Win64 or)
-“$(DXSDK_DIR)\Lib\x86\dxguid.lib” (for Win32)
-Where DXSDK_DIR is the environment variable with the path to the DirectX SDK.
+- `%DXSDK_DIR%\Lib\x64\dxguid.lib` (for Win64 or)
+- `%DXSDK_DIR%\Lib\x86\dxguid.lib` (for Win32)
+
+Where `DXSDK_DIR` is the environment variable with the path to the
+DirectX SDK.
 
 
 Acknowledgements
+----------------
+[Fabio Pellacini](http://www.cs.dartmouth.edu/~fabio/) wrote the original
+version of `ImageIO/Image.h`.
+The zip file reading functionality is based on code by Gilles Vollant.
+The OpenEXR_Matlab module is based on work by Jinwei Gu.
 
-Fabio Pellacini did the original version of ImageIO/Image.h. The zip file reading
-is based on code by Gilles Vollant. The OpenEXR_Matlab module is based on
-work by Jinwei Gu.
+The HDRITools package uses and includes free software:
+
+- The [zlib](http://www.zlib.net/) compression library
+  (Jean-loup Gailly, Mark Adler and team)
+- The [libpng](http://www.libpng.org/pub/png/) graphics library
+  (Glenn Randers-Pehrson and team)
+- The [OpenEXR](http://www.openexr.com) graphics library
+  (Industrial Light & Magic, a division of
+  Lucasfilm Entertainment Company Ltd.)
+- The [TCLAP](http://tclap.sourceforge.net/) command line parser library
+  (Michael E. Smoot and team)
