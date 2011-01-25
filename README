@@ -103,6 +103,8 @@ The HDRITools package uses and includes free software:
 
 - The [zlib](http://www.zlib.net/) compression library
   (Jean-loup Gailly, Mark Adler and team)
+- The [MiniZip](http://www.winimage.com/zLibDll/minizip.html) compression
+  library (Gilles Vollant and team)
 - The [libpng](http://www.libpng.org/pub/png/) graphics library
   (Glenn Randers-Pehrson and team)
 - The [OpenEXR](http://www.openexr.com) graphics library
