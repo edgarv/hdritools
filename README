@@ -41,20 +41,20 @@ Package contents
 
 The HDRITools package provides the following:
 
-- *OpenEXR_JNI* – The Java JNI bindings for OpenEXR.
+- *OpenEXR_JNI* - The Java JNI bindings for OpenEXR.
 
-- *OpenEXR_Matlab* – Matlab MEX extensions to read and save OpenEXR files.
+- *OpenEXR_Matlab* - Matlab MEX extensions to read and save OpenEXR files.
 
-- *ImageIO* – Parallel C++ library to manipulate HDR files in the Radiance,
+- *ImageIO* - Parallel C++ library to manipulate HDR files in the Radiance,
 OpenEXR and Portable Float Map files. It is (allegedly) tuned for speed, using
 templates and SSE/SSE2/SSE3 intrinsics. It can also write PNGs of integral-type
 pixels at 8 and 16 bits per pixel.
 
-- *batchToneMapper* – a parallel command line utility to tone map HDR 
+- *batchToneMapper* - a parallel command line utility to tone map HDR 
 files using exposure and gamma correction. It can also read the HDR 
 files contained in a zip file directly. It is based on ImageIO.
 
-- *qt4Image* – HDR file viewer to tone map, zoom and compare files, using 
+- *qt4Image* - HDR file viewer to tone map, zoom and compare files, using 
 amenities such as drag-and-drop. This is meant to be a modern 
 replacement of the venerable `glimage` created by Mahesh Ramasubramanian
 back in 1998. 
@@ -63,10 +63,10 @@ back in 1998.
 Required external components
 ----------------------------
 
-- [CMake](http://www.cmake.org) >=2.6 – to create the build files. 
-- [Threading Building Blocks](http://www.threadingbuildingblocks.org) >=2.0 –
+- [CMake](http://www.cmake.org) >=2.6 - to create the build files. 
+- [Threading Building Blocks](http://www.threadingbuildingblocks.org) >=2.0 -
   used for the parallelization. 
-- [Qt](http://qt.nokia.com) >=4.4 – for batchToneMapper and qt4Image.
+- [Qt](http://qt.nokia.com) >=4.4 - for batchToneMapper and qt4Image.
 - [GTest]() >= 1.5 - used for the optional unit tests.
 
 
