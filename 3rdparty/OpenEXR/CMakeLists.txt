@@ -16,7 +16,7 @@
 if(NOT OPENEXR_IS_INTERNAL)
   project(OpenEXR)
   cmake_minimum_required(VERSION 2.6)
-endif(NOT OPENEXR_IS_INTERNAL)
+endif()
 
 
 option(OPENEXR_SHARED_LIBS
@@ -24,10 +24,13 @@ option(OPENEXR_SHARED_LIBS
   
 if(OPENEXR_SHARED_LIBS)
   set(OPENEXR_LIBTYPE "SHARED")
-else(OPENEXR_SHARED_LIBS)
+else()
   set(OPENEXR_LIBTYPE "STATIC")
-endif(OPENEXR_SHARED_LIBS)
- 
+endif()
+
+# The SOVERSION is very different from the marketing version
+set(OPENEXR_SOVERSION "6.0.0")
+
 # Small macro to set the LIBNAME_VERSION variable accoring to the contents of the VERSION
 macro(GET_VERSION libname)
   string(TOUPPER "${libname}" libname_upper)
@@ -51,25 +54,26 @@ macro(MSVC_COMPILE_FLAGS targetname flags)
     COMPILE_FLAGS "${flags}"
     )
   endif(MSVC)
-endmacro(MSVC_COMPILE_FLAGS)
+endmacro()
 
 # For install we define a macro
 macro(INSTALL_TARGET targetname)
   if(OPENEXR_IS_INTERNAL)
     if(OPENEXR_SHARED_LIBS)
       install(TARGETS ${targetname}
-        RUNTIME DESTINATION "bin"
+        RUNTIME DESTINATION "bin" COMPONENT "openexr"
+        LIBRARY DESTINATION "lib" COMPONENT "openexr"
       )
-	endif(OPENEXR_SHARED_LIBS)
-  else(OPENEXR_IS_INTERNAL)
+	endif()
+  else()
     install(TARGETS ${targetname}
       RUNTIME DESTINATION "bin"
       LIBRARY DESTINATION "lib"
       ARCHIVE DESTINATION "lib"
       PUBLIC_HEADER DESTINATION "include/OpenEXR"
     )
-  endif(OPENEXR_IS_INTERNAL)
-endmacro(INSTALL_TARGET)
+  endif()
+endmacro()
 
  
 # The version of the ilmbase and openexr libraries.
@@ -79,7 +83,7 @@ GET_VERSION("ilmbase")
 # Building Windows DLL's on MSVC requires lots of extra work
 if(OPENEXR_SHARED_LIBS AND MSVC)
   set(OPENEXR_DLL ON)
-endif(OPENEXR_SHARED_LIBS AND MSVC)
+endif()
 
 # First we need to create the configuration headers
 
@@ -91,26 +95,26 @@ find_package(Threads)
 # pthreads
 if(CMAKE_USE_PTHREADS_INIT)
   set(HAVE_PTHREAD 1)
-endif(CMAKE_USE_PTHREADS_INIT)
+endif()
 
 # posix semaphores
 include(CheckIncludeFile)
 if(APPLE)
   set(HAVE_POSIX_SEMAPHORES 0)
-else(APPLE)
+else()
   CHECK_INCLUDE_FILE("semaphore.h" HAVE_POSIX_SEMAPHORES)
-endif(APPLE)
+endif()
 
 
 # Large stack is enabled only in linux systems
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(HAVE_LINUX_PROCFS 1)
   set(HAVE_LARGE_STACK  1)
-endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(HAVE_DARWIN 1)
-endif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+endif()
 
 # Detect that std::right if is usable
 include(CheckCXXSourceCompiles)
@@ -136,7 +140,7 @@ if(NOT OPENEXR_IS_INTERNAL)
   install(FILES ${OPENEXR_CFG_HEADERS}
     DESTINATION "include/OpenEXR"
     )
-endif(NOT OPENEXR_IS_INTERNAL)
+endif()
   
 
 # The build requires headers defined within all directories
@@ -157,10 +161,10 @@ if(OPENEXR_DLL)
   if(NOT OPENEXR_IS_INTERNAL)
     if(OPENEXR_SYSTEM_ZLIB)
   	  get_filename_component(ZLIB_LIB_FILENAME "${ZLIB_LIBRARIES}" ABSOLUTE)
-    else(OPENEXR_SYSTEM_ZLIB)
+    else()
       get_target_property(ZLIB_LIB_FILENAME zlib "LOCATION")
-    endif(OPENEXR_SYSTEM_ZLIB)
-  endif(NOT OPENEXR_IS_INTERNAL)
+    endif()
+  endif()
   
   # Store in cache the master resource file
   get_filename_component(OPENEXR_RC_PATH "win32/openexr.rc" 
@@ -181,26 +185,26 @@ if(OPENEXR_DLL)
 	
     list(APPEND ${sourceslst_var} "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}.rc")
   
-  endmacro(ADD_RESOURCE)
+  endmacro()
   
   
   # The DLLs need special handling. It assumes that the resource file has been generated!
   macro(CREATEDLL targetname)
   
-    # The createdll program need an export map while keeping all the symbols
+    # The createdll program needs an export map while keeping all the symbols
     set_target_properties(${targetname} PROPERTIES
       LINK_FLAGS "/MAP /MAPINFO:EXPORTS /OPT:NOREF /OPT:ICF")
 		
 	if(${ARGC} EQUAL 2)
 	  set(EXTRA_LIB "-o${ARGV1}")
-	endif(${ARGC} EQUAL 2)
+	endif()
 	
 	# We also add the zlib directory
 	get_filename_component(ZLIB_PATH ${ZLIB_LIB_FILENAME} PATH)
 	
     add_custom_command(TARGET ${targetname} POST_BUILD
       COMMAND createDLL
-	    "-x${targetname}.res" "-n$(OutDir)\\$(TargetName).map" "-l$(IntDir);..\\Half\\$(OutDir);..\\Iex\\$(OutDir);..\\Imath\\$(OutDir);..\\IlmThread\\$(OutDir);${ZLIB_PATH}" "-i$(OutDir)\\$(TargetName).lib"
+	    "-x${targetname}.res" "-n$(OutDir)\\$(TargetName).map" "-M$(PlatformName)" "-l$(IntDir);..\\Half\\$(OutDir);..\\Iex\\$(OutDir);..\\Imath\\$(OutDir);..\\IlmThread\\$(OutDir);${ZLIB_PATH}" "-i$(OutDir)\\$(TargetName).lib"
 		"${EXTRA_LIB}"
 	  COMMENT "Exporting all public symbols from $(TargetFileName)..."
 	  )
@@ -208,9 +212,9 @@ if(OPENEXR_DLL)
 	# If createDLL does not exist before the target is created, horrible things happen
 	add_dependencies(${targetname} createDLL)
 	
-  endmacro(CREATEDLL)
+  endmacro()
   
-endif(OPENEXR_DLL)
+endif()
 
 
 # Super macro with all the common stuff. The arguments are:
@@ -228,39 +232,40 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
   
     ADD_RESOURCE(${targetname} ${sources_var} 
 	  ${description} ${version} ${year})
-  endif(OPENEXR_DLL)
+  endif()
   
   # Adds the target
   add_library(${targetname} ${OPENEXR_LIBTYPE} ${${publicheaders_var}} ${${sources_var}})
   set_target_properties(${targetname} PROPERTIES 
     VERSION ${version}
+	SOVERSION "${OPENEXR_SOVERSION}"
 	DEBUG_POSTFIX "d"
   )
   
   # If built as a static library in gcc we need to add the fpic flag, so that the code will work when linked into a shared lib
-  if(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+  if(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set_target_properties(${targetname} PROPERTIES 
       COMPILE_FLAGS "-fpic"
     )
-  endif(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+  endif()
   
   if(NOT OPENEXR_IS_INTERNAL)
     set_target_properties(${targetname} PROPERTIES
 	  PUBLIC_HEADER "${${publicheaders_var}}"
 	)
-  endif(NOT OPENEXR_IS_INTERNAL)
+  endif()
   
   # For the windows dll we need extra definitions and use createDLL
   if(OPENEXR_DLL)
     string(TOUPPER ${targetname} targetUpper)
     add_definitions(-D${targetUpper}_EXPORTS)
     CREATEDLL(${targetname} ${ARGV6})
-  endif(OPENEXR_DLL)
+  endif()
   
   # Finally installs the target
   INSTALL_TARGET(${targetname})
 
-endmacro(ADD_OPENEXR_LIBRARY)
+endmacro()
   
 # Process each actual library
 add_subdirectory(Half)
@@ -281,11 +286,11 @@ if(OPENEXR_IS_INTERNAL)
   foreach(dir Half Iex Imath IlmThread IlmImf)
     get_filename_component(fulldir ${dir} ABSOLUTE)
 	list(APPEND OpenEXR_INCLUDE_DIR ${fulldir})
-  endforeach(dir)
+  endforeach()
   set(OpenEXR_INCLUDE_DIR ${OpenEXR_INCLUDE_DIR} PARENT_SCOPE)
   
   if(OPENEXR_DLL)
     set(OpenEXR_DEFINITIONS "-DOPENEXR_DLL" PARENT_SCOPE)
-  endif(OPENEXR_DLL)
+  endif()
 
-endif(OPENEXR_IS_INTERNAL)
+endif()

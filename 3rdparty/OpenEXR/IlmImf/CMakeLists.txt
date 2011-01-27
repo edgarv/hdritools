@@ -50,6 +50,10 @@ set(ILMIMF_HEADERS
   ImfRgbaYca.h
   ImfTestFile.h ImfThreading.h
   ImfB44Compressor.h
+  ImfAcesFile.h
+  ImfCheckedArithmetic.h
+  ImfMultiView.h
+  ImfStringVectorAttribute.h
   )
   
 set(ILMIMF_SOURCES
@@ -91,6 +95,9 @@ set(ILMIMF_SOURCES
   ImfTileOffsets.cpp
   ImfRgbaYca.cpp
   ImfTestFile.cpp
+  ImfAcesFile.cpp
+  ImfMultiView.cpp
+  ImfStringVectorAttribute.cpp
   ${LUT_DIRECTORY}/b44ExpLogTable.h
   )
 
@@ -99,7 +106,7 @@ set(ILMIMF_SOURCES
 # library explictly
 if(WIN32 AND ZLIB_LIB_FILENAME MATCHES "zlib(d)?\\.lib")
   set(ZLIB_EXTRA_ARG ${ZLIB_LIB_FILENAME})
-endif(WIN32 AND ZLIB_LIB_FILENAME MATCHES "zlib(d)?\\.lib")
+endif()
   
 # Creates the special target 
 ADD_OPENEXR_LIBRARY(IlmImf ILMIMF_HEADERS ILMIMF_SOURCES

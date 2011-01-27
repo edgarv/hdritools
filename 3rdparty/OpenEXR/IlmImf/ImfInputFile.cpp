@@ -423,7 +423,7 @@ InputFile::setFrameBuffer (const FrameBuffer &frameBuffer)
 	Lock lock (*_data);
 
 	//
-        // We must invalidate the cached buffer if the new frame
+	// We must invalidate the cached buffer if the new frame
 	// buffer has a different set of channels than the old
 	// frame buffer, or if the type of a channel has changed.
 	//
@@ -433,7 +433,7 @@ InputFile::setFrameBuffer (const FrameBuffer &frameBuffer)
 	FrameBuffer::ConstIterator i = oldFrameBuffer.begin();
 	FrameBuffer::ConstIterator j = frameBuffer.begin();
 
-	while (i != oldFrameBuffer.end())
+	while (i != oldFrameBuffer.end() && j != frameBuffer.end())
 	{
 	    if (strcmp (i.name(), j.name()) || i.slice().type != j.slice().type)
 		break;

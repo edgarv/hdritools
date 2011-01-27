@@ -132,7 +132,6 @@ class BaseExc: public std::string, public std::exception
 	name (const char* text=0)      throw(): base (text) {}	\
 	name (const std::string &text) throw(): base (text) {}	\
 	name (std::stringstream &text) throw(): base (text) {}	\
-	virtual ~name() throw() {} \
     };
 
 

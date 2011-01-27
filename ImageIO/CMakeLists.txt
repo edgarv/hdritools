@@ -84,7 +84,7 @@ endif()
 # OpenEXR definitions (only used in windows dll anyway)
 if(OpenEXR_DEFINITIONS)
   add_definitions(${OpenEXR_DEFINITIONS})
-endif(OpenEXR_DEFINITIONS)
+endif()
 
 # Installs this
 install(TARGETS ImageIO
@@ -92,4 +92,4 @@ install(TARGETS ImageIO
   LIBRARY DESTINATION "lib"  COMPONENT Runtime
   ARCHIVE DESTINATION "lib"  COMPONENT Developer
   PUBLIC_HEADER DESTINATION "include/pcg"  COMPONENT Developer
-  )
+)

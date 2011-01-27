@@ -79,7 +79,7 @@ class Name
     // Maximum length
     //---------------
 
-    static const int	SIZE = 32;
+    static const int	SIZE = 256;
     static const int	MAX_LENGTH = SIZE - 1;
 
   private:
@@ -100,7 +100,11 @@ bool operator < (const Name &x, const Name &y);
 inline Name &
 Name::operator = (const char text[])
 {
+#if _MSC_VER >= 1400
+    strncpy_s(_text, text, MAX_LENGTH);
+#else
     strncpy (_text, text, MAX_LENGTH);
+#endif
     return *this;
 }
 
