@@ -220,6 +220,13 @@ elseif(UNIX)
   endif()
 endif()
 
+# OpenEXR definitions (only used in windows dll anyway)
+if(OpenEXR_DEFINITIONS)
+  add_definitions(${OpenEXR_DEFINITIONS})
+endif()
+
+
+# Create the two targets
 add_mex(exrread  exrread.cpp  ${COMMON_SRC})
 add_mex(exrwrite exrwrite.cpp ${COMMON_SRC})
 
