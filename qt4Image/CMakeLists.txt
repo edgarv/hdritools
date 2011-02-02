@@ -107,6 +107,8 @@ include(${QT_USE_FILE})
 add_executable(qt4Image ${EXECUTABLE_TYPE} 
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
 target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
+set_target_properties(qt4Image PROPERTIES
+  VERSION "${HDRITOOLS_VERSION}")
 
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( qt4Image )
@@ -115,6 +117,8 @@ QT_ADD_IMG_PLUGINS( qt4Image )
 # Add the custom Info.plist to the target after configuring it
 if(APPLE AND QT4IMAGE_BUNDLE)
   set(MACOSX_BUNDLE_EXECUTABLE_NAME "qt4Image")
+  set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${HDRITOOLS_VERSION})
+  set(MACOSX_BUNDLE_BUNDLE_VERSION ${HDRITOOLS_MACLS_VERSION})
   configure_file(res/Info.plist.in "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
     set_target_properties(qt4Image PROPERTIES
 	  MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")

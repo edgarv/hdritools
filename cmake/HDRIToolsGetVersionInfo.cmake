@@ -2,16 +2,35 @@
 # This module provides a macro, tested to be included ONLY from the root dir:
 #  HDRITOOLS_GET_VERSION_INFO()
 # This macro will read the "VERSION.txt" file and execute "hg", setting:
-#  HDRITOOLS_VERSION
+#  HDRITOOLS_VERSION       - Full version string: <major>.<minor>.<patch>
 #  HDRITOOLS_VERSION_MAJOR
 #  HDRITOOLS_VERSION_MINOR
 #  HDRITOOLS_VERSION_PATCH
-#  HDRITOOLS_VERSION_BUILD
-#  HDRITOOLS_HAS_VALID_REV
-#  HDRITOOLS_REV_ID
-#  HDRITOOLS_DATE
+#  HDRITOOLS_VERSION_BUILD - Simple build number based on HDRITOOLS_DATE,
+#                            encoded as YYYYMMDD
+#  HDRITOOLS_HAS_VALID_REV - Flag to indicate whether HDRITOOLS_REV_ID is set
+#  HDRITOOLS_REV_ID        - First 12 digits of the mercurial revision ID
+#  HDRITOOLS_DATE          - Represents the code date as YYYY.MM.DD
+#  HDRITOOLS_MACLS_VERSION - A version for Mac Launch Services from the version
+#                            and code date, in the format
+#                            nnnnn.nn.nn[hgXXXXXXXXXXXX]
 
 macro(HDRITOOLS_GET_VERSION_INFO)
+
+  # Simple, internal macro for zero padding values. Assumes that the number of
+  # digits is enough. Note that this method overwrites the variable!
+  macro(ZERO_PAD NUMBER_VAR NUM_DIGITS)
+    set(_val ${${NUMBER_VAR}})
+    set(${NUMBER_VAR} "")
+    foreach(dummy_var RANGE 1 ${NUM_DIGITS})
+      math(EXPR _digit "${_val} % 10")
+      set(${NUMBER_VAR} "${_digit}${${NUMBER_VAR}}")
+      math(EXPR _val "${_val} / 10")
+    endforeach()
+    unset(_val)
+    unset(_digit)
+  endmacro()
+
 
   # Uses hg to get the version string and the date of such revision
   # Based on info from:
@@ -24,8 +43,8 @@ macro(HDRITOOLS_GET_VERSION_INFO)
     execute_process(
       COMMAND "${HG_CMD}" -R "${CMAKE_CURRENT_SOURCE_DIR}"
                           parents --template "{node|short},{date|shortdate}"
-	  OUTPUT_VARIABLE HG_INFO
-	  OUTPUT_STRIP_TRAILING_WHITESPACE
+      OUTPUT_VARIABLE HG_INFO
+      OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if (HG_INFO)
       # Extract the revision ID and the date
@@ -56,10 +75,10 @@ macro(HDRITOOLS_GET_VERSION_INFO)
       set(GETDATE_CMD "${CMAKE_CURRENT_SOURCE_DIR}/win32/getdate.exe")
     else()
       set(GETDATE_CMD "date")
-      set(GETDATE_ARGS "+'%Y.%m.%d'")	
+      set(GETDATE_ARGS "+'%Y.%m.%d'")    
     endif()
     execute_process(COMMAND "${GETDATE_CMD}" ${GETDATE_ARGS}
-  	  OUTPUT_VARIABLE HDRITOOLS_DATE
+      OUTPUT_VARIABLE HDRITOOLS_DATE
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if (NOT HDRITOOLS_DATE)
@@ -93,6 +112,26 @@ macro(HDRITOOLS_GET_VERSION_INFO)
   if (HDRITOOLS_DATE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
     set(HDRITOOLS_VERSION_BUILD
       "${CMAKE_MATCH_1}${CMAKE_MATCH_2}${CMAKE_MATCH_3}")
+
+    # Now make a Mac Launch Services version number based on version and date.
+    # Based on specs from:
+    # http://lists.apple.com/archives/carbon-dev/2006/Jun/msg00139.html (Feb 2011)
+    if (HDRITOOLS_VERSION_MAJOR GREATER 30 OR
+        HDRITOOLS_VERSION_MINOR GREATER 14 OR
+        HDRITOOLS_VERSION_PATCH GREATER 14 OR
+        ${CMAKE_MATCH_1} GREATER 2032)
+      message(AUTHOR_WARNING "HDRIVersion violates the Mac LS assumptions")
+    endif()
+    math(EXPR _MACLS_MAJOR "(${HDRITOOLS_VERSION_MAJOR}+1)*256 + (${HDRITOOLS_VERSION_MINOR}+1)*16 + ${HDRITOOLS_VERSION_PATCH}+1")
+    math(EXPR _MACLS_MINOR "((${CMAKE_MATCH_1}-2008)*4) + ((${CMAKE_MATCH_2}-1)*32 + ${CMAKE_MATCH_3})/100")
+    math(EXPR _MACLS_BUILD "((${CMAKE_MATCH_2}-1)*32 + ${CMAKE_MATCH_3})%100")
+    ZERO_PAD(_MACLS_MAJOR 4)
+    ZERO_PAD(_MACLS_MINOR 2)
+    ZERO_PAD(_MACLS_BUILD 2)
+    set(HDRITOOLS_MACLS_VERSION "${_MACLS_MAJOR}.${_MACLS_MINOR}.${_MACLS_BUILD}")
+    if(HDRITOOLS_HAS_VALID_REV)
+      set(HDRITOOLS_MACLS_VERSION "${HDRITOOLS_MACLS_VERSION}hg${HDRITOOLS_REV_ID}")
+    endif()
   else()
     message(FATAL_ERROR
       "HDRITools date has an unexpected format: ${HDRITOOLS_DATE}")
