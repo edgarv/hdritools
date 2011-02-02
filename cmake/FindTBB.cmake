@@ -45,8 +45,15 @@ find_path(TBB_INCLUDE_DIR tbb/task.h
   HINTS ${TBB_ROOT_DIR}/include
   PATHS /usr/include
         /opt/include
-  )
-mark_as_advanced(TBB_INCLUDE_DIR)
+)
+find_file(TBB_STDDEF_H tbb_stddef.h
+  HINTS ${TBB_INCLUDE_DIR}
+  PATH_SUFFIXES tbb Headers
+  DOC "TBB Header with version information"
+  NO_CMAKE_ENVIRONMENT_PATH
+  NO_CMAKE_PATH
+)
+mark_as_advanced(TBB_INCLUDE_DIR TBB_STDDEF_H)
   
 # Set the actual locations for Windows
 if(WIN32)
@@ -128,9 +135,9 @@ endif()
 
 
 # Try to get the compile-time version
-if(TBB_INCLUDE_DIR AND EXISTS "${TBB_INCLUDE_DIR}/tbb/tbb_stddef.h")
-  file(READ "${TBB_INCLUDE_DIR}/tbb/tbb_stddef.h" TBB_STDDEF_H)
-  if (TBB_STDDEF_H MATCHES "#define TBB_VERSION_MAJOR ([0-9]+).*#define TBB_VERSION_MINOR ([0-9]+)")
+if(TBB_INCLUDE_DIR AND TBB_STDDEF_H)
+  file(READ "${TBB_STDDEF_H}" TBB_STDDEF_H_TXT)
+  if (TBB_STDDEF_H_TXT MATCHES "#define TBB_VERSION_MAJOR ([0-9]+).*#define TBB_VERSION_MINOR ([0-9]+)")
     set(TBB_VERSION_MAJOR ${CMAKE_MATCH_1})
     set(TBB_VERSION_MINOR ${CMAKE_MATCH_2})
     set(TBB_VERSION "${TBB_VERSION_MAJOR}.${TBB_VERSION_MINOR}")

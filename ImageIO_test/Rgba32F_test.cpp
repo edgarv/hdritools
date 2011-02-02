@@ -381,7 +381,7 @@ TEST_F(Rgba32FTest, new_delete)
     // Allocate 1 element
     {
         pcg::Rgba32F *ptr = new pcg::Rgba32F;
-        ASSERT_EQ (0, (size_t)ptr & 0xF);
+        ASSERT_EQ (static_cast<size_t>(0), (size_t)ptr & 0xF);
         ptr->setAll(1.0f);
         *ptr += zero;
         ASSERT_EQ (ones, *ptr);
@@ -391,7 +391,7 @@ TEST_F(Rgba32FTest, new_delete)
     // Allocate arrays
     {
         pcg::Rgba32F *ptr = new pcg::Rgba32F[1];
-        ASSERT_EQ (0, (size_t)ptr & 0xF);
+        ASSERT_EQ (static_cast<size_t>(0), (size_t)ptr & 0xF);
         for (size_t i = 0; i < 1; ++i) {
             ptr[i].setAll(1.0f);
             ptr[i] += zero;
@@ -402,7 +402,7 @@ TEST_F(Rgba32FTest, new_delete)
 
     {
         pcg::Rgba32F *ptr = new pcg::Rgba32F[2];
-        ASSERT_EQ (0, (size_t)ptr & 0xF);
+        ASSERT_EQ (static_cast<size_t>(0), (size_t)ptr & 0xF);
         for (size_t i = 0; i < 2; ++i) {
             ptr[i].setAll(1.0f);
             ptr[i] += zero;
@@ -414,7 +414,7 @@ TEST_F(Rgba32FTest, new_delete)
     {
         const size_t count = 4096*3072;
         pcg::Rgba32F *ptr = new pcg::Rgba32F[count];
-        ASSERT_EQ (0, (size_t)ptr & 0xF);
+        ASSERT_EQ (static_cast<size_t>(0), (size_t)ptr & 0xF);
         for (size_t i = 0; i < count; ++i) {
             ptr[i].setAll(1.0f);
             ptr[i] += zero;
@@ -423,3 +423,4 @@ TEST_F(Rgba32FTest, new_delete)
         delete [] ptr;
     }
 }
+

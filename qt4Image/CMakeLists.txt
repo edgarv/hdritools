@@ -240,9 +240,12 @@ if (WIN32)
 endif()
 
 # The default downloaded version of TBB seems to be problematic...
-if (EXISTS ${TBB_OPTIMIZED_LIBRARY})
-  get_filename_component(TBB_LIB_DIR ${TBB_OPTIMIZED_LIBRARY} PATH)
+if (EXISTS ${TBB_MAIN_LIBRARY_RELEASE})
+  get_filename_component(TBB_LIB_DIR ${TBB_MAIN_LIBRARY_RELEASE} PATH)
   list(APPEND DIRS ${TBB_LIB_DIR})
+  if(APPLE AND TBB_LIB_DIR MATCHES ".+\\.framework\$")
+    list(APPEND DIRS "${TBB_LIB_DIR}/../")
+  endif()
   if (WIN32)
     string(REGEX REPLACE "lib([/\\].+[.//].+)?[/\\]?$" "bin\\1"
 	  TBB_BIN_DIR ${TBB_LIB_DIR})

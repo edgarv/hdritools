@@ -15,9 +15,6 @@ using namespace std;
 namespace pcg {
 
 
-	const unsigned int alpha_zero_mask[4] = {0x0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-
-
 	struct ALIGN16_BEG Rgba32F {
 		
 	private:
@@ -162,7 +159,7 @@ namespace pcg {
 		friend bool operator ==(const Rgba32F &a, const Rgba32F &b) { 
 			union { __m128 mask; unsigned long long val[2]; };
 			mask = _mm_cmpeq_ps(a, b);
-			return (val[0] & val[1]) == 0xffffffffffffffffu;
+			return (val[0] & val[1]) == 0xffffffffffffffffull;
 		}
 		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) {
             return !(operator== (a, b));

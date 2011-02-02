@@ -525,7 +525,7 @@ private:
 
             int bin_idx = static_cast<int> (params.res_factor * 
                 (log_lum - params.Lmin_log));
-            assert (bin_idx >= 0 && bin_idx < histogram.size());
+            assert (bin_idx >= 0 && bin_idx < (int)histogram.size());
             histogram[bin_idx]++;
         }
     }
@@ -563,10 +563,10 @@ private:
 		    const int index2 = _mm_extract_epi16(bin_idx, 2*2);
 		    const int index3 = _mm_extract_epi16(bin_idx, 3*2);
 
-            assert (index0 >= 0 && index0 < histogram.size());
-            assert (index1 >= 0 && index1 < histogram.size());
-            assert (index2 >= 0 && index2 < histogram.size());
-            assert (index3 >= 0 && index3 < histogram.size());
+            assert (index0 >= 0 && index0 < (int)histogram.size());
+            assert (index1 >= 0 && index1 < (int)histogram.size());
+            assert (index2 >= 0 && index2 < (int)histogram.size());
+            assert (index3 >= 0 && index3 < (int)histogram.size());
 
             histogram[index0]++;
             histogram[index1]++;
