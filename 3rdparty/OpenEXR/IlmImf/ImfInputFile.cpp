@@ -51,6 +51,7 @@
 #include "half.h"
 #include <fstream>
 #include <algorithm>
+#include <cassert>
 
 
 namespace Imf {
@@ -154,7 +155,10 @@ InputFile::Data::deleteCachedBuffer()
 
 		delete [] (((float *)s.base) + offset);
 		break;
-	    }                
+
+	      default:
+		assert("Unknown slice type" == 0);
+	    }       
 	}
 
 	//
@@ -293,7 +297,7 @@ bufferedReadPixels (InputFile::Data* ifd, int scanLine1, int scanLine2)
 		     x <= levelRange.max.x;
 		     x += toSlice.xSampling)
                 {
-		    for (size_t i = 0; i < size; ++i)
+		    for (int i = 0; i < size; ++i)
 			toPtr[i] = fromPtr[i];
 
 		    fromPtr += fromSlice.xStride * toSlice.xSampling;

@@ -149,7 +149,7 @@ usesLongNames (const Header &header)
 template <size_t N>
 void checkIsNullTerminated (const char (&str)[N], const char *what)
 {
-	for (int i = 0; i < N; ++i) {
+	for (size_t i = 0; i < N; ++i) {
 		if (str[i] == '\0')
 			return;
 	}
@@ -712,14 +712,14 @@ Header::sanityCheck (bool isTiled) const
 	    throw Iex::ArgExc ("Invalid tile size in image header.");
 
 	if (maxTileWidth > 0 &&
-	    maxTileWidth < tileDesc.xSize)
+	    maxTileWidth < static_cast<int>(tileDesc.xSize))
 	{
 	    THROW (Iex::ArgExc, "The width of the tiles exceeds the maximum "
 				"width of " << maxTileWidth << "pixels.");
 	}
 
 	if (maxTileHeight > 0 &&
-	    maxTileHeight < tileDesc.ySize)
+	    maxTileHeight < static_cast<int>(tileDesc.ySize))
 	{
 	    THROW (Iex::ArgExc, "The width of the tiles exceeds the maximum "
 				"width of " << maxTileHeight << "pixels.");
