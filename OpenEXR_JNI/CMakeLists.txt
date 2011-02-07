@@ -30,7 +30,7 @@ set(JAVA_SRCS
 )
   
 # The jar which will contain the compiled java files
-set(OPENEXRJNI_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni.jar)
+set(OPENEXRJNI_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni-${OPENEXRJNI_VERSION}.jar)
   
 # The jni headers are generated with javah from the java sources
 set(JNI_HEADERS
