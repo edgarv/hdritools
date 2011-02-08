@@ -635,7 +635,11 @@ public class EXRSimpleImageTest {
 	public void testWriteInvalid() throws EXRIOException {
 		EXRSimpleImage img = new EXRSimpleImage(64,64, Channels.RGB);
 		img.allocateBuffer();
-		img.write("\\\\Invalid\\network\\share\test.exr", Compression.NONE);
+                final String filename =
+                        System.getProperty("os.name").matches("[Ww]indows") ?
+                            "\\\\Invalid\\net|work\\share\test.exr" :
+                            "/Invalid/ran:dom/dir/\test.exr";
+		img.write(filename, Compression.NONE);
 	}
 
 }
