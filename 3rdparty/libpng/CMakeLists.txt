@@ -42,6 +42,8 @@ if(NOT WIN32)
   if(NOT M_LIBRARY)
     message(STATUS
       "math library 'libm' not found - floating point support disabled")
+  else()
+    mark_as_advanced(M_LIBRARY)
   endif()
 else()
   # not needed on windows
@@ -93,6 +95,7 @@ set(png_asm_tmp "OFF")
 if(NOT WIN32)
   find_program(uname_executable NAMES uname PATHS /bin /usr/bin /usr/local/bin)
   if(uname_executable)
+    mark_as_advanced(uname_executable)
     exec_program(${uname_executable}
                  ARGS --machine OUTPUT_VARIABLE uname_output)
     if("uname_output" MATCHES "^.*i[1-9]86.*$")
