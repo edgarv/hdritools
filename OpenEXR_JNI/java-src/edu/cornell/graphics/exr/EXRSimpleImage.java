@@ -86,10 +86,7 @@ public class EXRSimpleImage implements Serializable {
 		// compatible; init the cache & set the multi-threading options
 		initCache();
 		final int numProcs = Runtime.getRuntime().availableProcessors();
-		if (numProcs > 1) {
-			setNumWorkingThreads(numProcs);
-		}
-		
+		setNumWorkingThreads(numProcs);
 	}
 	
 	/** Additional attributes of the file */
