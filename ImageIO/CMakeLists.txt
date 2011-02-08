@@ -71,6 +71,8 @@ set_target_properties(ImageIO PROPERTIES
   PUBLIC_HEADER "${SRCS_PUBLIC}"
   OUTPUT_NAME "pcgImageIO"
   DEBUG_POSTFIX "d"
+  VERSION "${HDRITOOLS_VERSION}"
+  FRAMEWORK TRUE
   )
   
 # TODO This should be done only when building it as a shared library in Windows
@@ -79,6 +81,13 @@ add_definitions(-DIMAGEIO_EXPORTS)
 # Per Appendix C of the TBB documentation, make windows.h not to define min/max
 if(WIN32)
   add_definitions(-DNOMINMAX)
+endif()
+
+# Set up the Info.plist variables
+if (APPLE)
+  set(MACOSX_FRAMEWORK_IDENTIFIER "edu.cornell.graphics.pcgImageIO")
+  set(MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${HDRITOOLS_VERSION})
+  set(MACOSX_FRAMEWORK_BUNDLE_VERSION ${HDRITOOLS_MACLS_VERSION})
 endif()
 
 # OpenEXR definitions (only used in windows dll anyway)
@@ -90,6 +99,7 @@ endif()
 install(TARGETS ImageIO
   RUNTIME DESTINATION "bin"  COMPONENT Runtime
   LIBRARY DESTINATION "lib"  COMPONENT Runtime
+  FRAMEWORK DESTINATION "."  COMPONENT Runtime
   ARCHIVE DESTINATION "lib"  COMPONENT Developer
-  PUBLIC_HEADER DESTINATION "include/pcg"  COMPONENT Developer
+  PUBLIC_HEADER DESTINATION "include/pcgImageIO"  COMPONENT Developer
 )
