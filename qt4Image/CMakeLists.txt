@@ -142,7 +142,10 @@ install(TARGETS qt4Image
 # For windows we also generate and install a .reg file to register the program 
 # with Vista's association mechanism.
 # This should be an option in the program, but for now this should do the trick
-if(WIN32)
+CMAKE_DEPENDENT_OPTION(QT4IMAGE_REG_FILES
+  "Generate Windows registry files to associate file types with SDP." OFF
+  "WIN32" OFF)
+if(QT4IMAGE_REG_FILES)
   set(QT4_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/bin/qt4Image.exe")
   string(REPLACE "/" "\\\\" QT4_INSTALL_PATH ${QT4_INSTALL_PATH})
   
@@ -162,9 +165,7 @@ if(WIN32)
     DESTINATION win32
     COMPONENT "qt4image"
 	)
-
-
-endif(WIN32)
+endif()
 
 # Stop further processing if there is no bundle-stuff
 if(NOT QT4IMAGE_BUNDLE)
