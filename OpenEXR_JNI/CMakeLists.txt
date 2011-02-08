@@ -116,12 +116,12 @@ endif()
 
 # And installs the jar and jnilib
 install(TARGETS openexrjni
-  RUNTIME DESTINATION "bin"
-  LIBRARY DESTINATION "lib"
-  )
+  RUNTIME DESTINATION "${HDRITOOLS_SHARE_DIR}/java" COMPONENT "openexrjni"
+  LIBRARY DESTINATION "${HDRITOOLS_SHARE_DIR}/java" COMPONENT "openexrjni"
+)
 install(FILES ${OPENEXRJNI_JAR}
-  DESTINATION "jar"
-  )
+  DESTINATION "${HDRITOOLS_SHARE_DIR}/java" COMPONENT "openexrjni"
+)
 
 
 ################################# Tests with JUnit4 ##########################

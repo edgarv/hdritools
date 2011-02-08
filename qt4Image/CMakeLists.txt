@@ -134,9 +134,9 @@ include_directories(../ImageIO)
 
 # Installs this
 install(TARGETS qt4Image
-  RUNTIME DESTINATION bin COMPONENT Runtime
-  LIBRARY DESTINATION lib COMPONENT Developer
-  BUNDLE  DESTINATION .   COMPONENT Runtime
+  RUNTIME DESTINATION bin COMPONENT "qt4image"
+  LIBRARY DESTINATION lib COMPONENT "qt4image"
+  BUNDLE  DESTINATION .   COMPONENT "qt4image"
   )
 
 # For windows we also generate and install a .reg file to register the program 
@@ -153,13 +153,14 @@ if(WIN32)
   )
   
   install(FILES
-	${CMAKE_CURRENT_BINARY_DIR}/InstallVista.reg
+    ${CMAKE_CURRENT_BINARY_DIR}/InstallVista.reg
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallVista.reg
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/Types.reg
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/Types-Photoshop.reg
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes.reg
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes-Photoshop.reg
-	DESTINATION win32
+    ${CMAKE_CURRENT_SOURCE_DIR}/win32/Types.reg
+    ${CMAKE_CURRENT_SOURCE_DIR}/win32/Types-Photoshop.reg
+    ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes.reg
+    ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes-Photoshop.reg
+    DESTINATION win32
+    COMPONENT "qt4image"
 	)
 
 
@@ -196,21 +197,21 @@ if(EXISTS "${QT_PLUGINS_DIR}/imageformats" AND NOT(QT_CONFIG MATCHES "static"))
   if(NOT WIN32 OR NOT (QT_QTGUI_LIBRARY_RELEASE AND QT_QTGUI_LIBRARY_DEBUG))
     install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
       DESTINATION ${plugin_dest_dir}/plugins
-      COMPONENT Runtime
+      COMPONENT "qt4image"
 	  REGEX "svg|mng|gif" EXCLUDE)
   else()
     # There are different plugins for release and debug
 	install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
       DESTINATION ${plugin_dest_dir}/plugins
-      COMPONENT Runtime CONFIGURATIONS Debug
+      COMPONENT "qt4image" CONFIGURATIONS Debug
 	  REGEX ".+d4\\.dll$"
-	  REGEX "svg|mng|gif" EXCLUDE)
+	  REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
 	
 	install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
       DESTINATION ${plugin_dest_dir}/plugins
-      COMPONENT Runtime CONFIGURATIONS Release MinSizeRel RelWithDebInfo
+      COMPONENT "qt4image" CONFIGURATIONS Release MinSizeRel RelWithDebInfo
 	  REGEX ".+d4\\.dll$" EXCLUDE
-	  REGEX "svg|mng|gif" EXCLUDE)
+	  REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
   endif()
   
 endif()
@@ -225,13 +226,13 @@ if(QT_MAC_USE_COCOA AND EXISTS "${QTCOCOA_MENU_NIB}")
     execute_process(COMMAND \${CMAKE_COMMAND} -E copy_directory
       \"${QTCOCOA_MENU_NIB}\" 
       \"\${CMAKE_INSTALL_PREFIX}/${qtconf_dest_dir}/qt_menu.nib\")
-    " COMPONENT Runtime)
+    " COMPONENT "qt4image")
 endif()
 
 # Install a qt.conf file by running cmake code from the install script
 install(CODE "
   file(WRITE \"\${CMAKE_INSTALL_PREFIX}/${qtconf_dest_dir}/qt.conf\" \"\")
-  " COMPONENT Runtime)
+  " COMPONENT "qt4image")
 
 # Use BundleUtils to get all other dependencies to work. For Windows and Linux
 # CMake 2.8 is required
@@ -257,8 +258,18 @@ if (EXISTS ${TBB_MAIN_LIBRARY_RELEASE})
   endif()
 endif()
 
+# Let the install code use the location of the imageio component as well
+if (WIN32)
+  list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}/../imageio/bin")
+elseif (APPLE)
+  list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}/../imageio")
+else()
+  list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}/../imageio/lib")
+endif()
+list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}")
+
 install(CODE "
-  if(APPLE OR WIN32)
+if(APPLE OR WIN32)
   # gp_item_default_embedded_path item default_embedded_path_var
   #
   # Return the path that others should refer to the item by when the item
@@ -278,22 +289,22 @@ install(CODE "
     #
 
     # By default, embed things right next to the main bundle executable:
-	if(APPLE)
+    if(APPLE)
       set(path \"@executable_path/../../Contents/MacOS\")
-	elseif(WIN32)
-	  set(path \"@executable_path\")
-	endif()
+      elseif(WIN32)
+      set(path \"@executable_path\")
+    endif()
 
     set(overriden FALSE)
     
     # Qt plugins must reside in the appropriate folders within Contents/plugins
     set(qtplugin_regex \"(plugins[\\\\/][^\\\\/]+)[\\\\/][^\\\\/]+\\\\${CMAKE_SHARED_LIBRARY_SUFFIX}\$\")
     if(item MATCHES \"\${qtplugin_regex}\")
-	  if(APPLE)
+      if(APPLE)
         set(path \"@executable_path/../\${CMAKE_MATCH_1}\")
-	  elseif(WIN32)
-	    set(path \"@executable_path/\${CMAKE_MATCH_1}\")
-	  endif()
+      elseif(WIN32)
+        set(path \"@executable_path/\${CMAKE_MATCH_1}\")
+      endif()
       set(overriden TRUE)
     endif()
 
@@ -301,17 +312,17 @@ install(CODE "
     if(NOT overriden)
       if(item MATCHES \"[^/]+\\\\.framework/\")
         set(path \"@executable_path/../Frameworks\")
-	set(overriden TRUE)
+	    set(overriden TRUE)
       endif()
     endif()
 
     set(\${default_embedded_path_var} \"\${path}\" PARENT_SCOPE)
   endfunction()
-  endif() # APPLE OR WIN32
+endif() # APPLE OR WIN32
   
   file(GLOB_RECURSE QTPLUGINS
     \"\${CMAKE_INSTALL_PREFIX}/${plugin_dest_dir}/plugins/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
   include(BundleUtilities)
   fixup_bundle(\"${APPS}\" \"\${QTPLUGINS}\" \"${DIRS}\")
-  " COMPONENT Runtime)
-
+  "
+  COMPONENT "qt4image")

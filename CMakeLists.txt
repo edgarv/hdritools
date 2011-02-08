@@ -30,9 +30,9 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/headers")
 # Options on how to use zlib and openexr
 if(WIN32)
   set(USE_SYSTEM_LIBS_DEFAULT OFF)
-else(WIN32)
+else()
   set(USE_SYSTEM_LIBS_DEFAULT ON)
-endif(WIN32)
+endif()
 option(USE_SYSTEM_ZLIB
   "Use the system version of zlib instead of the bundled one."
   ${USE_SYSTEM_LIBS_DEFAULT})
@@ -55,13 +55,22 @@ if(UNIX)
     # which point to directories outside the build tree to the install RPATH
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	
-  else(USE_FULL_RPATH)
+  else()
     # Use the default settings
     set(CMAKE_INSTALL_RPATH "")
 	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
-  endif(USE_FULL_RPATH)
+  endif()
   
 endif()
+
+
+# Unix-style system should install additional components under "share"
+if (APPLE OR (WIN32 AND NOT CYGWIN))
+  set(HDRITOOLS_SHARE_DIR ".")
+else()
+  set(HDRITOOLS_SHARE_DIR "share/hdritools")
+endif()
+
   
 # Options to select which components to build
 option(BUILD_OPENEXR_JNI 
@@ -88,7 +97,7 @@ set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE2_COMPILER_FLAGS}" )
 # For GCC we always want to use the source fortify options
 if(CMAKE_COMPILER_IS_GNUCXX)
   add_definitions("-D_FORTIFY_SOURCE=2")
-endif(CMAKE_COMPILER_IS_GNUCXX)
+endif()
   
 # Sets the required zlib variables if we are using the bundled OpenEXR or if building the batch tonemapper
 if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
@@ -96,7 +105,7 @@ if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   if(USE_SYSTEM_ZLIB)
     find_package(ZLIB REQUIRED)
 	get_filename_component(ZLIB_LIB_FILENAME "${ZLIB_LIBRARIES}" ABSOLUTE)
-  else(USE_SYSTEM_ZLIB)
+  else()
     set(ZLIB_IS_INTERNAL TRUE)
 	set(ZLIB_ZCONF_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/headers/")
     add_subdirectory(3rdparty/zlib)
@@ -105,14 +114,14 @@ if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     set(ZLIB_LIBRARIES "zlib")
 	get_target_property(ZLIB_LIB_FILENAME zlib "LOCATION")
     message(STATUS "Using the internal zlib.")
-  endif(USE_SYSTEM_ZLIB)
+  endif()
   
-endif(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
+endif()
 
 # We always need to use OpenEXR
 if(USE_SYSTEM_OPENEXR)
   find_package(OpenEXR 1.6 REQUIRED)
-else(USE_SYSTEM_OPENEXR)
+else()
   set(OPENEXR_IS_INTERNAL TRUE)
   add_subdirectory(3rdparty/OpenEXR)
   
@@ -121,7 +130,7 @@ else(USE_SYSTEM_OPENEXR)
   set(OpenEXR_ROOT_DIR 
     CACHE INTERNAL "Root dir for external OpenEXR not used." FORCE)
   
-endif(USE_SYSTEM_OPENEXR)
+endif()
 
   
 # Both the batch renderer and qt4Image depend on qt4
@@ -132,14 +141,14 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   # ImageIO depends on TBB
   find_package(TBB 2.0 REQUIRED)
   
-  # ImageIO requred libpng
+  # ImageIO requires libpng
   option(USE_SYSTEM_PNG
 	"Use the system version of libpng instead of the bundled one."
 	${USE_SYSTEM_LIBS_DEFAULT})
 	
   if(USE_SYSTEM_PNG)
     find_package(PNG REQUIRED)
-  else(USE_SYSTEM_PNG)
+  else()
     set(PNG_IS_INTERNAL TRUE)
     add_subdirectory(3rdparty/libpng)
     get_filename_component(PNG_INCLUDE_DIR "3rdparty/libpng" ABSOLUTE)
@@ -147,7 +156,7 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     # PNG_LIBRARIES is set within the subdir with the proper target name, but it still depends on zlib
 	set(PNG_LIBRARIES ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
     message(STATUS "Using the internal libpng.")
-  endif(USE_SYSTEM_PNG)
+  endif()
   
   # We need to build ImageIO
   add_subdirectory(ImageIO)
@@ -158,25 +167,25 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     add_subdirectory(ImageIO_test)
   endif()
   
-endif(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
+endif()
   
 # With the basic configuration options, proceed to the individual configuration
 if(BUILD_OPENEXR_JNI)
   add_subdirectory(OpenEXR_JNI)
-endif(BUILD_OPENEXR_JNI)
+endif()
 
 if(BUILD_OPENEXR_MATLAB)
   add_subdirectory(OpenEXR_Matlab)
-endif(BUILD_OPENEXR_MATLAB)
+endif()
 
 if(BUILD_BATCH_TONEMAPPER)
   add_subdirectory(zipfile)
   add_subdirectory(batchToneMapper)
-endif(BUILD_BATCH_TONEMAPPER)
+endif()
 
 if(BUILD_QT4IMAGE)
   add_subdirectory(qt4Image)
-endif(BUILD_QT4IMAGE)
+endif()
 
 
 

@@ -17,6 +17,8 @@ include(${QT_USE_FILE})
   
 add_executable(batchToneMapper ${SRCS})
 target_link_libraries(batchToneMapper ImageIO zipfile ${QT_LIBRARIES})
+set_target_properties(batchToneMapper PROPERTIES
+  VERSION "${HDRITOOLS_VERSION}")
 
 # To expands the command line arguments in Windows, see:
 # http://msdn.microsoft.com/en-us/library/8bch7bkk.aspx
@@ -38,8 +40,12 @@ include_directories(${TBB_INCLUDE_DIR})
 
 # Qt already links to zlib, so we don't need to add it again
 
-# Installs this
+# TODO Fix this nasty hack (adds the batch tone mapper to the qt4Image bundle!)
+if (APPLE AND BUILD_QT4IMAGE AND QT4IMAGE_BUNDLE)
+  set (DESTINATION_DIR "qt4Image.app/Contents/MacOS")
+else()
+  set (DESTINATION_DIR "bin")
+endif()
 install(TARGETS batchToneMapper
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  )
+  RUNTIME DESTINATION ${DESTINATION_DIR} COMPONENT "batchtonemapper"
+)

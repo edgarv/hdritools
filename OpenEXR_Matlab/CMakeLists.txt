@@ -330,9 +330,9 @@ endforeach()
 
 # And installs the mex binary and the .m file
 install(TARGETS ${MATLAB_MEX_TARGETS}
-  RUNTIME DESTINATION "matlab"
-  LIBRARY DESTINATION "matlab"
+  RUNTIME DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
+  LIBRARY DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
 install(FILES exrread.m exrwrite.m
-  DESTINATION "matlab"
+  DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
