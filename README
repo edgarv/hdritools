@@ -67,7 +67,9 @@ Required external components
 - [Threading Building Blocks](http://www.threadingbuildingblocks.org) >=2.0 -
   used for the parallelization. 
 - [Qt](http://qt.nokia.com) >=4.4 - for batchToneMapper and qt4Image.
-- [GTest]() >= 1.5 - used for the optional unit tests.
+- [Google Test](http://code.google.com/p/googletest/) >= 1.5 -
+  used for the optional native unit tests.
+- [JUnit](http://www.junit.org/) >= 4 - used for the optional Java unit tests.
 
 
 Build options

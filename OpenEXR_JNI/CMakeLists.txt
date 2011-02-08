@@ -68,8 +68,8 @@ endif()
 # Commands to builds the jar file
 add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
   COMMAND ${JAVA_COMPILE} -target 1.5
-     -d ${CMAKE_CURRENT_BINARY_DIR}
-	 ${JAVA_SRCS}
+    -d ${CMAKE_CURRENT_BINARY_DIR}
+    ${JAVA_SRCS}
   COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_JAR} -C ${CMAKE_CURRENT_BINARY_DIR} edu
   DEPENDS ${JAVA_SRCS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -99,6 +99,7 @@ include_directories(
 # Finally adds the actual library targets
 add_library(openexrjni SHARED ${SRCS} ${JNI_HEADERS})
 target_link_libraries(openexrjni ${OpenEXR_LIBRARIES})
+add_dependencies(openexrjni openexrjni_jar)
 
 # This is version 2 of the OpenEXR JNI addin
 set_target_properties(openexrjni PROPERTIES
@@ -121,3 +122,62 @@ install(TARGETS openexrjni
 install(FILES ${OPENEXRJNI_JAR}
   DESTINATION "jar"
   )
+
+
+################################# Tests with JUnit4 ##########################
+option(BUILD_OPENEXR_JNI_TEST
+  "Builds the JUnit4 tests for the OpenEXR JNI binding." OFF)
+if (NOT BUILD_OPENEXR_JNI_TEST)
+  return()
+endif()
+
+# TODO Refactor this into a FindJUnit4.cmake module, alla GTest
+find_file(JUNIT4_JAR
+  NAMES junit4.jar junit-4.jar
+  PATHS /usr/share
+  PATH_SUFFIXES java
+)
+if (NOT JUNIT4_JAR)
+  message(FATAL_ERROR "The JUnit4 jar is required for the tests.")
+else()
+  mark_as_advanced(JUNIT4_JAR)
+endif()
+
+
+# Commands to builds the jar file with the tests
+set(OPENEXRJNI_TEST_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni-test.jar)
+set(JAVA_TEST_SRCS
+  java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
+)
+
+# Separator for the classpath
+if (WIN32 AND NOT CYGWIN)
+  set (PATH_SEPARATOR ";")
+else()
+  set (PATH_SEPARATOR ":")
+endif()
+
+# Create the output directory, otherwise javac freaks out
+set(TEST_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/test)
+if (NOT EXISTS ${TEST_OUT_DIR})
+  file(MAKE_DIRECTORY ${TEST_OUT_DIR})
+endif()
+add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
+  COMMAND ${JAVA_COMPILE} -target 1.5
+    -d ${TEST_OUT_DIR} -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
+    ${JAVA_TEST_SRCS}
+  COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu
+  DEPENDS ${JAVA_TEST_SRCS} ${OPENEXRJNI_JAR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Compiling OpenEXR-JNI JUnit4 test java files and builing jar..."
+)
+# Adds a target so that dependencies are properly tracked
+add_custom_target(openexrjni_test_jar DEPENDS ${OPENEXRJNI_TEST_JAR})
+add_dependencies(openexrjni openexrjni_test_jar)
+
+add_test(NAME JUnit4_EXRSimpleImageTest COMMAND
+  "${Java_JAVA_EXECUTABLE}"
+  -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${OPENEXRJNI_TEST_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
+  -Xcheck:jni -Djava.library.path=$<TARGET_FILE_DIR:openexrjni>
+  org.junit.runner.JUnitCore edu.cornell.graphics.exr.EXRSimpleImageTest
+)
