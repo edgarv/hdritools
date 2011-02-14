@@ -1,7 +1,6 @@
 #include "FloatImageProcessor.h"
 #include "ImageInfo.h"
 
-#include <iostream>
 #include <istream>
 #include <Rgba32F.h>
 #include <Image.h>
@@ -12,20 +11,29 @@
 #include <QString>
 #include <QRegExp>
 
+#include <cstdio>
+#include <QTextStream>
+namespace
+{
+QTextStream cerr(stderr, QIODevice::WriteOnly);
+QTextStream cout(stdout, QIODevice::WriteOnly);
+}
 
-ImageInfo* FloatImageProcessor::load(const char *filenameStr, std::istream &is, 
-									 const char *formatStr, int offset)
+
+ImageInfo* FloatImageProcessor::load(const QString& filenameStr,
+                                     std::istream &is,
+                                     const QString& formatStr, int offset)
 {
 	// Creates the used regular expressions
 	QRegExp rgbeRegex(".+\\.(rgbe|hdr)$", Qt::CaseInsensitive);
 	QRegExp exrRegex(".+\\.exr$", Qt::CaseInsensitive);
 	QRegExp pfmRegex(".+\\.pfm$", Qt::CaseInsensitive);
 
+    // Local copy of the filename
+    QString filename(filenameStr);
+
 	// Pointer with the result image
 	Image<Rgba32F> *floatImage = new Image<Rgba32F>();
-
-	// Get the QString version of the filename
-	QString filename(filenameStr);
 
 	// Tries to find the type of image based on the extension
 	try {
@@ -45,13 +53,13 @@ ImageInfo* FloatImageProcessor::load(const char *filenameStr, std::istream &is,
 			PfmIO::Load(*floatImage, is);
 		}
 		else {
-			cerr << "Ooops! Unrecognized file : " << filenameStr << endl;
+			cerr << "Ooops! Unrecognized file : " << filename << endl;
 			// Returns an invalid handle
 			return new ImageInfo;
 		}
 	}
 	catch (std::exception e) {
-		cerr << "Ooops! While loading " << filenameStr << ": " << e.what() << endl;
+		cerr << "Ooops! While loading " << filename << ": " << e.what() << endl;
 		return new ImageInfo;
 	}
 
@@ -61,14 +69,13 @@ ImageInfo* FloatImageProcessor::load(const char *filenameStr, std::istream &is,
 	setTargetName(filename, formatStr, offset);
 
 	// The data is ready for the next stage, just return it
-	ImageInfo *info = new ImageInfo(floatImage, 
-		string(filenameStr), filename.toStdString());
+	ImageInfo *info = new ImageInfo(floatImage, filenameStr, filename);
 	return info;
 
 }
 
-void FloatImageProcessor::setTargetName(QString & filename, 
-										const char *formatStr, int offset)
+void FloatImageProcessor::setTargetName(QString & filename,
+                                        const QString & formatStr, int offset)
 {
 	QRegExp trailingDigit("(\\d+)\\.(\\w+)$");
 	int pos = -1;

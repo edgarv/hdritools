@@ -3,31 +3,34 @@
 #include "ImageInfo.h"
 
 #include <fstream>
-#include <iostream>
+
+#include <cstdio>
+#include <QTextStream>
+namespace
+{
+QTextStream cerr(stderr, QIODevice::WriteOnly);
+QTextStream cout(stdout, QIODevice::WriteOnly);
+}
 
 using tbb::filter;
 
-using std::vector;
-using std::string;
 using std::ifstream;
-using std::cerr;
 using std::ios_base;
 
 
-FileInputFilter::FileInputFilter(const vector<string> &fileNames) :
+FileInputFilter::FileInputFilter(const QStringList &fileNames) :
 	filter(/*is_serial*/ true),
 	files(fileNames)
 {
-	filename = files.begin();
+	filename = files.constBegin();
 }
 
 void* FileInputFilter::operator()(void*)
 {
 	// Super simple!
 	if (filename != files.end()) {
-		const char * filenamePtr = filename->c_str();
-		++filename;
-		return const_cast<char*>(filenamePtr);
+        // Postfix ++ has greater precedence than *
+        return const_cast<QString*>(&(*filename++));
 	}
 	else {
 		return NULL;
@@ -36,24 +39,24 @@ void* FileInputFilter::operator()(void*)
 
 
 
-FileLoaderFilter::FileLoaderFilter(const std::string &format, int filenameOffset) :
+FileLoaderFilter::FileLoaderFilter(const QString &format, int filenameOffset) :
   tbb::filter(/*is_serial*/false),
-  formatStr(format.c_str()),
+  formatStr(format),
   offset(filenameOffset) 
 {}
 
 
 void* FileLoaderFilter::operator()(void* arg)
 {
-	const char *filename = static_cast<const char*>(arg);
+	const QString *filename = static_cast<const QString*>(arg);
 
 	// Opens the input stream
-	ifstream is(filename, ios_base::binary);
+	ifstream is(filename->toLocal8Bit(), ios_base::binary);
 	if (! is.bad() ) {
-		return FloatImageProcessor::load(filename, is, formatStr, offset);
+		return FloatImageProcessor::load(*filename, is, formatStr, offset);
 	}
 	else {
-		cerr << "Ooops! Unable to open " << filename << " for reading.";
+		cerr << "Ooops! Unable to open " << *filename << " for reading.";
 		return new ImageInfo;
 	}
 

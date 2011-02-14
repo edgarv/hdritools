@@ -4,10 +4,14 @@
 #include <QImage>
 #include <PngIO.h>
 
-#include <iostream>
+#include <cstdio>
+#include <QTextStream>
+namespace
+{
+QTextStream cerr(stderr, QIODevice::WriteOnly);
+QTextStream cout(stdout, QIODevice::WriteOnly);
+}
 
-using std::cout;
-using std::cerr;
 
 ToneMappingFilter::ToneMappingFilter(const ToneMapper &toneMapper, bool useBpp16) : 
 	filter(/*is_serial=*/false),
@@ -34,12 +38,14 @@ void* ToneMappingFilter::operator()(void* item)
 			Image<Bgra8> ldrImage(floatImage.Width(), floatImage.Height());
 			toneMapper.ToneMap(ldrImage, floatImage);
 
-			// Finally wraps the ldrImage into a QImage and saves it with the specified name
+			// Finally wraps the ldrImage into a QImage and saves it 
+            // with the specified name
 			QImage qImage(reinterpret_cast<uchar *>(ldrImage.GetDataPointer()), 
 				ldrImage.Width(), ldrImage.Height(), QImage::Format_RGB32);
 
-			// TODO: The name might contain a path, so should we create it if it doesn't exist?
-			if ( !qImage.save((QString)info->filename.c_str()) ) {
+			// TODO: The name might contain a path, so should we create it if
+            // it doesn't exist?
+			if ( !qImage.save(info->filename) ) {
 				cerr << "Ooops! unable to save " << info->filename << ". Are you sure it's valid?" << endl;
 			}
 		}
@@ -48,7 +54,8 @@ void* ToneMappingFilter::operator()(void* item)
 			toneMapper.ToneMap(ldrImage, floatImage);
 
 			try {
-				PngIO::Save(ldrImage, info->filename.c_str(), toneMapper.isSRGB(), toneMapper.InvGamma());
+				PngIO::Save(ldrImage, info->filename.toLocal8Bit(),
+                    toneMapper.isSRGB(), toneMapper.InvGamma());
 			}
 			catch (std::exception &e) {
 				cerr << "Ooops! unable to save " << info->filename << ": " << e.what() << endl;

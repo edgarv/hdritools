@@ -1,8 +1,7 @@
 #if !defined(FILEINPUTFILTER_H)
 #define FILEINPUTFILTER_H
 
-#include <vector>
-#include <string>
+#include <QStringList>
 
 // TBB import for the filter stuff
 #include <tbb/pipeline.h>
@@ -13,13 +12,13 @@
 class FileInputFilter : public tbb::filter {
 
 	// The list of files to process. Note that it just holds a reference!
-	const std::vector<std::string> &files;
+	const QStringList &files;
 
 	// Iterator to the list of files
-	std::vector<std::string>::const_iterator filename;
+	QStringList::const_iterator filename;
 
 public:
-	FileInputFilter(const std::vector<std::string> &fileNames);
+	FileInputFilter(const QStringList &fileNames);
 
 	// This will be invoked serially, it returns the c_str() version of
 	// each filename in the list. Why? Because the next stage will use
@@ -31,7 +30,7 @@ public:
 class FileLoaderFilter : public tbb::filter {
 
 public:
-	FileLoaderFilter(const std::string &format, int filenameOffset = 0);
+	FileLoaderFilter(const QString &format, int filenameOffset = 0);
 
 	// The input of this filter are the const char* from FileInputFilter
 	// with the name of the standard file to open. It returns pointers
@@ -39,7 +38,7 @@ public:
 	void* operator()(void* arg);
 
 protected:
-	const char * formatStr;
+	const QString formatStr;
 	const int offset;
 
 };

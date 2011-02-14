@@ -29,6 +29,8 @@
 #include "Util.h"
 
 #include <QCoreApplication>
+#include <QString>
+#include <QStringList>
 
 using namespace std;
 using namespace TCLAP;
@@ -111,15 +113,14 @@ private:
 
 
 // Main parameter processing through TCLAP
-void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma, 
-			   bool &bpp16, int &offset, 
-			   string &format, vector<string> &files) 
+void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
+               int &offset, QString &format, QStringList &files) 
 {
 	try {
 
 		CmdLine cmdline("Tone maps all the HDR images from the input files "
             "and those within the given zip files.", ' ',
-            BatchToneMapper::getVersion());
+            BatchToneMapper::getVersion().toStdString());
 		ConstraintGreaterThan constraint(0.0f);
 
 		// Exposure
@@ -153,10 +154,15 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 			false, 0, "integer");
 
 		// Output format constraint
-		vector<string> supportedFormats = 
-			Util::supportedWriteImageFormats();
+		const QStringList & supportedFormatsQt = Util::supportedWriteImageFormats();
+        vector<string> supportedFormats;
+        for (QStringList::const_iterator it = supportedFormatsQt.constBegin();
+             it != supportedFormatsQt.constEnd(); ++it)
+        {
+            supportedFormats.push_back(it->toStdString());
+        }
 		FormatConstraint formatConstraint(supportedFormats);
-		string defaultFormat = BatchToneMapper::getDefaultFormat();
+		const string defaultFormat = BatchToneMapper::getDefaultFormat().toStdString();
 
 		string formatArgDesc("Image format for the tone mapped images. It must be one of: ");
 		formatArgDesc += formatConstraint.description() + ". The default is " + defaultFormat + ".";
@@ -176,8 +182,18 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 		cmdline.add(formatArg);
 		cmdline.add(filesArg);
 		
-		// Parse the argv array
-		cmdline.parse(argc, argv);
+		// Parse the argv array, encoding the cmdline in UTF-8 for TCLAP
+        const QStringList arguments = QCoreApplication::arguments();
+        std::vector<std::string> args;
+        for (QStringList::const_iterator it = arguments.constBegin();
+             it != arguments.constEnd(); ++it) {
+            const QByteArray utf8 = it->toUtf8();
+            std::string arg(utf8.constData());
+            args.push_back(arg);
+        }
+
+		cmdline.parse(args);
+
 
 		// If we are here we are safe to recover the values
 		srgb = srgbArg.getValue();
@@ -190,9 +206,13 @@ void parseArgs(int argc, char* argv[], float &exposure, bool &srgb, float &gamma
 			exposure = log2f(exposureMultiplierArg.getValue());
 		}
 		offset = offsetArg.getValue();
-		format = formatArg.getValue();
+        format = QString::fromStdString(formatArg.getValue());
 		bpp16  = format == Util::PNG16_FORMAT_STR;
-		files  = filesArg.getValue();
+		const vector<string> &filesUtf8 = filesArg.getValue();
+        for (vector<string>::const_iterator it = filesUtf8.begin();
+             it != filesUtf8.end(); ++it) {
+            files.append(QString::fromUtf8(it->c_str()));
+        }
 
 	}
 	catch(ArgException &e) {
@@ -215,11 +235,11 @@ int main(int argc, char* argv[])
 	bool srgb;
 	bool bpp16;
 	float gamma;
-	string format;
-	vector<string> files;
+	QString format;
+	QStringList files;
 
 	// Parses the arguments, the process will setup the exposure exponent, gamma and the list of files
-        parseArgs(argc, argv, exposure, srgb, gamma, bpp16, offset, format, files);
+    parseArgs(exposure, srgb, gamma, bpp16, offset, format, files);
 
 	// Creates the batch tone mapper with those arguments
 	BatchToneMapper batchToneMapper(files, bpp16);

@@ -3,18 +3,21 @@
 #include "FloatImageProcessor.h"
 #include "ImageInfo.h"
 
-#include <iostream>
+#include <cstdio>
+#include <QTextStream>
+namespace
+{
+QTextStream cerr(stderr, QIODevice::WriteOnly);
+QTextStream cout(stdout, QIODevice::WriteOnly);
+}
 
-using std::cout;
-using std::cerr;
-using std::endl;
 
-
-ZipfileInputFilter::ZipfileInputFilter(const vector<string> &zipfiles, 
-									   const string &format, int filenameOffset) : 
+ZipfileInputFilter::ZipfileInputFilter(const QStringList &zipfiles, 
+                                       const QString &format,
+                                       int filenameOffset) :
 	filter(/*is_serial=*/true),
 	zipfiles(zipfiles),
-	formatStr(format.c_str()),
+	formatStr(format),
 	zipfile(NULL),
 	offset(filenameOffset)
 {
@@ -27,7 +30,7 @@ ZipFile* ZipfileInputFilter::nextZipFile() {
 		cout << "Opening " << *filename << "..." << endl;
 
 		try {
-			ZipFile *zip = new ZipFile( (filename++)->c_str() );
+			ZipFile *zip = new ZipFile( (filename++)->toLocal8Bit());
 			return zip;
 		}
 		catch (exception &e) {

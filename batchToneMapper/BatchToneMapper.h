@@ -5,9 +5,10 @@
 #define BATCH_TONE_MAPPER_H
 
 
-#include <vector>
-#include <string>
 #include <ostream>
+
+#include <QString>
+#include <QStringList>
 
 #include <ToneMapper.h>
 
@@ -16,7 +17,7 @@ class BatchToneMapper {
 	friend std::ostream& operator<<(std::ostream& os, const BatchToneMapper& b);
 
 public:
-	BatchToneMapper(const std::vector<std::string> &files, bool bpp16);
+	BatchToneMapper(const QStringList& files, bool bpp16);
 
 	// Sets up the tonemapper with a specific gamma
 	void setupToneMapper(float exposure, float gamma);
@@ -41,13 +42,13 @@ public:
 	// Tries to set the format. It must be one of those exactly
 	// as returned from Util::supportedWriteImageFormats().
 	// If it isn't it doesn't do anything and the current format remains
-	void setFormat(const std::string & newFormat);
+	void setFormat(const QString & newFormat);
 
 	// Gets the default format string
-	static const std::string & getDefaultFormat();
+	static const QString getDefaultFormat();
 
     // Gets the version string
-    static const std::string & getVersion();
+    static const QString getVersion();
 
 private:
 
@@ -55,7 +56,7 @@ private:
 
 	// General parameters
 	int offset;
-	std::string format;
+	QString format;
 
 	// Tone mapper
 	pcg::ToneMapper toneMapper;
@@ -67,21 +68,21 @@ private:
 	const bool useBpp16;
 
 	// Lists of files to process
-	vector<string> zipFiles;
-	vector<string> hdrFiles;
+	QStringList zipFiles;
+	QStringList hdrFiles;
 
 	// Cache the default format
-	static std::string defaultFormat;
+	static QString defaultFormat;
 
     // Cache the version string
-    static std::string version;
+    static QString version;
 
 
 	// Utility method to separate the elements from a raw file list into a
 	// list of zip files and other of HDR files. The two new lists contains copies
 	// of the strings. Before adding them to the list this method checks that
 	// the files actually exists and are readable.
-	void classifyFiles(const std::vector<std::string> & files);
+	void classifyFiles(const QStringList & files);
 
 	// Individual pipelines
 	void executeZip() const;

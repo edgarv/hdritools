@@ -1,9 +1,5 @@
 #include "Util.h"
 
-#include <algorithm>
-#include <vector>
-#include <string>
-
 #include <QImageWriter>
 #include <QList>
 #include <QByteArray>
@@ -14,14 +10,15 @@
 #include <tbb/tbb_stddef.h>
 #include <tbb/tbb_machine.h>
 
-#if _WIN32||_WIN64
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#if defined(_WIN32)
+# define WIN32_LEAN_AND_MEAN
+# define NOMINMAX
+# include <windows.h>
 #elif __linux__
-#include <sys/sysinfo.h>
+# include <sys/sysinfo.h>
 #elif __APPLE__
-#include <sys/types.h>
-#include <sys/sysctl.h>
+# include <sys/types.h>
+# include <sys/sysctl.h>
 #endif
 
 using namespace std;
@@ -31,11 +28,11 @@ volatile int Util::number_of_processors = 0;
 bool Util::hasPng = false;
 bool Util::hasJpg = false;
 
-string Util::PNG16_FORMAT_STR("png16");
+const QString Util::PNG16_FORMAT_STR("png16");
 
-vector<string> Util::supported;
+QStringList Util::supported;
 
-const vector<string> & Util::supportedWriteImageFormats()
+const QStringList & Util::supportedWriteImageFormats()
 {
 	if (supported.size() == 0) {
 
@@ -43,19 +40,20 @@ const vector<string> & Util::supportedWriteImageFormats()
 		supported.push_back(PNG16_FORMAT_STR);
 
 		QList<QByteArray> list = QImageWriter::supportedImageFormats();
-		for (int i = 0; i < list.size(); ++i) {
-			QString formatQt(list.at(i));
-			const string format = formatQt.toLower().toStdString();
-			if (format == "jpg" || format == "jpeg") {
+        for (QList<QByteArray>::const_iterator it = list.constBegin();
+             it != list.constEnd(); ++it)
+        {
+            QString format(*it);
+            format = format.toLower();
+            if (format == "jpg" || format == "jpeg") {
 				hasJpg = true;
 			}
 			else if (format == "png") {
 				hasPng = true;
 			}
-			supported.push_back( format );
-		}
-
-		std::sort(supported.begin(), supported.end());
+			supported.append( format );
+        }
+		supported.sort();
 	}
 
 	return supported;
@@ -81,9 +79,9 @@ bool Util::isJpgSupported()
 
 
 
-bool Util::isReadable(const string& filename, bool & isZip, bool & isHdr)
+bool Util::isReadable(const QString & filename, bool & isZip, bool & isHdr)
 {
-	QFileInfo info(filename.c_str());
+	QFileInfo info(filename);
 	if (!info.exists() || !info.isFile() || !info.isReadable()) {
 		isZip = false;
 		isHdr = false;
@@ -108,7 +106,7 @@ int Util::numberOfProcessors()
 {
 	if (!number_of_processors) {
 
-#if _WIN32||_WIN64
+#if defined(_WIN32)
     
         SYSTEM_INFO si;
         GetSystemInfo(&si);

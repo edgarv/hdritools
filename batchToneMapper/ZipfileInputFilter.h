@@ -3,8 +3,7 @@
 
 #include <ZipFile.h>
 
-#include <vector>
-#include <string>
+#include <QStringList>
 
 
 // TBB import for the filter stuff
@@ -23,14 +22,14 @@ class ZipfileInputFilter : public tbb::filter {
 private:
 
 	// The list of files to process
-	const vector<string> &zipfiles;
+	const QStringList &zipfiles;
 
 	// The output format to use. It is assumed to be one of those returned by
 	// QImageWriter::supportedImageFormats() and lowercase
-	const char * formatStr;
+	const QString formatStr;
 
 	// Iterator to the list of files
-	vector<string>::const_iterator filename;
+	QStringList::const_iterator filename;
 
 	// Each entry in the current zipfile
 	ZipFile::const_iterator entry;
@@ -45,7 +44,7 @@ private:
 
 
 public:
-	ZipfileInputFilter(const vector<string> &zipfiles, const string &format, int filenameOffset = 0);
+	ZipfileInputFilter(const QStringList &zipfiles, const QString &format, int filenameOffset = 0);
 
 	// This will be invoked serially, its job is to return pointers to the opened zipfiles.
 	// The next filter in the chain must close the zip files when it's done!

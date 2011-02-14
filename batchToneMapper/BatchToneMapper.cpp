@@ -1,7 +1,5 @@
 #include "BatchToneMapper.h"
 
-#include <iostream>
-
 // Misc utitilities
 #include "Util.h"
 
@@ -13,14 +11,22 @@
 #include <HDRITools_version.h>
 #include <QString>
 
+#include <cstdio>
+#include <QTextStream>
+namespace
+{
+QTextStream cerr(stderr, QIODevice::WriteOnly);
+QTextStream cout(stdout, QIODevice::WriteOnly);
+}
+
 using namespace std;
 
 
-string BatchToneMapper::defaultFormat;
-string BatchToneMapper::version;
+QString BatchToneMapper::defaultFormat;
+QString BatchToneMapper::version;
 
 
-BatchToneMapper::BatchToneMapper(const vector<string>& files, bool bpp16) :
+BatchToneMapper::BatchToneMapper(const QStringList& files, bool bpp16) :
 offset(0), format(!bpp16 ? getDefaultFormat() : "png"),
 toneMapper(LUT_SIZE), tokens(0), useBpp16(bpp16)
 {
@@ -42,13 +48,13 @@ void BatchToneMapper::setupToneMapper(float exposure) {
 	toneMapper.SetSRGB(true);
 }
 
-void BatchToneMapper::setFormat(const string & newFormat)
+void BatchToneMapper::setFormat(const QString & newFormat)
 {
 	if (!useBpp16) {
 		// There are not many formats, so this is not that bad
-		const vector<string> & formats = Util::supportedWriteImageFormats();
-		for(vector<string>::const_iterator it = formats.begin();
-			it != formats.end(); ++it)
+		const QStringList & formats = Util::supportedWriteImageFormats();
+        for(QStringList::const_iterator it = formats.constBegin();
+			it != formats.constEnd(); ++it)
 		{
 			if (newFormat == *it) {
 				format = newFormat;
@@ -81,9 +87,9 @@ void BatchToneMapper::execute() const {
 	}
 }
 
-const string & BatchToneMapper::getDefaultFormat() {
+const QString BatchToneMapper::getDefaultFormat() {
 
-	if (defaultFormat.empty()) {
+	if (defaultFormat.isEmpty()) {
 
 		// Default to png, jpg, or whatever is first
 		if (Util::isPngSupported()) {
@@ -101,14 +107,13 @@ const string & BatchToneMapper::getDefaultFormat() {
 }
 
 
-const string & BatchToneMapper::getVersion()
+const QString BatchToneMapper::getVersion()
 {
-    if (version.empty()) {
+    if (version.isEmpty()) {
 #if HDRITOOLS_HAS_VALID_REV
-        QString qversion = QString("%1-hg%2")
+        version = QString("%1-hg%2")
             .arg(pcg::version::versionString())
             .arg(pcg::version::globalRevision());
-        version = qversion.toStdString();
 #else
         version = pcg::version::versionString();
 #endif
@@ -116,9 +121,10 @@ const string & BatchToneMapper::getVersion()
     return version;
 }
 
-void BatchToneMapper::classifyFiles(const vector<string> & files) {
+void BatchToneMapper::classifyFiles(const QStringList & files) {
 
-	for(vector<string>::const_iterator it = files.begin(); it != files.end(); ++it)
+	for(QStringList::const_iterator it = files.constBegin();
+        it != files.constEnd(); ++it)
 	{
 		bool isZip;
 		bool isHdr;
@@ -129,10 +135,10 @@ void BatchToneMapper::classifyFiles(const vector<string> & files) {
 		}
 		else {
 			if (isZip) {
-				zipFiles.push_back(*it);
+				zipFiles.append(*it);
 			}
 			else if (isHdr) {
-				hdrFiles.push_back(*it);
+				hdrFiles.append(*it);
 			}
 			else {
 				cerr << "Warning: the file " << *it << " doesn't have a recognized type." << endl;
@@ -202,20 +208,20 @@ ostream& operator<<(ostream& os, const BatchToneMapper& b)
 
 	os << "  Offset:    " << b.offset << endl
 	   << "  BPP:       " << (b.useBpp16 ? 16 : 8) << endl
-	   << "  Format:    " << b.format << endl;
-	if(b.zipFiles.size() > 0) {
+	   << "  Format:    " << b.format.toStdString() << endl;
+	if(!b.zipFiles.isEmpty()) {
 		os << "  Zip Files: ";
-		for (vector<string>::const_iterator it = b.zipFiles.begin(); 
-			 it != b.zipFiles.end(); ++it) {
-			os << *it << ' ';
+		for (QStringList::const_iterator it = b.zipFiles.constBegin(); 
+			 it != b.zipFiles.constEnd(); ++it) {
+			os << it->toStdString() << ' ';
 		}
 		os << endl;
 	}
-	if(b.hdrFiles.size() > 0) {
+	if(!b.hdrFiles.isEmpty()) {
 		os << "  HDR Files: ";
-		for (vector<string>::const_iterator it = b.hdrFiles.begin();
-			 it != b.hdrFiles.end(); ++it) {
-			os << *it << ' ';
+		for (QStringList::const_iterator it = b.hdrFiles.constBegin();
+			 it != b.hdrFiles.constEnd(); ++it) {
+			os << it->toStdString() << ' ';
 		}
 		os << endl;
 	}
