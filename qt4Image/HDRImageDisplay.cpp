@@ -195,6 +195,9 @@ void HDRImageDisplay::paintEvent(QPaintEvent *event)
     QPainter painter(this);
 
     painter.scale(scaleFactor,scaleFactor);
+    if (scaleFactor < static_cast<qreal>(1)) {
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    }
 
     painter.drawImage(/*x*/ 0, /*y*/ 0, qImage);
 

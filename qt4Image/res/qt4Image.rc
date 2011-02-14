@@ -52,7 +52,7 @@ BEGIN
     //language ID = U.S. English, char set = Windows, Multilingual
     BEGIN
       VALUE "FileDescription",	"Qt4Image\0"
-	  VALUE "CompanyName", "Program of Computer Graphics, Cornell University\0"
+      VALUE "CompanyName", "Program of Computer Graphics, Cornell University\0"
       VALUE "FileVersion",	"0.1.0\0"
       VALUE "InternalName",	"qt4Image.exe\0"
       VALUE "LegalCopyright",	"Copyright (c) 2008, Program of Computer Graphics, Cornell University\0"
