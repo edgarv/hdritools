@@ -95,7 +95,7 @@ bool Util::isReadable(const string& filename, bool & isZip, bool & isHdr)
 		isHdr = false;
 	}
 	else {
-		QRegExp hdrExp("rgbe|hdr|exr", Qt::CaseInsensitive);
+		QRegExp hdrExp("rgbe|hdr|exr|pfm", Qt::CaseInsensitive);
 		isHdr = hdrExp.exactMatch(info.suffix());
 		isZip = false;
 	}
