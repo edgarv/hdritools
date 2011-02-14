@@ -21,6 +21,9 @@ class ZipfileInputFilter : public tbb::filter {
 
 private:
 
+    // Helper structure to keep an opened zipfile and its original filename
+    struct zipfile_t;
+
     // The list of files to process
     const QStringList &zipfiles;
 
@@ -33,9 +36,9 @@ private:
 
     // Each entry in the current zipfile
     ZipFile::const_iterator entry;
-    ZipFile *zipfile;
+    zipfile_t *zipfile;
 
-    ZipFile* nextZipFile();
+    zipfile_t* nextZipFile();
 
     ZipEntry* nextEntry();
 

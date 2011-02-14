@@ -3,6 +3,9 @@
 #include "FloatImageProcessor.h"
 #include "ImageInfo.h"
 
+#include <QFileInfo>
+#include <QDir>
+
 #include <cstdio>
 #include <QTextStream>
 namespace
@@ -10,6 +13,24 @@ namespace
 QTextStream cerr(stderr, QIODevice::WriteOnly);
 QTextStream cout(stdout, QIODevice::WriteOnly);
 }
+
+
+struct ZipfileInputFilter::zipfile_t {
+    ZipFile *zip;
+    QString filename;
+    QFileInfo info;
+    
+    zipfile_t(ZipFile *zipfile, QString name) 
+        : zip(zipfile), filename(name), info(name) {}
+
+    ~zipfile_t() {
+        delete zip;
+    }
+
+    inline QString cleanFilePath(const QString & filename) {
+        return QDir::cleanPath(info.dir().filePath(filename));
+    }
+};
 
 
 ZipfileInputFilter::ZipfileInputFilter(const QStringList &zipfiles, 
@@ -25,12 +46,14 @@ ZipfileInputFilter::ZipfileInputFilter(const QStringList &zipfiles,
 }
 
 
-ZipFile* ZipfileInputFilter::nextZipFile() {
+ZipfileInputFilter::zipfile_t* ZipfileInputFilter::nextZipFile() {
     while (filename != zipfiles.end()) {
         cout << "Opening " << *filename << "..." << endl;
 
         try {
-            ZipFile *zip = new ZipFile( (filename++)->toLocal8Bit());
+            zipfile_t *zip = new zipfile_t(
+                new ZipFile(filename->toLocal8Bit()), *filename);
+            ++filename;
             return zip;
         }
         catch (exception &e) {
@@ -51,12 +74,12 @@ ZipEntry* ZipfileInputFilter::nextEntry() {
             if (zipfile == NULL) {
                 return NULL;
             }
-            entry = zipfile->begin();
+            entry = zipfile->zip->begin();
         }
 
         // We have something already open, check if it's the last one,
         // otherwise return and advance
-        if (entry != zipfile->end()) {
+        if (entry != zipfile->zip->end()) {
             return *entry++;
         }
         else {
@@ -83,8 +106,11 @@ void* ZipfileInputFilter::operator()(void*) {
                 return NULL;
             }
 
-            return FloatImageProcessor::load(entry->GetName(), 
-                zipfile->GetInputStream(entry), formatStr, offset);
+            // Make the target name relative to the parent of the zip file
+            QString entryName = zipfile->cleanFilePath(entry->GetName());
+
+            return FloatImageProcessor::load(entryName, 
+                zipfile->zip->GetInputStream(entry), formatStr, offset);
 
         }
         catch(std::exception &e) {
