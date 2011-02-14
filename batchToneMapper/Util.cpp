@@ -34,46 +34,46 @@ QStringList Util::supported;
 
 const QStringList & Util::supportedWriteImageFormats()
 {
-	if (supported.size() == 0) {
+    if (supported.size() == 0) {
 
-		// Signal png with 16 bpp as a format
-		supported.push_back(PNG16_FORMAT_STR);
+        // Signal png with 16 bpp as a format
+        supported.push_back(PNG16_FORMAT_STR);
 
-		QList<QByteArray> list = QImageWriter::supportedImageFormats();
+        QList<QByteArray> list = QImageWriter::supportedImageFormats();
         for (QList<QByteArray>::const_iterator it = list.constBegin();
              it != list.constEnd(); ++it)
         {
             QString format(*it);
             format = format.toLower();
             if (format == "jpg" || format == "jpeg") {
-				hasJpg = true;
-			}
-			else if (format == "png") {
-				hasPng = true;
-			}
-			supported.append( format );
+                hasJpg = true;
+            }
+            else if (format == "png") {
+                hasPng = true;
+            }
+            supported.append( format );
         }
-		supported.sort();
-	}
+        supported.sort();
+    }
 
-	return supported;
+    return supported;
 }
 
 
 bool Util::isPngSupported()
 {
-	if (supported.size() == 0) {
-		supportedWriteImageFormats();
-	}
-	return hasPng;
+    if (supported.size() == 0) {
+        supportedWriteImageFormats();
+    }
+    return hasPng;
 }
 
 bool Util::isJpgSupported()
 {
-	if (supported.size() == 0) {
-		supportedWriteImageFormats();
-	}
-	return hasJpg;
+    if (supported.size() == 0) {
+        supportedWriteImageFormats();
+    }
+    return hasJpg;
 }
 
 
@@ -81,30 +81,30 @@ bool Util::isJpgSupported()
 
 bool Util::isReadable(const QString & filename, bool & isZip, bool & isHdr)
 {
-	QFileInfo info(filename);
-	if (!info.exists() || !info.isFile() || !info.isReadable()) {
-		isZip = false;
-		isHdr = false;
-		return false;
-	}
+    QFileInfo info(filename);
+    if (!info.exists() || !info.isFile() || !info.isReadable()) {
+        isZip = false;
+        isHdr = false;
+        return false;
+    }
 
-	if (info.suffix().compare("zip", Qt::CaseInsensitive) == 0) {
-		isZip = true;
-		isHdr = false;
-	}
-	else {
-		QRegExp hdrExp("rgbe|hdr|exr|pfm", Qt::CaseInsensitive);
-		isHdr = hdrExp.exactMatch(info.suffix());
-		isZip = false;
-	}
+    if (info.suffix().compare("zip", Qt::CaseInsensitive) == 0) {
+        isZip = true;
+        isHdr = false;
+    }
+    else {
+        QRegExp hdrExp("rgbe|hdr|exr|pfm", Qt::CaseInsensitive);
+        isHdr = hdrExp.exactMatch(info.suffix());
+        isZip = false;
+    }
 
-	return true;
+    return true;
 }
 
 
 int Util::numberOfProcessors()
 {
-	if (!number_of_processors) {
+    if (!number_of_processors) {
 
 #if defined(_WIN32)
     
@@ -130,7 +130,7 @@ int Util::numberOfProcessors()
 
 #endif /* os kind */
 
-	}
+    }
 
-	return number_of_processors;
+    return number_of_processors;
 }

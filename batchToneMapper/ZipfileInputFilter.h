@@ -21,34 +21,34 @@ class ZipfileInputFilter : public tbb::filter {
 
 private:
 
-	// The list of files to process
-	const QStringList &zipfiles;
+    // The list of files to process
+    const QStringList &zipfiles;
 
-	// The output format to use. It is assumed to be one of those returned by
-	// QImageWriter::supportedImageFormats() and lowercase
-	const QString formatStr;
+    // The output format to use. It is assumed to be one of those returned by
+    // QImageWriter::supportedImageFormats() and lowercase
+    const QString formatStr;
 
-	// Iterator to the list of files
-	QStringList::const_iterator filename;
+    // Iterator to the list of files
+    QStringList::const_iterator filename;
 
-	// Each entry in the current zipfile
-	ZipFile::const_iterator entry;
-	ZipFile *zipfile;
+    // Each entry in the current zipfile
+    ZipFile::const_iterator entry;
+    ZipFile *zipfile;
 
-	ZipFile* nextZipFile();
+    ZipFile* nextZipFile();
 
-	ZipEntry* nextEntry();
+    ZipEntry* nextEntry();
 
-	// The optional offset to add to the numeric filenames
-	const int offset;
+    // The optional offset to add to the numeric filenames
+    const int offset;
 
 
 public:
-	ZipfileInputFilter(const QStringList &zipfiles, const QString &format, int filenameOffset = 0);
+    ZipfileInputFilter(const QStringList &zipfiles, const QString &format, int filenameOffset = 0);
 
-	// This will be invoked serially, its job is to return pointers to the opened zipfiles.
-	// The next filter in the chain must close the zip files when it's done!
-	void* operator()(void*);
+    // This will be invoked serially, its job is to return pointers to the opened zipfiles.
+    // The next filter in the chain must close the zip files when it's done!
+    void* operator()(void*);
 };
 
 

@@ -14,15 +14,15 @@ class FloatImageProcessor
 {
 
 public:
-	// Returns a structure ready for the tonemapper. If it can't load the file
-	// it returns an invalid ImageInfo, NOT null.
-	static ImageInfo* load(const QString& filenameStr, std::istream & is, 
-		const QString& formatStr, int offset = 0);
+    // Returns a structure ready for the tonemapper. If it can't load the file
+    // it returns an invalid ImageInfo, NOT null.
+    static ImageInfo* load(const QString& filenameStr, std::istream & is, 
+        const QString& formatStr, int offset = 0);
 
 private:
-	// To get the output filename it adds the offset (if it makes sense)
-	// and changes the extension
-	static void setTargetName(QString & filename, const QString & formatStr,
+    // To get the output filename it adds the offset (if it makes sense)
+    // and changes the extension
+    static void setTargetName(QString & filename, const QString & formatStr,
         int offset);
 
 };

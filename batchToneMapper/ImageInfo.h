@@ -10,24 +10,24 @@ using namespace pcg;
 /** Small Transfer object to pass info between the pipeline stages */
 
 struct ImageInfo {
-	const Image<Rgba32F> *img;
-	const QString originalFile;
-	const QString filename;
-	const bool isValid;
+    const Image<Rgba32F> *img;
+    const QString originalFile;
+    const QString filename;
+    const bool isValid;
 
-	ImageInfo(Image<Rgba32F> *image, const char *input, const char *outname) :
-		img(image), originalFile(input), filename(outname), isValid(true) {}
+    ImageInfo(Image<Rgba32F> *image, const char *input, const char *outname) :
+        img(image), originalFile(input), filename(outname), isValid(true) {}
 
-	ImageInfo(Image<Rgba32F> *image, const QString &input, const QString &outname) :
-		img(image), originalFile(input), filename(outname), isValid(true) {}
+    ImageInfo(Image<Rgba32F> *image, const QString &input, const QString &outname) :
+        img(image), originalFile(input), filename(outname), isValid(true) {}
 
-	ImageInfo() : img(NULL), isValid(false) {}
+    ImageInfo() : img(NULL), isValid(false) {}
 
-	~ImageInfo() {
-		if (img != NULL) {
-			delete img;
-		}
-	}
+    ~ImageInfo() {
+        if (img != NULL) {
+            delete img;
+        }
+    }
 };
 
 #endif /* IMAGEINFO_H */
