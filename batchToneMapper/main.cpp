@@ -5,7 +5,7 @@
 // When the input filename contains a trailing number (i.e. file-0001.exr, 00003.rgbe) 
 // an offset may be applied to generate the output file (i.e. with an offset=10; 
 // file-0001.exr -> file-0011.png, 00003.rgbe -> 00013.png).
-// The HDR supported formats are RGBE (.rgbe, .hdr) and OpenEXR (.exr).
+// The HDR supported formats are RGBE (.rgbe, .hdr), OpenEXR (.exr) and PFM (.pfm)
 //
 // TODO:
 //   - Check/implement support for zip files with directories.
@@ -23,6 +23,7 @@
 #include <tbb/tick_count.h>
 
 // Main working entity
+#include "ToneMappingFilter.h"
 #include "BatchToneMapper.h"
 
 // To get the list of formats
@@ -93,6 +94,36 @@ public:
 };
 
 
+// Constraint for setting a minimum and maximum (inclusive)
+template <typename T>
+class ConstraintRange : public Constraint<T>
+{
+    const T m_min;
+    const T m_max;
+    string desc;
+    string short_id;
+
+public:
+    ConstraintRange(T minimum, T maximum) : m_min(minimum), m_max(maximum)
+    {
+        ostringstream srange;
+        srange << '[' << m_min << ',' << m_max << ']';
+        short_id = "float in " + srange.str();
+        desc = "The value must be in the range " + srange.str() + ".";
+    }
+
+    virtual string description() const {
+        return desc;
+    }
+    virtual string shortID() const {
+        return short_id;
+    }
+    virtual bool check(const T &value) const {
+        return (m_min <= value) && (value <= m_max);
+    }
+};
+
+
 // The format list is large, so we customize the builtin TCLAP constraint
 class FormatConstraint : public ValuesConstraint<string>
 {
@@ -114,6 +145,8 @@ private:
 
 // Main parameter processing through TCLAP
 void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
+               pcg::TmoTechnique &technique,
+               float &key, float &whitePoint, float &logLumAvg,
                int &offset, QString &format, QStringList &files) 
 {
     try {
@@ -122,35 +155,81 @@ void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
             "and those within the given zip files.", ' ',
             BatchToneMapper::getVersion().toStdString());
         ConstraintGreaterThan constraint(0.0f);
+        ConstraintRange<float> constraintKey(0.0f, 1.0f);
 
         // Exposure
         ValueArg<float> exposureArg("e", "exposure", 
             "Exponent for the exposure compensation. "
-            "The pixels will be multiplied by 2^exposure prior to gamma correction (default 0).", 
+            "The pixels will be multiplied by 2^exposure prior to "
+            "gamma correction (default 0).", 
             false, 0.0f, "float");
 
         // Exposure factor
         ValueArg<float> exposureMultiplierArg("m", "expmult",
             "Exposure compensation multiplier. "
-            "The pixels will be multiplied by this value prior to gamma correction (default 1).",
+            "The pixels will be multiplied by this value prior to "
+            "gamma correction (default 1).",
             false, 1.0f, &constraint);
+
+        // Reinhard02 flag
+        SwitchArg reinhard02Arg("",
+            "reinhard02",
+            "The pixels will be transformed by a curve defined by the global "
+            "version of the Reinhard02 TMO. By default the tone mapping "
+            "parameters are computed automatically for each image, but they "
+            "may be overriden manually through the optional arguments "
+            "--key, --whitepoint and --loglumavg. When all the optional "
+            "arguments are set the tone mapping curve applied to each image "
+            "becomes the same.",
+            false);
+
+        // Exposure, gamma and Reinhard02 are mutually exclusive
+        vector<Arg*> tmoArgs;
+        tmoArgs.push_back(&exposureArg);
+        tmoArgs.push_back(&exposureMultiplierArg);
+        tmoArgs.push_back(&reinhard02Arg);
+
+        // Key (valid only with --reinhard02)
+        ValueArg<float> keyArg("k", "key",
+            "Tone mapping key. "
+            "Overrides the value automatically set. "
+            "Valid only when --reinhard02 is enabled.",
+            false, ToneMappingFilter::AutoParam(), &constraintKey);
+
+        // White point (valid only with --reinhard02)
+        ValueArg<float> whitePointArg("w", "whitepoint",
+            "Tone mapping white point. "
+            "Overrides the value automatically set. "
+            "Valid only when --reinhard02 is enabled.",
+            false, ToneMappingFilter::AutoParam(), &constraint);
+
+        // Average log luminance (valid only with --reinhard02)
+        ValueArg<float> logLumAvgArg("l", "loglumavg",
+            "Log-luminance average. "
+            "Overrides the value automatically set. "
+            "Valid only when --reinhard02 is enabled.",
+            false, ToneMappingFilter::AutoParam(), &constraint);
+
 
         // Gamma value
         ValueArg<float> gammaArg("g", "gamma",
             "Gamma correction. "
-            "The pixels will be raised to the power of 1/gamma after the exposure compensation (default 2.2).",
+            "The pixels will be raised to the power of 1/gamma after the "
+            "low dynamic range conversion (default 2.2).",
             false, 2.2f, &constraint);
 
         // sRGB flag
-        TCLAP::SwitchArg srgbArg("",
+        SwitchArg srgbArg("",
             "srgb",
-            "The pixels will be transformed according to the sRGB space after the exposure compensation.",
+            "The pixels will be transformed according to the sRGB space "
+            "after the low dynamic range conversion.",
             false);
 
         // Offset to add to the numeric filenames
         ValueArg<int> offsetArg("o", "offset",
             "Filename offset. "
-            "If the filename contains a trailing number, this value will be added to it for each final output file.",
+            "If the filename contains a trailing number, this value will be "
+            "added to it for each final output file.",
             false, 0, "integer");
 
         // Output format constraint
@@ -175,8 +254,12 @@ void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
             "HDR images (rgbe|hdr|exr|pfm) and Zip files with HDR images to tone map.", 
             true, "filename");
 
-        // Adds the arguments to the command line (the unlabeled multi args must be the last ones!!)
-        cmdline.xorAdd(exposureArg, exposureMultiplierArg);
+        // Adds the arguments to the command line
+        // (the unlabeled multi args must be the last ones!!)
+        cmdline.xorAdd(tmoArgs);
+        cmdline.add(logLumAvgArg);
+        cmdline.add(whitePointArg);
+        cmdline.add(keyArg);
         cmdline.xorAdd(srgbArg, gammaArg);
         cmdline.add(offsetArg);
         cmdline.add(formatArg);
@@ -195,16 +278,20 @@ void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
         cmdline.parse(args);
 
 
-        // If we are here we are safe to recover the values
+        // If we are here it's safe to recover the values
         srgb = srgbArg.getValue();
         gamma = gammaArg.getValue();
-        if (exposureArg.isSet()) {
-            exposure = exposureArg.getValue();
-        }
-        else if (exposureMultiplierArg.isSet()) {
+        exposure = exposureArg.getValue();
+        if (exposureMultiplierArg.isSet()) {
             // Yes, is not that accurate but for our purposes it's enough
             exposure = log2f(exposureMultiplierArg.getValue());
         }
+
+        technique = reinhard02Arg.getValue() ? pcg::REINHARD02 : pcg::EXPOSURE;
+        key = keyArg.getValue();
+        whitePoint = whitePointArg.getValue();
+        logLumAvg = logLumAvgArg.getValue();
+
         offset = offsetArg.getValue();
         format = QString::fromStdString(formatArg.getValue());
         bpp16  = format == Util::PNG16_FORMAT_STR;
@@ -213,7 +300,6 @@ void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
              it != filesUtf8.end(); ++it) {
             files.append(QString::fromUtf8(it->c_str()));
         }
-
     }
     catch(ArgException &e) {
         cerr << "Error: " << e.error() << " for arg " << e.argId() << endl;
@@ -235,11 +321,14 @@ int main(int argc, char* argv[])
     bool srgb;
     bool bpp16;
     float gamma;
+    pcg::TmoTechnique technique;
+    float key, whitePoint, logLumAvg;
     QString format;
     QStringList files;
 
-    // Parses the arguments, the process will setup the exposure exponent, gamma and the list of files
-    parseArgs(exposure, srgb, gamma, bpp16, offset, format, files);
+    // Parses the arguments
+    parseArgs(exposure, srgb, gamma, bpp16, technique,
+        key, whitePoint, logLumAvg, offset, format, files);
 
     // Creates the batch tone mapper with those arguments
     BatchToneMapper batchToneMapper(files, bpp16);
@@ -248,6 +337,10 @@ int main(int argc, char* argv[])
     }
     else {
         batchToneMapper.setupToneMapper(exposure, gamma);
+    }
+    batchToneMapper.setTechnique(technique);
+    if (technique == pcg::REINHARD02) {
+        batchToneMapper.setReinhard02Params(key, whitePoint, logLumAvg);
     }
     batchToneMapper.setOffset(offset);
     batchToneMapper.setFormat(format);

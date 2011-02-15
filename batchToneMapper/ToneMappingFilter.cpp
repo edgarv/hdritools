@@ -13,11 +13,22 @@ QTextStream cout(stdout, QIODevice::WriteOnly);
 }
 
 
-ToneMappingFilter::ToneMappingFilter(const ToneMapper &toneMapper, bool useBpp16) : 
-    filter(/*is_serial=*/false),
-    toneMapper(toneMapper),
-    useBpp16(useBpp16)
-{}
+ToneMappingFilter::ToneMappingFilter(ToneMapper &toneMapper, bool useBpp16) : 
+filter(/*is_serial=*/false),
+toneMapper(toneMapper), useBpp16(useBpp16), technique(pcg::EXPOSURE),
+key(AutoParam()), whitePoint(AutoParam()), logLumAvg(AutoParam())
+{
+}
+
+
+ToneMappingFilter::ToneMappingFilter(ToneMapper &toneMapper, bool useBpp16,
+                                     float k, float wp, float lw) :
+filter(/*is_serial=*/!isReinhard02Fixed(key, whitePoint, logLumAvg)),
+toneMapper(toneMapper), useBpp16(useBpp16), technique(pcg::REINHARD02),
+key(k), whitePoint(wp), logLumAvg(lw)
+{
+}
+
 
 void* ToneMappingFilter::operator()(void* item)
 {
@@ -32,11 +43,25 @@ void* ToneMappingFilter::operator()(void* item)
         }
 
         const Image<Rgba32F> &floatImage = *(info->img);
+        if (technique == pcg::REINHARD02) {
+            pcg::Reinhard02::Params params;
+            if (isReinhard02Fixed()) {
+                params.key     = key;
+                params.l_white = whitePoint;
+                params.l_w     = logLumAvg;
+            } else {
+                params = pcg::Reinhard02::EstimateParams(floatImage);
+                if (key        != AutoParam()) params.key     = key;
+                if (whitePoint != AutoParam()) params.l_white = whitePoint;
+                if (logLumAvg  != AutoParam()) params.l_w     = logLumAvg;
+            }
+            toneMapper.SetParams(params);
+        }
 
         // Allocates the LDR Image and tonemaps it
         if (!useBpp16) {
             Image<Bgra8> ldrImage(floatImage.Width(), floatImage.Height());
-            toneMapper.ToneMap(ldrImage, floatImage);
+            toneMapper.ToneMap(ldrImage, floatImage, true, technique);
 
             // Finally wraps the ldrImage into a QImage and saves it 
             // with the specified name
@@ -51,7 +76,7 @@ void* ToneMappingFilter::operator()(void* item)
         }
         else {
             Image<Rgba16> ldrImage(floatImage.Width(), floatImage.Height());
-            toneMapper.ToneMap(ldrImage, floatImage);
+            toneMapper.ToneMap(ldrImage, floatImage, technique);
 
             try {
                 PngIO::Save(ldrImage, info->filename.toLocal8Bit(),

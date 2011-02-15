@@ -28,7 +28,9 @@ QString BatchToneMapper::version;
 
 BatchToneMapper::BatchToneMapper(const QStringList& files, bool bpp16) :
 offset(0), format(!bpp16 ? getDefaultFormat() : "png"),
-toneMapper(LUT_SIZE), tokens(0), useBpp16(bpp16)
+toneMapper(LUT_SIZE), tokens(0), useBpp16(bpp16), technique(pcg::EXPOSURE),
+key(ToneMappingFilter::AutoParam()),whitePoint(ToneMappingFilter::AutoParam()),
+logLumAvg(ToneMappingFilter::AutoParam())
 {
     classifyFiles(files);
 
@@ -37,16 +39,27 @@ toneMapper(LUT_SIZE), tokens(0), useBpp16(bpp16)
     assert(tokens > 0);
 }
 
+
 void BatchToneMapper::setupToneMapper(float exposure, float gamma) {
     toneMapper.SetExposure(exposure);
     toneMapper.SetGamma(gamma);
     toneMapper.SetSRGB(false);
 }
 
+
 void BatchToneMapper::setupToneMapper(float exposure) {
     toneMapper.SetExposure(exposure);
     toneMapper.SetSRGB(true);
 }
+
+
+void BatchToneMapper::setReinhard02Params(float k, float wp, float lw)
+{
+    key        = k;
+    whitePoint = wp;
+    logLumAvg  = lw;
+}
+
 
 void BatchToneMapper::setFormat(const QString & newFormat)
 {
@@ -74,18 +87,19 @@ void BatchToneMapper::setFormat(const QString & newFormat)
 }
 
 
-void BatchToneMapper::execute() const {
+void BatchToneMapper::execute() {
 
-    if (zipFiles.size() > 0) {
+    if (!zipFiles.isEmpty()) {
         executeZip();
         cout << "All Zip files have been processed." << endl;
     }
 
-    if (hdrFiles.size() > 0) {
+    if (!hdrFiles.isEmpty()) {
         executeHdr();
         cout << "All HDR files have been processed." << endl;
     }
 }
+
 
 const QString BatchToneMapper::getDefaultFormat() {
 
@@ -121,6 +135,7 @@ const QString BatchToneMapper::getVersion()
     return version;
 }
 
+
 void BatchToneMapper::classifyFiles(const QStringList & files) {
 
     for(QStringList::const_iterator it = files.constBegin();
@@ -147,7 +162,23 @@ void BatchToneMapper::classifyFiles(const QStringList & files) {
     }
 }
 
-void BatchToneMapper::executeZip() const {
+
+ToneMappingFilter* BatchToneMapper::createToneMappingFilter()
+{
+    ToneMappingFilter *filter;
+    if (technique == pcg::EXPOSURE) {
+        filter = new ToneMappingFilter(toneMapper, useBpp16);
+    } else if (technique == pcg::REINHARD02) {
+        filter = new ToneMappingFilter(toneMapper, useBpp16,
+            key, whitePoint, logLumAvg);
+    } else {
+        filter = NULL;
+    }
+    Q_ASSERT(filter != NULL);
+    return filter;
+}
+
+void BatchToneMapper::executeZip() {
     
     // Creates and uses a TBB pipeline
     tbb::pipeline pipeline;
@@ -157,18 +188,19 @@ void BatchToneMapper::executeZip() const {
     pipeline.add_filter(zipFilter);
 
     // Adds the tone mapping filter
-    ToneMappingFilter toneFilter(toneMapper, useBpp16);
-    pipeline.add_filter(toneFilter);
+    ToneMappingFilter *toneFilter = createToneMappingFilter();
+    pipeline.add_filter(*toneFilter);
 
     
     pipeline.run(tokens);
 
     // Clears the filters after it's done
     pipeline.clear();
+    delete toneFilter;
 }
 
 
-void BatchToneMapper::executeHdr() const {
+void BatchToneMapper::executeHdr() {
 
     // Creates and uses a TBB pipeline
     tbb::pipeline pipeline;
@@ -181,13 +213,14 @@ void BatchToneMapper::executeHdr() const {
     pipeline.add_filter(loaderFilter);
 
     // Adds the tone mapping filter
-    ToneMappingFilter toneFilter(toneMapper, useBpp16);
-    pipeline.add_filter(toneFilter);
+    ToneMappingFilter *toneFilter = createToneMappingFilter();
+    pipeline.add_filter(*toneFilter);
 
     pipeline.run(tokens);
 
     // Clears the filters after it's done
     pipeline.clear();
+    delete toneFilter;
 }
 
 

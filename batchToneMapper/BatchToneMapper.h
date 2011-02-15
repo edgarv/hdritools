@@ -4,6 +4,7 @@
 #if !defined(BATCH_TONE_MAPPER_H)
 #define BATCH_TONE_MAPPER_H
 
+#include "ToneMappingFilter.h"
 
 #include <ostream>
 
@@ -25,6 +26,16 @@ public:
     // Sets up the tonemapper just with the exposure, using sRGB
     void setupToneMapper(float exposure);
 
+    // Specifies the values for the Reinhard02 TMO. If a parameter is to be
+    // determined automatically just set it to the value returned by
+    // ToneMappingFilter::AutoParam(). By default all parameters are automatic
+    void setReinhard02Params(float key, float whitePoint, float logLumAvg);
+
+    // Sets up a specific TMO technique to use. The default is EXPOSURE
+    void setTechnique(pcg::TmoTechnique tmo) {
+        technique = tmo;
+    }
+
     // To know if it has any valid files to process when
     // execute() is called.
     bool hasWork() const {
@@ -32,7 +43,7 @@ public:
     }
 
     // Main method: once everything is setup, process the files
-    void execute() const;
+    void execute();
 
     // Sets the offset for the filenames (it's zero by default)
     void setOffset(int newOffset) {
@@ -71,6 +82,12 @@ private:
     QStringList zipFiles;
     QStringList hdrFiles;
 
+    // Tone mapping settings
+    pcg::TmoTechnique technique;
+    float key;
+    float whitePoint;
+    float logLumAvg;
+
     // Cache the default format
     static QString defaultFormat;
 
@@ -79,15 +96,18 @@ private:
 
 
     // Utility method to separate the elements from a raw file list into a
-    // list of zip files and other of HDR files. The two new lists contains copies
-    // of the strings. Before adding them to the list this method checks that
-    // the files actually exists and are readable.
+    // list of zip files and other of HDR files. The two new lists contains
+    // copies of the strings. Before adding them to the list this method
+    // checks that the files actually exists and are readable.
     void classifyFiles(const QStringList & files);
 
-    // Individual pipelines
-    void executeZip() const;
-    void executeHdr() const;
+    // Creates the new tone mapping filter. The caller is responsible
+    // for deletion of the returned object
+    ToneMappingFilter* createToneMappingFilter();
 
+    // Individual pipelines
+    void executeZip();
+    void executeHdr();
 };
 
 
