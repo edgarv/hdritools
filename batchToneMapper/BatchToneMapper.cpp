@@ -78,11 +78,11 @@ void BatchToneMapper::setFormat(const QString & newFormat)
     }
     else {
         // Only png is supported
-        if (newFormat != "png") {
+        if (newFormat != "png" && newFormat != Util::PNG16_FORMAT_STR) {
             cerr << "Warning: unsupported format for bpp16 \"" << newFormat 
                  << "\". Using png." << endl;
-            format = "png";
         }
+        format = "png";
     }
 }
 
