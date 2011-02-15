@@ -20,9 +20,8 @@ class FileInputFilter : public tbb::filter {
 public:
     FileInputFilter(const QStringList &fileNames);
 
-    // This will be invoked serially, it returns the c_str() version of
-    // each filename in the list. Why? Because the next stage will use
-    // QStrings for everything, which will created from c-strings anyway.
+    // This will be invoked serially, it returns a pointer to the QString
+    // version of each filename in the list.
     void* operator()(void*);
 };
 
@@ -32,7 +31,7 @@ class FileLoaderFilter : public tbb::filter {
 public:
     FileLoaderFilter(const QString &format, int filenameOffset = 0);
 
-    // The input of this filter are the const char* from FileInputFilter
+    // The input of this filter are the const QString* from FileInputFilter
     // with the name of the standard file to open. It returns pointers
     // to the proper ImageInfo structures, NOT null.
     void* operator()(void* arg);
