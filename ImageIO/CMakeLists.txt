@@ -62,6 +62,14 @@ set(SRCS_PUBLIC
   # Also include the version header, defined in the root directory
   "${HDRITOOLS_VERSION_FILENAME}"
   )
+
+# Add the Windows Resource
+if (WIN32)
+  HDRITOOLS_WIN_RC(RCFILE
+    "Utility library for image operations, tone mapping and HDR files IO."
+    "pcgImageIO" "pcgImageIO.dll")
+  list(APPEND SRCS "${RCFILE}")
+endif()
   
 add_library(ImageIO SHARED ${SRCS})
 target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES} ${PNG_LIBRARIES})

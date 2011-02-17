@@ -90,7 +90,7 @@ if(MSVC AND NOT CMAKE_CL_64)
   set(SSE2_COMPILER_FLAGS "/arch:SSE2")
 elseif(CMAKE_COMPILER_IS_GNUCXX)
   set(SSE2_COMPILER_FLAGS "-msse -msse2 -msse3 -mfpmath=sse")
-endif(MSVC AND NOT CMAKE_CL_64)
+endif()
 set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SSE2_COMPILER_FLAGS}" )
 set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE2_COMPILER_FLAGS}" )
 
@@ -129,7 +129,29 @@ else()
   # the FindOpenEXR script
   set(OpenEXR_ROOT_DIR 
     CACHE INTERNAL "Root dir for external OpenEXR not used." FORCE)
-  
+endif()
+
+
+if (WIN32)
+  # Helper macro to add the generic resource info for Windows. It sets the 
+  # "out_variable" to the path of the generated resource file
+  get_filename_component(HDRITOOLS_RC_TEMPLATE
+    "win32/info.rc.template.in" ABSOLUTE)
+  function(HDRITOOLS_WIN_RC out_variable description product_name filename)
+    string(REGEX REPLACE ".*([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1,\\2,\\3,0"
+      RC_VERSION_COMMA ${HDRITOOLS_VERSION})
+    set(RC_VERSION ${HDRITOOLS_VERSION})
+	set(RC_COMPANY "Program of Computer Graphics, Cornell University")
+	set(RC_COPYRIGHT "Copyright (c) 2008-2011, Program of Computer Graphics, Cornell University")
+	set(RC_DESCRIPTION ${description})
+	set(RC_NAME ${product_name})
+	set(RC_FILENAME ${filename})
+	
+	configure_file("${HDRITOOLS_RC_TEMPLATE}"
+	  "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc")
+	set(${out_variable}
+	  "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc" PARENT_SCOPE)
+  endfunction()
 endif()
 
   

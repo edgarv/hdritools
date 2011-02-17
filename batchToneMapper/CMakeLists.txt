@@ -12,6 +12,14 @@ set(SRCS
   main.cpp
   )
   
+# Add the Windows Resource
+if (WIN32)
+  HDRITOOLS_WIN_RC(RCFILE
+    "Parallel command line utility for tone mapping HDR images."
+    "batchToneMapper" "batchToneMapper.exe")
+  list(APPEND SRCS "${RCFILE}")
+endif()
+  
 # Load the QT configuration
 include(${QT_USE_FILE})
   
