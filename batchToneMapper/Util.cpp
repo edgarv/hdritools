@@ -410,3 +410,23 @@ int Util::numberOfProcessors()
 
     return number_of_processors;
 }
+
+
+QStringList Util::glob(const QString & pattern, bool useQt)
+{
+    QStringList result;
+    if (useQt) {
+        result = ::QGlob(pattern);
+    } else {
+#if defined(_WIN32)
+        result = ::globWin32(pattern);
+#else
+        Q_ASSERT("Not implemented!" == 0);
+#endif
+    }
+    // If the pattern failed, just return it
+    if (result.isEmpty()) {
+        result.append(pattern);
+    }
+    return result;
+}

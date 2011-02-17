@@ -22,6 +22,9 @@ public:
     // Returns the number of processor available in the system
     static int numberOfProcessors();
 
+    // Expands a globbing pattern. By default it will use the Qt-based version
+    static QStringList glob(const QString & pattern, bool useQt = true);
+
     // Format string for 16-bit png
     static const QString PNG16_FORMAT_STR;
 
