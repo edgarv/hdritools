@@ -8,6 +8,8 @@
 #include <QFileInfo>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QApplication>
+#include <QClipboard>
 #include <QtDebug>
 
 
@@ -198,9 +200,7 @@ void HDRImageDisplay::paintEvent(QPaintEvent *event)
     if (scaleFactor < static_cast<qreal>(1)) {
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
     }
-
     painter.drawImage(/*x*/ 0, /*y*/ 0, qImage);
-
 }
 
 
@@ -280,4 +280,15 @@ void HDRImageDisplay::mouseMoveEvent(QMouseEvent * event)
     // don't have to worry about scrollbars!
     mouseOverPixel(QPoint(qRound(event->pos().x()/scaleFactor), 
         qRound(event->pos().y()/scaleFactor)));
+}
+
+
+
+void HDRImageDisplay::copyToClipboard()
+{
+    // There must be something valid
+    Q_ASSERT( hdrImage.Width() > 0 && hdrImage.Height() > 0 );
+
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setImage(qImage);    
 }

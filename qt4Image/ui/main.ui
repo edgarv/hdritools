@@ -257,7 +257,14 @@
     </property>
     <addaction name="action_AdjustSize"/>
    </widget>
+   <widget class="QMenu" name="menu_Edit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="action_Copy"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menu_Edit"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
@@ -433,6 +440,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="action_Copy">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Copy</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
    </property>
   </action>
  </widget>

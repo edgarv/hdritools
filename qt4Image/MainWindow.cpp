@@ -79,6 +79,10 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     connect( actionE_xit, SIGNAL(triggered()), app, SLOT(closeAllWindows()) );
     connect( action_Close_window, SIGNAL(triggered()), this, SLOT(close()) );
 
+    // Connection for the edit menu
+    connect( action_Copy, SIGNAL(triggered()),
+        hdrDisplay, SLOT(copyToClipboard()) );
+
     // Connections for the view menu
     connect( actionZoom_In,  SIGNAL(triggered()), this, SLOT(zoomIn()) );
     connect( actionZoom_Out, SIGNAL(triggered()), this, SLOT(zoomOut()) );
@@ -287,6 +291,7 @@ void MainWindow::updateForLoadedImage(QString imgName)
     action_Fit_on_Screen->setEnabled(true);
     action_Save_as->setEnabled(true);
     menuCompare->setEnabled(true);
+    action_Copy->setEnabled(true);
     action_Pixel_Info->setEnabled(true);
     updateActions();
 

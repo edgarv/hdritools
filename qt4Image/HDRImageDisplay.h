@@ -115,14 +115,17 @@ public:
     void mouseMoveEvent(QMouseEvent * event);
 
 
-    // Slots related to the tone mapping settings
 public slots:
+    // Slots related to the tone mapping settings
     void setGamma(float gamma);
     void setExposure(float exposure);
     void setSRGB(bool enable);
     void setWhitePoint(double value);
     void setKey(double value);
     void setReinhard02(bool enabled);
+
+    // Clipboard slots
+    void copyToClipboard();
 
 protected:
     virtual void paintEvent(QPaintEvent *event);
