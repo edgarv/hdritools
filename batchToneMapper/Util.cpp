@@ -1,10 +1,15 @@
 #include "Util.h"
 
+#include <QString>
 #include <QImageWriter>
 #include <QList>
 #include <QByteArray>
 #include <QFileInfo>
 #include <QtDebug>
+#include <QRegExp>
+#include <QFileInfo>
+#include <QDir>
+#include <QDirIterator>
 
 // The function for getting the number of threads
 // is pretty much a ripoff of tbb
@@ -182,9 +187,124 @@ QStringList globWin32(const QString & pattern)
     return list;
 }
 
-
-}
+} // namespace
 #endif // defined(_WIN32)
+
+
+namespace
+{
+
+//////////////////////////////////////////////////////////////////////////////
+// Qt version of the Python implementation for glob:
+// http://svn.python.org/view/python/branches/release27-maint/Lib/glob.py?view=markup
+// 
+// Original code is under the Python Software Foundation License
+// http://docs.python.org/license.html
+// 
+//
+// These 2 helper functions non-recursively glob inside a literal directory.
+// They return a list of basenames. `glob1` accepts a pattern while `glob0`
+// takes a literal basename (so it only has to check for its existence)
+
+inline bool hasMagic(const QString & pathname)
+{
+    static const QRegExp reg("[*?[]");
+    Q_ASSERT(reg.isValid());
+    return reg.indexIn(pathname) != -1;
+}
+
+
+QStringList glob1(const QString& dirname, const QString& pattern)
+{
+    Q_ASSERT(!pattern.isEmpty());
+    QStringList list;
+    QDirIterator it(dirname);
+#if defined(Q_WS_WIN)
+    const QRegExp reg(pattern, Qt::CaseInsensitive, QRegExp::WildcardUnix);
+#else
+    const QRegExp reg(pattern, Qt::CaseSensitive, QRegExp::WildcardUnix);
+#endif
+    const bool skip_startsWith_dot_check = pattern.startsWith('.');
+    while (it.hasNext()) {
+        it.next();
+        const QString fname = it.fileName();
+        if (reg.exactMatch(fname) &&
+            (skip_startsWith_dot_check || !fname.startsWith('.'))) {
+            list.append(fname);
+        }
+    }
+    return list;
+}
+
+
+QStringList glob0(const QString& dirname, const QString& basename)
+{
+    QStringList list;
+    if (basename.isEmpty()) {
+        // QFileInfo::fileName() returns an empty value if the path ends with
+        // a separator. 'q*x/' should match only directories
+        QFileInfo info(dirname);
+        if (info.isDir()) {
+            list.append(dirname);
+        }
+    } else {
+        QFileInfo info(dirname, basename);
+        if (info.exists() || info.isSymLink()) {
+            list.append(basename);
+        }
+    }
+    return list;
+}
+
+
+QStringList QGlob(const QString& pathname)
+{
+    QStringList list;
+
+    if (!hasMagic(pathname)) {
+        QFileInfo info(pathname);
+        if (info.exists()) {
+            list.append(pathname);
+        }
+        return list;
+    }
+    QFileInfo info(pathname);
+
+    // The variable names are using python's conventions!
+    const QString basename = info.fileName();
+    const QString dirname  = info.path();
+
+    if (dirname.isEmpty() || dirname == ".") {
+        // Simple case: just query the current directory for the pattern
+        return glob1(dirname, basename);
+    }
+
+    // Windows chokes if the dirname has wildcards but POSIX allows that
+    QStringList dirs;
+    if (hasMagic(dirname)) {
+        // Recurse to find all directories which match
+        dirs = ::QGlob(dirname);
+    } else {
+        dirs.append(dirname);
+    }
+
+    const bool magicBasename = hasMagic(basename);
+    for (QStringList::const_iterator it = dirs.constBegin();
+         it != dirs.constEnd(); ++it)
+    {
+        const QDir dir(*it);
+        const QStringList names = magicBasename ?
+            glob1(*it, basename) : glob0(*it, basename);
+        for (QStringList::const_iterator itName = names.constBegin();
+             itName != names.constEnd(); ++itName)
+        {
+            list.append(QDir::toNativeSeparators(dir.filePath(*itName)));
+        }
+    }
+    list.sort();
+    return list;
+}
+} // namespace
 
 
 
