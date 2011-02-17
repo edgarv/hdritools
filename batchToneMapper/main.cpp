@@ -32,6 +32,7 @@
 #include <QCoreApplication>
 #include <QString>
 #include <QStringList>
+#include <QStringListIterator>
 
 using namespace std;
 using namespace TCLAP;
@@ -296,10 +297,26 @@ void parseArgs(float &exposure, bool &srgb, float &gamma, bool &bpp16,
         format = QString::fromStdString(formatArg.getValue());
         bpp16  = format == Util::PNG16_FORMAT_STR;
         const vector<string> &filesUtf8 = filesArg.getValue();
+
+#if !defined(_WIN32)
         for (vector<string>::const_iterator it = filesUtf8.begin();
              it != filesUtf8.end(); ++it) {
             files.append(QString::fromUtf8(it->c_str()));
         }
+#else
+        // Using QCoreApplication::arguments() means that willcards does not
+        // get expanded even when linking against setargv.obj (that affects
+        // just main(int, char**). So we use our Qt, POSIX style globbing
+        for (vector<string>::const_iterator it = filesUtf8.begin();
+             it != filesUtf8.end(); ++it) {
+            const QString file = QString::fromUtf8(it->c_str());
+            const QStringList result = Util::glob(file);
+            QStringListIterator resultIt(result);
+            while (resultIt.hasNext()) {
+                files.append(resultIt.next());
+            }
+        }
+#endif // !defined(_WIN32)
     }
     catch(ArgException &e) {
         cerr << "Error: " << e.error() << " for arg " << e.argId() << endl;
