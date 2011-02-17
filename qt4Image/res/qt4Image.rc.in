@@ -20,12 +20,10 @@ STRINGTABLE DISCARDABLE
 BEGIN
 IDS_QT4IMAGE_DESC,
 "Qt4Image is a simple, fast viewer for High Dynamic Range Images (HDR) in \
-the Radiance (.rgbe, .hdr) and OpenEXR (.exr) formats. It allows changing \
-the exposure and gamma curve for the image, saving a tone-mapped image to \
-common formats such as PNG and JPEG and comparing against another HDR \
-file. It provides other amenities such as zooming, per-pixel information \
-and drag-and-drop.\n\r\n\r\n\rIt is implemented on top of several Open Source \
-libraries: OpenEXR, zlib, Threading Building Blocks and (naturally) Qt4."
+the Radiance (.rgbe, .hdr), OpenEXR (.exr) and Portable Float Map (.pfm) \
+formats. It allows changing the exposure and gamma curve for the image, \
+saving a tone-mapped image to common formats such as PNG and JPEG and \
+comparing against another HDR file."
 END
 
 
@@ -34,8 +32,8 @@ VS_VERSION_INFO		VERSIONINFO
 #else
 VS_VERSION_INFO		VERSIONINFO	MOVEABLE IMPURE LOADONCALL DISCARDABLE
 #endif
-  FILEVERSION		0,1,0,0
-  PRODUCTVERSION	0,1,0,0
+  FILEVERSION		@RC_VERSION_COMMA@ /* e.g. 1,0,0,0 */
+  PRODUCTVERSION	@RC_VERSION_COMMA@
   FILEFLAGSMASK		VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
   FILEFLAGS		1
@@ -53,12 +51,12 @@ BEGIN
     BEGIN
       VALUE "FileDescription",	"Qt4Image\0"
       VALUE "CompanyName", "Program of Computer Graphics, Cornell University\0"
-      VALUE "FileVersion",	"0.1.0\0"
+      VALUE "FileVersion",	"@RC_VERSION@\0"
       VALUE "InternalName",	"qt4Image.exe\0"
-      VALUE "LegalCopyright",	"Copyright (c) 2008, Program of Computer Graphics, Cornell University\0"
+      VALUE "LegalCopyright",	"Copyright (c) 2008-2011, Program of Computer Graphics, Cornell University\0"
       VALUE "OriginalFilename",	"qt4Image.exe\0"
       VALUE "ProductName",	"qt4Image\0"
-      VALUE "ProductVersion",	"0.1.0\0"
+      VALUE "ProductVersion",	"@RC_VERSION@\0"
     END
   END
   BLOCK "VarFileInfo"

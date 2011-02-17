@@ -78,7 +78,15 @@ source_group("Qt Generated" FILES ${MOC_SRCS} ${UI_SRCS} ${QRC_SRCS})
 if(WIN32)
   set(QT_USE_QTMAIN 1)
   set(EXECUTABLE_TYPE "WIN32")
-  list(APPEND SRCS "res/qt4Image.rc")
+  
+  # Create the resource file from the template
+  string(REGEX REPLACE ".*([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1,\\2,\\3,0"
+    RC_VERSION_COMMA ${HDRITOOLS_VERSION})
+  set(RC_VERSION ${HDRITOOLS_VERSION})
+  configure_file("res/qt4Image.rc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/res/qt4Image.rc")
+  include_directories("res")  # Necessary so the icons may be found
+  list(APPEND SRCS "${CMAKE_CURRENT_BINARY_DIR}/res/qt4Image.rc")
 endif()
 
 
