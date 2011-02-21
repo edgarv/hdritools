@@ -2,6 +2,7 @@
 
 #include "dSFMT/RandomMT.h"
 #include "Timer.h"
+#include "TestUtil.h"
 
 #include <gtest/gtest.h>
 
@@ -421,7 +422,7 @@ TEST_F(RgbeTest, Rgba32FCast)
         const pcg::Rgba32F expected(0.5f, 0.25f, 0.125f);
         const pcg::Rgbe v(128, 64, 32, 128);
         const pcg::Rgba32F result = v;
-        ASSERT_EQ(expected, result);
+        ASSERT_RGBA32F_EQ(expected, result);
     }
 
     // Stress run

@@ -11,11 +11,23 @@
 
 #if defined(__INTEL_COMPILER)
 # include <mathimf.h>
+#else
+# if !defined(_MSC_VER)
+#  include <cmath>
+# else
+namespace 
+{
+inline float fminf(float x, float y) {
+    return x < y ? x : y;
+}
+inline float fmaxf(float x, float y) {
+    return x > y ? x : y;
+}
+}
+# endif
 #endif
 
 #include "Reinhard02.h"
-
-#include <cstddef>
 
 #include <limits>
 #include <vector>
@@ -173,8 +185,8 @@ struct LuminanceFunctor
     void join (LuminanceFunctor & rhs)
     {
         zero_count += rhs.zero_count;
-        Lmin = std::min (Lmin, rhs.Lmin);
-        Lmax = std::max (Lmax, rhs.Lmax);
+        Lmin = fminf (Lmin, rhs.Lmin);
+        Lmax = fmaxf (Lmax, rhs.Lmax);
     }
 
     // Method invoked by TBB: accumulates the data for the subrange
@@ -213,8 +225,8 @@ private:
             _mm_store_ss(Lw+i, dot_tmp);
             // Flush all negatives, denorms, NaNs and infinity values to 0.0
             if (!isInvalidLuminance(Lw[i])) {
-                Lmin = std::min (Lw[i], Lmin);
-                Lmax = std::max (Lw[i], Lmax);
+                Lmin = fminf (Lw[i], Lmin);
+                Lmax = fmaxf (Lw[i], Lmax);
             } else {
                 Lw[i] = 0.0f;
                 ++zero_count;
@@ -291,8 +303,8 @@ private:
 
         // Accumulate the result for min & max
         for (int i = 0; i < 4; ++i) {
-            Lmin = std::min (Lmin, vec_min.f[i]);
-            Lmax = std::max (Lmax, vec_max.f[i]);
+            Lmin = fminf (Lmin, vec_min.f[i]);
+            Lmax = fmaxf (Lmax, vec_max.f[i]);
         }
     }
 };
@@ -595,8 +607,8 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
 #else
     rangeHelper = ssemath::log_ps (rangeHelper);
 #endif
-    const float Lmin_log = std::min(rangeHelper.r(), logf(Lmin));
-    const float Lmax_log = std::max(rangeHelper.g(), logf(Lmax));
+    const float Lmin_log = fminf(rangeHelper.r(), logf(Lmin));
+    const float Lmax_log = fmaxf(rangeHelper.g(), logf(Lmax));
 
     const int resolution = 100;
     const int dynrange = static_cast<int> (ceil(1e-5 + Lmax_log - Lmin_log));
@@ -605,14 +617,16 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
     // This makes sure that epsilon is large enough so that it is not necessary
     // to guard for the corner case where Lmax_log will be mapped to N
     // There must be an analytical way of doing this, but this is decent enough
+    const float range = Lmax_log - Lmin_log;
+    const float fnum_bins = static_cast<float>(num_bins);
     float epsilon = 1.9073486328125e-6f;
-    {
-        const float range = Lmax_log - Lmin_log;
-        while (static_cast<int>((num_bins/(epsilon+range)) * range) >= num_bins)
-            epsilon *= 2.0f;
+    float res_factor = num_bins / (epsilon + range);
+    while (static_cast<int>(static_cast<float>(res_factor*range)) >= num_bins){
+        epsilon *= 2.0f;
+        res_factor = fnum_bins / (epsilon + range);
     }
-    const float res_factor = num_bins / (epsilon + (Lmax_log-Lmin_log));
-    const float inv_res = (epsilon + (Lmax_log - Lmin_log)) / num_bins;
+    
+    const float inv_res = (epsilon + range) / num_bins;
 
     // Construct and return the object
     Params p (num_bins, res_factor, Lmin_log, Lmax_log, inv_res);

@@ -18,6 +18,7 @@ set(SRCS
   
   tableau_f32.h tableau_f32.cpp
   Timer.h Timer.cpp
+  TestUtil.h
   
   # Helper MT components
   dSFMT/RandomMT.h dSFMT/RandomMT.cpp

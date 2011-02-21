@@ -2,6 +2,7 @@
 
 #include "dSFMT/RandomMT.h"
 #include "Timer.h"
+#include "TestUtil.h"
 
 #include <gtest/gtest.h>
 
@@ -246,7 +247,7 @@ protected:
 
         // Compare all the pixels
         for (int i = 0; i < numPixels; ++i) {
-            ASSERT_EQ (reference[i], result[i]);
+            ASSERT_RGBA32F_EQ (reference[i], result[i]);
         }
     }
 

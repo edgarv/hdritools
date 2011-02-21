@@ -1,6 +1,7 @@
 #include <Rgba32F.h>
 
 #include "dSFMT/RandomMT.h"
+#include "TestUtil.h"
 
 #include <gtest/gtest.h>
 
@@ -230,10 +231,10 @@ TEST_F(Rgba32FTest, ComparisonOperators)
     ASSERT_FALSE (a != b);
     ASSERT_TRUE  (b == a);
     ASSERT_FALSE (b != a);
-    ASSERT_EQ (a, b);
-    ASSERT_EQ (b, a);
-    ASSERT_EQ (a, a);
-    ASSERT_EQ (b, b);
+    ASSERT_RGBA32F_EQ (a, b);
+    ASSERT_RGBA32F_EQ (b, a);
+    ASSERT_RGBA32F_EQ (a, a);
+    ASSERT_RGBA32F_EQ (b, b);
 
     setRnd(b);
     ASSERT_TRUE  (a == a);
@@ -246,8 +247,8 @@ TEST_F(Rgba32FTest, ComparisonOperators)
     ASSERT_FALSE (b == a);
     ASSERT_NE (a, b);
     ASSERT_NE (b, a);
-    ASSERT_EQ (a, a);
-    ASSERT_EQ (b, b);
+    ASSERT_RGBA32F_EQ (a, a);
+    ASSERT_RGBA32F_EQ (b, b);
 
 
     // Stress run
@@ -255,7 +256,7 @@ TEST_F(Rgba32FTest, ComparisonOperators)
         setRnd(a);
         b.set(a.r(), a.g(), a.b(), a.a());
         ASSERT_TRUE (a == b);
-        ASSERT_EQ (a, b);
+        ASSERT_RGBA32F_EQ (a, b);
 
         // Modify a value
         size_t idx;
@@ -292,7 +293,7 @@ TEST_F(Rgba32FTest, ComparisonOperators)
             ASSERT_EQ(m.a() op n.a(), res.a());               \
                                                               \
             m op ## = n;                                      \
-            ASSERT_EQ(res, m);                                \
+            ASSERT_RGBA32F_EQ(res, m);                        \
                                                               \
             const float s = rnd.nextFloat() * 8.0f;           \
             setRnd(m, static_cast<float>(rnd.nextInt(8)+1));  \
@@ -308,7 +309,7 @@ TEST_F(Rgba32FTest, ComparisonOperators)
             ASSERT_EQ(m.a() op s, res.a());                   \
                                                               \
             m op ## = s;                                      \
-            ASSERT_EQ(res, m);                                \
+            ASSERT_RGBA32F_EQ(res, m);                        \
         }                                                     \
     }  
 
@@ -384,7 +385,7 @@ TEST_F(Rgba32FTest, new_delete)
         ASSERT_EQ (static_cast<size_t>(0), (size_t)ptr & 0xF);
         ptr->setAll(1.0f);
         *ptr += zero;
-        ASSERT_EQ (ones, *ptr);
+        ASSERT_RGBA32F_EQ (ones, *ptr);
         delete ptr;
     }
 
@@ -395,7 +396,7 @@ TEST_F(Rgba32FTest, new_delete)
         for (size_t i = 0; i < 1; ++i) {
             ptr[i].setAll(1.0f);
             ptr[i] += zero;
-            ASSERT_EQ (ones, ptr[i]);
+            ASSERT_RGBA32F_EQ (ones, ptr[i]);
         }
         delete [] ptr;
     }
@@ -406,7 +407,7 @@ TEST_F(Rgba32FTest, new_delete)
         for (size_t i = 0; i < 2; ++i) {
             ptr[i].setAll(1.0f);
             ptr[i] += zero;
-            ASSERT_EQ (ones, ptr[i]);
+            ASSERT_RGBA32F_EQ (ones, ptr[i]);
         }
         delete [] ptr;
     }
@@ -418,7 +419,7 @@ TEST_F(Rgba32FTest, new_delete)
         for (size_t i = 0; i < count; ++i) {
             ptr[i].setAll(1.0f);
             ptr[i] += zero;
-            ASSERT_EQ (ones, ptr[i]);
+            ASSERT_RGBA32F_EQ (ones, ptr[i]);
         }
         delete [] ptr;
     }

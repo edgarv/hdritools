@@ -64,7 +64,7 @@ inline __m128 broadcast_idx(const __m128 n)
 }
 
 // Helper function to calculate a dot product
-inline float dot_float(Rgba32F a, Rgba32F b)
+inline float dot_float(const Rgba32F &a, const Rgba32F &b)
 {
     float res;
     Rgba32F dot_tmp = a * b;
