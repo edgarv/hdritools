@@ -18,9 +18,15 @@
 // instead of VC6. 
 //////////////////////////////////////////////////////////////////////////
 
-#include "mex.h" 
-#include "math.h"
-#include "stdio.h"
+#if _MSC_VER >= 1600
+# include <yvals.h>
+// This macro is defined in ISO/IEC TR 19769:2004
+# if !defined(__STDC_UTF_16__)
+#  define __STDC_UTF_16__
+# endif
+#endif
+
+#include <mex.h>
 
 #include <ImathBox.h>
 #include <ImfRgba.h>

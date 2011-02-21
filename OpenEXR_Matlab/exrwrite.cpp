@@ -17,12 +17,17 @@
 // instead of VC6. 
 //////////////////////////////////////////////////////////////////////////
 
+#if _MSC_VER >= 1600
+# include <yvals.h>
+// This macro is defined in ISO/IEC TR 19769:2004
+# if !defined(__STDC_UTF_16__)
+#  define __STDC_UTF_16__
+# endif
+#endif
 
-#include "mex.h" 
-#include "matrix.h"
-#include "tmwtypes.h"   // Matlab types
-#include "math.h"
-#include "stdio.h"
+#include <mex.h>
+#include <matrix.h>
+#include <tmwtypes.h>   // Matlab types
 
 #include <ImathBox.h>
 #include <ImfRgba.h>
