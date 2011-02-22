@@ -213,16 +213,66 @@ endif()
 
 # Packaging with CPack
 
+# Inform about the version
 if (HDRITOOLS_HAS_VALID_REV)
-  set (CPACK_PACKAGE_VERSION ${HDRITOOLS_VERSION}-hg${HDRITOOLS_REV_ID})
+  message(STATUS "HDRITools package version: ${HDRITOOLS_VERSION}-hg${HDRITOOLS_REV_ID} (${HDRITOOLS_DATE})")
 else()
-  set (CPACK_PACKAGE_VERSION ${HDRITOOLS_VERSION})
+  message(STATUS "HDRITools package version: ${HDRITOOLS_VERSION} (${HDRITOOLS_DATE})")
 endif()
-message(STATUS "HDRITools package version: ${CPACK_PACKAGE_VERSION}")
-set(CPACK_PACKAGE_NAME   "HDRITools")
-set(CPACK_PACKAGE_VENDOR "Cornell PCG")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
-  "Set of simple tools to view, tone-map and manipulate HDR images.") 
-set(CPACK_DMG_FORMAT "UDBZ") # UDIF bzip2-compressed image (OS X 10.4+ only)
 
+# The rest of the CPack config is in a different file
+include(HDRIToolsCpackConfig.cmake)
 include(CPack)
+
+# Define the groups of components
+cpack_add_component_group("apps"  DISPLAY_NAME "Applications")
+cpack_add_component_group("bindings" DISPLAY_NAME "Bindings")
+
+# Components description
+if (ZLIB_IS_INTERNAL AND ZLIB_SHARED_LIB)
+  set(ZLIB_COMPONENT "zlib")
+  cpack_add_component(${ZLIB_COMPONENT} HIDDEN)
+endif()
+
+if (OPENEXR_IS_INTERNAL AND OPENEXR_SHARED_LIBS)
+  set(OPENEXR_COMPONENT "openexr")
+  cpack_add_component(${OPENEXR_COMPONENT} HIDDEN  DEPENDS ${ZLIB_COMPONENT})
+endif()
+
+if (PNG_IS_INTERNAL AND PNG_SHARED_LIB)
+  set(PNG_COMPONENT "libpng")
+  cpack_add_component(${PNG_COMPONENT} HIDDEN DEPENDS ${ZLIB_COMPONENT})
+endif()
+
+
+cpack_add_component("imageio"
+  DISPLAY_NAME "ImageIO"
+  HIDDEN
+  DEPENDS ${OPENEXR_COMPONENT} ${PNG_COMPONENT}
+)
+cpack_add_component("imageio_dev"
+  DISABLED
+  DISPLAY_NAME "ImageIO-dev"
+  DEPENDS "imageio"
+)
+cpack_add_component("batchtonemapper"
+  DISPLAY_NAME "Batch tone mapper"
+  GROUP   "apps"
+  DEPENDS "imageio"
+)
+cpack_add_component("qt4image"
+  DISPLAY_NAME "Qt4Image"
+  GROUP   "apps"
+  DEPENDS "imageio"
+)
+
+cpack_add_component("openexrjni"
+  DISPLAY_NAME "OpenEXR-JNI"
+  GROUP   "bindings"
+  DEPENDS ${OPENEXR_COMPONENT}
+)
+cpack_add_component("openexrmex"
+  DISPLAY_NAME "OpenEXR-Matlab"
+  GROUP   "bindings"
+  DEPENDS ${OPENEXR_COMPONENT}
+)
