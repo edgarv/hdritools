@@ -106,6 +106,10 @@ else()
   set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
 endif()
 
+# Add the extra configuration stuff from Qt4Image
+if (QT4IMAGE_CPACK_CONFIG_FILE)
+  include("${QT4IMAGE_CPACK_CONFIG_FILE}")
+endif()
 
 
 # Drag'N Drop installer for Mac (PackageMaker is overkill)

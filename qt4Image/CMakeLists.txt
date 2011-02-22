@@ -175,19 +175,17 @@ if(QT4IMAGE_REG_FILES)
 	)
 endif()
 
+
+# Add set the file with extra CPack config for qt4Image
+set (QT4IMAGE_CPACK_CONFIG_FILE 
+  "${CMAKE_CURRENT_SOURCE_DIR}/qt4ImageCpackConfig.cmake" PARENT_SCOPE)
+
+
 # Stop further processing if there is no bundle-stuff
 if(NOT QT4IMAGE_BUNDLE)
   return()
 endif()
 
-# Check CMake version before going further
-cmake_policy(PUSH)
-if (NOT APPLE)
-  cmake_minimum_required(VERSION 2.8.0 FATAL_ERROR)
-else()
-  cmake_minimum_required(VERSION 2.6.2 FATAL_ERROR)
-endif()
-cmake_policy(POP)
 
 # Additional bunlde installation 
 set(plugin_dest_dir bin)
