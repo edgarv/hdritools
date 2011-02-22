@@ -1,4 +1,34 @@
 ; CPack install script designed for a nmake build
+; Custom version from the one in git/master:
+;  http://cmake.org/gitweb?p=cmake.git;a=blob_plain;f=Modules/NSIS.template.in;h=df9d2d39d0d07a947ee98ad879c2ce1501a70bc5;hb=master
+
+;Compatibility with Vista/Win7 UAC
+RequestExecutionLevel admin
+
+
+; Macro from:
+;  http://nsis.sourceforge.net/FileAssoc (Feb 2011)
+; !defines for use with SHChangeNotify
+!ifdef SHCNE_ASSOCCHANGED
+!undef SHCNE_ASSOCCHANGED
+!endif
+!define SHCNE_ASSOCCHANGED 0x08000000
+!ifdef SHCNF_FLUSH
+!undef SHCNF_FLUSH
+!endif
+!define SHCNF_FLUSH        0x1000
+ 
+!macro UPDATEFILEASSOC
+; Using the system.dll plugin to call the SHChangeNotify Win32 API function so we
+; can update the shell.
+  System::Call "shell32::SHChangeNotify(i,i,i,i) (${SHCNE_ASSOCCHANGED}, ${SHCNF_FLUSH}, 0, 0)"
+!macroend
+
+
+;Extra initial definitions, such as:
+; CPACK_REQUIRIRE_64BIT - Checks that the target system is 64-bit, otherwise abort
+@CPACK_CUSTOM_INITIAL_DEFINITIONS@
+
 
 ;--------------------------------
 ; You must define these values
@@ -36,6 +66,10 @@
 
   ;Set compression
   SetCompressor @CPACK_NSIS_COMPRESSOR@
+  
+  ;Macros for x64 stuff
+  !include "x64.nsh"
+
 
 @CPACK_NSIS_DEFINES@   
 
@@ -741,6 +775,12 @@ FunctionEnd
 ; determine admin versus local install
 Function un.onInit
 
+!ifdef CPACK_REQUIRIRE_64BIT
+  ${If} ${RunningX64}
+    SetRegView 64
+  ${EndIf}
+!endif
+
   ClearErrors
   UserInfo::GetName
   IfErrors noLM
@@ -899,6 +939,17 @@ SectionEnd
 ; "Program Files" for AllUsers, "My Documents" for JustMe...
 
 Function .onInit
+!ifdef CPACK_REQUIRIRE_64BIT
+  ; Abort if the 64-bit version is being installed in a 32-bit system
+  ${If} ${RunningX64}
+    SetRegView 64
+  ${Else}
+    MessageBox MB_OK|MB_ICONSTOP \
+      "Windows XP 64-bit Edition Version 2003 or newer must be used."
+    Abort "64-bit OS required"
+  ${EndIf}
+!endif
+
   ; Reads components status for registry
   !insertmacro SectionList "InitSection"
 
