@@ -31,24 +31,32 @@
 #include <ImathBox.h>
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
+#include <string>
 
 using namespace Imf;
 using namespace Imath;
+
+
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 { 
     /* Check for proper number of arguments */
     if (nrhs != 1) {
-        mexErrMsgTxt("The filename is required.");
+        mexErrMsgIdAndTxt("OpenEXR:argument", "The filename is required.");
     } else if (nlhs > 1) {
-        mexErrMsgTxt("Too many output arguments.");
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Too many output arguments.");
     }
-    
-    char inputfile[256];
-    mxGetString(prhs[0], inputfile, 256);
+
+    char *inputfilePtr = mxArrayToString(prhs[0]);
+    if (inputfilePtr == NULL) {
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Invalid filename argument.");
+    }
+    // Copy to a string so that the matlab memory may be freed asap
+    const std::string inputfile(inputfilePtr);
+    mxFree(inputfilePtr); inputfilePtr = static_cast<char*>(0);
     
     try {
-        RgbaInputFile file(inputfile);
+        RgbaInputFile file(inputfile.c_str());
         Box2i dw = file.dataWindow();
 
         const int width  = dw.max.x - dw.min.x + 1;
@@ -82,5 +90,4 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     catch( std::exception &e ) {
         mexErrMsgIdAndTxt("OpenEXR:exception", e.what());
     }
-    
-} 
+}

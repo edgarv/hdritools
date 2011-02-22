@@ -32,10 +32,10 @@
 #include <ImathBox.h>
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
+#include <string>
 
 using namespace Imf;
 using namespace Imath;
-
 
 
 
@@ -50,49 +50,51 @@ void copyPixels(Rgba *pixels, const T *img, int width, int height,
     
     // Copy the pixels
     for(int i=0; i<height; ++i)
-	for(int j=0; j<width;  ++j)
-	{
-		int k = j*height+i;
-		pixels[i*width+j].r = (half)((float)img[k]);
-		pixels[i*width+j].g = (half)((float)img[k+A]);
-		pixels[i*width+j].b = (half)((float)img[k+2*A]);
-		pixels[i*width+j].a = 1.0f;
-	}
+    for(int j=0; j<width;  ++j)
+    {
+        int k = j*height+i;
+        pixels[i*width+j].r = (half)((float)img[k]);
+        pixels[i*width+j].g = (half)((float)img[k+A]);
+        pixels[i*width+j].b = (half)((float)img[k+2*A]);
+        pixels[i*width+j].a = 1.0f;
+    }
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 {
     /* Check for proper number of arguments */
     if (nrhs != 2) {
-        mexErrMsgTxt("Two input arguments required.");
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Two input arguments required.");
     } else if (nlhs != 0) {
-        mexErrMsgTxt("Too many output arguments.");
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Too many output arguments.");
     }
-    
-	int width = 0, height = 0;
+
+    int width = 0, height = 0;
    
-	const mwSize nd = mxGetNumberOfDimensions(prhs[0]);
-	if(nd==2)
-	{
-		height = (int)mxGetM(prhs[0]);
-		width  = (int)mxGetN(prhs[0]);
-	}
-	else if(nd==3)
-	{
-		height = (int)mxGetM(prhs[0]);
-		width  = (int)mxGetN(prhs[0])/3;
-	}
-	else
-	{
-        mexErrMsgTxt("\"img\" must be either a 2d or 3d matrix.");
-	}
-	char outputfile[256];
-	mxGetString(prhs[1], outputfile, 256);
+    const mwSize nd = mxGetNumberOfDimensions(prhs[0]);
+    if(nd == 2) {
+        height = (int)mxGetM(prhs[0]);
+        width  = (int)mxGetN(prhs[0]);
+    } else if(nd == 3) {
+        height = (int)mxGetM(prhs[0]);
+        width  = (int)mxGetN(prhs[0])/3;
+    } else {
+        mexErrMsgIdAndTxt("OpenEXR:argument",
+            "\"img\" must be either a 2d or 3d matrix.");
+    }
+
+    char *outputfilePtr = mxArrayToString(prhs[1]);
+    if (outputfilePtr == NULL) {
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Invalid filename argument.");
+    }
+    // Copy to a string so that the matlab memory may be freed asap
+    const std::string outputfile(outputfilePtr);
+    mxFree(outputfilePtr); outputfilePtr = static_cast<char*>(0);
 
     // Uses matlab's alloc, so that the memory if released when
     // the control returns to matlab
-	Rgba *pixels = (Rgba*)mxCalloc(width*height, sizeof(Rgba));
-	
+    Rgba *pixels = (Rgba*)mxCalloc(width*height, sizeof(Rgba));
+    
     const bool isMonochrome = nd==3 ? false : true;
     
     // We only know how to write real data, so we cast img to the
@@ -143,7 +145,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     try {
-        RgbaOutputFile file(outputfile, width, height, WRITE_RGB);
+        RgbaOutputFile file(outputfile.c_str(), width, height, WRITE_RGB);
         file.setFrameBuffer(pixels, 1, width);
         file.writePixels(height);
     }
@@ -153,5 +155,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     // We don't need to explicitly delete the data because we
     // allocated it with mxCalloc
-	/*delete[] pixels; pixels = NULL;*/
-} 
+    /*delete[] pixels; pixels = NULL;*/
+}

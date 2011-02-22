@@ -1,7 +1,7 @@
 /** Initialization file, will be called upon loading the mex module */
 
 /* First part: includes */
-#if defined( WIN32 )
+#if defined(_WIN32)
   #define WINDOWS_LEAN_AND_MEAN
   #include <windows.h>
 #elif USE_SYSCONF
@@ -13,7 +13,7 @@
 /* Second part: function to get the number of CPUs */
 int get_num_cpus()
 {
-#if defined( WIN32 )
+#if defined(_WIN32)
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
 	const int n = (int)info.dwNumberOfProcessors;
@@ -37,7 +37,7 @@ inline void setImfThreads()
 
 
 /* Last part: actual shared library initialization */
-#ifdef WIN32
+#if defined(_WIN32)
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
