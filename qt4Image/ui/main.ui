@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>QT4Image</string>
+   <string>Qt4Image</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../res/icons.qrc">
@@ -293,7 +293,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;About QT4Image</string>
+    <string>&amp;About Qt4Image</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>
