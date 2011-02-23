@@ -99,8 +99,9 @@ Acknowledgements
 ----------------
 [Fabio Pellacini](http://www.cs.dartmouth.edu/~fabio/) wrote the original
 version of `ImageIO/Image.h`.
-The zip file reading functionality is based on code by Gilles Vollant.
-The OpenEXR_Matlab module is based on work by Jinwei Gu.
+The zip file reading functionality is based on MiniZip.
+The OpenEXR_Matlab module is based on work by
+[Jinwei Gu](http://www.cs.columbia.edu/~jwgu/).
 
 The HDRITools package uses and includes free software:
 
@@ -115,3 +116,9 @@ The HDRITools package uses and includes free software:
   Lucasfilm Entertainment Company Ltd.)
 - The [TCLAP](http://tclap.sourceforge.net/) command line parser library
   (Michael E. Smoot and team)
+- The [Simple SSE math functions](http://gruntthepeon.free.fr/ssemath/)
+  (Julien Pommier)
+- The Approximate Math Library for SSE / SSE2 library (Intel Corporation)
+- The [SIMD oriented Fast Mersenne Twister](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/)
+  random number library
+  (Mutsuo Saito, Makoto Matsumoto and Hiroshima University)
