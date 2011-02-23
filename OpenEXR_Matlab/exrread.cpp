@@ -14,6 +14,9 @@
 // Jinwei Gu. 2006/02/10
 // jwgu@cs.columbia.edu
 //
+// Modified by Edgar Velazquez-Armendariz
+// <cs#cornell#edu - eva5>
+//
 // When using mex to compiling it in matlab, make sure to use VC7.1 or above
 // instead of VC6. 
 //////////////////////////////////////////////////////////////////////////

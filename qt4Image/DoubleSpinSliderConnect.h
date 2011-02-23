@@ -1,3 +1,18 @@
+/*============================================================================
+  HDRITools - High Dynamic Range Image Tools
+  Copyright 2008-2011 Program of Computer Graphics, Cornell University
+
+  Distributed under the OSI-approved MIT License (the "License");
+  see accompanying file LICENSE for details.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the License for more information.
+ ----------------------------------------------------------------------------- 
+ Primary author:
+     Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
+============================================================================*/
+
 // This is a simple class to provide the extra signals so that one
 // can connect a double spin box and a normal slider. This class
 // will just assume that the slider makes sense with respect to the

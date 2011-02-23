@@ -1,3 +1,42 @@
+/*============================================================================
+  HDRITools - High Dynamic Range Image Tools
+  Copyright 2008-2011 Program of Computer Graphics, Cornell University
+
+  Distributed under the OSI-approved MIT License (the "License");
+  see accompanying file LICENSE for details.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the License for more information.
+ ----------------------------------------------------------------------------- 
+ Primary author:
+     Bruce Walter <bjw@graphics.cornell.edu>
+     Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
+============================================================================*/
+
+
+/* This file contains code to read and write four byte rgbe file format
+ developed by Greg Ward.  It handles the conversions between rgbe and
+ pixels consisting of floats.  The data is assumed to be an array of floats.
+ By default there are three floats per pixel in the order red, green, blue.
+ (RGBE_DATA_??? values control this.)  Only the mimimal header reading and 
+ writing is implemented.  Each routine does error checking and will return
+ a status value as defined below.  This code is intended as a skeleton so
+ feel free to modify it to suit your needs.
+
+ (Place notice here if you modified the code.)
+
+ 2008.02.10 edgar   Adapted to C++ and decoupled file reading
+            and pixel conversion operations.
+ 2002.10.29	westin	Allow additional header after FORMAT= line; such
+			files are routinely emitted by RADIANCE tools.
+
+ posted to http://www.graphics.cornell.edu/~bjw/
+ written by Bruce Walter  (bjw@graphics.cornell.edu)  5/26/95
+ based on code written by Greg Ward
+*/
+
+
 // Real implementation of the Rgbe reading stuff
 
 #include "RgbeIO.h"

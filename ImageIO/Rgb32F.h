@@ -1,3 +1,18 @@
+/*============================================================================
+  HDRITools - High Dynamic Range Image Tools
+  Copyright 2008-2011 Program of Computer Graphics, Cornell University
+
+  Distributed under the OSI-approved MIT License (the "License");
+  see accompanying file LICENSE for details.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the License for more information.
+ ----------------------------------------------------------------------------- 
+ Primary author:
+     Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
+============================================================================*/
+
 // A simple interface for floating point pixels which only have the RGB channels
 
 #if !defined (PCG_RGB32F_H)
