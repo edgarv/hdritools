@@ -191,6 +191,15 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     message(STATUS "Using the internal libpng.")
   endif()
   
+  # Option to install the development files. Default to false in MSVC
+  if (MSVC)
+    set (IMAGEIO_DEV_INSTALL_DEFAULT OFF)
+  else()
+    set (IMAGEIO_DEV_INSTALL_DEFAULT ON)
+  endif()
+  option(IMAGEIO_DEV_INSTALL "Install the development components for ImageIO."
+    ${IMAGEIO_DEV_INSTALL_DEFAULT})
+  
   # We need to build ImageIO
   add_subdirectory(ImageIO)
   
@@ -261,11 +270,15 @@ cpack_add_component("imageio"
   HIDDEN
   DEPENDS ${OPENEXR_COMPONENT} ${PNG_COMPONENT}
 )
-cpack_add_component("imageio_dev"
-  DISABLED
-  DISPLAY_NAME "ImageIO-dev"
-  DEPENDS "imageio"
-)
+
+if (IMAGEIO_DEV_INSTALL)
+  cpack_add_component("imageio_dev"
+    DISABLED
+    DISPLAY_NAME "ImageIO-dev"
+    DEPENDS "imageio"
+  )
+endif()
+
 cpack_add_component("batchtonemapper"
   DISPLAY_NAME "Batch tone mapper"
   GROUP   "apps"

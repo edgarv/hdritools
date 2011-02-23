@@ -273,7 +273,7 @@ elseif (APPLE)
 else()
   list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}/../imageio/lib")
 endif()
-list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}")
+list(APPEND DIRS "\${CMAKE_INSTALL_PREFIX}" "\${CMAKE_INSTALL_PREFIX}/lib")
 
 install(CODE "
 if(APPLE OR WIN32)

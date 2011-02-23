@@ -90,13 +90,18 @@ add_library(ImageIO SHARED ${SRCS})
 target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES} ${PNG_LIBRARIES})
 include_directories(${TBB_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${PNG_INCLUDE_DIR})
 
-set_target_properties(ImageIO PROPERTIES 
-  PUBLIC_HEADER "${SRCS_PUBLIC}"
+set_target_properties(ImageIO PROPERTIES
   OUTPUT_NAME "pcgImageIO"
   DEBUG_POSTFIX "d"
   VERSION "${HDRITOOLS_VERSION}"
-  FRAMEWORK TRUE
+)
+
+if(IMAGEIO_DEV_INSTALL)
+  set_target_properties(ImageIO PROPERTIES
+    PUBLIC_HEADER "${SRCS_PUBLIC}"
+	FRAMEWORK TRUE
   )
+endif()
   
 # TODO This should be done only when building it as a shared library in Windows
 add_definitions(-DIMAGEIO_EXPORTS)
@@ -119,10 +124,17 @@ if(OpenEXR_DEFINITIONS)
 endif()
 
 # Installs this
-install(TARGETS ImageIO
-  RUNTIME DESTINATION "bin"  COMPONENT "imageio"
-  LIBRARY DESTINATION "lib"  COMPONENT "imageio"
-  FRAMEWORK DESTINATION "."  COMPONENT "imageio"
-  ARCHIVE DESTINATION "lib"  COMPONENT "imageio_dev"
-  PUBLIC_HEADER DESTINATION "include/pcgImageIO"  COMPONENT "imageio_dev"
-)
+if(IMAGEIO_DEV_INSTALL)
+  install(TARGETS ImageIO
+    RUNTIME DESTINATION "bin"  COMPONENT "imageio"
+    LIBRARY DESTINATION "lib"  COMPONENT "imageio"
+    FRAMEWORK DESTINATION "."  COMPONENT "imageio_dev"
+    ARCHIVE DESTINATION "lib"  COMPONENT "imageio_dev"
+    PUBLIC_HEADER DESTINATION "include/pcgImageIO"  COMPONENT "imageio_dev"
+  )
+else()
+  install(TARGETS ImageIO
+    RUNTIME DESTINATION "bin"  COMPONENT "imageio"
+    LIBRARY DESTINATION "lib"  COMPONENT "imageio"
+  )
+endif()
