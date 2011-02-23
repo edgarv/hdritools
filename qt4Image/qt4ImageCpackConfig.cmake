@@ -47,6 +47,29 @@ macro(NSIS_DOC_CLASS outvar_install outvar_uninstall classname iconidx)
 endmacro()
 
 
+# Call with extension as in ".exr"
+function(NSIS_OPENWITHPROGIDS outvar_install outvar_uninstall classname extension)
+  set(${outvar_install}
+    "\\n; OpenWithProgids: ${extension} (${classname})\\n  WriteRegBin SHCTX 'SOFTWARE\\\\Classes\\\\${extension}\\\\OpenWithProgids' '${classname}' 0\\n\\n"
+    PARENT_SCOPE)
+  set(uninstalltmp1 "  DeleteRegValue SHCTX 'SOFTWARE\\\\Classes\\\\${extension}\\\\OpenWithProgids' '${classname}'")
+  set(uninstalltmp2 "  DeleteRegKey /ifempty SHCTX 'SOFTWARE\\\\Classes\\\\${extension}\\\\OpenWithProgids'")
+  set(uninstalltmp3 "  DeleteRegKey /ifempty SHCTX 'SOFTWARE\\\\Classes\\\\${extension}'")
+  set(${outvar_uninstall}
+    "\\n; Delete OpenWithProgids: ${extension} (${classname})\\n${uninstalltmp1}\\n${uninstalltmp2}\\n${uninstalltmp3}\\n\\n"
+	PARENT_SCOPE)
+endfunction()
+
+
+# For now it supports only one extension per document class
+function(NSIS_REGISTER_DOC_CLASS outvar_install outvar_uninstall classname iconidx extension)
+  NSIS_DOC_CLASS(installtmp1 uninstalltmp1 ${classname} ${iconidx})
+  NSIS_OPENWITHPROGIDS(installtmp2 uninstalltmp2 ${classname} ${extension})
+  set(${outvar_install} "${installtmp1}${installtmp2}" PARENT_SCOPE)
+  set(${outvar_uninstall} "${uninstalltmp2}${uninstalltmp1}" PARENT_SCOPE)
+endfunction()
+
+
 # Create the key for the document classes
 set(QT4IMAGE_PROG_KEY   "PCG.qt4Image.${HDRITOOLS_VERSION_MAJOR}")
 set(QT4IMAGE_EXR_CLASS  "PCG.qt4Image.OpenEXRFile.${HDRITOOLS_VERSION_MAJOR}")
@@ -55,10 +78,14 @@ set(QT4IMAGE_HDR_CLASS  "PCG.qt4Image.RadianceFile.${HDRITOOLS_VERSION_MAJOR}")
 set(QT4IMAGE_PBM_CLASS  "PCG.qt4Image.PBMFile.${HDRITOOLS_VERSION_MAJOR}")
 
 # TODO Make a way to keep the indices and the resource file in sync
-NSIS_DOC_CLASS(NSIS_EXR_INSTALL  NSIS_EXR_UNINSTALL  ${QT4IMAGE_EXR_CLASS}  1)
-NSIS_DOC_CLASS(NSIS_RGBE_INSTALL NSIS_RGBE_UNINSTALL ${QT4IMAGE_RGBE_CLASS} 2)
-NSIS_DOC_CLASS(NSIS_HDR_INSTALL  NSIS_HDR_UNINSTALL  ${QT4IMAGE_HDR_CLASS}  3)
-NSIS_DOC_CLASS(NSIS_PBM_INSTALL  NSIS_PBM_UNINSTALL  ${QT4IMAGE_PBM_CLASS}  4)
+NSIS_REGISTER_DOC_CLASS(NSIS_EXR_INSTALL  NSIS_EXR_UNINSTALL
+  ${QT4IMAGE_EXR_CLASS}  1 ".exr")
+NSIS_REGISTER_DOC_CLASS(NSIS_RGBE_INSTALL NSIS_RGBE_UNINSTALL
+  ${QT4IMAGE_RGBE_CLASS} 2 ".rgbe")
+NSIS_REGISTER_DOC_CLASS(NSIS_HDR_INSTALL  NSIS_HDR_UNINSTALL
+  ${QT4IMAGE_HDR_CLASS}  3 ".hdr")
+NSIS_REGISTER_DOC_CLASS(NSIS_PBM_INSTALL  NSIS_PBM_UNINSTALL
+  ${QT4IMAGE_PBM_CLASS}  4 ".pfm")
 
 # Create the keys for the Win Vista+ capabilities (for "Default Programs")
 set(NSIS_QT4IMAGE_CAPABILITIES_KEY
