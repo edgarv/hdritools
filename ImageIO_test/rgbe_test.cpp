@@ -502,13 +502,13 @@ TEST_F(RgbeTest, Performance2Rgbe)
     timerImp.stop();
     ASSERT_EQ (hashRtgi2.hashCode(), hashImp.hashCode());
 
-    std::cout <<"  Reference:   "<< timerRef.elapsedSeconds()<<" s"<< std::endl;
-    std::cout<<"  Rtgi2 imp:   "<<timerRtgi2.elapsedSeconds()<<" s"<< std::endl;
-    std::cout <<"  ImageIO:     "<< timerImp.elapsedSeconds()<<" s"<< std::endl;
+    std::cout <<"  Reference:   "<< timerRef.milliTime() <<" ms"<< std::endl;
+    std::cout <<"  Rtgi2 imp:   "<<timerRtgi2.milliTime()<<" ms"<< std::endl;
+    std::cout <<"  ImageIO:     "<< timerImp.milliTime() <<" ms"<< std::endl;
     printf("  ImageIO/Ref: %.2f%%\n", 
-        100.0*timerRef.elapsedSeconds()/timerImp.elapsedSeconds());
+        100.0*timerRef.milliTime()/timerImp.milliTime());
     printf("  ImgIO/Rtgi2: %.2f%%\n", 
-        100.0*timerRtgi2.elapsedSeconds()/timerImp.elapsedSeconds());
+        100.0*timerRtgi2.milliTime()/timerImp.milliTime());
 
     std::return_temporary_buffer (P.first);
 }
@@ -568,13 +568,13 @@ TEST_F(RgbeTest, Performance2Float)
     ASSERT_FLOAT_EQ(sumRtgi2.b(), sumImp.b());
     ASSERT_FLOAT_EQ(sumRtgi2.a(), sumImp.a());
 
-    std::cout <<"  Reference:   "<< timerRef.elapsedSeconds()<<" s"<< std::endl;
-    std::cout<<"  Rtgi2 imp:   "<<timerRtgi2.elapsedSeconds()<<" s"<< std::endl;
-    std::cout <<"  ImageIO:     "<< timerImp.elapsedSeconds()<<" s"<< std::endl;
+    std::cout <<"  Reference:   "<< timerRef.milliTime()  <<" ms"<< std::endl;
+    std::cout <<"  Rtgi2 imp:   "<< timerRtgi2.milliTime()<<" ms"<< std::endl;
+    std::cout <<"  ImageIO:     "<< timerImp.milliTime()  <<" ms"<< std::endl;
     printf("  ImageIO/Ref: %.2f%%\n", 
-        100.0*timerRef.elapsedSeconds()/timerImp.elapsedSeconds());
+        100.0*timerRef.milliTime()/timerImp.milliTime());
     printf("  ImgIO/Rtgi2: %.2f%%\n", 
-        100.0*timerRtgi2.elapsedSeconds()/timerImp.elapsedSeconds());
+        100.0*timerRtgi2.milliTime()/timerImp.milliTime());
 
     std::return_temporary_buffer (P.first);
 }

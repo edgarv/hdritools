@@ -59,7 +59,7 @@ TEST(LegacyTests, DISABLED_RGBEImage)
 	RgbeImage rgbeImageTest("iris.rgbe");
 	timer.stop();
 	cout << "Rgbe Image: " << rgbeImageTest.Width() << " x " << rgbeImageTest.Height() << endl;
-	cout << "Time to load pure RGBE image: " << timer.elapsedSeconds() << endl;
+	cout << "Time to load pure RGBE image: " << timer.milliTime() << " ms" << endl;
 	cout << "Last pixel: " << rgbeImageTest[rgbeImageTest.Size()-1] << endl;
 
 	// Converting the RGBE image into an Rgba32F at once
@@ -73,7 +73,7 @@ TEST(LegacyTests, DISABLED_RGBEImage)
 		}
 
 		timer.stop();
-		cout << "Time to convert loaded RGBE to Rgba32F: " << timer.elapsedSeconds() << endl;
+		cout << "Time to convert loaded RGBE to Rgba32F: " << timer.milliTime() << " ms" << endl;
 		cout << "Last pixel: " << floatImage[floatImage.Size()-1] << endl;
 	}
 
@@ -82,7 +82,7 @@ TEST(LegacyTests, DISABLED_RGBEImage)
 	RgbeIO::Load(testImg2, "iris.rgbe");
 	timer.stop();
 	cout << "Rgba32F Image from Rgbe: " << testImg2.Width() << " x " << testImg2.Height() << endl;
-	cout << "Time to load image converting on the fly: " << timer.elapsedSeconds() << endl;
+	cout << "Time to load image converting on the fly: " << timer.milliTime() << " ms" << endl;
 	cout << "Last pixel: " << testImg2[testImg2.Size()-1] << endl;
 }
 
@@ -101,7 +101,7 @@ TEST(LegacyTests, DISABLED_ToneMapper)
 	toneMapper.SetGamma(2.6f);
 	timer.stop();
 
-	cout << "Time to setup the ToneMapper lut: " << timer.elapsedSeconds()/5 << endl;
+	cout << "Time to setup the ToneMapper lut: " << timer.milliTime()/5 << " ms" << endl;
 
     // Loads the image converting on the fly
 	Image<Rgba32F, TopDown> floatImage;
@@ -113,13 +113,13 @@ TEST(LegacyTests, DISABLED_ToneMapper)
 	timer.reset();
 	toneMapper.ToneMap(ldrImage, floatImage);
 	timer.stop();
-	cout << "Time to tone map the image: " << timer.elapsedSeconds() << endl;
+	cout << "Time to tone map the image: " << timer.milliTime() << " ms" << endl;
 
 	// Create a png image from the Bgra8 image
 	timer.reset();
 	PngIO::Save(ldrImage, "test-horse-bgra8-g2.png", false, 1/2.0f);
 	timer.stop();
-	cout << "Time to save as PNG 8bpp: " << timer.elapsedSeconds() << endl;
+	cout << "Time to save as PNG 8bpp: " << timer.milliTime() << " ms" << endl;
 
 	// Tonemap again and save, but as sRGB
 	toneMapper.SetSRGB(true);
@@ -136,7 +136,7 @@ TEST(LegacyTests, DISABLED_ToneMapper)
 	timer.reset();
 	toneMapper.ToneMap(ldrImage2, floatImage, false);
 	timer.stop();
-	cout << "Time to tone map the image (no LUT): " << timer.elapsedSeconds() << endl;
+	cout << "Time to tone map the image (no LUT): " << timer.milliTime() << " ms" << endl;
 	PngIO::Save(ldrImage2, "test-horse-rgba8-srgb-noLUT.png", true);
 
 	// Lets try with the high resolution version
@@ -146,12 +146,12 @@ TEST(LegacyTests, DISABLED_ToneMapper)
 	Rgba16 &px = ldrImage16.ElementAt(200,300);
 	cout << "High bpp pixel (200,300): " << px.r << ',' << px.g << ',' << px.b << endl;
 	timer.stop();
-	cout << "Time to tone map the 16bpp image (no LUT): " << timer.elapsedSeconds() << endl;
+	cout << "Time to tone map the 16bpp image (no LUT): " << timer.milliTime() << " ms" << endl;
 
 	timer.reset();
 	PngIO::Save(ldrImage16, "test-horse-rgb16-srgb-noLUT.png", true);
 	timer.stop();
-	cout << "Time to save as PNG 16bpp: " << timer.elapsedSeconds() << endl;
+	cout << "Time to save as PNG 16bpp: " << timer.milliTime() << " ms" << endl;
 
 #if 0
 	// Create a QImage from the Argb8 Image and save as PNG
@@ -160,11 +160,11 @@ TEST(LegacyTests, DISABLED_ToneMapper)
 	QImage qImage(reinterpret_cast<uchar *>(ldrImage.GetDataPointer()), ldrImage.Width(), ldrImage.Height(),
 		QImage::Format_RGB32);
 	timer.stop();
-	cout << "Time to wrap in a QImage: " << timer.elapsedSeconds() << endl;
+	cout << "Time to wrap in a QImage: " << timer.milliTime() << " ms" << endl;
 	timer.reset();
 	qImage.save("test-horse.png");
 	timer.stop();
-	cout << "Time to save as PNG from QImage: " << timer.elapsedSeconds() << endl;
+	cout << "Time to save as PNG from QImage: " << timer.milliTime() << " ms" << endl;
 	cout << "Sanity: sizeof(long) " << sizeof(long) << endl;
 #endif
 

@@ -1,102 +1,149 @@
+/*============================================================================
+  HDRITools - High Dynamic Range Image Tools
+  Copyright 2008-2011 Program of Computer Graphics, Cornell University
+
+  Distributed under the OSI-approved MIT License (the "License");
+  see accompanying file LICENSE for details.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the License for more information.
+ ----------------------------------------------------------------------------- 
+ Primary author:
+     Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
+============================================================================*/
+
 #include "Timer.h"
 
-// Includes for the timer
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <windows.h>
+#include <cassert>
+
+#if defined(_WIN32)
+// Exclude the MFC stuff and min/max macros
+# define WIN32_LEAN_AND_MEAN
+# define NOMINMAX
+# include <windows.h>
+#elif defined(__APPLE__)
+// Info from the Mac OS X Reference Library (accessed February 2011)
+// http://www.wand.net.nz/~smr26/wordpress/2009/01/19/monotonic-time-in-mac-os-x/
+// http://developer.apple.com/library/mac/#qa/qa2004/qa1398.html
+# include <CoreServices/CoreServices.h>
+# include <mach/mach.h>
+# include <mach/mach_time.h>
+# include <unistd.h>
 #else
-#include <sys/time.h>
-#include <unistd.h>
+// Assume POSIX. Check for good clocks support.
+# include <ctime>
+# if defined(CLOCK_MONOTONIC)
+# define TIMER_CLOCK CLOCK_MONOTONIC
+# elif defined(CLOCK_HIGHRES)
+# define TIMER_CLOCK CLOCK_HIGHRES
+# elif defined(CLOCK_REALTIME)
+# define TIMER_CLOCK CLOCK_REALTIME
+# else
+# error No suitable clock found.  Check docs for clock_gettime.
+# endif
 #endif
 
 
-double Timer::mPeriod = 0.0;
+namespace
+{
+#if !defined(_WIN32)
+inline int64_t timespecToNano (const timespec &x)
+{
+    return (x.tv_sec * 1000000000L) + x.tv_nsec;
+}
+#endif
 
-Timer::Timer(bool inHardware) : mHardware(inHardware) {
-	if(mPeriod == 0) calibrateCountPeriod(); 
-	reset();
+
+// For windows the resolution is in ticks per second, otherwise it is
+// already in nanoseconds per sample
+Timer::fraction_t timerResolution()
+{
+#if defined(_WIN32)
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    const int64_t denom = static_cast<int64_t>(freq.QuadPart);
+    const Timer::fraction_t resolution(1000000000L, denom);
+#elif defined(__APPLE__)
+    mach_timebase_info_data_t sTimebaseInfo;
+    mach_timebase_info(&sTimebaseInfo);
+    const Timer::fraction_t resolution(sTimebaseInfo.numer, sTimebaseInfo.denom);
+#else
+    timespec tspec;
+    clock_getres (TIMER_CLOCK, &tspec);
+    const int64_t denom = timespecToNano (tspec);
+    const Timer::fraction_t resolution(1L, denom);
+#endif
+    return resolution;
+}
+} // namespace
+
+
+const Timer::fraction_t Timer::timerResolution = ::timerResolution();
+
+
+double Timer::getTimerResolution()
+{
+    return Timer::timerResolution * 1e9;
 }
 
 
-/* Disable the "unreferenced format parameter" warning */
-#if defined(_MSC_VER)
-#pragma warning( disable : 4100 )
-#endif
-
-void Timer::calibrateCountPeriod(unsigned int inDelay, unsigned int inTimes)
+Timer::Timer() : m_elapsed(0L), m_time(0L)
 {
-#ifdef WIN32
-	// use the windows counter
-	LARGE_INTEGER lFrequency;
-	QueryPerformanceFrequency(&lFrequency);
-	mPeriod = 1. / lFrequency.QuadPart;
-#else
-	if(mHardware) {
-#if defined (__GNUG__) && (defined (__i386__) || defined (__ppc__))
-		double lPeriod = 0;
-		// calibrate by matching the time-stamps with the micro-seconds of gettimeofday
-		for(unsigned int i = 0; i < inTimes; ++ i) {
-			timeval lStartTime, lTime;
-			::gettimeofday(&lStartTime, 0);
-			unsigned long long lStartCount = getCount();
-			::usleep(inDelay);
-			::gettimeofday(&lTime, 0);
-			unsigned long long lCount = getCount() - lStartCount;
-			lTime.tv_sec -= lStartTime.tv_sec;
-			lTime.tv_usec -= lStartTime.tv_usec;
-			// dismiss the first run of the loop
-			if(i != 0) lPeriod += (lTime.tv_sec + lTime.tv_usec*0.000001)/lCount;
-		}
-		mPeriod = lPeriod/(inTimes-1);
-#else
-		// use the microseconds of gettimeofday
-		mPeriod = 0.000001;
-#endif
-	} else {
-		// use the microseconds of gettimeofday
-		mPeriod = 0.000001;
-	}
-#endif
-
 }
 
-unsigned long long Timer::getCount(void) const
-{
-	unsigned long long lCount = 0;
-#ifdef WIN32
-	LARGE_INTEGER lCurrent;
-	QueryPerformanceCounter(&lCurrent);
-	lCount = lCurrent.QuadPart;
-#else
-	if(mHardware) {
-#if defined (__GNUG__) && defined (__i386__)
-		__asm__ volatile("rdtsc" : "=A" (lCount));
-#else
-#if defined (__GNUG__) && defined (__ppc__)
-		register unsigned int lLow;
-		register unsigned int lHigh1;
-		register unsigned int lHigh2;
-		do {
-			// make sure that high bits have not changed
-			__asm__ volatile ( "mftbu %0" : "=r" (lHigh1) );
-			__asm__ volatile ( "mftb  %0" : "=r" (lLow) );
-			__asm__ volatile ( "mftbu %0" : "=r" (lHigh2) );
-		} while(lHigh1 != lHigh2);
-		// transfer to lCount
-		unsigned int *lPtr = (unsigned int*) &lCount;
-		*lPtr++ = lHigh1; *lPtr = lLow;
-#else
-		timeval lCurrent;
-		::gettimeofday(&lCurrent, 0);
-		lCount = (unsigned long long)lCurrent.tv_sec*1000000 + lCurrent.tv_usec;
-#endif
-#endif
-	} else {
-		timeval lCurrent;
-		::gettimeofday(&lCurrent, 0);
-		lCount = (unsigned long long)lCurrent.tv_sec*1000000 + lCurrent.tv_usec;
-	}
-#endif
-	return lCount;
 
+int64_t Timer::getNanoTime()
+{
+#if defined(_WIN32)
+    LARGE_INTEGER perfcount;
+    QueryPerformanceCounter(&perfcount);
+    // Should never overflow unless dealing with periods over 73 years long
+    const int64_t rawtime = static_cast<int64_t>(perfcount.QuadPart);
+#elif defined(__APPLE__)
+    const int64_t rawtime = static_cast<int64_t>(mach_absolute_time());
+#else
+    timespec tspec;
+    clock_gettime (TIMER_CLOCK, &tspec);
+    const int64_t rawtime = timespecToNano (tspec);
+#endif
+    const int64_t t= Timer::timerResolution * rawtime;
+    return t;
+}
+
+
+void Timer::reset()
+{
+    m_elapsed = 0L;
+    m_time    = 0L;
+}
+
+
+void Timer::start()
+{
+    assert(m_time == 0);
+    m_time = getNanoTime();
+}
+
+
+void Timer::stop()
+{
+    assert(m_time != 0);
+    int64_t currtime = getNanoTime();
+    m_elapsed += currtime - m_time;
+    m_time = 0;
+}
+
+
+// This method may only be used when the timer is stopped
+int64_t Timer::nanoTime() const
+{
+    assert(m_time == 0);
+    return m_elapsed;
+}
+
+
+double Timer::milliTime() const
+{
+    return nanoTime() * 1e-6;
 }
