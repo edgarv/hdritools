@@ -30,7 +30,7 @@ set(SRCS
 # Add the Windows Resource
 if (WIN32)
   HDRITOOLS_WIN_RC(RCFILE
-    "Parallel command line utility for tone mapping HDR images."
+    "Parallel HDR tone mapper"
     "batchToneMapper" "batchToneMapper.exe")
   list(APPEND SRCS "${RCFILE}")
 endif()
