@@ -109,8 +109,20 @@ set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE2_COMPILER_FLAGS}" )
 if(CMAKE_COMPILER_IS_GNUCXX)
   add_definitions("-D_FORTIFY_SOURCE=2")
 endif()
+
+
+# Option and helper macro to enable global optimization on targets.
+# As of CMake 2.8.4 this seems to work only on the command line Intel compiler
+option(USE_INTERPROCEDURAL_OPTIMIZATION
+  "Enable global optimization/LTCG on Release builds." ON)
+macro(HDRITOOLS_LTCG targetname)
+  set_target_properties(${targetname} PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE ${USE_INTERPROCEDURAL_OPTIMIZATION})
+endmacro()
+
   
-# Sets the required zlib variables if we are using the bundled OpenEXR or if building the batch tonemapper
+# Sets the required zlib variables if we are using the bundled OpenEXR or if
+# building the batch tonemapper
 if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
   if(USE_SYSTEM_ZLIB)

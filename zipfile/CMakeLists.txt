@@ -29,6 +29,7 @@ if (APPLE)
 endif()
   
 add_library(zipfile STATIC ${SRCS})
+HDRITOOLS_LTCG(zipfile)
 
 # Note that it's not linked here!
 include_directories(${ZLIB_INCLUDE_DIRS})

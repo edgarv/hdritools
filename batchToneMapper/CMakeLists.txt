@@ -39,6 +39,7 @@ endif()
 include(${QT_USE_FILE})
   
 add_executable(batchToneMapper ${SRCS})
+HDRITOOLS_LTCG(batchToneMapper)
 target_link_libraries(batchToneMapper ImageIO zipfile ${QT_LIBRARIES})
 set_target_properties(batchToneMapper PROPERTIES
   VERSION "${HDRITOOLS_VERSION}")

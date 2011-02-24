@@ -158,6 +158,10 @@ if(ZLIB_IS_INTERNAL AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
   set_target_properties(zlib PROPERTIES COMPILE_FLAGS "-fpic")
 endif()
 
+if(ZLIB_IS_INTERNAL)
+  HDRITOOLS_LTCG(zlib)
+endif()
+
 if(NOT CYGWIN)
     # This property causes shared libraries on Linux to have the full version
     # encoded into their final filename.  We disable this on Cygwin because

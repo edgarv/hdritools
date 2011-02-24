@@ -253,6 +253,8 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
     set_target_properties(${targetname} PROPERTIES
 	  PUBLIC_HEADER "${${publicheaders_var}}"
 	)
+  else()
+    HDRITOOLS_LTCG(${targetname})
   endif()
   
   # For the windows dll we need extra definitions and use createDLL

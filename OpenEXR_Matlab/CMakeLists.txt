@@ -267,6 +267,7 @@ function(add_mex name)
   set(sources ${ARGV})
   list(REMOVE_AT sources 0)
   add_library(${name} ${MEX_TARGET_TYPE} ${sources})
+  HDRITOOLS_LTCG(${name})
   set_target_properties(${name} PROPERTIES
     SUFFIX ".${MEX_EXT}"
     PREFIX ""
@@ -280,6 +281,7 @@ function(add_mex name)
   # Same set of things for the extra architexture
   if (MATLAB_UNIVERSAL)
     add_library(${name}_extra ${MEX_TARGET_TYPE} ${sources})
+    HDRITOOLS_LTCG(${name}_extra)
     set_target_properties(${name}_extra PROPERTIES
       OUTPUT_NAME "${name}"
       SUFFIX ".${MEX_EXT_EXTRA}"

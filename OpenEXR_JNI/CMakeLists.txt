@@ -113,6 +113,7 @@ include_directories(
 
 # Finally adds the actual library targets
 add_library(openexrjni SHARED ${SRCS} ${JNI_HEADERS})
+HDRITOOLS_LTCG(openexrjni)
 target_link_libraries(openexrjni ${OpenEXR_LIBRARIES})
 add_dependencies(openexrjni openexrjni_jar)
 

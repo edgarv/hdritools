@@ -114,6 +114,7 @@ include(${QT_USE_FILE})
 # Creates the executable with all the stuff
 add_executable(qt4Image ${EXECUTABLE_TYPE} 
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
+HDRITOOLS_LTCG(qt4Image)
 target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
 set_target_properties(qt4Image PROPERTIES
   VERSION "${HDRITOOLS_VERSION}")

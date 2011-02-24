@@ -87,6 +87,7 @@ if (WIN32)
 endif()
   
 add_library(ImageIO SHARED ${SRCS})
+HDRITOOLS_LTCG(ImageIO)
 target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES} ${PNG_LIBRARIES})
 include_directories(${TBB_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${PNG_INCLUDE_DIR})
 
