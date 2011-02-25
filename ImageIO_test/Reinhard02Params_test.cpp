@@ -44,6 +44,22 @@ protected:
 
     }
 
+	// Function to generate weird bit patterns which are all NaNs
+	inline float getNaN()
+	{
+		if (rnd.nextBoolean()) {
+			return std::numeric_limits<float>::quiet_NaN();
+		} else {
+			union { unsigned int bits; float val; };
+			// Values greater than 0x7f800000 (positive and negative) and NaNs
+			bits = 0x7f800001 + rnd.nextInt(0x7fffff);
+			if (rnd.nextBoolean()) {
+				bits |= 0x80000000;	// Turn on the negative bit
+			}
+			return val;
+		}
+	}
+
     static const int IMG_W = 640;
     static const int IMG_H = 480;
 
@@ -126,7 +142,7 @@ TEST_F(Reinhard02ParamsTest, AllInvalid)
             if (p < 0.25) {
                 val = -rnd.nextFloat();
             } else if (p < 0.5) {
-                val = float_limits::quiet_NaN();
+                val = getNaN();
             } else if (p < 0.75) {
                 val = -float_limits::infinity();
             } else if (p < 0.9) {
@@ -156,7 +172,7 @@ TEST_F(Reinhard02ParamsTest, SomeInvalid)
             if (p < 0.25) {
                 val = -rnd.nextFloat();
             } else if (p < 0.5) {
-                val = float_limits::quiet_NaN();
+                val = getNaN();
             } else if (p < 0.75) {
                 val = -float_limits::infinity();
             } else if (p < 0.9) {
@@ -184,7 +200,7 @@ TEST_F(Reinhard02ParamsTest, OneValid)
             if (p < 0.25) {
                 val = -rnd.nextFloat();
             } else if (p < 0.5) {
-                val = float_limits::quiet_NaN();
+                val = getNaN();
             } else if (p < 0.75) {
                 val = -float_limits::infinity();
             } else if (p < 0.9) {
@@ -219,7 +235,7 @@ TEST_F(Reinhard02ParamsTest, TwoValid)
             if (p < 0.25) {
                 val = -rnd.nextFloat();
             } else if (p < 0.5) {
-                val = float_limits::quiet_NaN();
+                val = getNaN();
             } else if (p < 0.75) {
                 val = -float_limits::infinity();
             } else if (p < 0.9) {

@@ -150,6 +150,18 @@ inline bool isInvalidLuminance(float x) {
 }
 
 
+// Helper function to calculate a dot product
+inline float dot_float(const Rgba32F &a, const Rgba32F &b)
+{
+    float res;
+    Rgba32F dot_tmp = a * b;
+    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
+    _mm_store_ss(&res, dot_tmp);
+    return res;
+}
+
+
 
 // TBB functor object to fill the array of luminances. It converts the invalid
 // values to zero and returns the maximum, minimum and number of invalid values
@@ -175,6 +187,7 @@ struct LuminanceFunctor
     static const Rgba32F vec_MINVAL;
     static const Rgba32F ZERO;
     static const __m128i MASK_NAN;
+    static const __m128  MASK_ABS;
 
     // LUT for counting the number of zero-ed elements given the 4x32bit masks
     // where a 0x0 means the element was converted to zero.
@@ -233,10 +246,7 @@ struct LuminanceFunctor
 private:
     inline void computeScalar(size_t begin, size_t end) {
         for (size_t i = begin; i < end; ++i) {
-            __m128 dot_tmp = pixels[i] * vec_LUM;
-            dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-            dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-            _mm_store_ss(Lw+i, dot_tmp);
+            Lw[i] = dot_float(pixels[i], vec_LUM);
             // Flush all negatives, denorms, NaNs and infinity values to 0.0
             if (!isInvalidLuminance(Lw[i])) {
                 Lmin = fminf (Lw[i], Lmin);
@@ -290,7 +300,7 @@ private:
             // (0x7f800000 > vec_Lw) ? 0xffff : 0, then expand to 32 bits
             __m128 mask_nan = _mm_cmpneq_ps(ZERO, 
                 _mm_castsi128_ps(_mm_cmpgt_epi32(MASK_NAN,
-                                 _mm_castps_si128(vec_Lw))));
+                _mm_castps_si128(_mm_and_ps(vec_Lw, MASK_ABS)))));
 
             // Combine the masks
             __m128 mask = _mm_and_ps(mask_min, mask_nan);
@@ -307,8 +317,8 @@ private:
             zero_count += LUT[lut_index];
     #endif
 
-            // Update the minimum and maximum vectors, only the valid elements
-            // SSE4.1 has a nice "blendps" instruction, but I can't it here
+            // Update the valid elements for the minimum and maximum vectors.
+            // SSE4.1 has a nice "blendps" instruction which I can't use here.
             __m128 result_min=_mm_or_ps(result, _mm_andnot_ps(mask, vec_min.v));
             vec_min.v = _mm_min_ps (vec_min.v, result_min);
             __m128 result_max=_mm_or_ps(result, _mm_andnot_ps(mask, vec_max.v));
@@ -333,6 +343,8 @@ const Rgba32F LuminanceFunctor::vec_LUM_B(LUM_B);
 const Rgba32F LuminanceFunctor::vec_MINVAL(float_limits::min());
 const Rgba32F LuminanceFunctor::ZERO(0.0f);
 const __m128i LuminanceFunctor::MASK_NAN(_mm_set1_epi32 (0x7f800000));
+const __m128  LuminanceFunctor::MASK_ABS(_mm_castsi128_ps (
+                                         _mm_set1_epi32 (0x7FFFFFFF)));
 #if !USE_PACKED_LUT
 const int LuminanceFunctor::LUT[] = 
     { 4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0 };
@@ -586,8 +598,8 @@ private:
             const __m128i bin_idx = _mm_cvttps_epi32 (idx_temp);
             const int index0 = _mm_extract_epi16(bin_idx, 0*2);
             const int index1 = _mm_extract_epi16(bin_idx, 1*2);
-		    const int index2 = _mm_extract_epi16(bin_idx, 2*2);
-		    const int index3 = _mm_extract_epi16(bin_idx, 3*2);
+            const int index2 = _mm_extract_epi16(bin_idx, 2*2);
+            const int index3 = _mm_extract_epi16(bin_idx, 3*2);
 
             assert (index0 >= 0 && index0 < (int)histogram.size());
             assert (index1 >= 0 && index1 < (int)histogram.size());
