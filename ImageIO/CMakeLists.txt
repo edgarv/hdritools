@@ -16,6 +16,12 @@
 # Cmake file for the ImageIO library. It assumes that TBB and OpenEXR
 # have been found and the proper variables are set
 
+# Starting with TBB 2.2, the scheduler initialization is automatic. We detect
+# that through the version as previously set up by find_package(TBB)
+if (DEFINED TBB_VERSION AND NOT TBB_VERSION VERSION_LESS "2.2")
+  add_definitions("-DIMAGEIO_TBB_DEFAULT_INIT")
+endif()
+
 # Generate the rgbe LUT
 add_executable(rgbeLUT rgbeLUT.cpp)
 

@@ -32,10 +32,6 @@ Q_IMPORT_PLUGIN(qtiff)
 
 int main(int argc, char *argv[])
 {
-    // TODO: This is no longer required in windows, but how does it
-    // behave in Linux or Mac??
-    //tbb::task_scheduler_init init;
-
     ImageApp app(argc, argv);
 
     // The application accepts for now one optional argument: the file to load

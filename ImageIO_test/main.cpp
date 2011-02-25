@@ -203,9 +203,6 @@ TEST(LegacyTests, DISABLED_PfmImage)
 
 int main(int argc, char** argv) 
 {
-    // Init TBB
-	//tbb::task_scheduler_init init;
-
     ::testing::InitGoogleTest (&argc, argv);
     return RUN_ALL_TESTS();
 }
