@@ -15,14 +15,14 @@
 
 // The implementation of the nice connector
 
-#include "DoubleSpinSliderConnect.h"
-#include <QtGui>
-
 #if defined(__INTEL_COMPILER)
 # include <mathimf.h>
 #else
 # include <cmath>
 #endif
+
+#include "DoubleSpinSliderConnect.h"
+#include <QtGui>
 
 DoubleSpinSliderConnect::DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin) :
     value(0.0f)

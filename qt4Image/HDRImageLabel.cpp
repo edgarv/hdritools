@@ -15,16 +15,16 @@
 
 // Implementation file
 
-#include "HDRImageLabel.h"
-
-#include <QtGui>
-#include <QtDebug>
-
 #if defined(__INTEL_COMPILER)
 # include <mathimf.h>
 #else
 # include <cmath>
 #endif
+
+#include "HDRImageLabel.h"
+
+#include <QtGui>
+#include <QtDebug>
 
 HDRImageLabel::HDRImageLabel(QWidget *parent, Qt::WindowFlags f) : QLabel(parent, f)
 {
