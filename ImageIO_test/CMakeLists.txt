@@ -52,6 +52,13 @@ remove_definitions(-DIMAGEIO_EXPORTS)
 add_executable(ImageIO_Test ${SRCS})
 target_link_libraries(ImageIO_Test ImageIO ${GTEST_LIBRARIES})
 
+if(NOT WIN32)
+  find_package(Threads)
+  if(CMAKE_USE_PTHREADS_INIT)
+    target_link_libraries(ImageIO_Test ${CMAKE_THREAD_LIBS_INIT})
+  endif()
+endif()
+
 
 # Run the executable with CTest
 add_test(ImageIOUnitTests ImageIO_Test)
