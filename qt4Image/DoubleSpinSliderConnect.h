@@ -55,13 +55,18 @@ protected:
     QDoubleSpinBox  *spin;
 
     // The actual value of this guy
-    float value;
+    float m_value;
 
 public:
-    DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin);
+    DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin,
+        QObject * parent = (QObject*)0);
 
     // Utility function to enable/disable both components at the same time
     void setEnabled(bool isEnabled);
+
+    float value () const {
+        return m_value;
+    }
 
 };
 

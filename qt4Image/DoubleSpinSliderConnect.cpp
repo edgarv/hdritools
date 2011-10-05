@@ -24,8 +24,10 @@
 #include "DoubleSpinSliderConnect.h"
 #include <QtGui>
 
-DoubleSpinSliderConnect::DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubleSpinBox  *spin) :
-    value(0.0f)
+DoubleSpinSliderConnect::DoubleSpinSliderConnect(QAbstractSlider *slider,
+    QDoubleSpinBox  *spin, QObject * parent) :
+QObject (parent),
+m_value(0.0f)
 {
     Q_ASSERT( slider != NULL && spin != NULL );
     this->slider = slider;
@@ -42,8 +44,8 @@ DoubleSpinSliderConnect::DoubleSpinSliderConnect(QAbstractSlider *slider, QDoubl
 
 void DoubleSpinSliderConnect::setValue(float val) {
 
-    if (val != this->value) {
-        this->value = val;
+    if (val != m_value) {
+        m_value = val;
 
         // The signals will also update the slider
         spin->setValue(val);
