@@ -82,6 +82,7 @@ void QInterpolator::setValue(double value)
         }
 
         emit valueChanged(value);
+        emit valueChanged(static_cast<float> (value));
     }
 }
 

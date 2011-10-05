@@ -78,6 +78,7 @@ protected:
 
 signals:
     void valueChanged(double value);
+    void valueChanged(float value);
     
 
 private slots:
