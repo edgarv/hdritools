@@ -13,6 +13,11 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#if defined(_MSC_VER)
+# pragma once
+#endif
+#if !defined (PCG_QFIXUPDOUBLEVALIDATOR_H)
+
 #include <QDoubleValidator>
 
 class QFixupDoubleValidator : public QDoubleValidator
@@ -34,3 +39,5 @@ private:
     QString m_bottomFixup;
     QString m_topFixup;
 };
+
+#endif // PCG_QFIXUPDOUBLEVALIDATOR_H
