@@ -22,11 +22,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #if _MSC_VER >= 1600
-# include <yvals.h>
-// This macro is defined in ISO/IEC TR 19769:2004
-# if !defined(__STDC_UTF_16__)
-#  define __STDC_UTF_16__
-# endif
+# define CHAR16_T wchar_t
 #endif
 
 #include <mex.h>
