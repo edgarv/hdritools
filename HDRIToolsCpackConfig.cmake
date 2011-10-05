@@ -43,7 +43,7 @@ set(CPACK_PACKAGE_DESCRIPTION
 "HDRITools is a set of simple tools to manipulate HDR images. They include a
 viewer, a batch tonemapper, basic JNI bindings for OpenEXR and Matlab
 extensions to read and save OpenEXR files.")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.text")
 
 # Use a version of the license which doesn't have explicit line breaks
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" LICENSE_TXT)
