@@ -24,6 +24,8 @@
 #include <ImathBox.h>
 #include <ImfArray.h>
 #include <ImfRgbaFile.h>
+#include <ImfInputFile.h>
+#include <ImfChannelList.h>
 #include <ImfIO.h>
 #include <errno.h>
 
@@ -130,11 +132,69 @@ void ReadImage(Image<Rgba32F, TopDown> &img, Imf::RgbaInputFile &file)
 	}
 }
 
+
+// Version using the general purpose interface, assumes RGBA channels
+void ReadImage(Image<Rgba32F, TopDown> &img, Imf::InputFile &file)
+{
+	Imath::Box2i dw = file.header().dataWindow();
+	const int width  = dw.max.x - dw.min.x + 1;
+	const int height = dw.max.y - dw.min.y + 1;
+
+	// We will read the RGBA data, requesting full floating point values
+
+	// Build a framebuffer
+	Imf::FrameBuffer framebuffer;
+	img.Alloc(width, height);
+	float *pixels = reinterpret_cast<float *>(img.GetDataPointer());
+
+	// The code assumes that sizeof(Rgba32F) == 4 * sizeof(float), and that the
+	// pixels inside Rgba32F are at certain fixed offsets. If
+	//   Rgba32F pixel;
+	//   float * ptr = reinterpret_cast<float*>(&pixel)
+	// Then the following is true:
+	//   ptr[0] == pixel.a()
+	//   ptr[1] == pixel.b()
+	//   ptr[2] == pixel.g()
+	//   ptr[3] == pixel.r()
+	const off_t baseOffset = - 4 * (dw.min.x + dw.min.y*width);
+
+	framebuffer.insert("R", Imf::Slice(Imf::FLOAT,
+		(char*) ((pixels + 3) + baseOffset),	// base
+		sizeof(Rgba32F), sizeof(Rgba32F) * width,				// xStride,yStride
+		1,1, 0.0));												// x/y sampling, fill
+	framebuffer.insert("G", Imf::Slice(Imf::FLOAT,
+		(char*) ((pixels + 2) + baseOffset),	// base
+		sizeof(Rgba32F), sizeof(Rgba32F) * width,				// xStride,yStride
+		1,1, 0.0));												// x/y sampling, fill
+	framebuffer.insert("B", Imf::Slice(Imf::FLOAT,
+		(char*) ((pixels + 1) + baseOffset),	// base
+		sizeof(Rgba32F), sizeof(Rgba32F) * width,				// xStride,yStride
+		1,1, 0.0));												// x/y sampling, fill
+	framebuffer.insert("A", Imf::Slice(Imf::FLOAT,
+		(char*) ((pixels + 0) + baseOffset),	// base
+		sizeof(Rgba32F), sizeof(Rgba32F) * width,				// xStride,yStride
+		1,1, 1.0));												// x/y sampling, fill
+
+	// Read all the pixels from the image
+	file.setFrameBuffer (framebuffer);
+	file.readPixels (dw.min.y, dw.max.y);	// Ossia, (0, height-1);
+}
+
+
 void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename) {
 
 	try {
-		Imf::RgbaInputFile file(filename);
-		ReadImage(img, file);
+		Imf::InputFile file(filename);
+		const Imf::ChannelList & channels = file.header().channels();
+		const bool isYC = channels.findChannel("Y") != NULL  || 
+		                  channels.findChannel("RY") != NULL || 
+		                  channels.findChannel("BY") != NULL;
+		if (!isYC) {
+			ReadImage(img, file);
+		} else {
+			Imf::RgbaInputFile ycFile(filename);
+			ReadImage(img, ycFile);
+		}
 	}
 	catch (Iex::BaseExc &e) {
 
@@ -147,7 +207,7 @@ void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  istream &is) {
 
 	try {
 		StdIStream stdis(is);
-		Imf::RgbaInputFile file(stdis);
+		Imf::InputFile file(stdis);
 		ReadImage(img, file);
 	}
 	catch (Iex::BaseExc &e) {
