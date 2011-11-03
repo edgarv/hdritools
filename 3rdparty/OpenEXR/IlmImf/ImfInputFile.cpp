@@ -282,12 +282,12 @@ bufferedReadPixels (InputFile::Data* ifd, int scanLine1, int scanLine2)
 		//
                 
                 fromPtr = fromSlice.base +
-                          (y - tileRange.min.y) * fromSlice.yStride +
-                          xStart * fromSlice.xStride;
+                          (y - tileRange.min.y) * static_cast<off_t>(fromSlice.yStride) +
+                          xStart * static_cast<off_t>(fromSlice.xStride);
 
                 toPtr = toSlice.base +
-                        divp (y, toSlice.ySampling) * toSlice.yStride +
-                        divp (xStart, toSlice.xSampling) * toSlice.xStride;
+                        divp (y, toSlice.ySampling) * static_cast<off_t>(toSlice.yStride) +
+                        divp (xStart, toSlice.xSampling) * static_cast<off_t>(toSlice.xStride);
 
 		//
                 // Copy all pixels for the scanline in this row of tiles
