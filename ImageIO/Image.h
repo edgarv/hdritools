@@ -177,7 +177,7 @@ namespace pcg {
 			w = h = 0;
 		}
 
-		// Returns a reference to the i-th pixel in the j-th column (indices are zero-based)
+		// Returns a reference to the i-th pixel in the j-th scanline (indices are zero-based)
 		// according to the scanline order of the image.
 		T& ElementAt(int i, int j, ScanLineMode mode = S) const {
 			assert(w*j+i >=0 && w*j+i < w*h && j >= 0 && j < h && i >=0 && i < w);
