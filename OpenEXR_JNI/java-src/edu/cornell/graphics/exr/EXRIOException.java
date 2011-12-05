@@ -26,10 +26,10 @@ import java.io.IOException;
  */
 public class EXRIOException extends IOException {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	public EXRIOException(){}
-	public EXRIOException(String message) {
-		super(message);
-	}
+    public EXRIOException(){}
+    public EXRIOException(String message) {
+        super(message);
+    }
 }
