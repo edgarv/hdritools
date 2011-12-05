@@ -96,7 +96,7 @@ public class Attributes {
 	}
 	
 	/**
-	 * The default constructor sets automagically the owner and the
+	 * The default constructor sets automatically the owner and the
 	 * date fields. The owner will be the value of the System
 	 * property <code>user.name</code> as defined in 
 	 * {@link System#getProperties()}. All other fields are left empty.
@@ -113,7 +113,7 @@ public class Attributes {
 	 * @param cal Calendar set up with the desired creation date
 	 *                     or <code>null</code>.
 	 */
-	public void setDate(Calendar cal) {
+	public final void setDate(Calendar cal) {
 		
 		if (cal == null) {
 			capDate = null;
@@ -141,7 +141,7 @@ public class Attributes {
 	 * 
 	 * @param date the desired creation date or <code>null</code>.
 	 */
-	public void setDate(Date date) {
+	public final void setDate(Date date) {
 		
 		if (date == null) {
 			capDate = null;
@@ -161,7 +161,7 @@ public class Attributes {
 	}
 	
 	/** Sets the owner, or <code>null</code>. */
-	public void setOwner(String owner) {
+	public final void setOwner(String owner) {
 		this.owner = owner;
 	}
 
@@ -171,7 +171,7 @@ public class Attributes {
 	}
 
 	/** Sets the comments, or <code>null</code>. */
-	public void setComments(String comments) {
+	public final void setComments(String comments) {
 		this.comments = comments;
 	}
 	
