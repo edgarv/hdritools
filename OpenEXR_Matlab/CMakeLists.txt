@@ -330,15 +330,21 @@ if(OpenEXR_DEFINITIONS)
 endif()
 
 
-# Create the two modules
+# Create the MEX modules
 add_mex(exrread  exrread.cpp  ${COMMON_SRC})
 add_mex(exrwrite exrwrite.cpp ${COMMON_SRC})
+add_mex(exrinfo  exrinfo.cpp  ImfToMatlab.h ImfToMatlab.cpp ${COMMON_SRC})
+add_mex(exrreadchannels exrreadchannels.cpp ${COMMON_SRC})
 
 
 # Links them against OpenEXR
-set(MATLAB_MEX_TARGETS exrread exrwrite)
+set(MATLAB_MEX_TARGETS exrread exrwrite exrinfo exrreadchannels)
 if (MATLAB_UNIVERSAL)
-  list(APPEND MATLAB_MEX_TARGETS exrread_extra exrwrite_extra)
+  set(mex_targets_extra "")
+  foreach(mextarget ${MATLAB_MEX_TARGETS})
+    list(APPEND mex_targets_extra "${mextarget}_extra")
+  endforeach()
+  list(APPEND MATLAB_MEX_TARGETS ${mex_targets_extra})
 endif()
 foreach(mextarget ${MATLAB_MEX_TARGETS})
   target_link_libraries(${mextarget} ${OpenEXR_LIBRARIES})
@@ -350,6 +356,6 @@ install(TARGETS ${MATLAB_MEX_TARGETS}
   RUNTIME DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   LIBRARY DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
-install(FILES exrread.m exrwrite.m
+install(FILES exrread.m exrwrite.m exrinfo.m exrreadchannels.m
   DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
