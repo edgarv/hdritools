@@ -1,25 +1,19 @@
-//////////////////////////////////////////////////////////////////////////
-//
-// exrread.cpp
-//
-// Matlab interface for reading a float image to exr file
-//
-// img = exrread(filename)
-//
-// img is a 3d (color) hdr image (when filename is gray image, img's 3 
-// channels are the same).
-//
-// see also exrwrite.cpp
-// 
-// Jinwei Gu. 2006/02/10
-// jwgu@cs.columbia.edu
-//
-// Modified by Edgar Velazquez-Armendariz
-// <cs#cornell#edu - eva5>
-//
-// When using mex to compiling it in matlab, make sure to use VC7.1 or above
-// instead of VC6. 
-//////////////////////////////////////////////////////////////////////////
+/*============================================================================
+  HDRITools - High Dynamic Range Image Tools
+  Copyright 2008-2011 Program of Computer Graphics, Cornell University
+
+  Distributed under the OSI-approved MIT License (the "License");
+  see accompanying file LICENSE for details.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the License for more information.
+ ----------------------------------------------------------------------------- 
+ Primary author:
+     Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
+ Originally based on code by:
+     Jinwei Gu <jwgu@cs.columbia.edu> (2006/02/10)
+============================================================================*/
 
 #if _MSC_VER >= 1600
 # define CHAR16_T wchar_t
@@ -32,11 +26,131 @@
 #include <ImathBox.h>
 #include <ImfRgba.h>
 #include <ImfRgbaFile.h>
+#include <ImfInputFile.h>
+#include <ImfChannelList.h>
+#include <ImfArray.h>
+
 #include <string>
 
 using namespace Imf;
 using namespace Imath;
 
+
+
+namespace
+{
+
+// Read the RGB pixels using the simplfied interface
+void readPixels(float * buffer, RgbaInputFile & file)
+{
+    const Box2i & dw = file.header().dataWindow();
+    const int width  = dw.max.x - dw.min.x + 1;
+    const int height = dw.max.y - dw.min.y + 1;
+
+    Array2D<Rgba> halfPixels(height, width);
+    const off_t offset = - dw.min.x - dw.min.y * width;
+
+    file.setFrameBuffer(&halfPixels[0][0] + offset, 1, width);
+    file.readPixels(dw.min.y, dw.max.y);
+
+    // Write into the target buffer
+    const off_t planeOffset = width * height;
+    float * r = buffer;
+    float * g = r + planeOffset;
+    float * b = g + planeOffset;
+    const off_t xStride = height;
+    const off_t yStride = 1;
+
+    // Traverse the image in column-major order. Perhaps it is more
+    // efficient to copy the data in the same order and then call
+    // the native Matlab transpose, but this should be decent enough.
+    for (int h = 0; h < height; ++h) {
+        const Rgba* scanline = halfPixels[h];
+        off_t xOffset = 0;
+        for (int w = 0; w < width; ++w, xOffset += xStride) {
+            const Rgba & px = scanline[w];
+            const off_t idx = xOffset + h*yStride;
+            r[idx] = px.r;
+            g[idx] = px.g;
+            b[idx] = px.b;
+        }
+    }
+}
+
+
+// Read the RGB channels using the general interface. This load
+// only the R,G,B channels of the image
+void readPixels(float * buffer, InputFile & file)
+{
+    const Box2i & dw = file.header().dataWindow();
+    const int width  = dw.max.x - dw.min.x + 1;
+    const int height = dw.max.y - dw.min.y + 1;
+
+    const off_t planeOffset = width * height;
+    float * r = buffer;
+    float * g = r + planeOffset;
+    float * b = g + planeOffset;
+
+    FrameBuffer framebuffer;
+    const off_t offset = - dw.min.x - dw.min.y * width;
+
+    const ChannelList & channelList = file.header().channels();
+    const char* channels[] = {"R", "G", "B"};
+    float* data[] = {r, g, b};
+    for (int i = 0; i < 3; ++i) {
+
+        // Get the appropriate sampling factors
+        int xSampling = 1, ySampling = 1;
+        ChannelList::ConstIterator cIt = channelList.find(channels[i]);
+        if (cIt != channelList.end()) {
+            xSampling = cIt.channel().xSampling;
+            ySampling = cIt.channel().ySampling;
+        }
+
+        // Insert the slice in the framebuffer. The "weird" strides are because
+        // Matlab uses column-major order
+        framebuffer.insert(channels[i], Slice(FLOAT, (char*)(data[i] + offset),
+            sizeof(float) * height, // x-stride
+            sizeof(float),          // y-stride
+            xSampling, ySampling));
+    }
+
+    // Finally read the pixels
+    file.setFrameBuffer(framebuffer);
+    file.readPixels(dw.min.y, dw.max.y);
+}
+
+
+// Main entry point. It returns an mxArray* with the appropriate RGB data
+// loaded in the matlab way (column major, planar)
+mxArray * readPixels(const char * filename)
+{
+    // Check if it is a YC file, so that we use the RGBA interface to decode it
+    InputFile file(filename);
+    const ChannelList & channels = file.header().channels();
+    const bool isYC = channels.findChannel("Y")  != NULL || 
+                      channels.findChannel("RY") != NULL || 
+                      channels.findChannel("BY") != NULL;
+
+    // Allocate the requied space
+    const Box2i & dw = file.header().dataWindow();
+    const int width  = dw.max.x - dw.min.x + 1;
+    const int height = dw.max.y - dw.min.y + 1;
+    const mwSize dims[] = {height, width, 3};
+    mxArray * data = mxCreateNumericArray(3, &dims[0], mxSINGLE_CLASS, mxREAL);
+    float * buffer = static_cast<float*> (mxGetData(data));
+
+    if (!isYC) {
+        readPixels(buffer, file);
+    } else {
+        Imf::RgbaInputFile ycFile(filename);
+        readPixels(buffer, ycFile);
+    }
+
+    return data;
+}
+
+} // namespace
 
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
@@ -59,38 +173,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mxFree(inputfilePtr); inputfilePtr = static_cast<char*>(0);
     
     try {
-        RgbaInputFile file(inputfile.c_str());
-        Box2i dw = file.dataWindow();
-
-        const int width  = dw.max.x - dw.min.x + 1;
-        const int height = dw.max.y - dw.min.y + 1;
-
-        // Create the helper data on the Matlab heap, so that it's
-        // deallocated automatically
-        Rgba *pixels = (Rgba*)mxCalloc(width*height, sizeof(Rgba));
-
-        file.setFrameBuffer(pixels-dw.min.x-dw.min.y*width, 1, width);
-        file.readPixels(dw.min.y, dw.max.y);
-
-        mwSize dims[3];
-        dims[0]=height; dims[1]=width; dims[2]=3;
-        plhs[0] = mxCreateNumericArray(3, dims, mxSINGLE_CLASS, mxREAL); 
-        float *img = (float*)mxGetPr(plhs[0]);
-        const int A = width*height;
-
-        for(int i=0; i<height; i++)
-        for(int j=0; j<width; j++)
-        {
-            const int k = i*width+j;
-            const int m = j*height+i;
-
-            img[m    ] = pixels[k].r;
-            img[A+m  ] = pixels[k].g;
-            img[2*A+m] = pixels[k].b;
-        }
-        
+        plhs[0] = readPixels(inputfile.c_str());        
     }
-    catch( std::exception &e ) {
+    catch(Iex::BaseExc &e) {
         mexErrMsgIdAndTxt("OpenEXR:exception", e.what());
     }
 }
