@@ -309,7 +309,7 @@ else(NOT MSVC)
 endif(NOT MSVC)
 
 # Creates the projects.
-set(COMMON_SRC util.h init.cpp)
+set(COMMON_SRC util.h util.cpp)
 if(UNIX AND MEX_VERSION_SRC)
   list(APPEND COMMON_SRC ${MEX_VERSION_SRC})
 endif()
