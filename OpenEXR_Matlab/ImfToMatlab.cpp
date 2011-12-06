@@ -151,7 +151,7 @@ inline mxArray * fromVector(const VecType<T> & vec)
 {
 	const int ndim = VecType<T>::dimensions();
 	mxArray *mArr = mxCreateNumericMatrix(1, ndim, mex_traits<T>::classID, mxREAL);
-	T * ptr = reinterpret_cast<T*>(mxGetPr(mArr));
+	T * ptr = static_cast<T*>(mxGetData(mArr));
 	for (int i = 0; i != ndim; ++i) {
 		ptr[i] = vec[i];
 	}
@@ -179,7 +179,7 @@ inline mxArray * fromMatrix(const MatrixType<T> &m)
 	// Imath has only square, 3x3 or 4x4 matrices
 	const int ndim = MatrixType<T>::dimensions();
 	mxArray *mArr = mxCreateNumericMatrix(ndim, ndim, mex_traits<T>::classID, mxREAL);
-	T * ptr = reinterpret_cast<T*>(mxGetPr(mArr));
+	T * ptr = static_cast<T*>(mxGetData(mArr));
 	// Matlab uses column-major matrices
 	for (int j = 0; j < ndim; ++j) {
 		for (int i = 0; i < ndim; ++i) {
