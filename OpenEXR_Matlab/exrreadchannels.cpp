@@ -98,6 +98,7 @@ void getRequestedChannels(int nrhs, const mxArray *prhs[],
 // Prepares a framebuffer for the requested channels, allocating also the
 // appropriate Matlab memory
 void prepareFrameBuffer(FrameBuffer & fb, const Box2i & dataWindow,
+    const ChannelList & channels,
     const std::vector<std::string> & requestedChannels,
     std::vector<mxArray *> & outMatlabData)
 {
@@ -118,13 +119,21 @@ void prepareFrameBuffer(FrameBuffer & fb, const Box2i & dataWindow,
         outMatlabData[i] = data;
 
         float * ptr = static_cast<float*>(mxGetData(data));
+
+        // Get the appropriate sampling factors
+        int xSampling = 1, ySampling = 1;
+        ChannelList::ConstIterator cIt = channels.find(requestedChannels[i]);
+        if (cIt != channels.end()) {
+            xSampling = cIt.channel().xSampling;
+            ySampling = cIt.channel().ySampling;
+        }
         
         // Insert the slice in the framebuffer. The "weird" strides are because
         // Matlab uses column-major order
         fb.insert(requestedChannels[i], Slice(FLOAT, (char*)(ptr + offset),
-            sizeof(float) * height,
-            sizeof(float),
-            1, 1 /* x, y sampling */));
+            sizeof(float) * height, // x-stride
+            sizeof(float),          // y-stride
+            xSampling, ySampling));
     }
 }
 
@@ -214,9 +223,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
         // Prepare the framebuffer
         const Box2i & dw = img.header().dataWindow();
+        const ChannelList & imgChannels = img.header().channels();
         std::vector<mxArray *> mxData(channelNames.size());
         FrameBuffer framebuffer;
-        prepareFrameBuffer(framebuffer, dw, channelNames, mxData);
+        prepareFrameBuffer(framebuffer, dw, imgChannels, channelNames, mxData);
 
         // Actually read the pixels
         img.setFrameBuffer(framebuffer);
