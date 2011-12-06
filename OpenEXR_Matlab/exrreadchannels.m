@@ -10,11 +10,17 @@ function exrreadchannels( filename )
 %   Note that if there is only a single channel the result is just a
 %   matrix with the value of the channel.
 %
+%   M = EXRREADCHANNELS(FILENAME, CARRAY) behaves as above, but it
+%   receives a cell array with the names of the desired channels.
+%
 %   [M1,...] = EXRREADCHANNELS(FILENAME,C1,...) reads the channels
 %   specified by the strings C1,C2,...,Cn and stores the channel data in
 %   the corresponding matrices M1,M2,...,Mn.
 %
-%   For all these methods it is undefined to request a channel which does
+%   [M1,...] = EXRREADCHANNELS(FILENAME, CARRAY) behaves as above, but it
+%   receives a cell array with the names of the desired channels.
+%
+%   For all these methods it is an error to request a channel which does
 %   not exist. Use EXRINFO to get a list of the channels available for
 %   a given file.
 %
