@@ -187,8 +187,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     /* Check for proper number of arguments */
     if (nrhs < 1) {
         mexErrMsgIdAndTxt("OpenEXR:argument", "Too few arguments.");
-    } else if (nlhs > 1) {
-        mexErrMsgIdAndTxt("OpenEXR:argument", "Too many output arguments.");
     }
 
     char *inputfilePtr = mxArrayToString(prhs[0]);
@@ -202,6 +200,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // Get the strings of explicitly requested channels channels
     std::vector<std::string> channelNames;
     getRequestedChannels(nrhs, prhs, channelNames);
+
+    // Validate the output arguments
+    if (nlhs > 1 && nlhs != channelNames.size()) {
+        mexErrMsgIdAndTxt("OpenEXR:argument",
+            "Invalid number of output arguments.");
+    }
     
 
     try {
@@ -220,6 +224,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             // If there are no explicitly required channels, read all
             getChannelNames(img.header().channels(), channelNames);
         }
+        assert(!channelNames.empty());
 
         // Prepare the framebuffer
         const Box2i & dw = img.header().dataWindow();
@@ -233,8 +238,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         img.readPixels(dw.min.y, dw.max.y);
 
         // Assemble the result
-        mxArray * resultMap = buildMap(channelNames, mxData);
-        plhs[0] = resultMap;
+        if (nlhs <= 1) {
+            // Return a map if there are multiple channels, otherwise the data
+            if (channelNames.size() != 1) {
+                mxArray * resultMap = buildMap(channelNames, mxData);
+                plhs[0] = resultMap;
+            } else {
+                plhs[0] = mxData[0];
+            }
+        }
+        else {
+            // Multiple output arguments, assign the data directly
+            assert(nlhs == channelNames.size());
+            for (int i = 0; i < nlhs; ++i) {
+                plhs[i] = mxData[i];
+            }
+        }
     }
     catch( Iex::BaseExc &e ) {
         mexErrMsgIdAndTxt("OpenEXR:exception", e.what());
