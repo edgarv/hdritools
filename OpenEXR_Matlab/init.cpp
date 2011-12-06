@@ -13,9 +13,8 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
-/** Initialization file, will be called upon loading the mex module */
+#include "util.h"
 
-/* First part: includes */
 #if defined(_WIN32)
   #define WINDOWS_LEAN_AND_MEAN
   #include <windows.h>
@@ -23,67 +22,55 @@
   #include <unistd.h>
 #endif
 
+#include <mex.h>
+
 #include <ImfThreading.h>
 
-/* Second part: function to get the number of CPUs */
-int get_num_cpus()
+
+namespace
+{
+
+// Actual function to get the number of CPUs
+inline int get_num_cpus()
 {
 #if defined(_WIN32)
-	SYSTEM_INFO info;
-	GetSystemInfo(&info);
-	const int n = (int)info.dwNumberOfProcessors;
-	return n > 0 ? n : 1;
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    const int n = (int)info.dwNumberOfProcessors;
+    return n > 0 ? n : 1;
 #elif USE_SYSCONF
-	const int n = sysconf(_SC_NPROCESSORS_ONLN);
-	return n > 0 ? n : 1;
+    const int n = sysconf(_SC_NPROCESSORS_ONLN);
+    return n > 0 ? n : 1;
 #else
-	// Nothing better
-	return 1;
+    // Nothing better
+    return 1;
 #endif
-
 }
 
-/* Third part: Common function call to do the initialization */
-inline void setImfThreads()
+} // namespace
+
+
+int pcg::getNumCPUs()
 {
-	const int n = get_num_cpus();
-	Imf::setGlobalThreadCount(n);
+    static int numCPUs = get_num_cpus();
+    return numCPUs;
 }
 
 
-/* Last part: actual shared library initialization */
-#if defined(_WIN32)
-
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-					 )
+// Exit callback
+extern "C" void mexEXRExitCallback(void)
 {
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-		setImfThreads();
-		break;
-
-	case DLL_THREAD_ATTACH:
-		break;
-
-	case DLL_THREAD_DETACH:
-		break;
-
-	case DLL_PROCESS_DETACH:
-		break;
-	}
-	return TRUE;
+    Imf::setGlobalThreadCount(0);
 }
 
 
-#else
-
-// Called when the library is loaded and before dlopen() returns
-void __attribute__ ((constructor)) mex_openexr_load(void)
+void pcg::mexEXRInit()
 {
-    setImfThreads();
+    static bool initialized = false;
+    if (!initialized) {
+        const int numCPUs = getNumCPUs();
+        Imf::setGlobalThreadCount(numCPUs);
+        mexAtExit(mexEXRExitCallback);
+        initialized = true;
+    }
 }
-
-#endif

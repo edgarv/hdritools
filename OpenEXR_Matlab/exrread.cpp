@@ -25,6 +25,8 @@
 # define CHAR16_T wchar_t
 #endif
 
+#include "util.h"
+
 #include <mex.h>
 
 #include <ImathBox.h>
@@ -39,6 +41,8 @@ using namespace Imath;
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 { 
+    pcg::mexEXRInit();
+
     /* Check for proper number of arguments */
     if (nrhs != 1) {
         mexErrMsgIdAndTxt("OpenEXR:argument", "The filename is required.");

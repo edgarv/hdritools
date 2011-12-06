@@ -308,16 +308,10 @@ else(NOT MSVC)
   add_definitions(-DUSE_SYSCONF=0)
 endif(NOT MSVC)
 
-# Creates the projects. Note that using init.cpp in Mac crashes Matlab
-if (MSVC)
-  set(COMMON_SRC init.cpp)
-elseif(UNIX)
-  if (NOT APPLE)
-    set(COMMON_SRC init.cpp)
-  endif()
-  if (MEX_VERSION_SRC)
-    list(APPEND COMMON_SRC ${MEX_VERSION_SRC})
-  endif()
+# Creates the projects.
+set(COMMON_SRC util.h init.cpp)
+if(UNIX AND MEX_VERSION_SRC)
+  list(APPEND COMMON_SRC ${MEX_VERSION_SRC})
 endif()
 
 # OpenEXR definitions (only used in windows dll anyway)

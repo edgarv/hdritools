@@ -24,6 +24,8 @@
 # define CHAR16_T wchar_t
 #endif
 
+#include "util.h"
+
 #include <mex.h>
 #include <matrix.h>
 #include <tmwtypes.h>   // Matlab types
@@ -61,6 +63,8 @@ void copyPixels(Rgba *pixels, const T *img, int width, int height,
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 {
+    pcg::mexEXRInit();
+
     /* Check for proper number of arguments */
     if (nrhs != 2) {
         mexErrMsgIdAndTxt("OpenEXR:argument", "Two input arguments required.");
