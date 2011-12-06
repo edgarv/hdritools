@@ -192,12 +192,8 @@ else(MSVC)
   message(FATAL_ERROR "TODO: Add support for the ${CMAKE_SYSTEM_NAME} platform!")
 endif(MSVC)
 
-# The mac uses a different type of library target
-if (NOT APPLE)
-  set(MEX_TARGET_TYPE "SHARED")
-else()
-  set(MEX_TARGET_TYPE "MODULE")
-endif()
+# Type of library target
+set(MEX_TARGET_TYPE "MODULE")
 
 # Find the basic mex libraries
 find_library(MATLAB_MX_LIBRARY  NAMES mx libmx 
