@@ -44,6 +44,20 @@ namespace pcg {
 			B44A
 		};
 
+		// Modes indicating which channels to write
+		enum RgbaChannels {
+			WRITE_R,
+			WRITE_G,
+			WRITE_B,
+			WRITE_A,
+			WRITE_RGB,
+			WRITE_RGBA,
+			WRITE_YC,   // Luminance, chroma
+			WRITE_YCA,  // Luminance, chroma, alpha
+			WRITE_Y,    // Luminance only
+			WRITE_YA    // Luminance, alpha
+		};
+
 		static void Load(Image<Rgba32F, TopDown> &img, const char *filename) {
 			LoadHelper(img, filename);
 		}
@@ -71,8 +85,16 @@ namespace pcg {
 		}
 
 		// To save the images with a different scanline order we only set a flag!
-		static void IMAGEIO_API Save(Image<Rgba32F, TopDown> &img, const char *filename, Compression compression = ZIP);
-		static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename, Compression compression = ZIP);
+		static void IMAGEIO_API Save(Image<Rgba32F, TopDown> &img, const char *filename,
+			Compression compression = ZIP);
+		static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename,
+			Compression compression = ZIP);
+
+		// New methods to specify the channels to write, to preserve binary compatibility
+		static void IMAGEIO_API Save(Image<Rgba32F, TopDown> &img, const char *filename,
+			RgbaChannels rgbaChannels, Compression compression = ZIP);
+		static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename,
+			RgbaChannels rgbaChannels, Compression compression = ZIP);
 
 	private:
 		static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, const char *filename);
@@ -80,8 +102,8 @@ namespace pcg {
 
 		// Declare the super utility function for saving
 		template<ScanLineMode S>
-		static void SaveHelper(Image<Rgba32F, S> &img, const char *filename, Compression compression = ZIP);
-
+		static void SaveHelper(Image<Rgba32F, S> &img, const char *filename,
+			Compression compression, RgbaChannels rgbaChannels);
 	};
 }
 

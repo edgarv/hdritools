@@ -248,8 +248,42 @@ inline Imf::Compression getImfCompression(OpenEXRIO::Compression c) {
 
 }
 
+
+// Small function to translate between our enum and the actual Ilm type
+inline Imf::RgbaChannels getImfRgbaChannels(OpenEXRIO::RgbaChannels channels)
+{
+	switch(channels) {
+	case OpenEXRIO::WRITE_R:
+		return Imf::WRITE_R;
+	case OpenEXRIO::WRITE_G:
+		return Imf::WRITE_G;
+	case OpenEXRIO::WRITE_B:
+		return Imf::WRITE_B;
+	case OpenEXRIO::WRITE_A:
+		return Imf::WRITE_A;
+	case OpenEXRIO::WRITE_RGB:
+		return Imf::WRITE_RGB;
+	case OpenEXRIO::WRITE_RGBA:
+		return Imf::WRITE_RGBA;
+	case OpenEXRIO::WRITE_YC:
+		return Imf::WRITE_YC;
+	case OpenEXRIO::WRITE_YCA:
+		return Imf::WRITE_YCA;
+	case OpenEXRIO::WRITE_Y:
+		return Imf::WRITE_Y;
+	case OpenEXRIO::WRITE_YA:
+		return Imf::WRITE_YA;
+
+	default:
+		assert(false);
+		return Imf::WRITE_RGBA;
+	}
+}
+
+
 template<ScanLineMode S>
-void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename, Compression compression)
+void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename,
+	Compression compression, RgbaChannels rgbaChannels)
 {
 	try {
 		const int width  = img.Width();
@@ -268,13 +302,14 @@ void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename, Compres
 		}
 
 		// Retrieve the compression type and the scanline order to use
-		const Imf::Compression c = getImfCompression(compression);
+		const Imf::Compression c   = getImfCompression(compression);
+		const Imf::RgbaChannels cn = getImfRgbaChannels(rgbaChannels);
 		const Imf::LineOrder order = S == TopDown ? Imf::INCREASING_Y : Imf::DECREASING_Y;
 
 		// Hyper-easy IlmImf-based file creation:
 		// Filename, width, height, channels, pixel aspect ratio, screen windows center, 
 		// screen window width, line order, compression
-		Imf::RgbaOutputFile file(filename, width, height, Imf::WRITE_RGB, 1, 
+		Imf::RgbaOutputFile file(filename, width, height, cn, 1, 
 			Imath::V2f(0,0), 1, order, c);
 		file.setFrameBuffer(&halfPixels[0][0], 1, width);
 		file.writePixels(height);
@@ -288,9 +323,24 @@ void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename, Compres
 
 
 // Actually instanciate the saving template
-void OpenEXRIO::Save(Image<Rgba32F, TopDown> &img, const char *filename, Compression compression) {
-	SaveHelper(img, filename);
+void OpenEXRIO::Save(Image<Rgba32F, TopDown> &img, const char *filename,
+	Compression compression)
+{
+	SaveHelper(img, filename, compression, WRITE_RGB);
 }
-void OpenEXRIO::Save(Image<Rgba32F, BottomUp> &img, const char *filename, Compression compression) {
-	SaveHelper(img, filename);
+void OpenEXRIO::Save(Image<Rgba32F, BottomUp> &img, const char *filename,
+	Compression compression)
+{
+	SaveHelper(img, filename, compression, WRITE_RGB);
+}
+
+void OpenEXRIO::Save(Image<Rgba32F, TopDown> &img, const char *filename,
+	RgbaChannels rgbaChannels, Compression compression)
+{
+	SaveHelper(img, filename, compression, rgbaChannels);
+}
+void OpenEXRIO::Save(Image<Rgba32F, BottomUp> &img, const char *filename,
+	RgbaChannels rgbaChannels, Compression compression)
+{
+	SaveHelper(img, filename, compression, rgbaChannels);
 }
