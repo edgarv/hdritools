@@ -92,7 +92,11 @@ void readPixels(float * buffer, InputFile & file)
     float * b = g + planeOffset;
 
     FrameBuffer framebuffer;
-    const off_t offset = - dw.min.x - dw.min.y * width;
+
+    // The "weird" strides are because Matlab uses column-major order
+    const int xStride = height;
+    const int yStride = 1;
+    const off_t offset = - dw.min.x * xStride - dw.min.y * yStride;
 
     const ChannelList & channelList = file.header().channels();
     const char* channels[] = {"R", "G", "B"};
@@ -107,11 +111,10 @@ void readPixels(float * buffer, InputFile & file)
             ySampling = cIt.channel().ySampling;
         }
 
-        // Insert the slice in the framebuffer. The "weird" strides are because
-        // Matlab uses column-major order
+        // Insert the slice in the framebuffer
         framebuffer.insert(channels[i], Slice(FLOAT, (char*)(data[i] + offset),
-            sizeof(float) * height, // x-stride
-            sizeof(float),          // y-stride
+            sizeof(float) * xStride,
+            sizeof(float) * yStride,
             xSampling, ySampling));
     }
 

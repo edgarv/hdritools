@@ -111,8 +111,12 @@ void prepareFrameBuffer(FrameBuffer & fb, const Box2i & dataWindow,
     const int width  = dw.max.x - dw.min.x + 1;
     const int height = dw.max.y - dw.min.y + 1;
 
+    // The "weird" strides are because Matlab uses column-major order
+    const int xStride = height;
+    const int yStride = 1;
+
     // Offset for all the slices
-    const off_t offset = - (dw.min.x + dw.min.y*width);
+    const off_t offset = - (dw.min.x * xStride + dw.min.y * yStride);
 
     for (size_t i = 0; i != requestedChannels.size(); ++i) {
         // Allocate the memory
@@ -130,11 +134,10 @@ void prepareFrameBuffer(FrameBuffer & fb, const Box2i & dataWindow,
             ySampling = cIt.channel().ySampling;
         }
         
-        // Insert the slice in the framebuffer. The "weird" strides are because
-        // Matlab uses column-major order
+        // Insert the slice in the framebuffer
         fb.insert(requestedChannels[i], Slice(FLOAT, (char*)(ptr + offset),
-            sizeof(float) * height, // x-stride
-            sizeof(float),          // y-stride
+            sizeof(float) * xStride,
+            sizeof(float) * yStride,
             xSampling, ySampling));
     }
 }
