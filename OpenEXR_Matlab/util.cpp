@@ -68,7 +68,8 @@ void pcg::mexEXRInit()
 {
     static bool initialized = false;
     if (!initialized) {
-        const int numCPUs = getNumCPUs();
+        // Use up to 75% of CPUs to avoid oversubscription
+        const int numCPUs = (3*getNumCPUs() + 3) / 4;
         Imf::setGlobalThreadCount(numCPUs);
         mexAtExit(mexEXRExitCallback);
         initialized = true;
