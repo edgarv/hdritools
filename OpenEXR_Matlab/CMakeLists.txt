@@ -325,10 +325,12 @@ add_mex(exrread  exrread.cpp  ${COMMON_SRC})
 add_mex(exrwrite exrwrite.cpp ${COMMON_SRC})
 add_mex(exrinfo  exrinfo.cpp  ImfToMatlab.h ImfToMatlab.cpp ${COMMON_SRC})
 add_mex(exrreadchannels exrreadchannels.cpp ${COMMON_SRC})
+add_mex(exrwritechannels exrwritechannels.cpp ${COMMON_SRC})
 
 
 # Links them against OpenEXR
-set(MATLAB_MEX_TARGETS exrread exrwrite exrinfo exrreadchannels)
+set(MATLAB_MEX_TARGETS exrread exrwrite exrinfo
+  exrreadchannels exrwritechannels)
 if (MATLAB_UNIVERSAL)
   set(mex_targets_extra "")
   foreach(mextarget ${MATLAB_MEX_TARGETS})
