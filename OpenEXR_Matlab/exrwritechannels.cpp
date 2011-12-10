@@ -21,6 +21,13 @@
 
 #include <mex.h>
 
+#include <ImfAttribute.h>
+#include <ImfPixelType.h>
+#include <ImfCompression.h>
+#include <ImfOutputFile.h>
+#include <ImfHeader.h>
+#include <ImfChannelList.h>
+
 #include <string>
 #include <vector>
 #include <utility>
@@ -37,6 +44,160 @@ struct MatricesVec
 	mwSize N;
 	std::vector<std::pair<const mxArray *, mxClassID> > data;
 };
+
+// Class to be queried for actual data during the OpenEXR file creation
+class Data {
+
+public:
+	Data(const std::string & filename,
+		 Imf::Compression compression, Imf::PixelType targetPixelType,
+		 const std::vector<std::string> & channelNames,
+		 const MatricesVec channelData);
+
+	~Data();
+
+	typedef std::pair<std::string, const float *> DataPair;
+
+	// Write the OpenEXR file. Note that this method may throw exceptions
+	void writeEXR() const;
+
+	inline size_t size() const {
+		return m_channels.size();
+	}
+
+	inline const DataPair & operator[] (size_t index) const {
+		return m_channels[index];
+	}
+
+	inline const std::string & channelName (size_t index) const {
+		return m_channels[index].first;
+	}
+
+	inline const float * channelData (size_t index) const {
+		return m_channels[index].second;
+	}
+
+	inline size_t xStride() const {
+		return m_height;
+	}
+
+	inline size_t yStride() const {
+		return 1;
+	}
+
+	inline size_t width() const {
+		return m_width;
+	}
+
+	inline size_t height() const {
+		return m_height;
+	}
+
+	inline const std::string & filename() const {
+		return m_filename;
+	}
+
+	inline Imf::Compression compression() const {
+		return m_compression;
+	}
+
+	inline Imf::PixelType type() const {
+		return m_type;
+	}
+
+
+private:
+	
+	const std::string m_filename;
+	const Imf::Compression m_compression;
+	const Imf::PixelType m_type;
+	const size_t m_width;
+	const size_t m_height;
+	
+	// Pairs of channels and a pointer to the data
+	std::vector<DataPair> m_channels;
+
+	// Matlab managed copies in single format
+	std::vector<const mxArray *> m_data;
+
+	// Data created through mexCallMATLAB
+	std::vector<mxArray *> m_allocated;
+};
+
+
+Data::Data(const std::string & filename,
+	       Imf::Compression compression, Imf::PixelType targetPixelType,
+	       const std::vector<std::string> & channelNames,
+	       const MatricesVec channelData) :
+m_filename(filename), m_compression(compression), m_type(targetPixelType),
+m_width(channelData.N), m_height(channelData.M)
+{
+	assert(!channelNames.empty());
+	assert(channelNames.size() == channelData.data.size());
+
+	for (size_t i = 0; i < channelNames.size(); ++i) {
+		if (channelData.data[i].second != mxSINGLE_CLASS) {
+			// If the type is not float, convert
+			mxArray * origData   = const_cast<mxArray *>(channelData.data[i].first);
+			mxArray * singleData = NULL;
+			if (mexCallMATLAB(1, &singleData, 1, &origData, "single") != 0) {
+				mexErrMsgTxt("Could not convert data to single.");
+			}
+			m_data.push_back(singleData);
+			m_allocated.push_back(singleData);
+		}
+		else {
+			// The Matlab data is already single
+			m_data.push_back(channelData.data[i].first);
+		}
+
+		DataPair pair(channelNames[i], static_cast<float *>(mxGetData(m_data[i])));
+		m_channels.push_back(pair);
+	}
+}
+
+
+Data::~Data()
+{
+	for (size_t i = 0; i != m_allocated.size(); ++i) {
+		mxDestroyArray(m_allocated[i]);
+	}
+}
+
+
+void Data::writeEXR() const
+{
+	using namespace Imf;
+	using namespace Imath;
+
+	Header header(static_cast<int>(width()), static_cast<int>(height()),
+		1.0f,             // aspect ratio
+		V2f(0.0f, 0.0f), // screen window center,
+		1.0f,            // screen window width,
+		INCREASING_Y,    // line order
+		compression());
+
+	// Insert channels in the header
+	for (size_t i = 0; i != size(); ++i) {
+		header.channels().insert(channelName(i), Channel(type()));
+	}
+
+	OutputFile file(filename().c_str(), header);
+
+	// Create and populate the frame buffer
+	FrameBuffer frameBuffer;
+	for (size_t i = 0; i != size(); ++i) {
+		char * base = reinterpret_cast<char*>(const_cast<float*>(channelData(i)));
+		frameBuffer.insert(channelName(i),     // name
+			Slice(FLOAT,                       // type
+				  base,                        // base
+				  sizeof(float) * xStride(),   // xStride
+				  sizeof(float) * yStride())); // yStride
+	}
+
+	file.setFrameBuffer(frameBuffer);
+	file.writePixels(static_cast<int>(height()));
+}
 
 
 
@@ -272,16 +433,86 @@ bool toNative(const mxArray * pa,
 }
 
 
+// Converto to a pixel type from a Matlab String
+template <>
+bool toNative(const mxArray * pa, Imf::PixelType & outType)
+{
+	char * data = mxArrayToString(pa);
+	if (data == NULL) {
+		return false;
+	}
+
+	bool result = true;
+	if (strcmp(data, "half") == 0) {
+		outType = Imf::HALF;
+	}
+	else if (strcmp(data, "single") == 0) {
+		outType = Imf::FLOAT;
+	}
+	else {
+		mexWarnMsgIdAndTxt("OpenEXR:argument", "Unrecognized pixel type: %s", data);
+		result = false;
+	}
+
+	mxFree(data);
+	return result;
+}
+
+
+template <>
+bool toNative(const mxArray * pa, Imf::Compression & outCompression)
+{
+	char * data = mxArrayToString(pa);
+	if (data == NULL) {
+		return false;
+	}
+
+	bool result = true;
+	if (strcmp(data, "none") == 0) {
+		outCompression = Imf::NO_COMPRESSION;
+	}
+	else if (strcmp(data, "rle") == 0) {
+		outCompression = Imf::RLE_COMPRESSION;
+	}
+	else if (strcmp(data, "zips") == 0) {
+		outCompression = Imf::ZIPS_COMPRESSION;
+	}
+	else if (strcmp(data, "zip") == 0) {
+		outCompression = Imf::ZIP_COMPRESSION;
+	}
+	else if (strcmp(data, "piz") == 0) {
+		outCompression = Imf::PIZ_COMPRESSION;
+	}
+	else if (strcmp(data, "pxr24") == 0) {
+		outCompression = Imf::PXR24_COMPRESSION;
+	}
+	else if (strcmp(data, "b44") == 0) {
+		outCompression = Imf::B44_COMPRESSION;
+	}
+	else if (strcmp(data, "b44a") == 0) {
+		outCompression = Imf::B44A_COMPRESSION;
+	}
+	else {
+		mexWarnMsgIdAndTxt("OpenEXR:argument", "Unrecognized compression: %s", data);
+		result = false;
+	}
+
+	mxFree(data);
+	return result;
+}
+
+
 
 
 // Unify the different ways to call the function
-void prepareArguments(const int nrhs, const mxArray * prhs[])
+Data * prepareArguments(const int nrhs, const mxArray * prhs[])
 {
 	int currArg = 0;
 
 	std::string filename;
-	std::string compression("piz");
-	std::string pixelType("half");
+	Imf::Compression compression = Imf::PIZ_COMPRESSION;
+	Imf::PixelType pixelType = Imf::HALF;
+	
 	const mxArray * attribs = NULL;
 	std::vector<std::string> channelNames;
 	MatricesVec channelData;
@@ -409,9 +640,14 @@ void prepareArguments(const int nrhs, const mxArray * prhs[])
 			"provided channel names and channel data matrices.");
 	}
 
+	if (attribs != NULL) {
+		mexWarnMsgIdAndTxt("OpenEXR:unsupported",
+			"Attribute support has not been implemented yet.");
+	}
 
-	mexPrintf("Filename: \"%s\", compression: \"%s\", pixelType: \"%s\" Channels:\n",
-		filename.c_str(), compression.c_str(), pixelType.c_str());
+
+	mexPrintf("Filename: \"%s\", compression: \"%d\", pixelType: \"%d\" Channels:\n",
+		filename.c_str(), compression, pixelType);
 	for (size_t i = 0; i != channelNames.size(); ++i) {
 		mexPrintf("  \"%s\"\n", channelNames[i].c_str());
 	}
@@ -419,6 +655,8 @@ void prepareArguments(const int nrhs, const mxArray * prhs[])
 	for (size_t i = 0; i != channelData.data.size(); ++i) {
 		mexPrintf("  \"%s\"\n", mxGetClassName(channelData.data[i].first));
 	}
+
+	return new Data(filename, compression, pixelType, channelNames, channelData);
 }
 
 } // namespace
@@ -436,5 +674,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mexErrMsgIdAndTxt("OpenEXR:argument", "Too many output arguments.");
     }
 
-	prepareArguments(nrhs, prhs);
+	try {
+		std::auto_ptr<Data> data(prepareArguments(nrhs, prhs));
+		data->writeEXR();
+	}
+	catch (Iex::BaseExc & e) {
+		mexErrMsgIdAndTxt("OpenEXR:exception", e.what());
+	}
 }
