@@ -19,6 +19,7 @@
 
 #include "util.h"
 #include "ImfToMatlab.h"
+#include "MatlabToImf.h"
 
 #include <mex.h>
 
@@ -36,7 +37,7 @@
 #include <cassert>
 
 
-namespace
+namespace pcg
 {
 
 // Helper struct to hold Matlab pointers to matrices of the same size
@@ -48,33 +49,123 @@ struct MatricesVec
 };
 
 
-
-// Convert an array of the given numeric type into another preallocated array.
-template <typename SourceType, typename TargetType>
-inline void convertData(TargetType * dest, const mxArray * pa, const size_t len)
+template<>
+bool toNative(const mxArray * pa, MatricesVec & outData)
 {
-	assert(mxGetClassID(pa) == pcg::mex_traits<SourceType>::classID);
-	const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
-	for (size_t i = 0; i != len; ++i) {
-		dest[i] = static_cast<TargetType> (src[i]);
+	// If not a cell array, it might be a single matrix
+	if (!mxIsCell(pa)) {
+		std::pair<const mxArray *, mxClassID> pair;
+		if (!toNative(pa, pair)) {
+			return false;
+		}
+		mwSize M, N;
+		if (!isMatrix(pair.first, M, N)) {
+			return false;
+		}
+		outData.data.push_back(pair);
+		outData.M = M;
+		outData.N = N;
+		return true;
 	}
+
+	mwSize numel = 0;
+	if (!isVector(pa, numel)) {
+		return false;
+	} else if (numel == 0) {
+		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Empty cell vector.");
+		return false;
+	}
+
+	// Get the size from the first element
+	{
+		const mxArray * elem = mxGetCell(pa, 0);
+		std::pair<const mxArray *, mxClassID> pair;
+		if (!toNative(elem, pair)) {
+			return false;
+		}
+		mwSize M, N;
+		if (!isMatrix(pair.first, M, N)) {
+			return false;
+		}
+		outData.data.push_back(pair);
+		outData.M = M;
+		outData.N = N;
+	}
+
+	// Iterate over the rest
+	for (mwIndex i = 1; i != numel; ++i) {
+		const mxArray * elem = mxGetCell(pa, i);
+		std::pair<const mxArray *, mxClassID> currPair;
+		if (!toNative(elem, currPair)) {
+			return false;
+		}
+		mwSize currM, currN;
+		if (!isMatrix(currPair.first, currM, currN)) {
+			return false;
+		}
+		else if (currM != outData.M || currN != outData.N) {
+			mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion",
+				"Inconsistent matrix sizes.");
+			return false;
+		}
+		outData.data.push_back(currPair);
+	}
+
+	return true;
 }
 
 
-// Slight specialization for half, with the explicit intermediate conversion
-// to float to avoid downcasting warnings.
-template <typename SourceType>
-inline void convertData(half * dest, const mxArray * pa, const size_t len)
+
+// Convert from a containters.Map object. This is very memory intensive since
+// it will create cell arrays using dynamic Matlab memory.
+bool toNative(const mxArray * pa,
+	std::vector<std::string> &outNames, MatricesVec & outData)
 {
-	assert(mxGetClassID(pa) == pcg::mex_traits<SourceType>::classID);
-	const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
-	for (size_t i = 0; i != len; ++i) {
-		const float f = static_cast<float> (src[i]);
-		dest[i] = static_cast<half> (f);
+	if (!mxIsClass(pa, "containers.Map")) {
+		mexErrMsgIdAndTxt("OpenEXR:argument", "Not a containers.Map object.");
+	}
+
+	// Extract the cell arrays with the data and the channel names
+	mxArray * map = const_cast<mxArray *>(pa);
+	mxArray * isempty   = NULL;
+	mxArray * namesCell = NULL;
+	mxArray * dataCell  = NULL;
+	if (mexCallMATLAB(1, &isempty, 1, &map, "isempty") != 0) {
+		mexErrMsgIdAndTxt("OpenEXR:argument", "Could not query the map.");
+	}
+	else if (mxIsLogicalScalarTrue(isempty)) {
+		mxDestroyArray (isempty);
+		return true;
+	}
+	mxDestroyArray (isempty);
+
+
+	if (mexCallMATLAB(1, &namesCell, 1, &map, "keys") != 0) {
+		mexErrMsgIdAndTxt("OpenEXR:argument", "Could not get the map keys.");
+	}
+	if (mexCallMATLAB(1, &dataCell, 1, &map, "values") != 0) {
+		mexErrMsgIdAndTxt("OpenEXR:argument", "Could not get the map values.");
+	}
+
+	if (toNative(namesCell, outNames) && toNative(dataCell, outData)) {
+		return true;
+	} else {
+		mxDestroyArray (namesCell);
+		mxDestroyArray (dataCell);
+		return false;
 	}
 }
 
+} // namespace pcg
 
+
+
+
+using namespace pcg;
+
+
+namespace
+{
 
 // Class to be queried for actual data during the OpenEXR file creation
 class Data {
@@ -217,45 +308,7 @@ char * Data::prepareChannel(const std::pair<const mxArray *, mxClassID> & pair)
 		void * rawData = mxMalloc(sizeof(TargetType) * numPixels);
 		m_allocated.push_back(rawData);
 		TargetType * dest = static_cast<TargetType*> (rawData);
-
-		switch(srcType) {
-		case mxDOUBLE_CLASS:
-			convertData<real64_T>(dest, pa, numPixels);
-			break;
-		case mxSINGLE_CLASS:
-			convertData<real32_T>(dest, pa, numPixels);
-			break;
-		case mxINT8_CLASS:
-			convertData<int8_T>(dest, pa, numPixels);
-			break;
-		case mxUINT8_CLASS:
-			convertData<uint8_T>(dest, pa, numPixels);
-			break;
-		case mxINT16_CLASS:
-			convertData<int16_T>(dest, pa, numPixels);
-			break;
-		case mxUINT16_CLASS:
-			convertData<uint16_T>(dest, pa, numPixels);
-			break;
-		case mxINT32_CLASS:
-			convertData<int32_T>(dest, pa, numPixels);
-			break;
-		case mxUINT32_CLASS:
-			convertData<uint32_T>(dest, pa, numPixels);
-			break;
-		case mxINT64_CLASS:
-			convertData<int64_T>(dest, pa, numPixels);
-			break;
-		case mxUINT64_CLASS:
-			convertData<uint64_T>(dest, pa, numPixels);
-			break;
-
-		default:
-			assert("Unsupported mxClassID" == 0);
-			mexErrMsgIdAndTxt("OpenEXR:unsupported",
-				"Unsupported mxClassID: %s", mxGetClassName(pa));
-		}
-
+		convertData(dest, pa, srcType, numPixels);
 		return reinterpret_cast<char*>(dest);
 	}
 }
@@ -305,304 +358,10 @@ void Data::writeEXR() const
 
 
 
-// Conversions from Matlab to C++. Return true if the conversion is successful
-template <typename T>
-bool toNative(const mxArray * pa, T & outValue)
-{
-	return false;
-}
-
-
-template <typename T>
-void toNativeCheck(const mxArray * pa, T & outValue)
-{
-	if (!toNative(pa, outValue)) {
-		mexErrMsgIdAndTxt("OpenEXR:IllegalConversion",
-			"Illegal data conversion from Matlab to C++");
-	}
-}
-
-
-template <>
-bool toNative(const mxArray * pa, std::string & outValue)
-{
-	char * data = mxArrayToString(pa);
-	if (data == NULL) {
-		return false;
-	}
-	outValue = data;
-	mxFree(data);
-	return true;
-}
-
-
-template<>
-bool toNative(const mxArray * pa, std::vector<std::string> & outVec)
-{
-	// Be tolerant and accept a single string
-	if (mxIsChar(pa)) {
-		std::string result;
-		if (!toNative(pa, result)) {
-			return false;
-		}
-		outVec.push_back(result);
-		return true;
-	}
-	else if (!mxIsCell(pa)) {
-		return false;
-	}
-
-	// Handle the cell array
-	const mwSize numDim = mxGetNumberOfDimensions(pa);
-	if (numDim != 2) {
-		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Tensors not supported.");
-		return false;
-	}
-	const mwSize * dim = mxGetDimensions(pa);
-	if (dim[0] != 1 && dim[1] != 1) {
-		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Not a cell vector.");
-		return false;
-	}
-
-	const size_t numel = mxGetNumberOfElements(pa);
-	for (mwIndex i = 0; i != numel; ++i) {
-		std::string result;
-		const mxArray * element = mxGetCell(pa, i);
-		if (!toNative(element, result)) {
-			return false;
-		}
-		outVec.push_back(result);
-	}
-	return true;
-}
-
-
-template<>
-bool toNative(const mxArray * pa, std::pair<const mxArray *, mxClassID> & pair)
-{
-	if (mxIsNumeric(pa)) {
-		if (mxIsComplex(pa)) {
-			mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion",
-				"Complex data is not supported.");
-			return false;
-		}
-		pair.first  = pa;
-		pair.second = mxGetClassID(pa);
-		return true;
-	}
-	else {
-		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion",
-			"Non numeric type: %s", mxGetClassName(pa));
-		return false;
-	}
-}
 
 
 
-bool isMatrix(const mxArray * pa, mwSize & outM, mwSize & outN) {
-	// Handle the cell array
-	const mwSize numDim = mxGetNumberOfDimensions(pa);
-	if (numDim != 2) {
-		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Tensors not supported.");
-		return false;
-	}
-	const mwSize * dim = mxGetDimensions(pa);
-	outM = dim[0];
-	outN = dim[1];
-	return true;
-}
-
-
-bool isVector(const mxArray * pa, mwSize & outNumel) {
-	mwSize M, N;
-	if (!isMatrix(pa, M, N)) {
-		return false;
-	}
-	if (M != 1 && N != 1) {
-		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Matrices not supported.");
-		return false;
-	}
-	outNumel = mxGetNumberOfElements(pa);
-	assert(outNumel == M*N);
-	return true;
-}
-
-
-template<>
-bool toNative(const mxArray * pa, MatricesVec & outData)
-{
-	// If not a cell array, it might be a single matrix
-	if (!mxIsCell(pa)) {
-		std::pair<const mxArray *, mxClassID> pair;
-		if (!toNative(pa, pair)) {
-			return false;
-		}
-		mwSize M, N;
-		if (!isMatrix(pair.first, M, N)) {
-			return false;
-		}
-		outData.data.push_back(pair);
-		outData.M = M;
-		outData.N = N;
-		return true;
-	}
-
-	mwSize numel = 0;
-	if (!isVector(pa, numel)) {
-		return false;
-	} else if (numel == 0) {
-		mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Empty cell vector.");
-		return false;
-	}
-
-	// Get the size from the first element
-	{
-		const mxArray * elem = mxGetCell(pa, 0);
-		std::pair<const mxArray *, mxClassID> pair;
-		if (!toNative(elem, pair)) {
-			return false;
-		}
-		mwSize M, N;
-		if (!isMatrix(pair.first, M, N)) {
-			return false;
-		}
-		outData.data.push_back(pair);
-		outData.M = M;
-		outData.N = N;
-	}
-
-	// Iterate over the rest
-	for (mwIndex i = 1; i != numel; ++i) {
-		const mxArray * elem = mxGetCell(pa, i);
-		std::pair<const mxArray *, mxClassID> currPair;
-		if (!toNative(elem, currPair)) {
-			return false;
-		}
-		mwSize currM, currN;
-		if (!isMatrix(currPair.first, currM, currN)) {
-			return false;
-		}
-		else if (currM != outData.M || currN != outData.N) {
-			mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion",
-				"Inconsistent matrix sizes.");
-			return false;
-		}
-		outData.data.push_back(currPair);
-	}
-
-	return true;
-}
-
-
-
-// Convert from a containters.Map object. This is very memory intensive since
-// it will create cell arrays using dynamic Matlab memory.
-bool toNative(const mxArray * pa,
-	std::vector<std::string> &outNames, MatricesVec & outData)
-{
-	if (!mxIsClass(pa, "containers.Map")) {
-		mexErrMsgIdAndTxt("OpenEXR:argument", "Not a containers.Map object.");
-	}
-
-	// Extract the cell arrays with the data and the channel names
-	mxArray * map = const_cast<mxArray *>(pa);
-	mxArray * isempty   = NULL;
-	mxArray * namesCell = NULL;
-	mxArray * dataCell  = NULL;
-	if (mexCallMATLAB(1, &isempty, 1, &map, "isempty") != 0) {
-		mexErrMsgIdAndTxt("OpenEXR:argument", "Could not query the map.");
-	}
-	else if (mxIsLogicalScalarTrue(isempty)) {
-		mxDestroyArray (isempty);
-		return true;
-	}
-	mxDestroyArray (isempty);
-
-
-	if (mexCallMATLAB(1, &namesCell, 1, &map, "keys") != 0) {
-		mexErrMsgIdAndTxt("OpenEXR:argument", "Could not get the map keys.");
-	}
-	if (mexCallMATLAB(1, &dataCell, 1, &map, "values") != 0) {
-		mexErrMsgIdAndTxt("OpenEXR:argument", "Could not get the map values.");
-	}
-
-	if (toNative(namesCell, outNames) && toNative(dataCell, outData)) {
-		return true;
-	} else {
-		mxDestroyArray (namesCell);
-		mxDestroyArray (dataCell);
-		return false;
-	}
-}
-
-
-// Converto to a pixel type from a Matlab String
-template <>
-bool toNative(const mxArray * pa, Imf::PixelType & outType)
-{
-	char * data = mxArrayToString(pa);
-	if (data == NULL) {
-		return false;
-	}
-
-	bool result = true;
-	if (strcmp(data, "half") == 0) {
-		outType = Imf::HALF;
-	}
-	else if (strcmp(data, "single") == 0 || strcmp(data, "float") == 0) {
-		outType = Imf::FLOAT;
-	}
-	else {
-		mexWarnMsgIdAndTxt("OpenEXR:argument", "Unrecognized pixel type: %s", data);
-		result = false;
-	}
-
-	mxFree(data);
-	return result;
-}
-
-
-template <>
-bool toNative(const mxArray * pa, Imf::Compression & outCompression)
-{
-	char * data = mxArrayToString(pa);
-	if (data == NULL) {
-		return false;
-	}
-
-	bool result = true;
-	if (strcmp(data, "none") == 0) {
-		outCompression = Imf::NO_COMPRESSION;
-	}
-	else if (strcmp(data, "rle") == 0) {
-		outCompression = Imf::RLE_COMPRESSION;
-	}
-	else if (strcmp(data, "zips") == 0) {
-		outCompression = Imf::ZIPS_COMPRESSION;
-	}
-	else if (strcmp(data, "zip") == 0) {
-		outCompression = Imf::ZIP_COMPRESSION;
-	}
-	else if (strcmp(data, "piz") == 0) {
-		outCompression = Imf::PIZ_COMPRESSION;
-	}
-	else if (strcmp(data, "pxr24") == 0) {
-		outCompression = Imf::PXR24_COMPRESSION;
-	}
-	else if (strcmp(data, "b44") == 0) {
-		outCompression = Imf::B44_COMPRESSION;
-	}
-	else if (strcmp(data, "b44a") == 0) {
-		outCompression = Imf::B44A_COMPRESSION;
-	}
-	else {
-		mexWarnMsgIdAndTxt("OpenEXR:argument", "Unrecognized compression: %s", data);
-		result = false;
-	}
-
-	mxFree(data);
-	return result;
-}
+using namespace pcg;
 
 
 
