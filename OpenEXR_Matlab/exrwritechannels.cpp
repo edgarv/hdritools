@@ -749,6 +749,15 @@ Data * prepareArguments(const int nrhs, const mxArray * prhs[])
 	}
 
 
+	// B44[a] only compresses half channels
+	if (pixelType != Imf::HALF && (compression == Imf::B44_COMPRESSION || 
+		                           compression == Imf::B44A_COMPRESSION))
+	{
+		mexWarnMsgIdAndTxt("OpenEXR:compression",
+			"B44[A] format stores uncompressed data when the pixel type is not HALF.");
+	}
+
+
 	mexPrintf("Filename: \"%s\", compression: \"%d\", pixelType: \"%d\" Channels:\n",
 		filename.c_str(), compression, pixelType);
 	for (size_t i = 0; i != channelNames.size(); ++i) {
