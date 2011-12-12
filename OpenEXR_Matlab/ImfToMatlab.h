@@ -38,8 +38,10 @@ namespace pcg
 // Traits for matlab types
 ///////////////////////////////////////////////////////////////////////////////
 template<typename T>
-struct mex_traits;
-
+struct mex_traits
+{
+	static const mxClassID classID = mxUNKNOWN_CLASS;
+};
 
 template<>
 struct mex_traits<double>
