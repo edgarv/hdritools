@@ -349,6 +349,6 @@ install(TARGETS ${MATLAB_MEX_TARGETS}
   RUNTIME DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   LIBRARY DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
-install(FILES exrread.m exrwrite.m exrinfo.m exrreadchannels.m
+install(FILES exrread.m exrwrite.m exrinfo.m exrreadchannels.m exrwritechannels.m
   DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
