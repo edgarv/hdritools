@@ -18,9 +18,11 @@
 #endif
 
 #include "util.h"
+#include "ImfToMatlab.h"
 
 #include <mex.h>
 
+#include <half.h>
 #include <ImfAttribute.h>
 #include <ImfPixelType.h>
 #include <ImfCompression.h>
@@ -45,6 +47,35 @@ struct MatricesVec
 	std::vector<std::pair<const mxArray *, mxClassID> > data;
 };
 
+
+
+// Convert an array of the given numeric type into another preallocated array.
+template <typename SourceType, typename TargetType>
+inline void convertData(TargetType * dest, const mxArray * pa, const size_t len)
+{
+	assert(mxGetClassID(pa) == pcg::mex_traits<SourceType>::classID);
+	const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
+	for (size_t i = 0; i != len; ++i) {
+		dest[i] = static_cast<TargetType> (src[i]);
+	}
+}
+
+
+// Slight specialization for half, with the explicit intermediate conversion
+// to float to avoid downcasting warnings.
+template <typename SourceType>
+inline void convertData(half * dest, const mxArray * pa, const size_t len)
+{
+	assert(mxGetClassID(pa) == pcg::mex_traits<SourceType>::classID);
+	const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
+	for (size_t i = 0; i != len; ++i) {
+		const float f = static_cast<float> (src[i]);
+		dest[i] = static_cast<half> (f);
+	}
+}
+
+
+
 // Class to be queried for actual data during the OpenEXR file creation
 class Data {
 
@@ -56,7 +87,7 @@ public:
 
 	~Data();
 
-	typedef std::pair<std::string, const float *> DataPair;
+	typedef std::pair<std::string, char *> DataPair;
 
 	// Write the OpenEXR file. Note that this method may throw exceptions
 	void writeEXR() const;
@@ -65,16 +96,18 @@ public:
 		return m_channels.size();
 	}
 
-	inline const DataPair & operator[] (size_t index) const {
-		return m_channels[index];
-	}
-
-	inline const std::string & channelName (size_t index) const {
-		return m_channels[index].first;
-	}
-
-	inline const float * channelData (size_t index) const {
-		return m_channels[index].second;
+	inline size_t typeSize() const {
+		switch(type()) {
+		case Imf::HALF:
+			return sizeof(half);
+			break;
+		case Imf::FLOAT:
+			return sizeof(float);
+			break;
+		default:
+			assert("Unknown type" == 0);
+			return 0;
+		}
 	}
 
 	inline size_t xStride() const {
@@ -107,6 +140,19 @@ public:
 
 
 private:
+
+	// Helper function to create local copies of the data if necessary
+	template <typename TargetType>
+	char * prepareChannel(const std::pair<const mxArray *, mxClassID> & pair);
+
+	inline const std::string & channelName (size_t index) const {
+		return m_channels[index].first;
+	}
+
+	inline char * channelData (size_t index) const {
+		return m_channels[index].second;
+	}
+
 	
 	const std::string m_filename;
 	const Imf::Compression m_compression;
@@ -117,11 +163,8 @@ private:
 	// Pairs of channels and a pointer to the data
 	std::vector<DataPair> m_channels;
 
-	// Matlab managed copies in single format
-	std::vector<const mxArray *> m_data;
-
-	// Data created through mexCallMATLAB
-	std::vector<mxArray *> m_allocated;
+	// Data created through mxMalloc
+	std::vector<void *> m_allocated;
 };
 
 
@@ -136,23 +179,84 @@ m_width(channelData.N), m_height(channelData.M)
 	assert(channelNames.size() == channelData.data.size());
 
 	for (size_t i = 0; i < channelNames.size(); ++i) {
-		if (channelData.data[i].second != mxSINGLE_CLASS) {
-			// If the type is not float, convert
-			mxArray * origData   = const_cast<mxArray *>(channelData.data[i].first);
-			mxArray * singleData = NULL;
-			if (mexCallMATLAB(1, &singleData, 1, &origData, "single") != 0) {
-				mexErrMsgTxt("Could not convert data to single.");
-			}
-			m_data.push_back(singleData);
-			m_allocated.push_back(singleData);
-		}
-		else {
-			// The Matlab data is already single
-			m_data.push_back(channelData.data[i].first);
+		char * data;
+		switch (type()) {
+		case Imf::FLOAT:
+			data = prepareChannel<float>(channelData.data[i]);
+			break;
+		case Imf::HALF:
+			data = prepareChannel<half>(channelData.data[i]);
+			break;
+		default:
+			assert("Unsupported Pixel Type" == 0);
+			mexErrMsgIdAndTxt("OpenEXR:unsupported",
+				"Unsupported pixel type: %d", static_cast<int>(type()));
+			data = NULL; // Keep compiler happy
+
 		}
 
-		DataPair pair(channelNames[i], static_cast<float *>(mxGetData(m_data[i])));
+		DataPair pair(channelNames[i], data);
 		m_channels.push_back(pair);
+	}
+}
+
+
+template <typename TargetType>
+char * Data::prepareChannel(const std::pair<const mxArray *, mxClassID> & pair)
+{
+	const mxArray* pa       = pair.first;
+	const mxClassID srcType = pair.second;
+
+	if (srcType == pcg::mex_traits<TargetType>::classID) {
+		// If the type is compatible, just return a pointer to the Matlab data
+		return static_cast<char*>(mxGetData(pa));
+	}
+	else {
+		// Allocate enough space and convert in place
+		const size_t numPixels = width() * height();
+		void * rawData = mxMalloc(sizeof(TargetType) * numPixels);
+		m_allocated.push_back(rawData);
+		TargetType * dest = static_cast<TargetType*> (rawData);
+
+		switch(srcType) {
+		case mxDOUBLE_CLASS:
+			convertData<real64_T>(dest, pa, numPixels);
+			break;
+		case mxSINGLE_CLASS:
+			convertData<real32_T>(dest, pa, numPixels);
+			break;
+		case mxINT8_CLASS:
+			convertData<int8_T>(dest, pa, numPixels);
+			break;
+		case mxUINT8_CLASS:
+			convertData<uint8_T>(dest, pa, numPixels);
+			break;
+		case mxINT16_CLASS:
+			convertData<int16_T>(dest, pa, numPixels);
+			break;
+		case mxUINT16_CLASS:
+			convertData<uint16_T>(dest, pa, numPixels);
+			break;
+		case mxINT32_CLASS:
+			convertData<int32_T>(dest, pa, numPixels);
+			break;
+		case mxUINT32_CLASS:
+			convertData<uint32_T>(dest, pa, numPixels);
+			break;
+		case mxINT64_CLASS:
+			convertData<int64_T>(dest, pa, numPixels);
+			break;
+		case mxUINT64_CLASS:
+			convertData<uint64_T>(dest, pa, numPixels);
+			break;
+
+		default:
+			assert("Unsupported mxClassID" == 0);
+			mexErrMsgIdAndTxt("OpenEXR:unsupported",
+				"Unsupported mxClassID: %s", mxGetClassName(pa));
+		}
+
+		return reinterpret_cast<char*>(dest);
 	}
 }
 
@@ -160,7 +264,7 @@ m_width(channelData.N), m_height(channelData.M)
 Data::~Data()
 {
 	for (size_t i = 0; i != m_allocated.size(); ++i) {
-		mxDestroyArray(m_allocated[i]);
+		mxFree(m_allocated[i]);
 	}
 }
 
@@ -187,12 +291,11 @@ void Data::writeEXR() const
 	// Create and populate the frame buffer
 	FrameBuffer frameBuffer;
 	for (size_t i = 0; i != size(); ++i) {
-		char * base = reinterpret_cast<char*>(const_cast<float*>(channelData(i)));
-		frameBuffer.insert(channelName(i),     // name
-			Slice(FLOAT,                       // type
-				  base,                        // base
-				  sizeof(float) * xStride(),   // xStride
-				  sizeof(float) * yStride())); // yStride
+		frameBuffer.insert(channelName(i),  // name
+			Slice(type(),                   // type
+				  channelData(i),           // base
+				  typeSize() * xStride(),   // xStride
+				  typeSize() * yStride())); // yStride
 	}
 
 	file.setFrameBuffer(frameBuffer);
