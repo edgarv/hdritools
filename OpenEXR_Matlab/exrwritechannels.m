@@ -17,6 +17,7 @@ function exrwritechannels( filename )
 %   PIXELTYPE is a case sensitive string. It is one of:
 %     half   - use half precision (16-bit) floating point numbers.
 %     single - use single precision (32-bit) floating point numbers.
+%     float  - the same as 'single'.
 %
 %   ATTRIBS is a containers.Map object whose keys are the attribute's names
 %   and the value correspond to the attribute values. The names have to be
@@ -35,12 +36,6 @@ function exrwritechannels( filename )
 %   data for CHANNELS{i} is DATA{i}. All matrices in DATA must be the
 %   same size.
 %
-%     none creates an OpenEXR high dynamic range (HDR) image
-%   file from HDR, a real numeric high dynamic range image with either one or
-%   three channels per pixel (i.e. hdr is a m-by-n or m-by-n-by-3 matrix).
-%   The HDR file with the name filename uses the PIZ wavelet based
-%   compression to minimize the file size.
-%
 %   EXRWRITECHANNELS(FILENAME, COMPRESSION, PIXELTYPE, CHANNELS, DATA)
 %   behaves as above, assuming an empty set of attributes.
 %
@@ -48,15 +43,17 @@ function exrwritechannels( filename )
 %   above, assuming PIXELTYPE is 'half'.
 %
 %   EXRWRITECHANNELS(FILENAME, CHANNELS, DATA) behaves as above, assuming
-%   COMPRESSIOn is 'piz' and PIXELTYPE is 'half'.
+%   COMPRESSION is 'zip' and PIXELTYPE is 'half'.
 %
 %   EXRWRITECHANNELS(FILENAME, COMPRESSION, PIXELTYPE, ATTRIBS, CHANNELSMAP)
 %   EXRWRITECHANNELS(FILENAME, COMPRESSION, PIXELTYPE, CHANNELSMAP)
 %   EXRWRITECHANNELS(FILENAME, COMPRESSION, CHANNELSMAP)
 %   EXRWRITECHANNELS(FILENAME, CHANNELSMAP)
 %
-%   These versions take a CONTAINERS.MAP object whose keys are the
-%   channel names and the values the channel data.
+%   These versions take a CONTAINERS.MAP object whose keys are the channel
+%   names and the values the channel data. Note that these functions
+%   are less efficient than those which take directly cell arrays for the
+%   channel names and data.
 %
 %   Note: this implementation uses the ILM IlmImf library version 1.7
 %

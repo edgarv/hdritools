@@ -613,7 +613,7 @@ Data * prepareArguments(const int nrhs, const mxArray * prhs[])
 	int currArg = 0;
 
 	std::string filename;
-	Imf::Compression compression = Imf::PIZ_COMPRESSION;
+	Imf::Compression compression = Imf::ZIP_COMPRESSION;
 	Imf::PixelType pixelType = Imf::HALF;
 	
 	const mxArray * attribs = NULL;
