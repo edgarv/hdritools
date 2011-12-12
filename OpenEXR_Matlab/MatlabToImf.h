@@ -20,6 +20,7 @@
 #if !defined(PCG_MATLABTOIMF_H)
 #define PCG_MATLABTOIMF_H
 
+#include "ImfToMatlab.h"
 
 #include <half.h>
 #include <ImfPixelType.h>
@@ -33,6 +34,14 @@
 #include <cstring>
 #include <cassert>
 
+
+// Forward declaration
+namespace Imf
+{
+class Attribute;
+}
+
+
 // Utilities to convert from Matlab types to OpenEXR types
 
 namespace pcg
@@ -42,11 +51,9 @@ namespace pcg
 // Utilities
 ///////////////////////////////////////////////////////////////////////////////
 
-bool isMatrix(const mxArray * pa, mwSize & outM, mwSize & outN) {
-    // Handle the cell array
+inline bool isMatrix(const mxArray * pa, mwSize & outM, mwSize & outN) {
     const mwSize numDim = mxGetNumberOfDimensions(pa);
     if (numDim != 2) {
-        mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Tensors not supported.");
         return false;
     }
     const mwSize * dim = mxGetDimensions(pa);
@@ -56,18 +63,26 @@ bool isMatrix(const mxArray * pa, mwSize & outM, mwSize & outN) {
 }
 
 
-bool isVector(const mxArray * pa, mwSize & outNumel) {
+inline bool isVector(const mxArray * pa, mwSize & outNumel) {
     mwSize M, N;
     if (!isMatrix(pa, M, N)) {
         return false;
     }
     if (M != 1 && N != 1) {
-        mexWarnMsgIdAndTxt("OpenEXR:IllegalConversion", "Matrices not supported.");
         return false;
     }
     outNumel = mxGetNumberOfElements(pa);
     assert(outNumel == M*N);
     return true;
+}
+
+
+inline bool isScalar(const mxArray * pa) {
+    mwSize M, N;
+    if (!isMatrix(pa, M, N)) {
+        return false;
+    }
+	return (M == 1 && N == 1);
 }
 
 
@@ -77,14 +92,14 @@ bool isVector(const mxArray * pa, mwSize & outNumel) {
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-bool toNative(const mxArray * pa, T & outValue)
+inline bool toNative(const mxArray * pa, T & outValue)
 {
     return false;
 }
 
 
 template <typename T>
-void toNativeCheck(const mxArray * pa, T & outValue)
+inline void toNativeCheck(const mxArray * pa, T & outValue)
 {
     if (!toNative(pa, outValue)) {
         mexErrMsgIdAndTxt("OpenEXR:IllegalConversion",
@@ -94,7 +109,7 @@ void toNativeCheck(const mxArray * pa, T & outValue)
 
 
 template <>
-bool toNative(const mxArray * pa, std::string & outValue)
+inline bool toNative(const mxArray * pa, std::string & outValue)
 {
     char * data = mxArrayToString(pa);
     if (data == NULL) {
@@ -107,7 +122,7 @@ bool toNative(const mxArray * pa, std::string & outValue)
 
 
 template<>
-bool toNative(const mxArray * pa, std::vector<std::string> & outVec)
+inline bool toNative(const mxArray * pa, std::vector<std::string> & outVec)
 {
     // Be tolerant and accept a single string
     if (mxIsChar(pa)) {
@@ -148,7 +163,8 @@ bool toNative(const mxArray * pa, std::vector<std::string> & outVec)
 
 
 template<>
-bool toNative(const mxArray * pa, std::pair<const mxArray *, mxClassID> & pair)
+inline bool toNative(const mxArray * pa,
+                     std::pair<const mxArray *, mxClassID> & pair)
 {
     if (mxIsNumeric(pa)) {
         if (mxIsComplex(pa)) {
@@ -170,7 +186,7 @@ bool toNative(const mxArray * pa, std::pair<const mxArray *, mxClassID> & pair)
 
 // Converto to a pixel type from a Matlab String
 template <>
-bool toNative(const mxArray * pa, Imf::PixelType & outType)
+inline bool toNative(const mxArray * pa, Imf::PixelType & outType)
 {
     char * data = mxArrayToString(pa);
     if (data == NULL) {
@@ -185,7 +201,8 @@ bool toNative(const mxArray * pa, Imf::PixelType & outType)
         outType = Imf::FLOAT;
     }
     else {
-        mexWarnMsgIdAndTxt("OpenEXR:argument", "Unrecognized pixel type: %s", data);
+        mexWarnMsgIdAndTxt("OpenEXR:argument",
+            "Unrecognized pixel type: %s", data);
         result = false;
     }
 
@@ -195,7 +212,7 @@ bool toNative(const mxArray * pa, Imf::PixelType & outType)
 
 
 template <>
-bool toNative(const mxArray * pa, Imf::Compression & outCompression)
+inline bool toNative(const mxArray * pa, Imf::Compression & outCompression)
 {
     char * data = mxArrayToString(pa);
     if (data == NULL) {
@@ -247,7 +264,7 @@ bool toNative(const mxArray * pa, Imf::Compression & outCompression)
 template <typename SourceType, typename TargetType>
 inline void convertData(TargetType * dest, const mxArray * pa, const size_t len)
 {
-    assert(mxGetClassID(pa) == pcg::mex_traits<SourceType>::classID);
+    assert(mxGetClassID(pa) == mex_traits<SourceType>::classID);
     const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
     for (size_t i = 0; i != len; ++i) {
         dest[i] = static_cast<TargetType> (src[i]);
@@ -260,7 +277,7 @@ inline void convertData(TargetType * dest, const mxArray * pa, const size_t len)
 template <typename SourceType>
 inline void convertData(half * dest, const mxArray * pa, const size_t len)
 {
-    assert(mxGetClassID(pa) == pcg::mex_traits<SourceType>::classID);
+    assert(mxGetClassID(pa) == mex_traits<SourceType>::classID);
     const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
     for (size_t i = 0; i != len; ++i) {
         const float f = static_cast<float> (src[i]);
@@ -271,8 +288,8 @@ inline void convertData(half * dest, const mxArray * pa, const size_t len)
 
 // Convert from a Matlab numeric array into the given data format
 template <typename TargetType>
-void convertData(TargetType * dest, const mxArray * pa, mxClassID srcType,
-    const size_t len)
+inline void convertData(TargetType * dest,
+                        const mxArray * pa, mxClassID srcType, const size_t len)
 {
     assert(srcType == mxGetClassID(pa));
 
@@ -314,6 +331,13 @@ void convertData(TargetType * dest, const mxArray * pa, mxClassID srcType,
             "Unsupported mxClassID: %s", mxGetClassName(pa));
     }
 }
+
+
+
+// Convert the Matlab type to a known Imf::Attribute. Returns NULL if
+// the conversion fails, most likely because the conversion is not
+// implemented yet.
+static Imf::Attribute* toAttribute(const mxArray * pa);
 
 } // namespace pcg
 

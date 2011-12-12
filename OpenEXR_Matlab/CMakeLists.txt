@@ -326,7 +326,7 @@ add_mex(exrwrite exrwrite.cpp ${COMMON_SRC})
 add_mex(exrinfo  exrinfo.cpp  ImfToMatlab.h ImfToMatlab.cpp ${COMMON_SRC})
 add_mex(exrreadchannels exrreadchannels.cpp ${COMMON_SRC})
 add_mex(exrwritechannels exrwritechannels.cpp 
-  MatlabToImf.h ImfToMatlab.h ${COMMON_SRC})
+  MatlabToImf.h MatlabToImf.cpp ImfToMatlab.h ${COMMON_SRC})
 
 
 # Links them against OpenEXR
