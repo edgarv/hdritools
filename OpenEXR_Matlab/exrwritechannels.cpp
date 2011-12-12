@@ -549,7 +549,7 @@ bool toNative(const mxArray * pa, Imf::PixelType & outType)
 	if (strcmp(data, "half") == 0) {
 		outType = Imf::HALF;
 	}
-	else if (strcmp(data, "single") == 0) {
+	else if (strcmp(data, "single") == 0 || strcmp(data, "float") == 0) {
 		outType = Imf::FLOAT;
 	}
 	else {
