@@ -168,15 +168,15 @@ namespace
 {
 
 // Class to be queried for actual data during the OpenEXR file creation
-class Data {
+class WriteData {
 
 public:
-    Data(const std::string & filename,
+    WriteData(const std::string & filename,
          Imf::Compression compression, Imf::PixelType targetPixelType,
          const std::vector<std::string> & channelNames,
          const MatricesVec channelData);
 
-    ~Data();
+    ~WriteData();
 
     typedef std::pair<std::string, char *> DataPair;
 
@@ -259,10 +259,11 @@ private:
 };
 
 
-Data::Data(const std::string & filename,
-           Imf::Compression compression, Imf::PixelType targetPixelType,
-           const std::vector<std::string> & channelNames,
-           const MatricesVec channelData) :
+WriteData::WriteData(const std::string & filename,
+                    Imf::Compression compression,
+                    Imf::PixelType targetPixelType,
+                    const std::vector<std::string> & channelNames,
+                    const MatricesVec channelData) :
 m_filename(filename), m_compression(compression), m_type(targetPixelType),
 m_width(channelData.N), m_height(channelData.M)
 {
@@ -293,7 +294,8 @@ m_width(channelData.N), m_height(channelData.M)
 
 
 template <typename TargetType>
-char * Data::prepareChannel(const std::pair<const mxArray *, mxClassID> & pair)
+char * WriteData::prepareChannel(const std::pair<const mxArray *,
+                                 mxClassID> & pair)
 {
     const mxArray* pa       = pair.first;
     const mxClassID srcType = pair.second;
@@ -314,7 +316,7 @@ char * Data::prepareChannel(const std::pair<const mxArray *, mxClassID> & pair)
 }
 
 
-Data::~Data()
+WriteData::~WriteData()
 {
     for (size_t i = 0; i != m_allocated.size(); ++i) {
         mxFree(m_allocated[i]);
@@ -322,7 +324,7 @@ Data::~Data()
 }
 
 
-void Data::writeEXR() const
+void WriteData::writeEXR() const
 {
     using namespace Imf;
     using namespace Imath;
@@ -357,17 +359,8 @@ void Data::writeEXR() const
 
 
 
-
-
-
-
-using namespace pcg;
-
-
-
-
 // Unify the different ways to call the function
-Data * prepareArguments(const int nrhs, const mxArray * prhs[])
+WriteData * prepareArguments(const int nrhs, const mxArray * prhs[])
 {
     int currArg = 0;
 
@@ -527,7 +520,9 @@ Data * prepareArguments(const int nrhs, const mxArray * prhs[])
         mexPrintf("  \"%s\"\n", mxGetClassName(channelData.data[i].first));
     }
 
-    return new Data(filename, compression, pixelType, channelNames, channelData);
+    WriteData * writeData = new WriteData(filename, compression, pixelType,
+        channelNames, channelData);
+    return writeData;
 }
 
 } // namespace
@@ -546,7 +541,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     try {
-        std::auto_ptr<Data> data(prepareArguments(nrhs, prhs));
+        std::auto_ptr<WriteData> data(prepareArguments(nrhs, prhs));
         data->writeEXR();
     }
     catch (Iex::BaseExc & e) {
