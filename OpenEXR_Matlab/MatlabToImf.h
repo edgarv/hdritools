@@ -82,7 +82,7 @@ inline bool isScalar(const mxArray * pa) {
     if (!isMatrix(pa, M, N)) {
         return false;
     }
-	return (M == 1 && N == 1);
+    return (M == 1 && N == 1);
 }
 
 
@@ -337,7 +337,7 @@ inline void convertData(TargetType * dest,
 // Convert the Matlab type to a known Imf::Attribute. Returns NULL if
 // the conversion fails, most likely because the conversion is not
 // implemented yet.
-static Imf::Attribute* toAttribute(const mxArray * pa);
+Imf::Attribute* toAttribute(const mxArray * pa);
 
 } // namespace pcg
 

@@ -48,6 +48,11 @@ struct MatricesVec
     std::vector<std::pair<const mxArray *, mxClassID> > data;
 };
 
+// To hold a vector of attributes
+typedef std::pair<std::string, Imf::Attribute *> AttributePair;
+typedef std::vector<AttributePair> AttributeVector;
+
+
 
 template<>
 bool toNative(const mxArray * pa, MatricesVec & outData)
@@ -116,6 +121,63 @@ bool toNative(const mxArray * pa, MatricesVec & outData)
 
 
 
+// Convert from a containters.Map object into a set of attributes. The caller
+// is responsible to delete the attribute pointers returned.
+template <>
+bool toNative(const mxArray * pa, AttributeVector &outAttributes)
+{
+    if (!mxIsClass(pa, "containers.Map")) {
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Not a containers.Map object.");
+    }
+
+    // Extract the cell arrays with the names and values for the attributes
+    mxArray * map = const_cast<mxArray *>(pa);
+    mxArray * isempty    = NULL;
+    mxArray * namesCell  = NULL;
+    mxArray * valuesCell = NULL;
+    if (mexCallMATLAB(1, &isempty, 1, &map, "isempty") != 0) {
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Could not query the map.");
+    }
+    else if (mxIsLogicalScalarTrue(isempty)) {
+        mxDestroyArray (isempty);
+        return true;
+    }
+
+    if (mexCallMATLAB(1, &namesCell, 1, &map, "keys") != 0) {
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Could not get the map keys.");
+    }
+
+    std::vector<std::string> names;
+    if (!toNative(namesCell, names)) {
+        mexWarnMsgIdAndTxt("OpenEXR:unsupported",
+            "The attribute map contains non-string keys.");
+        mxDestroyArray(namesCell);
+        return false;
+    } else {
+        mxDestroyArray(namesCell);
+        namesCell = NULL;
+    }
+
+    if (mexCallMATLAB(1, &valuesCell, 1, &map, "values") != 0) {
+        mxDestroyArray(namesCell);
+        mexErrMsgIdAndTxt("OpenEXR:argument", "Could not get the map values.");
+    }
+
+    assert(names.size() == mxGetNumberOfElements(valuesCell));
+    for (size_t i = 0; i != names.size(); ++i) {
+        Imf::Attribute * attr = toAttribute(mxGetCell(valuesCell, i));
+        if (attr != NULL) {
+            AttributePair pair(names[i], attr);
+            outAttributes.push_back(pair);
+        }
+    }
+
+    mxDestroyArray(valuesCell);
+    return true;
+}
+
+
+
 // Convert from a containters.Map object. This is very memory intensive since
 // it will create cell arrays using dynamic Matlab memory.
 bool toNative(const mxArray * pa,
@@ -173,6 +235,7 @@ class WriteData {
 public:
     WriteData(const std::string & filename,
          Imf::Compression compression, Imf::PixelType targetPixelType,
+         const AttributeVector & attributes,
          const std::vector<std::string> & channelNames,
          const MatricesVec channelData);
 
@@ -250,6 +313,9 @@ private:
     const Imf::PixelType m_type;
     const size_t m_width;
     const size_t m_height;
+
+    // Attributes of which we take ownership
+    AttributeVector m_attributes;
     
     // Pairs of channels and a pointer to the data
     std::vector<DataPair> m_channels;
@@ -262,10 +328,12 @@ private:
 WriteData::WriteData(const std::string & filename,
                     Imf::Compression compression,
                     Imf::PixelType targetPixelType,
+                    const AttributeVector & attributes,
                     const std::vector<std::string> & channelNames,
                     const MatricesVec channelData) :
 m_filename(filename), m_compression(compression), m_type(targetPixelType),
-m_width(channelData.N), m_height(channelData.M)
+m_width(channelData.N), m_height(channelData.M),
+m_attributes(attributes)
 {
     assert(!channelNames.empty());
     assert(channelNames.size() == channelData.data.size());
@@ -321,6 +389,12 @@ WriteData::~WriteData()
     for (size_t i = 0; i != m_allocated.size(); ++i) {
         mxFree(m_allocated[i]);
     }
+
+    for (size_t i = 0; i != m_attributes.size(); ++i) {
+        if (m_attributes[i].second != NULL) {
+            delete m_attributes[i].second;
+        }
+    }
 }
 
 
@@ -335,6 +409,13 @@ void WriteData::writeEXR() const
         1.0f,            // screen window width,
         INCREASING_Y,    // line order
         compression());
+
+    // Add the attributes
+    for (AttributeVector::const_iterator it = m_attributes.begin();
+        it != m_attributes.end(); ++it)
+    {
+        header.insert(it->first, *(it->second));
+    }
 
     // Insert channels in the header
     for (size_t i = 0; i != size(); ++i) {
@@ -369,6 +450,7 @@ WriteData * prepareArguments(const int nrhs, const mxArray * prhs[])
     Imf::PixelType pixelType = Imf::HALF;
     
     const mxArray * attribs = NULL;
+    AttributeVector attributesVector;
     std::vector<std::string> channelNames;
     MatricesVec channelData;
 
@@ -496,8 +578,12 @@ WriteData * prepareArguments(const int nrhs, const mxArray * prhs[])
     }
 
     if (attribs != NULL) {
-        mexWarnMsgIdAndTxt("OpenEXR:unsupported",
-            "Attribute support has not been implemented yet.");
+        // Delay the conversion until here to avoid memory leaks: the generated
+        // attributes will get deleted only by the WriteData destructor
+        if (!toNative(attribs, attributesVector)) {
+            mexWarnMsgIdAndTxt("OpenEXR:unsupported",
+                "Attribute generation failed.");
+        }
     }
 
     // B44[a] only compresses half channels
@@ -510,7 +596,7 @@ WriteData * prepareArguments(const int nrhs, const mxArray * prhs[])
 
 
     WriteData * writeData = new WriteData(filename, compression, pixelType,
-        channelNames, channelData);
+        attributesVector, channelNames, channelData);
     return writeData;
 }
 
