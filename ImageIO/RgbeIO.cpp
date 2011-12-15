@@ -157,8 +157,8 @@ int rgbeions::readHeader(istream &is, int &width, int &height, rgbe_header_info 
 	for(;;) {
 		// In C++, istream.getline() removes the delimiter, which is removed from the stream
 		// but not appended to the input either. The delimiter by default if '\n'
-		if ( (buf[0] == 0) )
-			if ( !found_format )
+		if (buf[0] == 0)
+			if (!found_format)
 				return rgbe_error(rgbe_format_error,"no FORMAT specifier found");
 			else
 				break;       /* Break out of loop; end of header */

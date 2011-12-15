@@ -35,7 +35,7 @@ namespace pcg {
 			Division,
 			RelativeError,
 			PositiveNegative,
-			PositiveNegativeRelativeError,
+			PositiveNegativeRelativeError
 		};
 		
 		static IMAGEIO_API void Compare(Type type, Image<Rgba32F, TopDown> &dest, 

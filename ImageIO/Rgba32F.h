@@ -171,10 +171,17 @@ namespace pcg {
 		friend Rgba32F operator ^(const Rgba32F &a, const Rgba32F &b) { return _mm_xor_ps(a,b); }
 
 		/* Comparison Operators */
-		friend bool operator ==(const Rgba32F &a, const Rgba32F &b) { 
-			union { __m128 mask; unsigned long long val[2]; };
+		friend bool operator ==(const Rgba32F &a, const Rgba32F &b) {
+			// Macro to flag 64-bit integer literals as extensions
+			#if defined(__GNUC__) || defined(__clang__)
+			# define PCG_EXTENSION(expr) __extension__ expr
+			#else
+			# define PCG_EXTENSION(expr) expr
+			#endif
+			union { __m128 mask; PCG_EXTENSION(unsigned long long val[2]); };
 			mask = _mm_cmpeq_ps(a, b);
-			return (val[0] & val[1]) == 0xffffffffffffffffull;
+			return (val[0] & val[1]) == PCG_EXTENSION(0xffffffffffffffffull);
+			#undef PCG_EXTENSION
 		}
 		friend bool operator !=(const Rgba32F &a, const Rgba32F &b) {
             return !(operator== (a, b));

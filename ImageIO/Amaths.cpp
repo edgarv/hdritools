@@ -50,8 +50,8 @@ const ALIGN16_BEG Type _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }; \
 static const ALIGN16_BEG int32_t _epi32_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
 
 _PS_EXTERN_CONST(am_1, 1.0f);
-_PS_EXTERN_CONST_TYPE(am_min_norm_pos, int32_t, 0x00800000);
-_PS_EXTERN_CONST_TYPE(am_inv_mant_mask, int32_t, ~0x7f800000);
+_PS_EXTERN_CONST_TYPE(am_min_norm_pos, int32_t, 0x00800000)
+_PS_EXTERN_CONST_TYPE(am_inv_mant_mask, int32_t, ~0x7f800000)
 
 _EPI32_CONST(0x7f, 0x7f);
 

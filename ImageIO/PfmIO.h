@@ -29,7 +29,7 @@
 
 namespace pcg {
 
-	PCG_DEFINE_EXC(PfmIOException, IOException);
+	PCG_DEFINE_EXC(PfmIOException, IOException)
 
 	class PfmIO {
 

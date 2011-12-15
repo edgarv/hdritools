@@ -42,7 +42,11 @@ const char *EXR_EXCEPTION = "edu/cornell/graphics/exr/EXRIOException";
 jlong JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_getNativeVersion
   (JNIEnv *, jclass)
 {
+#if defined(__GNUC__) || defined(__clang__)
+	return __extension__ edu_cornell_graphics_exr_EXRSimpleImage_serialVersionUID;
+#else
 	return edu_cornell_graphics_exr_EXRSimpleImage_serialVersionUID;
+#endif
 }
 
 // Sets the number of global working threads, or throws a nasty exception

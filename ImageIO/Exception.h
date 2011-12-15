@@ -50,9 +50,9 @@ namespace pcg {
 	};
 
 	// Some specific exceptions
-	PCG_DEFINE_EXC(IllegalArgumentException, Exception);
-	PCG_DEFINE_EXC(IOException, Exception);
-	PCG_DEFINE_EXC(RuntimeException, Exception);
+	PCG_DEFINE_EXC(IllegalArgumentException, Exception)
+	PCG_DEFINE_EXC(IOException, Exception)
+	PCG_DEFINE_EXC(RuntimeException, Exception)
 
 }
 
