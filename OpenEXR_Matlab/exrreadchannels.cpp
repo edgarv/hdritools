@@ -209,7 +209,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     getRequestedChannels(nrhs, prhs, channelNames);
 
     // Validate the output arguments
-    if (nlhs > 1 && nlhs != channelNames.size()) {
+    if (nlhs > 1 && nlhs != static_cast<int>(channelNames.size())) {
         mexErrMsgIdAndTxt("OpenEXR:argument",
             "Invalid number of output arguments.");
     }
