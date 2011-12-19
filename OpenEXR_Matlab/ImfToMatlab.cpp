@@ -173,11 +173,10 @@ inline mxArray * fromBox(const Box<VecType<T> > & box)
 }
 
 
-template<typename T, template <typename> class MatrixType>
+template<int ndim, typename T, template <typename> class MatrixType>
 inline mxArray * fromMatrix(const MatrixType<T> &m)
 {
 	// Imath has only square, 3x3 or 4x4 matrices
-	const int ndim = MatrixType<T>::dimensions();
 	mxArray *mArr = mxCreateNumericMatrix(ndim, ndim, mex_traits<T>::classID, mxREAL);
 	T * ptr = static_cast<T*>(mxGetData(mArr));
 	// Matlab uses column-major matrices
@@ -295,13 +294,13 @@ mxArray* pcg::toMatlab(const Imf::Attribute & attr)
 
 	// Matrices
 	else if (canCastTo<M33dAttribute>(attr)) {
-		return fromMatrix(getValue<M33d>(attr));
+		return fromMatrix<3>(getValue<M33d>(attr));
 	} else if (canCastTo<M33fAttribute>(attr)) {
-		return fromMatrix(getValue<M33f>(attr));
+		return fromMatrix<3>(getValue<M33f>(attr));
 	} else if (canCastTo<M44dAttribute>(attr)) {
-		return fromMatrix(getValue<M44d>(attr));
+		return fromMatrix<4>(getValue<M44d>(attr));
 	} else if (canCastTo<M44fAttribute>(attr)) {
-		return fromMatrix(getValue<M44f>(attr));
+		return fromMatrix<4>(getValue<M44f>(attr));
 	}
 
 	// Preview Image
