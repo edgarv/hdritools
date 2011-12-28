@@ -25,7 +25,7 @@
 #include <ImfHeader.h>
 #include <ImfChannelList.h>
 #include <ImfAttribute.h>
-#include <ImfStdIO.h>
+#include <ImfInputFile.h>
 
 #include <string>
 #include <vector>
@@ -146,12 +146,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     try {
         // Open a file, but only read the header
-        Header header;
-        {
-            StdIFStream is(inputfile.c_str());
-            int version = 0;
-            header.readFrom(is, version);
-        }
+        InputFile image(inputfile.c_str());
+        const Header & header = image.header();
 
         const Box2i & dw = header.dataWindow();
         const int width  = dw.max.x - dw.min.x + 1;
