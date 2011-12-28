@@ -23,6 +23,11 @@
 
 #include <mex.h>
 
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wlong-long"
+#endif
+
 #include <half.h>
 #include <ImfAttribute.h>
 #include <ImfPixelType.h>
@@ -30,6 +35,10 @@
 #include <ImfOutputFile.h>
 #include <ImfHeader.h>
 #include <ImfChannelList.h>
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
 
 #include <string>
 #include <vector>

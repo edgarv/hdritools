@@ -18,6 +18,11 @@
 #include <mex.h>
 #include <matrix.h>
 
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wlong-long"
+#endif
+
 #include <ImfAttribute.h>
 #include <ImfBoxAttribute.h>
 #include <ImfChannelListAttribute.h>
@@ -38,6 +43,10 @@
 #include <ImfTileDescriptionAttribute.h>
 #include <ImfTimeCodeAttribute.h>
 #include <ImfVecAttribute.h>
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
 
 #include <cassert>
 

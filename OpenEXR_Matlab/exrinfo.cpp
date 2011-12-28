@@ -22,10 +22,19 @@
 #include <mex.h>
 #include <matrix.h>
 
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wlong-long"
+#endif
+
 #include <ImfHeader.h>
 #include <ImfChannelList.h>
 #include <ImfAttribute.h>
 #include <ImfInputFile.h>
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
 
 #include <string>
 #include <vector>

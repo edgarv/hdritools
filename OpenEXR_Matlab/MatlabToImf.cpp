@@ -17,12 +17,21 @@
 
 #include <mex.h>
 
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wlong-long"
+#endif
+
 #include <ImfAttribute.h>
 #include <ImfStringAttribute.h>
 #include <ImfStringVectorAttribute.h>
 #include <ImfIntAttribute.h>
 #include <ImfFloatAttribute.h>
 #include <ImfDoubleAttribute.h>
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
 
 #include <string>
 
