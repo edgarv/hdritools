@@ -105,9 +105,21 @@ endif()
 set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SSE2_COMPILER_FLAGS}" )
 set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE2_COMPILER_FLAGS}" )
 
-# For GCC we always want to use the source fortify options
+# For GCC 4.1+ we always want to use the source fortify options
 if(CMAKE_COMPILER_IS_GNUCXX)
-  add_definitions("-D_FORTIFY_SOURCE=2")
+  include(CheckCSourceCompiles)
+  CHECK_C_SOURCE_COMPILES("
+#define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#if GCC_VERSION < 401
+#error \"gcc is not 4.1 or newer\"
+#endif
+
+int main(int argc, char **argv) { return 0; }
+" HAS_GCC41)
+
+  if(HAS_GCC41)
+    add_definitions("-D_FORTIFY_SOURCE=2")
+  endif()
 endif()
 
 
