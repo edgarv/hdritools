@@ -260,6 +260,34 @@ inline bool toNative(const mxArray * pa, Imf::Compression & outCompression)
 // Bulk array conversion
 ///////////////////////////////////////////////////////////////////////////////
 
+namespace convert_detail
+{
+
+// Helper struct to cast types
+template <typename TargetType>
+struct type_traits
+{
+    template <typename T>
+    static TargetType cast (const T & n)
+    {
+        return static_cast<TargetType> (n);
+    }
+};
+
+template <>
+struct type_traits<half>
+{
+    template <typename T>
+    static half cast (const T & n)
+    {
+        const float f = static_cast<float> (n);
+        return static_cast<half> (f);
+    }
+};
+
+} // namespace convert_detail
+
+
 // Convert an array of the given numeric type into another preallocated array.
 template <typename SourceType, typename TargetType>
 inline void convertData(TargetType * dest, const mxArray * pa, const size_t len)
@@ -267,21 +295,7 @@ inline void convertData(TargetType * dest, const mxArray * pa, const size_t len)
     assert(mxGetClassID(pa) == mex_traits<SourceType>::classID);
     const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
     for (size_t i = 0; i != len; ++i) {
-        dest[i] = static_cast<TargetType> (src[i]);
-    }
-}
-
-
-// Slight specialization for half, with the explicit intermediate conversion
-// to float to avoid downcasting warnings.
-template <typename SourceType>
-inline void convertData(half * dest, const mxArray * pa, const size_t len)
-{
-    assert(mxGetClassID(pa) == mex_traits<SourceType>::classID);
-    const SourceType * src = static_cast<const SourceType *>(mxGetData(pa));
-    for (size_t i = 0; i != len; ++i) {
-        const float f = static_cast<float> (src[i]);
-        dest[i] = static_cast<half> (f);
+        dest[i] = convert_detail::type_traits<TargetType>::cast (src[i]);
     }
 }
 
