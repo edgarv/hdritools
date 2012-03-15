@@ -35,7 +35,7 @@
 #endif // _MSC_VER
 
 
-#if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER < 1600
 // define the parts of stdint.h that are needed
 typedef __int8 int8_t;
 typedef __int16 int16_t;
