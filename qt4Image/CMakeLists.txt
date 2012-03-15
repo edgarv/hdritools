@@ -259,10 +259,14 @@ if (EXISTS ${TBB_MAIN_LIBRARY_RELEASE})
   if(APPLE AND TBB_LIB_DIR MATCHES ".+\\.framework\$")
     list(APPEND DIRS "${TBB_LIB_DIR}/../")
   endif()
-  if (WIN32)
-    string(REGEX REPLACE "lib([/\\].+[.//].+)?[/\\]?$" "bin\\1"
-	  TBB_BIN_DIR ${TBB_LIB_DIR})
-	list(APPEND DIRS ${TBB_BIN_DIR})
+  if (WIN32 AND TBB_LIB_DIR MATCHES "lib([/\\].+[.//].+)[/\\]?$")
+    string(REGEX REPLACE "lib([/\\].+[.//].+)[/\\]?$" "bin\\1"
+      TBB_BIN_DIR "${TBB_LIB_DIR}")
+    list(APPEND DIRS "${TBB_BIN_DIR}")
+  endif()
+  if (EXISTS "${TBB_LIB_DIR}/../bin")
+    get_filename_component(TBB_BIN_DIR "${TBB_LIB_DIR}/../bin" ABSOLUTE)
+    list(APPEND DIRS "${TBB_BIN_DIR}")
   endif()
 endif()
 
