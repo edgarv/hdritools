@@ -95,7 +95,7 @@ endif()
 add_library(ImageIO SHARED ${SRCS})
 HDRITOOLS_LTCG(ImageIO)
 target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES} ${PNG_LIBRARIES})
-include_directories(${TBB_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${PNG_INCLUDE_DIR})
+include_directories(${PNG_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${TBB_INCLUDE_DIR})
 
 set_target_properties(ImageIO PROPERTIES
   OUTPUT_NAME "pcgImageIO"
