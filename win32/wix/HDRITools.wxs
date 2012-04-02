@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Wix base project for HDRITools -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<!-- Variables intended to be defined from the command line -->
-	<!-- Version string of the Software (e.g. 0.3.0) -->
-	<?define Version="0.3.0" ?>
-	<!-- Platform for the package, most likely one of x86 or x64 -->
-	<?define Platform="x64" ?>
+	
+  <!-- Variables intended to be defined from the command line:
+    * Version  - human readable version string e.g. 0.3.0
+    * Platform - binaries architecture, either x86 or x64
+  -->
+  
+  <!-- Verify that the expected variables have been defined -->
+  <?ifndef Version ?>
+    <?error Version must be defined ?>
+  <?endif?>
+  <?ifndef Platform ?>
+    <?define Platform must be defined ?>
+  <?else?>
+    <?if not $(var.Platform) = "x86" and not $(var.Platform) = "x64" ?>
+      <?error Platform must be either x86 or x64?>
+    <?endif?>
+  <?endif?>
+  
 	<?if $(var.Platform)="x64" ?>
 		<?define IsX64="yes" ?>
 		<?define PFilesFolderID="ProgramFiles64Folder" ?>
