@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Wix base project for HDRITools -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	
+  
   <!-- Variables intended to be defined from the command line:
     * Version  - human readable version string e.g. 0.3.0
     * Platform - binaries architecture, either x86 or x64
@@ -19,102 +19,102 @@
     <?endif?>
   <?endif?>
   
-	<?if $(var.Platform)="x64" ?>
-		<?define IsX64="yes" ?>
-		<?define PFilesFolderID="ProgramFiles64Folder" ?>
-	<?elseif $(var.Platform)="x86" ?>
-		<?define IsX64="no" ?>
-		<?define PFilesFolderID="ProgramFilesFolder" ?>
-	<?endif?>
-	
-	
-	<!-- Variables that may be overriden by the command line later on -->
-	<?define ProductGUID="64d7d86c-7e93-4458-8aa4-b2043b59a32c" ?>
-	<?define UpgradeGUID="1d41df12-0a32-4733-a3da-6a92b60f1336" ?>
-	
-	<?define Product="HDRITools" ?>
-	<?define Company="Cornell PCG" ?>
-	<?define Description="Simple tools for HDR images used at the Cornell PCG" ?>
-	
-	<!-- Include the platform on the product name -->
-	<?if $(var.Platform)="x64" ?>
-		<?define ProductName="$(var.Product) (64-bit)" ?>
-	<?elseif $(var.Platform)="x86" ?>
-		<?define ProductName="$(var.Product) (32-bit)" ?>
-	<?endif?>
-	
-	<!-- Main product -->
-	<Product Id="$(var.ProductGUID)" Name="$(var.ProductName)" Language="1033"
-	         Version="$(var.Version)" Manufacturer="$(var.Company)"
-			 UpgradeCode="$(var.UpgradeGUID)" >
-		<Package Id="*" Description="$(var.ProductName) $(var.Version)"
-		         Comments="$(var.Description)" Manufacturer="$(var.Company)"
-		         InstallerVersion="200" Platform="$(var.Platform)" Compressed="yes" />
-		<Media Id="1" Cabinet="hdritools.cab" EmbedCab="yes" />
-		
-		<!-- Search for the old NSIS installer created by CPack.
+  <?if $(var.Platform)="x64" ?>
+    <?define IsX64="yes" ?>
+    <?define PFilesFolderID="ProgramFiles64Folder" ?>
+  <?elseif $(var.Platform)="x86" ?>
+    <?define IsX64="no" ?>
+    <?define PFilesFolderID="ProgramFilesFolder" ?>
+  <?endif?>
+  
+  
+  <!-- Variables that may be overriden by the command line later on -->
+  <?define ProductGUID="64d7d86c-7e93-4458-8aa4-b2043b59a32c" ?>
+  <?define UpgradeGUID="1d41df12-0a32-4733-a3da-6a92b60f1336" ?>
+  
+  <?define Product="HDRITools" ?>
+  <?define Company="Cornell PCG" ?>
+  <?define Description="Simple tools for HDR images used at the Cornell PCG" ?>
+  
+  <!-- Include the platform on the product name -->
+  <?if $(var.Platform)="x64" ?>
+    <?define ProductName="$(var.Product) (64-bit)" ?>
+  <?elseif $(var.Platform)="x86" ?>
+    <?define ProductName="$(var.Product) (32-bit)" ?>
+  <?endif?>
+  
+  <!-- Main product -->
+  <Product Id="$(var.ProductGUID)" Name="$(var.ProductName)" Language="1033"
+           Version="$(var.Version)" Manufacturer="$(var.Company)"
+       UpgradeCode="$(var.UpgradeGUID)" >
+    <Package Id="*" Description="$(var.ProductName) $(var.Version)"
+             Comments="$(var.Description)" Manufacturer="$(var.Company)"
+             InstallerVersion="200" Platform="$(var.Platform)" Compressed="yes" />
+    <Media Id="1" Cabinet="hdritools.cab" EmbedCab="yes" />
+    
+    <!-- Search for the old NSIS installer created by CPack.
              Property/@Name remains null because we are tooking for the default key value -->
-		<Property Id="NSIS_INSTALL">
-			<RegistrySearch
-				Id="SearchForOldNSISSetup"
-				Win64="$(var.IsX64)"
-				Root="HKLM"
-				Key="SOFTWARE\Cornell PCG\HDRITools 0.2.0"
-				Type="directory"
-			/>
-		</Property>
-		<!-- "Installed" is a Windows Installer property that ensures the check is only done when
-			 the user is installing the application, rather than on a repair or remove. -->
-		<Condition Message="Uninstall [NSIS_INSTALL] before installing this package.">
-			<![CDATA[Installed OR NOT NSIS_INSTALL]]>
-		</Condition>
-		<!-- We use some features which require WinVista -->
-		<Condition Message="This application is only supported on Windows Vista, Windows Server 2008, or higher.">
-			<![CDATA[Installed OR (VersionNT >= 600)]]>
-		</Condition>
-		
-		<!-- Top directory structure -->
-		<Directory Id='TARGETDIR' Name='SourceDir'>
-			<Directory Id="$(var.PFilesFolderID)" Name="PFiles">
-				<Directory Id="PCG.dir" Name="$(var.Company)">
-					<Directory Id="INSTALLDIR" Name="$(var.Product)" />
-				</Directory>
-			</Directory>
-		</Directory>
-		
-		<!-- HDRITools directories -->
-		<DirectoryRef Id="INSTALLDIR">
-			<Directory Id="bin.dir" Name="bin" >
-				<Directory Id="qtplugins.dir" Name="plugins" >
-					<Directory Id="qtimageformats.dir" Name="imageformats" />
-				</Directory>
-			</Directory>
-			<Directory Id="lib.dir" Name="lib" />
-			<Directory Id="include.dir" Name="include" />
-			<Directory Id="jar.dir" Name="jar" />
-			<Directory Id="matlab.dir" Name="matlab" />
-		</DirectoryRef>
-		
-		
-		<!-- Main feature, so that there is a single configurable directory -->
-		<Feature Id="$(var.Product).Complete" Title="$(var.Product)"
-		         Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR"
-				 Description="The complete $(var.Product) package." >
-				 
-		</Feature>
-		
-		
-		<!-- WixUI -->
-		<UIRef Id="WixUI_Mondo" />
-		<!-- Recommended to get custom messages -->
-		<UIRef Id="WixUI_ErrorProgressText" />
-		<!-- Required property -->
-		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
-		
-		<!--Auto-accept the license page-->
-		<Property Id="LicenseAccepted">1</Property>
-		<!-- Custom WixUI -->
-		<WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+    <Property Id="NSIS_INSTALL">
+      <RegistrySearch
+        Id="SearchForOldNSISSetup"
+        Win64="$(var.IsX64)"
+        Root="HKLM"
+        Key="SOFTWARE\Cornell PCG\HDRITools 0.2.0"
+        Type="directory"
+      />
+    </Property>
+    <!-- "Installed" is a Windows Installer property that ensures the check is only done when
+       the user is installing the application, rather than on a repair or remove. -->
+    <Condition Message="Uninstall [NSIS_INSTALL] before installing this package.">
+      <![CDATA[Installed OR NOT NSIS_INSTALL]]>
+    </Condition>
+    <!-- We use some features which require WinVista -->
+    <Condition Message="This application is only supported on Windows Vista, Windows Server 2008, or higher.">
+      <![CDATA[Installed OR (VersionNT >= 600)]]>
+    </Condition>
+    
+    <!-- Top directory structure -->
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id="$(var.PFilesFolderID)" Name="PFiles">
+        <Directory Id="PCG.dir" Name="$(var.Company)">
+          <Directory Id="INSTALLDIR" Name="$(var.Product)" />
+        </Directory>
+      </Directory>
+    </Directory>
+    
+    <!-- HDRITools directories -->
+    <DirectoryRef Id="INSTALLDIR">
+      <Directory Id="bin.dir" Name="bin" >
+        <Directory Id="qtplugins.dir" Name="plugins" >
+          <Directory Id="qtimageformats.dir" Name="imageformats" />
+        </Directory>
+      </Directory>
+      <Directory Id="lib.dir" Name="lib" />
+      <Directory Id="include.dir" Name="include" />
+      <Directory Id="jar.dir" Name="jar" />
+      <Directory Id="matlab.dir" Name="matlab" />
+    </DirectoryRef>
+    
+    
+    <!-- Main feature, so that there is a single configurable directory -->
+    <Feature Id="$(var.Product).Complete" Title="$(var.Product)"
+             Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR"
+         Description="The complete $(var.Product) package." >
+         
+    </Feature>
+    
+    
+    <!-- WixUI -->
+    <UIRef Id="WixUI_Mondo" />
+    <!-- Recommended to get custom messages -->
+    <UIRef Id="WixUI_ErrorProgressText" />
+    <!-- Required property -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    
+    <!--Auto-accept the license page-->
+    <Property Id="LicenseAccepted">1</Property>
+    <!-- Custom WixUI -->
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
 
-	</Product>
+  </Product>
 </Wix>
