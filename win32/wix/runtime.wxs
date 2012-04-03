@@ -51,6 +51,25 @@
       <ComponentRef Id="runtime.qtplugins.qjpeg4.dll" />
       <ComponentRef Id="runtime.qtplugins.qtiff4.dll" />
     </ComponentGroup>
+    
+    <!-- Visual C++ Redistributables -->
+    <!-- FIXME Provide the path to the merge module as a variable -->
+    <DirectoryRef Id="TARGETDIR">
+      <?if $(var.Platform) = "x64" ?>
+        <Merge Id="VCRedist"
+               SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC100_CRT_x64.msm"
+               Language="1033" DiskId="1" />
+      <?else?>
+        <Merge Id="VCRedist"
+             SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC100_CRT_x86.msm"
+             Language="1033" DiskId="1" />
+      <?endif?>
+    </DirectoryRef>
+
+    <Feature Id="VCRedist" Title="Visual C++ 10 Runtime" 
+             AllowAdvertise="no" Display="hidden" Level="1">
+      <MergeRef Id="VCRedist"/>
+    </Feature>
 
   </Fragment>
 

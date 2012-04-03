@@ -11,7 +11,7 @@
        UpgradeCode="$(var.UpgradeGUID)" >
     <Package Id="*" Description="$(var.ProductName) $(var.Version)"
              Comments="$(var.Description)" Manufacturer="$(var.Company)"
-             InstallerVersion="200" Platform="$(var.Platform)" Compressed="yes" />
+             InstallerVersion="300" Platform="$(var.Platform)" Compressed="yes" />
     <!-- Media Id "1" is the default for files -->
     <Media Id="1" Cabinet="hdritools.cab" EmbedCab="yes" />
     
@@ -66,6 +66,8 @@
 
       <FeatureRef Id="qt4image" />
       <FeatureRef Id="batchtonemapper" />
+
+      <FeatureRef Id="VCRedist" />
     </Feature>
     
     
