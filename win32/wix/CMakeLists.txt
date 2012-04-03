@@ -5,21 +5,51 @@ endif()
 
 find_package(WiX 3 REQUIRED)
 
+
+# Helper function to try to identify the includes in a wsx file.
+# The include must be of the form <?include FILENAME ?>
+# limited to one per line. It ignore <?include ?> blocks within
+# comment blocks.
+function(wxs_implicit_depends wxs out_wxi_var)
+  file(STRINGS "${wxs}" wxs_strings
+    REGEX ".*<\\?[ ]*include.+")
+  if (NOT wxs_strings)
+    set(${out_wxi_var} "" PARENT_SCOPE)
+    return()
+  endif()
+  
+  get_filename_component(base_dir "${wxs}" PATH)
+  set(lst "")
+  foreach(inc ${wxs_strings})
+    if (inc MATCHES ".*<\\?[ ]*include[ ]+([^ ]+)[ ]+\\?>")
+      list(APPEND lst "${base_dir}/${CMAKE_MATCH_1}")
+    endif()
+  endforeach()
+  set(${out_wxi_var} ${lst} PARENT_SCOPE)
+endfunction()
+
+
 # Function to compile .wxs into .wixobj. For now this uses hard-coded parameters
 # FIXME Do not rely on the global variable WiX_DEFINES
 function(compile_wxs wxs_file out_winobj_var)
   get_filename_component(wxs_absolute "${wxs_file}" ABSOLUTE)
+  wxs_implicit_depends("${wxs_absolute}" implicit_depends)
+  if (implicit_depends)
+    set(wxs_depends DEPENDS ${implicit_depends})
+  else()
+    set(wxs_depends "")
+  endif()
   string(REGEX REPLACE "\\.[wW][xX][sS]$" ".winobj" winobj "${wxs_file}")
   set(winobj_out "${CMAKE_CURRENT_BINARY_DIR}/${winobj}")
   add_custom_command(OUTPUT "${winobj_out}"
     COMMAND "${WiX_CANDLE_EXECUTABLE}" -nologo ${WiX_DEFINES} -fips
             -o "${winobj_out}"
             "${wxs_absolute}"
-    MAIN_DEPENDENCY "${wxs_absolute}"
+    MAIN_DEPENDENCY "${wxs_absolute}" ${wxs_depends}
   )
   set(${out_winobj_var} "${winobj_out}" PARENT_SCOPE)
 endfunction()
-  #add_custom_command(OUTPUT
+
   
 # Function to generate the .MSI from the list of .wxs sources.
 # This function will write the final MSI to the root of the build directory
@@ -43,7 +73,8 @@ function(add_wix msi_name)
   )
   add_custom_target(WIX_PACKAGE DEPENDS "${msi}")
 endfunction()
-  
+
+
 if (CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8 OR CMAKE_CL_64)
   set(HDRITOOLS_PLATFORM "x64")
 else()
