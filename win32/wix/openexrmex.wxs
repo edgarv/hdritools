@@ -3,9 +3,67 @@
 
   <?include guids.wxi ?>
   <?include defines.wxi ?>
+
+  <?if $(var.IsX64)="yes" ?>
+    <?define mexext="mexw64" ?>
+  <?else?>
+    <?define mexext="mexw32" ?>
+  <?endif?>
   
   <Fragment>
-  
+
+    <DirectoryRef Id="matlab.dir">
+       <Component Id="openexrmex.exrinfo.mexw" Guid="$(var.openexrmex.exrinfo.mexw)" Win64="$(var.IsX64)">
+          <File Name="exrinfo.$(var.mexext)" KeyPath="yes" Source="matlab\exrinfo.$(var.mexext)" />
+        </Component>
+      <Component Id="openexrmex.exrinfo.m" Guid="$(var.openexrmex.exrinfo.m)" Win64="$(var.IsX64)">
+        <File Name="exrinfo.m" KeyPath="yes" Source="matlab\exrinfo.m" />
+      </Component>
+
+      <Component Id="openexrmex.exrread.mexw" Guid="$(var.openexrmex.exrread.mexw)" Win64="$(var.IsX64)">
+        <File Name="exrread.$(var.mexext)" KeyPath="yes" Source="matlab\exrread.$(var.mexext)" />
+      </Component>
+      <Component Id="openexrmex.exrread.m" Guid="$(var.openexrmex.exrread.m)" Win64="$(var.IsX64)">
+        <File Name="exrread.m" KeyPath="yes" Source="matlab\exrread.m" />
+      </Component>
+
+      <Component Id="openexrmex.exrreadchannels.mexw" Guid="$(var.openexrmex.exrreadchannels.mexw)" Win64="$(var.IsX64)">
+        <File Name="exrreadchannels.$(var.mexext)" KeyPath="yes" Source="matlab\exrreadchannels.$(var.mexext)" />
+      </Component>
+      <Component Id="openexrmex.exrreadchannels.m" Guid="$(var.openexrmex.exrreadchannels.m)" Win64="$(var.IsX64)">
+        <File Name="exrreadchannels.m" KeyPath="yes" Source="matlab\exrreadchannels.m" />
+      </Component>
+
+      <Component Id="openexrmex.exrwrite.mexw" Guid="$(var.openexrmex.exrwrite.mexw)" Win64="$(var.IsX64)">
+        <File Name="exrwrite.$(var.mexext)" KeyPath="yes" Source="matlab\exrwrite.$(var.mexext)" />
+      </Component>
+      <Component Id="openexrmex.exrwrite.m" Guid="$(var.openexrmex.exrwrite.m)" Win64="$(var.IsX64)">
+        <File Name="exrwrite.m" KeyPath="yes" Source="matlab\exrwrite.m" />
+      </Component>
+
+      <Component Id="openexrmex.exrwritechannels.mexw" Guid="$(var.openexrmex.exrwritechannels.mexw)" Win64="$(var.IsX64)">
+        <File Name="exrwritechannels.$(var.mexext)" KeyPath="yes" Source="matlab\exrwritechannels.$(var.mexext)" />
+      </Component>
+      <Component Id="openexrmex.exrwritechannels.m" Guid="$(var.openexrmex.exrwritechannels.m)" Win64="$(var.IsX64)">
+        <File Name="exrwritechannels.m" KeyPath="yes" Source="matlab\exrwritechannels.m" />
+      </Component>
+      
+    </DirectoryRef>
+
+
+    <Feature Id="openexrmex" Title="OpenEXR-Matlab" Level="1000"
+             Description="Matlab MEX extensions to work with OpenEXR files.">
+      <ComponentRef Id="openexrmex.exrinfo.mexw"/>
+      <ComponentRef Id="openexrmex.exrinfo.m"/>
+      <ComponentRef Id="openexrmex.exrread.mexw"/>
+      <ComponentRef Id="openexrmex.exrread.m"/>
+      <ComponentRef Id="openexrmex.exrreadchannels.mexw"/>
+      <ComponentRef Id="openexrmex.exrreadchannels.m"/>
+      <ComponentRef Id="openexrmex.exrwrite.mexw"/>
+      <ComponentRef Id="openexrmex.exrwrite.m"/>
+      <ComponentRef Id="openexrmex.exrwritechannels.mexw"/>
+      <ComponentRef Id="openexrmex.exrwritechannels.m"/>
+    </Feature>
   
   </Fragment>
 

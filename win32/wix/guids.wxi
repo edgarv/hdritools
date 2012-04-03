@@ -22,5 +22,17 @@
   
   <!-- batchtonemapper -->
   <?define batchtonemapper.batchToneMapper.exe="4380eb31-35d8-499f-8759-aeb242f0936c" ?>
+  
+  <!-- OpenEXR Matlab bindings -->
+  <?define openexrmex.exrinfo.mexw="79add3df-7ec1-40bd-9aaa-efebbe226dd9" ?>
+  <?define openexrmex.exrinfo.m="5cc5857a-e0df-427d-9342-79e700ed0f33" ?>
+  <?define openexrmex.exrread.mexw="19dadbe9-62c5-4d22-836d-dad950f7dc99" ?>
+  <?define openexrmex.exrread.m="2c57e1c0-0938-4526-bdc2-00d612ab769e" ?>
+  <?define openexrmex.exrreadchannels.mexw="dfdb79bb-ac99-421b-9915-bcc417d66387" ?>
+  <?define openexrmex.exrreadchannels.m="99d10f72-deac-4fdb-8ba4-887120ab0b8d" ?>
+  <?define openexrmex.exrwrite.mexw="ee5e189f-7287-42f9-ac35-3349e51555ef" ?>
+  <?define openexrmex.exrwrite.m="a847d1ee-6e1c-432e-9ead-4238c5034d08" ?>
+  <?define openexrmex.exrwritechannels.mexw="915a7570-4475-4510-8406-1fd8ae107b6d" ?>
+  <?define openexrmex.exrwritechannels.m="947243aa-2178-4777-afd8-1483c50f49ce" ?>
 
 </Include>
