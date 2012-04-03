@@ -5,7 +5,21 @@
   <?include defines.wxi ?>
   
   <Fragment>
-  
+
+    <DirectoryRef Id="java.dir">
+      <Component Id="openexrjni.openexrjni.dll" Guid="$(var.openexrjni.openexrjni.dll)" Win64="$(var.IsX64)">
+        <File Name="openexrjni.dll" KeyPath="yes" Source="java\openexrjni.dll" />
+      </Component>
+      <Component Id="openexrjni.openexrjni.2.0.0.jar" Guid="$(var.openexrjni.openexrjni.2.0.0.jar)" Win64="$(var.IsX64)">
+        <File Name="openexrjni-2.0.0.jar" KeyPath="yes" Source="java\openexrjni-2.0.0.jar" />
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="openexjava" Title="OpenEXR-Java" Level="1000" 
+             Description="Java JNI bindings to do basic operations with OpenEXR files.">
+      <ComponentRef Id="openexrjni.openexrjni.dll"/>
+      <ComponentRef Id="openexrjni.openexrjni.2.0.0.jar"/>
+    </Feature>
   
   </Fragment>
 

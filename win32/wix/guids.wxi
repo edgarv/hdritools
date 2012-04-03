@@ -22,6 +22,10 @@
   
   <!-- batchtonemapper -->
   <?define batchtonemapper.batchToneMapper.exe="4380eb31-35d8-499f-8759-aeb242f0936c" ?>
+
+  <!-- OpenEXR Java bindings -->
+  <?define openexrjni.openexrjni.dll="43987520-a3e0-4f09-b51f-e637b2bb32cb" ?>
+  <?define openexrjni.openexrjni.2.0.0.jar="a19c5e79-ab3d-44e9-ad48-c616eb747efd" ?>
   
   <!-- OpenEXR Matlab bindings -->
   <?define openexrmex.exrinfo.mexw="79add3df-7ec1-40bd-9aaa-efebbe226dd9" ?>
