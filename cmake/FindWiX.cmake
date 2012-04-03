@@ -11,8 +11,8 @@
 #  WIX_FOUND             - if false, do not try to use WiX.
 #
 # These variables alter the behavior of the module when defined before calling
-# find_package(OpenEXR):
-#  WiX_ROOT_DIR - Base location of the OpenEXR installation.
+# find_package(WiX):
+#  WiX_ROOT_DIR - Base location of the WiX installation.
 #
 #=============================================================================
 # Edgar Velázquez-Armendáriz, Cornell University (cs.cornell.edu - eva5)
