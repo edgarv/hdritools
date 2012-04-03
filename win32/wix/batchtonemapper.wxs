@@ -5,7 +5,24 @@
   <?include defines.wxi ?>
   
   <Fragment>
-  
+
+    <DirectoryRef Id="bin.dir">
+      <Component Id="batchtonemapper.batchToneMapper.exe"
+                 Guid="$(var.batchtonemapper.batchToneMapper.exe)"
+                 Win64="$(var.IsX64)">
+        <File Name="batchToneMapper.exe" KeyPath="yes" Source="bin\batchToneMapper.exe" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- The batch tone mapper is not part of the typical installation -->
+    <Feature Id="batchtonemapper" Title="Batch tone mapper"
+             Description="Parallel command line utility to tone map HDR files using exposure and gamma correction."
+             Level="1000">
+      <ComponentRef Id="batchtonemapper.batchToneMapper.exe"/>
+      <ComponentRef Id="runtime.tbb.dll"/>
+      <ComponentGroupRef Id="pcgimageio.runtime"/>
+      <ComponentGroupRef Id="runtime.Qt4"/>
+    </Feature>
   
   </Fragment>
 

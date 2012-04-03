@@ -3,5 +3,24 @@
   <!-- Top level GUIDs -->
   <?define ProductGUID="64d7d86c-7e93-4458-8aa4-b2043b59a32c" ?>
   <?define UpgradeGUID="1d41df12-0a32-4733-a3da-6a92b60f1336" ?>
+  
+  <!-- Runtime libraries -->
+  <?define runtime.tbb.dll="d3e594d8-e890-4ad1-a834-2bf22de15bb0" ?>
+  <?define runtime.zlib1.dll="956ecebf-7fcf-4235-9d62-2ed23b0fa666" ?>
+  <?define runtime.qt.conf="9cd949d9-293a-4bb9-9ccc-8b8b1d96cd40" ?>
+  <?define runtime.QtCore4.dll="3ebb1e57-9a06-49fc-85a7-c0b99c7d4f99" ?>
+  <?define runtime.QtGui4.dll="be1c1018-cdc8-4778-a06f-83cf764d2159" ?>
+  <?define runtime.qtplugins.qico4.dll="18dea164-19ad-443a-aa55-3150222d6620" ?>
+  <?define runtime.qtplugins.qjpeg4.dll="50215c6a-b004-43ba-89f5-9747880f80df" ?>
+  <?define runtime.qtplugins.qtiff4.dll="72769f06-590d-4685-b3da-0468697c154a" ?>
+  
+  <!-- pcgimageio -->
+  <?define var.pcgimageio.pcgImageIO.dll="06cd650b-b881-4e19-99a1-f90f7a99237d" ?>
+  
+  <!-- qt4image -->
+  <?define qt4image.qt4Image.exe="86c13748-2a1a-497a-851f-698905dad89b" ?>
+  
+  <!-- batchtonemapper -->
+  <?define batchtonemapper.batchToneMapper.exe="4380eb31-35d8-499f-8759-aeb242f0936c" ?>
 
 </Include>

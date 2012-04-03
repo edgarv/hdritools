@@ -5,8 +5,53 @@
   <?include defines.wxi ?>
   
   <Fragment>
-  
-  
+
+    <DirectoryRef Id="bin.dir">
+      <Component Id="runtime.tbb.dll" Guid="$(var.runtime.tbb.dll)" Win64="$(var.IsX64)">
+        <File Name="tbb.dll" KeyPath="yes" Source="bin\tbb.dll" />
+      </Component>
+      <Component Id="runtime.zlib1.dll" Guid="$(var.runtime.zlib1.dll)" Win64="$(var.IsX64)">
+        <File Name="zlib1.dll" KeyPath="yes" Source="bin\zlib1.dll" />
+      </Component>
+    </DirectoryRef>
+    
+    <!-- Main Qt4 runtime components. As of Qt 4.7.4 the DLLs lack the language definition -->
+    <DirectoryRef Id="bin.dir">
+      <Component Id="runtime.qt.conf" Guid="$(var.runtime.qt.conf)" Win64="$(var.IsX64)">
+        <File Name="qt.conf" KeyPath="yes" Source="bin\qt.conf" />
+      </Component>
+      <Component Id="runtime.QtCore4.dll" Guid="$(var.runtime.QtCore4.dll)" Win64="$(var.IsX64)">
+        <File Name="QtCore4.dll" KeyPath="yes" Source="bin\QtCore4.dll" DefaultLanguage="1033" />
+      </Component>
+      <Component Id="runtime.QtGui4.dll" Guid="$(var.runtime.QtGui4.dll)" Win64="$(var.IsX64)">
+        <File Name="QtGui4.dll" KeyPath="yes" Source="bin\QtGui4.dll" DefaultLanguage="1033" />
+      </Component>
+    </DirectoryRef>
+    
+    <!-- Qt4 plugins -->
+    <DirectoryRef Id="qtimageformats.dir">
+      <Component Id="runtime.qtplugins.qico4.dll" Guid="$(var.runtime.qtplugins.qico4.dll)" Win64="$(var.IsX64)">
+        <File Name="qico4.dll" KeyPath="yes" Source="bin\plugins\imageformats\qico4.dll" DefaultLanguage="1033" />
+      </Component>
+      <Component Id="runtime.qtplugins.qjpeg4.dll" Guid="$(var.runtime.qtplugins.qjpeg4.dll)" Win64="$(var.IsX64)">
+        <File Name="qjpeg4.dll" KeyPath="yes" Source="bin\plugins\imageformats\qjpeg4.dll" DefaultLanguage="1033" />
+      </Component>
+      <Component Id="runtime.qtplugins.qtiff4.dll" Guid="$(var.runtime.qtplugins.qtiff4.dll)" Win64="$(var.IsX64)">
+        <File Name="qtiff4.dll" KeyPath="yes" Source="bin\plugins\imageformats\qtiff4.dll" DefaultLanguage="1033" />
+      </Component>
+    </DirectoryRef>
+    
+    <!-- Group all the Qt4 components. Assumes that it depends on zlib1 -->
+    <ComponentGroup Id="runtime.Qt4">
+      <ComponentRef Id="runtime.qt.conf" />
+      <ComponentRef Id="runtime.QtCore4.dll" />
+      <ComponentRef Id="runtime.QtGui4.dll" />
+      <ComponentRef Id="runtime.zlib1.dll" />
+      <ComponentRef Id="runtime.qtplugins.qico4.dll" />
+      <ComponentRef Id="runtime.qtplugins.qjpeg4.dll" />
+      <ComponentRef Id="runtime.qtplugins.qtiff4.dll" />
+    </ComponentGroup>
+
   </Fragment>
 
 </Wix>

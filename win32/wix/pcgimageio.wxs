@@ -5,7 +5,18 @@
   <?include defines.wxi ?>
   
   <Fragment>
-  
+
+    <DirectoryRef Id="bin.dir">
+      <Component Id="pcgimageio.pcgImageIO.dll" Guid="$(var.pcgimageio.pcgImageIO.dll)" Win64="$(var.IsX64)">
+        <File Name="pcgImageIO.dll" KeyPath="yes" Source="bin\pcgImageIO.dll" />
+      </Component>
+    </DirectoryRef>
+    
+    <!-- Group the library with its runtime dependencies -->
+    <ComponentGroup Id="pcgimageio.runtime">
+      <ComponentRef Id="pcgimageio.pcgImageIO.dll"/>
+      <ComponentRef Id="runtime.tbb.dll"/>
+    </ComponentGroup>
   
   </Fragment>
 

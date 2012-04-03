@@ -12,6 +12,7 @@
     <Package Id="*" Description="$(var.ProductName) $(var.Version)"
              Comments="$(var.Description)" Manufacturer="$(var.Company)"
              InstallerVersion="200" Platform="$(var.Platform)" Compressed="yes" />
+    <!-- Media Id "1" is the default for files -->
     <Media Id="1" Cabinet="hdritools.cab" EmbedCab="yes" />
     
     <!-- Search for the old NSIS installer created by CPack.
@@ -59,10 +60,12 @@
     
     
     <!-- Main feature, so that there is a single configurable directory -->
-    <Feature Id="$(var.Product).Complete" Title="$(var.Product)"
+    <Feature Id="$(var.Product).Complete" Title="$(var.Product) $(var.Version)"
              Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR"
-         Description="The complete $(var.Product) package." >
-         
+             Description="The complete $(var.Product) package." >
+
+      <FeatureRef Id="qt4image" />
+      <FeatureRef Id="batchtonemapper" />
     </Feature>
     
     
