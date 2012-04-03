@@ -39,15 +39,15 @@ function(compile_wxs wxs_file out_winobj_var)
   else()
     set(wxs_depends "")
   endif()
-  string(REGEX REPLACE "\\.[wW][xX][sS]$" ".winobj" winobj "${wxs_file}")
-  set(winobj_out "${CMAKE_CURRENT_BINARY_DIR}/${winobj}")
-  add_custom_command(OUTPUT "${winobj_out}"
+  string(REGEX REPLACE "\\.[wW][xX][sS]$" ".wixobj" winobj "${wxs_file}")
+  add_custom_command(OUTPUT "${winobj}"
     COMMAND "${WiX_CANDLE_EXECUTABLE}" -nologo ${WiX_DEFINES} -fips
-            -o "${winobj_out}"
             "${wxs_absolute}"
-    MAIN_DEPENDENCY "${wxs_absolute}" ${wxs_depends}
+    MAIN_DEPENDENCY "${wxs_file}" ${wxs_depends}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMENT "Compiling ${wxs_file} -> ${winobj}"
   )
-  set(${out_winobj_var} "${winobj_out}" PARENT_SCOPE)
+  set(${out_winobj_var} "${winobj}" PARENT_SCOPE)
 endfunction()
 
   
@@ -59,17 +59,20 @@ endfunction()
 function(add_wix msi_name)
   set(depends "")
   foreach(wxs ${ARGN})
-    compile_wxs(${wxs} winobj)
-    list(APPEND depends "${winobj}")
+    compile_wxs(${wxs} wixobj)
+    list(APPEND depends "${wixobj}")
   endforeach()
   
   # Actually create the MSI
-  set(msi "${PROJECT_BINARY_DIR}/${msi_name}")
+  #set(msi "${PROJECT_BINARY_DIR}/${msi_name}")
+  set(msi "${msi_name}")
   add_custom_command(OUTPUT "${msi}"
     COMMAND "${WiX_LIGHT_EXECUTABLE}" -nologo -b "${CMAKE_INSTALL_PREFIX}"
             -ext WixUIExtension ${WiX_DEFINES} -spdb
             -o "${msi}" ${depends}
     DEPENDS ${depends}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMENT "Linking ${msi_name}"
   )
   add_custom_target(WIX_PACKAGE DEPENDS "${msi}")
 endfunction()
