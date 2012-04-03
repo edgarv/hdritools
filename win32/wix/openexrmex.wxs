@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <?include guids.wxi ?>
+  <?include defines.wxi ?>
+  
+  <Fragment>
+  
+  
+  </Fragment>
+
+</Wix>

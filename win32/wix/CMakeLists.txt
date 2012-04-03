@@ -86,5 +86,15 @@ set(WiX_DEFINES "")
 list(APPEND WiX_DEFINES -dPlatform=${HDRITOOLS_PLATFORM})
 list(APPEND WiX_DEFINES -dVersion=${HDRITOOLS_VERSION})
 
-set(HDRITOOLS_MSI HDRITools-${HDRITOOLS_VERSION}-${HDRITOOLS_VERSION_BUILD}-${HDRITOOLS_PLATFORM}.msi)
-add_wix(${HDRITOOLS_MSI} HDRITools.wxs)
+set(SRCS
+  HDRITools.wxs
+  runtime.wxs
+  pcgimageio.wxs
+  qt4image.wxs
+  batchtonemapper.wxs
+  openexrjni.wxs
+  openexrmex.wxs
+)
+
+set(HDRITOOLS_MSI HDRITools-${HDRITOOLS_VERSION}-${HDRITOOLS_PLATFORM}.msi)
+add_wix(${HDRITOOLS_MSI} ${SRCS})
