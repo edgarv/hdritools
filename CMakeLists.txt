@@ -255,6 +255,17 @@ endif()
 
 
 
+# WiX Package for Windows
+# Currently this functionally makes lots of assumption about the final
+# layout of the different features.
+if(WIN32)
+  option(BUILD_WINDOWS_MSI_PACKAGE "Build Windows Installer package using WiX" OFF)
+  if(BUILD_WINDOWS_MSI_PACKAGE)
+    add_subdirectory("win32/wix")
+  endif()
+endif()
+
+
 # Packaging with CPack
 
 # Inform about the version
