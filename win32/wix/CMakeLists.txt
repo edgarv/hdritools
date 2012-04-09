@@ -78,6 +78,15 @@ function(add_wix msi_name)
 endfunction()
 
 
+# Custom actions DLL, using the static C runtime
+foreach (suffix DEBUG MINSIZEREL RELEASE RELWITHDEBINFO)
+  set(var CMAKE_C_FLAGS_${suffix})
+  string(REGEX REPLACE "/MD(d?)" "/MT\\1" newflags "${${var}}")
+  set(${var} "${newflags}")
+endforeach ()
+add_library(HDRIToolsCA SHARED HDRIToolsCA.c)
+
+
 if (CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8 OR CMAKE_CL_64)
   set(HDRITOOLS_PLATFORM "x64")
 else()

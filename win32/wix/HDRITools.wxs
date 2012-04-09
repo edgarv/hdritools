@@ -71,6 +71,18 @@
 
       <FeatureRef Id="VCRedist" />
     </Feature>
+
+
+    <!-- DLL with our custom actions -->
+    <Binary Id="HDRIToolsCA" SourceFile="HDRIToolsCA.dll" />
+    
+    <!-- Refresh the file associations at the end -->
+    <CustomAction Id="AssocChanged" BinaryKey="HDRIToolsCA"
+                  DllEntry="NotifyAssocChanged" />
+    <InstallExecuteSequence>
+      <!-- The actions both on install and removal -->
+      <Custom Action="AssocChanged" After="InstallFinalize" />
+    </InstallExecuteSequence>
     
     
     <!-- WixUI -->
