@@ -86,6 +86,50 @@
         </ProgId>
       </Component>
       
+      <Component Id="qt4image.registry.appregistration" Guid="$(var.qt4image.registry.appregistration)" Win64="$(var.IsX64)">
+        <!-- App Paths to find the executable without modifying the PATH -->
+        <RegistryValue Root="HKLM"
+                               Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\qt4Image.exe"
+                               Value="[#qt4Image.exe]" Type="string" KeyPath="yes" />
+        <!-- Support for openwith through the Applications subkey -->
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\SupportedTypes"
+                       Name=".exr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\SupportedTypes"
+                       Name=".rgbe" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\SupportedTypes"
+                       Name=".hdr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\SupportedTypes"
+                       Name=".pfm" Value="" Type="string" />
+
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\DefaultIcon"
+                       Value="[#qt4Image.exe],0" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\shell\open\command"
+                       Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
+      </Component>
+      
+      
+
+      <!-- Capabilities for Set Program Defaults -->
+      <Component Id="qt4image.registry.capabilities" Guid="$(var.qt4image.registry.capabilities)" Win64="$(var.IsX64)">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities"
+                       Name="ApplicationName" Value="Qt4Image" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities"
+                       Name="ApplicationDescription" Value="@[#qt4Image.exe],-20" Type="string" />
+
+        <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
+                       Name=".exr" Value="PCG.qt4Image.OpenEXRFile.1" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
+                       Name=".rgbe" Value="PCG.qt4Image.RGBEFile.1" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
+                       Name=".hdr" Value="PCG.qt4Image.RadianceFile.1" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
+                       Name=".pfm" Value="PCG.qt4Image.PBMFile.1" Type="string" />
+
+        <RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications"
+                       Name="PCG.qt4Image.1" Value="SOFTWARE\PCG\qt4Image\Capabilities" Type="string" />
+
+      </Component>
+      
     </DirectoryRef>
 
 
@@ -95,6 +139,8 @@
       <ComponentRef Id="qt4image.registry.rgbe"/>
       <ComponentRef Id="qt4image.registry.hdr"/>
       <ComponentRef Id="qt4image.registry.pbm"/>
+      <ComponentRef Id="qt4image.registry.appregistration"/>
+      <ComponentRef Id="qt4image.registry.capabilities"/>
     </ComponentGroup>
 
 
