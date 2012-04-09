@@ -19,6 +19,10 @@
   
   <!-- qt4image -->
   <?define qt4image.qt4Image.exe="86c13748-2a1a-497a-851f-698905dad89b" ?>
+  <?define qt4image.registry.exr="d91044c4-d851-4028-beeb-8c8f1dac0633" ?>
+  <?define qt4image.registry.rgbe="a75f0f2f-21c6-4a60-9037-f3510ea94692" ?>
+  <?define qt4image.registry.hdr="e5d246a9-3c56-4156-b4cc-6a1fcda09218" ?>
+  <?define qt4image.registry.pbm="b6f748d5-5144-4466-b537-28a1ba40268a" ?>
   
   <!-- batchtonemapper -->
   <?define batchtonemapper.batchToneMapper.exe="4380eb31-35d8-499f-8759-aeb242f0936c" ?>

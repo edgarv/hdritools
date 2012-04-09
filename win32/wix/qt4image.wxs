@@ -11,6 +11,92 @@
         <File Name="qt4Image.exe" KeyPath="yes" Source="bin\qt4Image.exe" />
       </Component>
     </DirectoryRef>
+    
+    
+    <!-- File associations and Capabilities for Program Defaults -->
+    <DirectoryRef Id="TARGETDIR">
+
+      <!-- OpenEXR -->
+      <Component Id="qt4image.registry.exr" Guid="$(var.qt4image.registry.exr)" Win64="$(var.IsX64)">
+        <ProgId Id="PCG.qt4Image.OpenEXRFile.1" Icon="qt4Image.exe" IconIndex="1">
+          <!-- 
+          Even though the verbs are under the <Extension> element, they are
+          added to the ProgID three. If there is more that one extension the
+          additional ones do not need to specify verbs.
+          -->
+          <Extension Id="exr">
+            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
+            <!--
+            <Verb Id="preview" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
+            -->
+          </Extension>
+          <!--
+          <Extension Id="openexr" />
+          <Extension Id="openexr2" />
+          -->
+        </ProgId>
+
+        <!--
+        Set the Perceived Type and the MIME content type. The unofficial
+        mime types come from:
+        http://cgit.freedesktop.org/xdg/shared-mime-info/tree/freedesktop.org.xml.in
+        -->
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.exr"
+                       Name="PerceivedType" Value="Image" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.exr"
+                       Name="Content Type" Value="image/x-exr" Type="string" />
+      </Component>
+
+      <!-- RGBE -->
+      <Component Id="qt4image.registry.rgbe" Guid="$(var.qt4image.registry.rgbe)" Win64="$(var.IsX64)">
+        <ProgId Id="PCG.qt4Image.RGBEFile.1" Icon="qt4Image.exe" IconIndex="2">
+          <Extension Id="rgbe">
+            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
+          </Extension>
+        </ProgId>
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.rgbe"
+                       Name="PerceivedType" Value="Image" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.rgbe"
+                       Name="Content Type" Value="image/x-rgbe" Type="string" />
+      </Component>
+
+      <!-- HDR -->
+      <Component Id="qt4image.registry.hdr" Guid="$(var.qt4image.registry.hdr)" Win64="$(var.IsX64)">
+        <ProgId Id="PCG.qt4Image.RadianceFile.1" Icon="qt4Image.exe" IconIndex="3">
+          <Extension Id="hdr">
+            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
+          </Extension>
+        </ProgId>
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.hdr"
+                       Name="PerceivedType" Value="Image" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.hdr"
+                       Name="Content Type" Value="image/x-hdr" Type="string" />
+      </Component>
+
+      <!-- 
+      PBM
+      Because the extension is by default assumed to be a Type 1 Font file we
+      do not add an associated type.
+      -->
+      <Component Id="qt4image.registry.pbm" Guid="$(var.qt4image.registry.pbm)" Win64="$(var.IsX64)">
+        <ProgId Id="PCG.qt4Image.PBMFile.1" Icon="qt4Image.exe" IconIndex="4">
+          <Extension Id="pfm">
+            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
+          </Extension>
+        </ProgId>
+      </Component>
+      
+    </DirectoryRef>
+
+
+    <!--- Keep all the registry-related components together -->
+    <ComponentGroup Id="qt4image.group.registry">
+      <ComponentRef Id="qt4image.registry.exr"/>
+      <ComponentRef Id="qt4image.registry.rgbe"/>
+      <ComponentRef Id="qt4image.registry.hdr"/>
+      <ComponentRef Id="qt4image.registry.pbm"/>
+    </ComponentGroup>
+
 
     <Feature Id="qt4image" Title="Qt4Image"
              Description="HDR file viewer to tone map, zoom and compare files, using amenities such as drag-and-drop."
@@ -18,6 +104,7 @@
       <ComponentRef Id="qt4image.qt4Image.exe"/>
       <ComponentGroupRef Id="pcgimageio.runtime" Primary="yes"/>
       <ComponentGroupRef Id="runtime.Qt4" Primary="yes"/>
+      <ComponentGroupRef Id="qt4image.group.registry"/>
     </Feature>
   
   </Fragment>
