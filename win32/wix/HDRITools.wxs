@@ -76,12 +76,14 @@
     <!-- DLL with our custom actions -->
     <Binary Id="HDRIToolsCA" SourceFile="HDRIToolsCA.dll" />
     
-    <!-- Refresh the file associations at the end -->
+    <!-- Refresh the file associations -->
     <CustomAction Id="AssocChanged" BinaryKey="HDRIToolsCA"
                   DllEntry="NotifyAssocChanged" />
     <InstallExecuteSequence>
-      <!-- The actions both on install and removal -->
-      <Custom Action="AssocChanged" After="InstallFinalize" />
+      <!-- Execute only with Qt4Image -->
+      <Custom Action="AssocChanged" After="InstallFinalize">
+        <![CDATA[(&qt4image = 3) OR (!qt4image = 3)]]>
+      </Custom>
     </InstallExecuteSequence>
     
     
