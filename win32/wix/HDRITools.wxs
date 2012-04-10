@@ -36,6 +36,10 @@
       <![CDATA[Installed OR (VersionNT >= 600)]]>
     </Condition>
     
+    <!-- Entries for Add or Remove Programs -->
+    <Property Id="ARPURLINFOABOUT">https://bitbucket.org/edgarv/hdritools</Property>
+    <Property Id="ARPURLUPDATEINFO">https://bitbucket.org/edgarv/hdritools/downloads</Property>
+    
     <!-- Top directory structure -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id="$(var.PFilesFolderID)" Name="PFiles">
