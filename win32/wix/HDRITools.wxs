@@ -5,10 +5,10 @@
   <?include guids.wxi ?>
   <?include defines.wxi ?>
   
-  <!-- Main product -->
-  <Product Id="$(var.ProductGUID)" Name="$(var.ProductName)" Language="1033"
+  <!-- Main product. Autogenerate the Id since we only support major updates -->
+  <Product Id="*" Name="$(var.ProductName)" Language="1033"
            Version="$(var.Version)" Manufacturer="$(var.Company)"
-       UpgradeCode="$(var.UpgradeGUID)" >
+           UpgradeCode="$(var.UpgradeGUID)" >
     <Package Id="*" Description="$(var.ProductName) $(var.Version)"
              Comments="$(var.Description)" Manufacturer="$(var.Company)"
              InstallerVersion="300" Platform="$(var.Platform)" Compressed="yes" />
@@ -86,16 +86,28 @@
 
     <!-- DLL with our custom actions -->
     <Binary Id="HDRIToolsCA" SourceFile="HDRIToolsCA.dll" />
+
+    <Upgrade Id="$(var.UpgradeGUID)">
+      <UpgradeVersion OnlyDetect="no" Property="INSTALLEDHDRITOOLS"
+                      Minimum="0.0.0" IncludeMinimum="yes"
+                      Maximum="$(var.Version)" IncludeMaximum="no" />
+    </Upgrade>
     
     <!-- Refresh the file associations -->
     <CustomAction Id="AssocChanged" BinaryKey="HDRIToolsCA"
                   DllEntry="NotifyAssocChanged" />
+    
     <InstallExecuteSequence>
       <!-- Execute only with the Qt4Image Feature -->
       <Custom Action="AssocChanged" After="InstallFinalize">
         <![CDATA[(&qt4image = 3) OR (!qt4image = 3)]]>
       </Custom>
+      <RemoveExistingProducts Before="InstallInitialize" />
     </InstallExecuteSequence>
+    
+    
+    <!-- Nice stuff for Windows Logo certification -->
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLDIR]" After="CostFinalize" />
     
     
     <!-- WixUI -->

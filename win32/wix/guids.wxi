@@ -1,7 +1,6 @@
 <Include>
 
   <!-- Top level GUIDs -->
-  <?define ProductGUID="64d7d86c-7e93-4458-8aa4-b2043b59a32c" ?>
   <?define UpgradeGUID="1d41df12-0a32-4733-a3da-6a92b60f1336" ?>
   
   <!-- Runtime libraries -->
