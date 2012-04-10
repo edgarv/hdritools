@@ -4,6 +4,12 @@
   <?include guids.wxi ?>
   <?include defines.wxi ?>
   
+  <!-- ProgIDs -->
+  <?define progid.exr="PCG.qt4Image.OpenEXRFile.1" ?>
+  <?define progid.rgbe="PCG.qt4Image.RGBEFile.1" ?>
+  <?define progid.hdr="PCG.qt4Image.RadianceFile.1" ?>
+  <?define progid.pbm="PCG.qt4Image.PBMFile.1" ?>
+  
   <Fragment>
 
     <DirectoryRef Id="bin.dir">
@@ -24,33 +30,33 @@
 
       <!-- OpenEXR -->
       <Component Id="qt4image.registry.exr" Guid="$(var.qt4image.registry.exr)" Win64="$(var.IsX64)">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.OpenEXRFile.1\DefaultIcon"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)\DefaultIcon"
                        Value="[#qt4Image.exe],1" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.OpenEXRFile.1\shell\open\command"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
 
       <!-- RGBE -->
       <Component Id="qt4image.registry.rgbe" Guid="$(var.qt4image.registry.rgbe)" Win64="$(var.IsX64)">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RGBEFile.1\DefaultIcon"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)\DefaultIcon"
                        Value="[#qt4Image.exe],2" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RGBEFile.1\shell\open\command"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
 
       <!-- HDR -->
       <Component Id="qt4image.registry.hdr" Guid="$(var.qt4image.registry.hdr)" Win64="$(var.IsX64)">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RadianceFile.1\DefaultIcon"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)\DefaultIcon"
                        Value="[#qt4Image.exe],3" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RadianceFile.1\shell\open\command"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
 
       <!-- PBM -->
       <Component Id="qt4image.registry.pbm" Guid="$(var.qt4image.registry.pbm)" Win64="$(var.IsX64)">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\DefaultIcon"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)\DefaultIcon"
                        Value="[#qt4Image.exe],4" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\open\command"
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
       
@@ -85,13 +91,13 @@
                        Name="ApplicationDescription" Value="@[#qt4Image.exe],-20" Type="string" />
 
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
-                       Name=".exr" Value="PCG.qt4Image.OpenEXRFile.1" Type="string" />
+                       Name=".exr" Value="$(var.progid.exr)" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
-                       Name=".rgbe" Value="PCG.qt4Image.RGBEFile.1" Type="string" />
+                       Name=".rgbe" Value="$(var.progid.rgbe)" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
-                       Name=".hdr" Value="PCG.qt4Image.RadianceFile.1" Type="string" />
+                       Name=".hdr" Value="$(var.progid.hdr)" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
-                       Name=".pfm" Value="PCG.qt4Image.PBMFile.1" Type="string" />
+                       Name=".pfm" Value="$(var.progid.pbm)" Type="string" />
 
         <RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications"
                        Name="PCG.qt4Image.1" Value="SOFTWARE\PCG\qt4Image\Capabilities" Type="string" />
