@@ -10,6 +10,15 @@
   <?define progid.hdr="PCG.qt4Image.RadianceFile.1" ?>
   <?define progid.pbm="PCG.qt4Image.PBMFile.1" ?>
   
+  <!--
+  Edit flags from FILETYPEATTRIBUTEFLAGS
+  http://msdn.microsoft.com/en-us/library/bb762506%28v=vs.100%29.aspx
+  FTA_HasExtension  0x00000004
+  FTA_AlwaysShowExt 0x00040000
+  -->
+  <?define editflags="262148" ?>
+  
+  
   <Fragment>
 
     <DirectoryRef Id="bin.dir">
@@ -30,6 +39,10 @@
 
       <!-- OpenEXR -->
       <Component Id="qt4image.registry.exr" Guid="$(var.qt4image.registry.exr)" Win64="$(var.IsX64)">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)"
+                       Value="OpenEXR Image file" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)"
+                       Name="EditFlags" Value="$(var.editflags)" Type="integer" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)\DefaultIcon"
                        Value="[#qt4Image.exe],1" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)\shell\open\command"
@@ -38,6 +51,10 @@
 
       <!-- RGBE -->
       <Component Id="qt4image.registry.rgbe" Guid="$(var.qt4image.registry.rgbe)" Win64="$(var.IsX64)">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)"
+                       Value="RGBE Image file" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)"
+                       Name="EditFlags" Value="$(var.editflags)" Type="integer" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)\DefaultIcon"
                        Value="[#qt4Image.exe],2" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)\shell\open\command"
@@ -46,6 +63,10 @@
 
       <!-- HDR -->
       <Component Id="qt4image.registry.hdr" Guid="$(var.qt4image.registry.hdr)" Win64="$(var.IsX64)">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)"
+                       Value="Radiance Image file" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)"
+                       Name="EditFlags" Value="$(var.editflags)" Type="integer" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)\DefaultIcon"
                        Value="[#qt4Image.exe],3" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)\shell\open\command"
@@ -54,6 +75,10 @@
 
       <!-- PBM -->
       <Component Id="qt4image.registry.pbm" Guid="$(var.qt4image.registry.pbm)" Win64="$(var.IsX64)">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)"
+                       Value="Portable Float Map Image file" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)"
+                       Name="EditFlags" Value="$(var.editflags)" Type="integer" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)\DefaultIcon"
                        Value="[#qt4Image.exe],4" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)\shell\open\command"
