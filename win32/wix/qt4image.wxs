@@ -13,78 +13,47 @@
     </DirectoryRef>
     
     
-    <!-- File associations and Capabilities for Program Defaults -->
+    <!--
+    File associations and Capabilities for Program Defaults.
+    We do not use ProgId/Extension/Verb because, unless they are advertised,
+    they seem to assume ownership of the file type. Writing directly the
+    registry entries and relying on Set Program Defaults seems a safer,
+    more conservative approach.
+    -->
     <DirectoryRef Id="TARGETDIR">
 
       <!-- OpenEXR -->
       <Component Id="qt4image.registry.exr" Guid="$(var.qt4image.registry.exr)" Win64="$(var.IsX64)">
-        <ProgId Id="PCG.qt4Image.OpenEXRFile.1" Icon="qt4Image.exe" IconIndex="1">
-          <!-- 
-          Even though the verbs are under the <Extension> element, they are
-          added to the ProgID three. If there is more that one extension the
-          additional ones do not need to specify verbs.
-          -->
-          <Extension Id="exr">
-            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
-            <!--
-            <Verb Id="preview" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
-            -->
-          </Extension>
-          <!--
-          <Extension Id="openexr" />
-          <Extension Id="openexr2" />
-          -->
-        </ProgId>
-
-        <!--
-        Set the Perceived Type and the MIME content type. The unofficial
-        mime types come from:
-        http://cgit.freedesktop.org/xdg/shared-mime-info/tree/freedesktop.org.xml.in
-        -->
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.exr"
-                       Name="PerceivedType" Value="Image" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.exr"
-                       Name="Content Type" Value="image/x-exr" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.OpenEXRFile.1\DefaultIcon"
+                       Value="[#qt4Image.exe],1" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.OpenEXRFile.1\shell\open\command"
+                       Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
 
       <!-- RGBE -->
       <Component Id="qt4image.registry.rgbe" Guid="$(var.qt4image.registry.rgbe)" Win64="$(var.IsX64)">
-        <ProgId Id="PCG.qt4Image.RGBEFile.1" Icon="qt4Image.exe" IconIndex="2">
-          <Extension Id="rgbe">
-            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
-          </Extension>
-        </ProgId>
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.rgbe"
-                       Name="PerceivedType" Value="Image" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.rgbe"
-                       Name="Content Type" Value="image/x-rgbe" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RGBEFile.1\DefaultIcon"
+                       Value="[#qt4Image.exe],2" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RGBEFile.1\shell\open\command"
+                       Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
 
       <!-- HDR -->
       <Component Id="qt4image.registry.hdr" Guid="$(var.qt4image.registry.hdr)" Win64="$(var.IsX64)">
-        <ProgId Id="PCG.qt4Image.RadianceFile.1" Icon="qt4Image.exe" IconIndex="3">
-          <Extension Id="hdr">
-            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
-          </Extension>
-        </ProgId>
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.hdr"
-                       Name="PerceivedType" Value="Image" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\.hdr"
-                       Name="Content Type" Value="image/x-hdr" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RadianceFile.1\DefaultIcon"
+                       Value="[#qt4Image.exe],3" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.RadianceFile.1\shell\open\command"
+                       Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
 
-      <!-- 
-      PBM
-      Because the extension is by default assumed to be a Type 1 Font file we
-      do not add an associated type.
-      -->
+      <!-- PBM -->
       <Component Id="qt4image.registry.pbm" Guid="$(var.qt4image.registry.pbm)" Win64="$(var.IsX64)">
-        <ProgId Id="PCG.qt4Image.PBMFile.1" Icon="qt4Image.exe" IconIndex="4">
-          <Extension Id="pfm">
-            <Verb Id="open" TargetFile="qt4Image.exe" Argument="&quot;%1&quot;"/>
-          </Extension>
-        </ProgId>
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\DefaultIcon"
+                       Value="[#qt4Image.exe],4" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\PCG.qt4Image.PBMFile.1\shell\open\command"
+                       Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
+      
       
       <Component Id="qt4image.registry.appregistration" Guid="$(var.qt4image.registry.appregistration)" Win64="$(var.IsX64)">
         <!-- App Paths to find the executable without modifying the PATH -->
@@ -107,7 +76,6 @@
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
       </Component>
       
-      
 
       <!-- Capabilities for Set Program Defaults -->
       <Component Id="qt4image.registry.capabilities" Guid="$(var.qt4image.registry.capabilities)" Win64="$(var.IsX64)">
@@ -127,7 +95,6 @@
 
         <RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications"
                        Name="PCG.qt4Image.1" Value="SOFTWARE\PCG\qt4Image\Capabilities" Type="string" />
-
       </Component>
       
     </DirectoryRef>
