@@ -56,7 +56,7 @@ endfunction()
 # to mimic the behavior of CPack.
 # FIXME Do not rely on the global variable WiX_DEFINES
 # FIMXE Assumes the install has been staged in CMAKE_INSTALL_PREFIX
-function(add_wix msi_name)
+function(add_wix msi_name out_result_var)
   set(depends "")
   foreach(wxs ${ARGN})
     compile_wxs(${wxs} wixobj)
@@ -64,17 +64,17 @@ function(add_wix msi_name)
   endforeach()
   
   # Actually create the MSI
-  #set(msi "${PROJECT_BINARY_DIR}/${msi_name}")
-  set(msi "${msi_name}")
+  set(msi "${CMAKE_CURRENT_BINARY_DIR}/${msi_name}")
   add_custom_command(OUTPUT "${msi}"
-    COMMAND "${WiX_LIGHT_EXECUTABLE}" -nologo -b "${CMAKE_INSTALL_PREFIX}"
+    COMMAND "${WiX_LIGHT_EXECUTABLE}" -nologo
+            -b "${CMAKE_INSTALL_PREFIX}"
             -ext WixUIExtension ${WiX_DEFINES} -spdb
             -o "${msi}" ${depends}
     DEPENDS ${depends}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     COMMENT "Linking ${msi_name}"
   )
-  add_custom_target(WIX_PACKAGE DEPENDS "${msi}")
+  set(${out_result_var} "${msi}" PARENT_SCOPE)
 endfunction()
 
 
@@ -108,5 +108,14 @@ set(SRCS
   openexrmex.wxs
 )
 
-set(HDRITOOLS_MSI HDRITools-${HDRITOOLS_VERSION}-${HDRITOOLS_PLATFORM}.msi)
-add_wix(${HDRITOOLS_MSI} ${SRCS})
+add_wix(HDRTools.msi HDRITOOLS_MSI ${SRCS})
+add_custom_target(WIX_PACKAGE DEPENDS "${HDRITOOLS_MSI}")
+  
+# Copy and rename the finalized package
+set(HDRITOOLS_MSI_FILE_NAME HDRITools-${HDRITOOLS_VERSION}-${HDRITOOLS_VERSION_BUILD}-${HDRITOOLS_PLATFORM}.msi)
+set(HDRITOOLS_MSI_DEST "${PROJECT_BINARY_DIR}/${HDRITOOLS_MSI_FILE_NAME}")
+add_custom_command(TARGET WIX_PACKAGE POST_BUILD
+  COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          "${HDRITOOLS_MSI}" "${HDRITOOLS_MSI_DEST}"
+  COMMENT "Copying HDRTools.msi -> ${HDRITOOLS_MSI_FILE_NAME}"
+)

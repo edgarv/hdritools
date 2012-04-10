@@ -15,8 +15,10 @@
     <!-- Media Id "1" is the default for files -->
     <Media Id="1" Cabinet="hdritools.cab" EmbedCab="yes" />
     
-    <!-- Search for the old NSIS installer created by CPack.
-             Property/@Name remains null because we are tooking for the default key value -->
+    <!-- 
+    Search for the old NSIS installer created by CPack.
+    Property/@Name remains null because we are tooking for the default key value
+    -->
     <Property Id="NSIS_INSTALL">
       <RegistrySearch
         Id="SearchForOldNSISSetup"
@@ -26,8 +28,10 @@
         Type="directory"
       />
     </Property>
-    <!-- "Installed" is a Windows Installer property that ensures the check is only done when
-       the user is installing the application, rather than on a repair or remove. -->
+    <!--
+    "Installed" is a Windows Installer property that ensures the check is only done when
+    the user is installing the application, rather than on a repair or remove.
+    -->
     <Condition Message="Uninstall [NSIS_INSTALL] before installing this package.">
       <![CDATA[Installed OR NOT NSIS_INSTALL]]>
     </Condition>
@@ -86,7 +90,7 @@
     <CustomAction Id="AssocChanged" BinaryKey="HDRIToolsCA"
                   DllEntry="NotifyAssocChanged" />
     <InstallExecuteSequence>
-      <!-- Execute only with Qt4Image -->
+      <!-- Execute only with the Qt4Image Feature -->
       <Custom Action="AssocChanged" After="InstallFinalize">
         <![CDATA[(&qt4image = 3) OR (!qt4image = 3)]]>
       </Custom>
