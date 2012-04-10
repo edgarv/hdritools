@@ -21,9 +21,15 @@
   
   <Fragment>
 
+    <Icon Id="qt4image.app.ico" SourceFile="qt4Image\app.ico" />
+
     <DirectoryRef Id="bin.dir">
       <Component Id="qt4image.qt4Image.exe" Guid="$(var.qt4image.qt4Image.exe)" Win64="$(var.IsX64)">
-        <File Name="qt4Image.exe" KeyPath="yes" Source="bin\qt4Image.exe" />
+        <File Name="qt4Image.exe" KeyPath="yes" Source="bin\qt4Image.exe">
+          <Shortcut Id="qt4ImageShortcut" Directory="ProgramMenuFolder"
+                              Name="Qt4Image" WorkingDirectory="bin.dir"
+                              Advertise="yes" Icon="qt4image.app.ico" />
+        </File>
       </Component>
     </DirectoryRef>
     

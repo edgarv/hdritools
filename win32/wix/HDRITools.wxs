@@ -51,6 +51,7 @@
           <Directory Id="INSTALLDIR" Name="$(var.Product)" />
         </Directory>
       </Directory>
+      <Directory Id="ProgramMenuFolder" />
     </Directory>
     
     <!-- HDRITools directories -->
