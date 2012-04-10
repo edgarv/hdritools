@@ -15,7 +15,8 @@
       </Component>
     </DirectoryRef>
 
-    <Feature Id="openexjava" Title="OpenEXR-Java" Level="1000" 
+    <Feature Id="openexjava" Title="OpenEXR-Java" Level="1000"
+             AllowAdvertise="no"
              Description="Java JNI bindings to do basic operations with OpenEXR files.">
       <ComponentRef Id="openexrjni.openexrjni.dll"/>
       <ComponentRef Id="openexrjni.openexrjni.2.0.0.jar"/>

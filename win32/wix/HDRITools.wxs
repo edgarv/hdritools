@@ -60,8 +60,10 @@
     
     
     <!-- Main feature, so that there is a single configurable directory -->
-    <Feature Id="$(var.Product).Complete" Title="$(var.Product) $(var.Version)"
-             Display="expand" Level="1" ConfigurableDirectory="INSTALLDIR"
+    <Feature Id="$(var.Product).Complete" Display="expand" Level="1"
+             ConfigurableDirectory="INSTALLDIR"
+             InstallDefault="local" AllowAdvertise="no"
+             Title="$(var.Product) $(var.Version)"
              Description="The complete $(var.Product) package." >
 
       <FeatureRef Id="qt4image" />

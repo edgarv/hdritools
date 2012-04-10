@@ -17,7 +17,7 @@
     <!-- The batch tone mapper is not part of the typical installation -->
     <Feature Id="batchtonemapper" Title="Batch tone mapper"
              Description="Parallel command line utility to tone map HDR files using exposure and gamma correction."
-             Level="1000">
+             Level="1000" AllowAdvertise="no">
       <ComponentRef Id="batchtonemapper.batchToneMapper.exe"/>
       <ComponentRef Id="runtime.tbb.dll"/>
       <ComponentGroupRef Id="pcgimageio.runtime"/>

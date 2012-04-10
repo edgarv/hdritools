@@ -52,6 +52,7 @@
 
 
     <Feature Id="openexrmex" Title="OpenEXR-Matlab" Level="1000"
+             AllowAdvertise="no"
              Description="Matlab MEX extensions to work with OpenEXR files.">
       <ComponentRef Id="openexrmex.exrinfo.mexw"/>
       <ComponentRef Id="openexrmex.exrinfo.m"/>

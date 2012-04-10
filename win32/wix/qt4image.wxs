@@ -144,7 +144,7 @@
 
     <Feature Id="qt4image" Title="Qt4Image"
              Description="HDR file viewer to tone map, zoom and compare files, using amenities such as drag-and-drop."
-             Level="1">
+             AllowAdvertise="yes" Level="1">
       <ComponentRef Id="qt4image.qt4Image.exe"/>
       <ComponentGroupRef Id="pcgimageio.runtime" Primary="yes"/>
       <ComponentGroupRef Id="runtime.Qt4" Primary="yes"/>
