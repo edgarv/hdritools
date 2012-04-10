@@ -99,8 +99,9 @@ Acknowledgements
 [Fabio Pellacini](http://www.cs.dartmouth.edu/~fabio/) wrote the original
 version of `ImageIO/Image.h`.
 The zip file reading functionality is based on MiniZip.
-The OpenEXR_Matlab module is based on work by
+The OpenEXR_Matlab module is originally based on work by
 [Jinwei Gu](http://www.cs.columbia.edu/~jwgu/).
+Experiments badge icon by [David Lanham](http://dlanham.com/).
 
 The HDRITools package uses and includes free software:
 
