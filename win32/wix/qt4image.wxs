@@ -21,7 +21,7 @@
   
   <Fragment>
 
-    <Icon Id="qt4image.app.ico" SourceFile="!(bindpath.qt4Image)\app.ico" />
+    <Icon Id="qt4image.app.ico" SourceFile="res\app.ico" />
 
     <DirectoryRef Id="bin.dir">
       <Component Id="qt4image.qt4Image.exe" Guid="$(var.qt4image.qt4Image.exe)" Win64="$(var.IsX64)">
