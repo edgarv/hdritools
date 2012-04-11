@@ -438,7 +438,7 @@ void MainWindow::about()
         ".<br/>"
         "Build date: %3.<br/>"
         "%1 is a simple, fast viewer for High Dynamic Range (HDR) images.</p>"
-        "<p>Copyright &copy; 2008-2011 Program of Computer Graphics, "
+        "<p>Copyright &copy; 2008-2012 Program of Computer Graphics, "
         "Cornell University.</p>")
             .arg(appTitle)
             .arg(tr(pcg::version::versionString()))
