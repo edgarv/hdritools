@@ -87,7 +87,7 @@ foreach (suffix DEBUG MINSIZEREL RELEASE RELWITHDEBINFO)
   string(REGEX REPLACE "/MD(d?)" "/MT\\1" newflags "${${var}}")
   set(${var} "${newflags}")
 endforeach ()
-add_library(HDRIToolsCA SHARED HDRIToolsCA.c)
+add_library(HDRIToolsCA SHARED EXCLUDE_FROM_ALL HDRIToolsCA.c)
 
 
 if (CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8 OR CMAKE_CL_64)
@@ -113,6 +113,7 @@ set(SRCS
 
 add_wix(HDRTools.msi HDRITOOLS_MSI ${SRCS})
 add_custom_target(WIX_PACKAGE DEPENDS "${HDRITOOLS_MSI}")
+add_dependencies(WIX_PACKAGE HDRIToolsCA)
   
 # Copy and rename the finalized package
 set(HDRITOOLS_MSI_FILE_NAME HDRITools-${HDRITOOLS_VERSION}-${HDRITOOLS_VERSION_BUILD}-${HDRITOOLS_PLATFORM}.msi)
