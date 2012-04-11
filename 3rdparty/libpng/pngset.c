@@ -299,7 +299,7 @@ png_set_pCAL(png_structp png_ptr, png_infop info_ptr,
    if (png_ptr == NULL || info_ptr == NULL)
       return;
 
-   length = (png_uint_32)(png_strlen(purpose) + 1);
+   length = png_strlen(purpose) + 1;
    png_debug1(3, "allocating purpose for info (%lu bytes)",
      (unsigned long)length);
    info_ptr->pcal_purpose = (png_charp)png_malloc_warn(png_ptr, length);
@@ -316,7 +316,7 @@ png_set_pCAL(png_structp png_ptr, png_infop info_ptr,
    info_ptr->pcal_type = (png_byte)type;
    info_ptr->pcal_nparams = (png_byte)nparams;
 
-   length = (png_uint_32)(png_strlen(units) + 1);
+   length = png_strlen(units) + 1;
    png_debug1(3, "allocating units for info (%lu bytes)",
      (unsigned long)length);
    info_ptr->pcal_units = (png_charp)png_malloc_warn(png_ptr, length);
@@ -339,7 +339,7 @@ png_set_pCAL(png_structp png_ptr, png_infop info_ptr,
 
    for (i = 0; i < nparams; i++)
    {
-      length = (png_uint_32)(png_strlen(params[i]) + 1);
+      length = png_strlen(params[i]) + 1;
       png_debug2(3, "allocating parameter %d for info (%lu bytes)", i,
         (unsigned long)length);
       info_ptr->pcal_params[i] = (png_charp)png_malloc_warn(png_ptr, length);
@@ -604,7 +604,7 @@ png_set_iCCP(png_structp png_ptr, png_infop info_ptr,
    if (png_ptr == NULL || info_ptr == NULL || name == NULL || profile == NULL)
       return;
 
-   length = (png_uint_32)(png_strlen(name)+1);
+   length = png_strlen(name)+1;
    new_iccp_name = (png_charp)png_malloc_warn(png_ptr, length);
    if (new_iccp_name == NULL)
    {
@@ -667,22 +667,26 @@ png_set_text_2(png_structp png_ptr, png_infop info_ptr, png_textp text_ptr,
     */
    if (info_ptr->num_text + num_text > info_ptr->max_text)
    {
+      int old_max_text = info_ptr->max_text;
+      int old_num_text = info_ptr->num_text;
+
       if (info_ptr->text != NULL)
       {
          png_textp old_text;
-         int old_max;
 
-         old_max = info_ptr->max_text;
          info_ptr->max_text = info_ptr->num_text + num_text + 8;
          old_text = info_ptr->text;
+
          info_ptr->text = (png_textp)png_malloc_warn(png_ptr,
             (png_uint_32)(info_ptr->max_text * png_sizeof(png_text)));
          if (info_ptr->text == NULL)
          {
-            png_free(png_ptr, old_text);
+            /* Restore to previous condition */
+            info_ptr->max_text = old_max_text;
+            info_ptr->text = old_text;
             return(1);
          }
-         png_memcpy(info_ptr->text, old_text, (png_size_t)(old_max *
+         png_memcpy(info_ptr->text, old_text, (png_size_t)(old_max_text *
             png_sizeof(png_text)));
          png_free(png_ptr, old_text);
       }
@@ -693,7 +697,12 @@ png_set_text_2(png_structp png_ptr, png_infop info_ptr, png_textp text_ptr,
          info_ptr->text = (png_textp)png_malloc_warn(png_ptr,
             (png_uint_32)(info_ptr->max_text * png_sizeof(png_text)));
          if (info_ptr->text == NULL)
+         {
+            /* Restore to previous condition */
+            info_ptr->num_text = old_num_text;
+            info_ptr->max_text = old_max_text;
             return(1);
+         }
 #ifdef PNG_FREE_ME_SUPPORTED
          info_ptr->free_me |= PNG_FREE_TEXT;
 #endif
@@ -701,6 +710,7 @@ png_set_text_2(png_structp png_ptr, png_infop info_ptr, png_textp text_ptr,
       png_debug1(3, "allocated %d entries for info_ptr->text",
          info_ptr->max_text);
    }
+
    for (i = 0; i < num_text; i++)
    {
       png_size_t text_length, key_len;
@@ -926,7 +936,7 @@ png_set_sPLT(png_structp png_ptr,
       png_sPLT_tp from = entries + i;
       png_uint_32 length;
 
-      length = (png_uint_32)(png_strlen(from->name) + 1);
+      length = png_strlen(from->name) + 1;
       to->name = (png_charp)png_malloc_warn(png_ptr, length);
       if (to->name == NULL)
       {

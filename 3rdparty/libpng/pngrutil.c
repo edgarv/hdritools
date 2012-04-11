@@ -1,8 +1,8 @@
 
 /* pngrutil.c - utilities to read a PNG file
  *
- * Last changed in libpng 1.2.44 [June 26, 2010]
- * Copyright (c) 1998-2010 Glenn Randers-Pehrson
+ * Last changed in libpng 1.2.48 [March 29, 2012]
+ * Copyright (c) 1998-2012 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -225,7 +225,7 @@ png_inflate(png_structp png_ptr, const png_byte *data, png_size_t size,
    png_size_t count = 0;
 
    png_ptr->zstream.next_in = (png_bytep)data; /* const_cast: VALID */
-   png_ptr->zstream.avail_in = (uInt)size;
+   png_ptr->zstream.avail_in = size;
 
    while (1)
    {
@@ -235,10 +235,10 @@ png_inflate(png_structp png_ptr, const png_byte *data, png_size_t size,
        * after every inflate call.
        */
       png_ptr->zstream.next_out = png_ptr->zbuf;
-      png_ptr->zstream.avail_out = (uInt)(png_ptr->zbuf_size);
+      png_ptr->zstream.avail_out = png_ptr->zbuf_size;
 
       ret = inflate(&png_ptr->zstream, Z_NO_FLUSH);
-      avail = (int)png_ptr->zbuf_size - png_ptr->zstream.avail_out;
+      avail = png_ptr->zbuf_size - png_ptr->zstream.avail_out;
 
       /* First copy/count any new output - but only if we didn't
        * get an error code.
@@ -247,8 +247,8 @@ png_inflate(png_structp png_ptr, const png_byte *data, png_size_t size,
       {
          if (output != 0 && output_size > count)
          {
-            int copy = (int)(output_size - count);
-            if (avail < copy) copy = avail;
+            png_size_t copy = output_size - count;
+            if ((png_size_t) avail < copy) copy = (png_size_t) avail;
             png_memcpy(output + count, png_ptr->zbuf, copy);
          }
          count += avail;
@@ -339,15 +339,13 @@ png_decompress_chunk(png_structp png_ptr, int comp_type,
       /* Now check the limits on this chunk - if the limit fails the
        * compressed data will be removed, the prefix will remain.
        */
-#ifdef PNG_SET_CHUNK_MALLOC_LIMIT_SUPPORTED
-      if (png_ptr->user_chunk_malloc_max &&
-          (prefix_size + expanded_size >= png_ptr->user_chunk_malloc_max - 1))
-#else
-#  ifdef PNG_USER_CHUNK_MALLOC_MAX
-      if ((PNG_USER_CHUNK_MALLOC_MAX > 0) &&
+      if (prefix_size >= (~(png_size_t)0) - 1 ||
+         expanded_size >= (~(png_size_t)0) - 1 - prefix_size
+#ifdef PNG_USER_CHUNK_MALLOC_MAX
+         || ((PNG_USER_CHUNK_MALLOC_MAX > 0) &&
           prefix_size + expanded_size >= PNG_USER_CHUNK_MALLOC_MAX - 1)
-#  endif
 #endif
+          )
          png_warning(png_ptr, "Exceeded size limit while expanding chunk");
 
       /* If the size is zero either there was an error and a message
@@ -355,16 +353,13 @@ png_decompress_chunk(png_structp png_ptr, int comp_type,
        * and we have nothing to do - the code will exit through the
        * error case below.
        */
-#if defined(PNG_SET_CHUNK_MALLOC_LIMIT_SUPPORTED) || \
-    defined(PNG_USER_CHUNK_MALLOC_MAX)
-      else
-#endif
-      if (expanded_size > 0)
+      else if (expanded_size > 0)
       {
          /* Success (maybe) - really uncompress the chunk. */
          png_size_t new_size = 0;
-         png_charp text = (png_charp)png_malloc_warn(png_ptr,
-                        (png_uint_32)(prefix_size + expanded_size + 1));
+
+         png_charp text = png_malloc_warn(png_ptr,
+             prefix_size + expanded_size + 1);
 
          if (text != NULL)
          {
@@ -411,7 +406,7 @@ png_decompress_chunk(png_structp png_ptr, int comp_type,
     * amount of compressed data.
     */
    {
-      png_charp text = (png_charp)png_malloc_warn(png_ptr, (png_uint_32)(prefix_size + 1));
+      png_charp text = png_malloc_warn(png_ptr, prefix_size + 1);
       if (text != NULL)
       {
          if (prefix_size > 0)
@@ -1123,7 +1118,7 @@ png_handle_iCCP(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    png_decompress_chunk(png_ptr, compression_type,
      slength, prefix_length, &data_length);
 
-   profile_length = (png_uint_32)(data_length - prefix_length);
+   profile_length = data_length - prefix_length;
 
    if ( prefix_length > data_length || profile_length < 4)
    {
@@ -1240,7 +1235,7 @@ png_handle_sPLT(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
 
    new_palette.depth = *entry_start++;
    entry_size = (new_palette.depth == 8 ? 6 : 10);
-   data_length = (int)(slength - (entry_start - (png_bytep)png_ptr->chunkdata));
+   data_length = (slength - (entry_start - (png_bytep)png_ptr->chunkdata));
 
    /* Integrity-check the data length */
    if (data_length % entry_size)
@@ -1535,14 +1530,15 @@ png_handle_hIST(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       return;
    }
 
-   num = length / 2 ;
-   if (num != (unsigned int) png_ptr->num_palette || num >
-      (unsigned int) PNG_MAX_PALETTE_LENGTH)
+   if (length > 2*PNG_MAX_PALETTE_LENGTH ||
+       length != (unsigned int) (2*png_ptr->num_palette))
    {
       png_warning(png_ptr, "Incorrect hIST chunk length");
       png_crc_finish(png_ptr, length);
       return;
    }
+
+   num = length / 2 ;
 
    for (i = 0; i < num; i++)
    {
@@ -1812,6 +1808,14 @@ png_handle_sCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       return;
    }
 
+   /* Need unit type, width, \0, height: minimum 4 bytes */
+   else if (length < 4)
+   {
+      png_warning(png_ptr, "sCAL chunk too short");
+      png_crc_finish(png_ptr, length);
+      return;
+   }
+
    png_debug1(2, "Allocating and reading sCAL chunk data (%lu bytes)",
       length + 1);
    png_ptr->chunkdata = (png_charp)png_malloc_warn(png_ptr, length + 1);
@@ -1854,11 +1858,11 @@ png_handle_sCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
       png_ptr->chunkdata = NULL;
       return;
    }
-   png_memcpy(swidth, ep, (png_size_t)png_strlen(ep));
+   png_memcpy(swidth, ep, (png_size_t)png_strlen(ep) + 1);
 #endif
 #endif
 
-   for (ep = png_ptr->chunkdata; *ep; ep++)
+   for (ep = png_ptr->chunkdata + 1; *ep; ep++)
       /* Empty loop */ ;
    ep++;
 
@@ -1898,7 +1902,7 @@ png_handle_sCAL(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
 #endif
       return;
    }
-   png_memcpy(sheight, ep, (png_size_t)png_strlen(ep));
+   png_memcpy(sheight, ep, (png_size_t)png_strlen(ep) + 1);
 #endif
 #endif
 
@@ -3340,15 +3344,15 @@ defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
      png_free(png_ptr, png_ptr->big_row_buf);
      if (png_ptr->interlaced)
         png_ptr->big_row_buf = (png_bytep)png_calloc(png_ptr,
-            (png_uint_32)(row_bytes + 64));
+            row_bytes + 64);
      else
         png_ptr->big_row_buf = (png_bytep)png_malloc(png_ptr,
-            (png_uint_32)(row_bytes + 64));
-     png_ptr->old_big_row_buf_size = (png_uint_32)(row_bytes + 64);
+            row_bytes + 64);
+     png_ptr->old_big_row_buf_size = row_bytes + 64;
 
      /* Use 32 bytes of padding before and after row_buf. */
      png_ptr->row_buf = png_ptr->big_row_buf + 32;
-     png_ptr->old_big_row_buf_size = (png_uint_32)(row_bytes + 64);
+     png_ptr->old_big_row_buf_size = row_bytes + 64;
    }
 
 #ifdef PNG_MAX_MALLOC_64K
@@ -3363,11 +3367,11 @@ defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
       png_free(png_ptr, png_ptr->prev_row);
       png_ptr->prev_row = (png_bytep)png_malloc(png_ptr, (png_uint_32)(
         row_bytes + 1));
-      png_memset_check(png_ptr, png_ptr->prev_row, 0, (png_uint_32)(row_bytes + 1));
-      png_ptr->old_prev_row_size = (png_uint_32)(row_bytes + 1);
+      png_memset_check(png_ptr, png_ptr->prev_row, 0, row_bytes + 1);
+      png_ptr->old_prev_row_size = row_bytes + 1;
    }
 
-   png_ptr->rowbytes = (png_uint_32)row_bytes;
+   png_ptr->rowbytes = row_bytes;
 
    png_debug1(3, "width = %lu,", png_ptr->width);
    png_debug1(3, "height = %lu,", png_ptr->height);

@@ -1,36 +1,36 @@
+if (NOT PNG_IS_INTERNAL)
+cmake_minimum_required(VERSION 2.4.3)
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
+
+if(UNIX AND NOT DEFINED CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING 
+      "Choose the type of build, options are:
+         None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used)
+         Debug
+         Release
+         RelWithDebInfo
+         MinSizeRel.")
+endif()
+
+project(libpng C)
+enable_testing()
+endif() # NOT PNG_IS_INTERNAL
+
 # Copyright (C) 2007-2010 Glenn Randers-Pehrson
 
 # This code is released under the libpng license.
 # For conditions of distribution and use, see the disclaimer
 # and license in png.h
 
-if (NOT PNG_IS_INTERNAL)
-  cmake_minimum_required(VERSION 2.4.3)
-  set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
-
-  if(UNIX AND NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING 
-        "Choose the type of build, options are:
-           None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used)
-           Debug
-           Release
-           RelWithDebInfo
-           MinSizeRel.")
-  endif()
-
-  project(libpng C)
-  enable_testing()
-endif()
-
 set(PNGLIB_MAJOR 1)
 set(PNGLIB_MINOR 2)
-set(PNGLIB_RELEASE 44)
+set(PNGLIB_RELEASE 49)
 set(PNGLIB_NAME libpng${PNGLIB_MAJOR}${PNGLIB_MINOR})
 set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_RELEASE})
 
 # needed packages
 if(NOT ZLIB_IS_INTERNAL)
-  find_package(ZLIB REQUIRED)
+find_package(ZLIB REQUIRED)
 endif()
 include_directories(${ZLIB_INCLUDE_DIRS})
 
@@ -52,38 +52,38 @@ endif()
 
 # COMMAND LINE OPTIONS
 if(NOT PNG_IS_INTERNAL)
-  if(DEFINED PNG_SHARED)
-    option(PNG_SHARED "Build shared lib" ${PNG_SHARED})
-  else()
-    option(PNG_SHARED "Build shared lib" ON)
-  endif()
-  if(DEFINED PNG_STATIC)
-    option(PNG_STATIC "Build static lib" ${PNG_STATIC})
-  else()
-    option(PNG_STATIC "Build static lib" ON)
-  endif()
+if(DEFINED PNG_SHARED)
+  option(PNG_SHARED "Build shared lib" ${PNG_SHARED})
 else()
+  option(PNG_SHARED "Build shared lib" ON)
+endif()
+if(DEFINED PNG_STATIC)
+  option(PNG_STATIC "Build static lib" ${PNG_STATIC})
+else()
+  option(PNG_STATIC "Build static lib" ON)
+endif()
+else() # NOT PNG_IS_INTERNAL
   option(PNG_SHARED_LIB "Build shared lib" ${USE_SYSTEM_LIBS_DEFAULT})
   set(PNG_SHARED ${PNG_SHARED_LIB})
   set(PNG_STATIC (NOT ${PNG_SHARED_LIB}))
-endif()
+endif()# NOT PNG_IS_INTERNAL
 
 if (NOT PNG_IS_INTERNAL)
-  if(MINGW)
-    option(PNG_TESTS  "Build pngtest" NO)
-  else()
-    option(PNG_TESTS  "Build pngtest" YES)
-  endif()
-endif()
-
-if (NOT PNG_IS_INTERNAL)
-  option(PNG_NO_CONSOLE_IO "FIXME" YES)
-  option(PNG_NO_STDIO      "FIXME" YES)
-  option(PNG_DEBUG         "Build with debug output" NO)
-  option(PNGARG            "FIXME" YES)
-  #TODO:
-  # PNG_CONSOLE_IO_SUPPORTED
+if(MINGW)
+  option(PNG_TESTS  "Build pngtest" NO)
 else()
+  option(PNG_TESTS  "Build pngtest" YES)
+endif()
+endif() # NOT PNG_IS_INTERNAL
+
+if (NOT PNG_IS_INTERNAL)
+option(PNG_NO_CONSOLE_IO "FIXME" YES)
+option(PNG_NO_STDIO      "FIXME" YES)
+option(PNG_DEBUG         "Build with debug output" NO)
+option(PNGARG            "FIXME" YES)
+#TODO:
+# PNG_CONSOLE_IO_SUPPORTED
+else() # NOT PNG_IS_INTERNAL
   set(PNG_NO_CONSOLE_IO YES)
   set(PNG_NO_STDIO      NO)
   set(PNG_DEBUG         NO)
@@ -100,10 +100,10 @@ if(NOT WIN32)
                  ARGS --machine OUTPUT_VARIABLE uname_output)
     if("uname_output" MATCHES "^.*i[1-9]86.*$")
       set(png_asm_tmp "ON")
-    else()
+    else("uname_output" MATCHES "^.*i[1-9]86.*$")
       set(png_asm_tmp "OFF")
-    endif()
-  endif()
+    endif("uname_output" MATCHES "^.*i[1-9]86.*$")
+  endif(uname_executable)
 else()
   # this env var is normally only set on win64
   set(TEXT "ProgramFiles(x86)")
@@ -221,6 +221,7 @@ if(PNG_STATIC)
   endif()
 endif()
 
+
 if(PNG_SHARED AND WIN32)
   set_target_properties(${PNG_LIB_NAME} PROPERTIES DEFINE_SYMBOL PNG_BUILD_DLL)
 endif()
@@ -241,20 +242,20 @@ set(libdir      ${CMAKE_INSTALL_PREFIX}/lib)
 set(includedir  ${CMAKE_INSTALL_PREFIX}/include)
 
 if (NOT PNG_IS_INTERNAL)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/libpng.pc)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng-config.in
-    ${CMAKE_CURRENT_BINARY_DIR}/libpng-config)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}.pc)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng-config.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}-config)
-endif()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libpng.pc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng-config.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libpng-config)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}.pc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng-config.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}-config)
+endif() # NOT PNG_IS_INTERNAL
 
 # SET UP LINKS
 if(PNG_SHARED)
   set_target_properties(${PNG_LIB_NAME} PROPERTIES
-#   VERSION 0.${PNGLIB_RELEASE}.1.2.44
+#   VERSION 0.${PNGLIB_RELEASE}.1.2.49
     VERSION 0.${PNGLIB_RELEASE}.0
     SOVERSION 0
     CLEAN_DIRECT_OUTPUT 1)
