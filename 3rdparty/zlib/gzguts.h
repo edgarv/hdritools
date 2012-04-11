@@ -27,7 +27,7 @@
 #endif
 #include <fcntl.h>
 
-#ifdef __TURBOC__
+#if defined(__TURBOC__) || defined(_MSC_VER)
 #  include <io.h>
 #endif
 
