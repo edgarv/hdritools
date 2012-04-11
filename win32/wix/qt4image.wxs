@@ -30,21 +30,16 @@
                               Name="Qt4Image" WorkingDirectory="bin.dir"
                               Advertise="yes" Icon="qt4image.app.ico" />
         </File>
-      </Component>
-    </DirectoryRef>
-    
-    
-    <!--
-    File associations and Capabilities for Program Defaults.
-    We do not use ProgId/Extension/Verb because, unless they are advertised,
-    they seem to assume ownership of the file type. Writing directly the
-    registry entries and relying on Set Program Defaults seems a safer,
-    more conservative approach.
-    -->
-    <DirectoryRef Id="TARGETDIR">
 
-      <!-- OpenEXR -->
-      <Component Id="qt4image.registry.exr" Guid="$(var.qt4image.registry.exr)" Win64="$(var.IsX64)">
+        <!--
+        File associations and Capabilities for Program Defaults.
+        We do not use ProgId/Extension/Verb because, unless they are advertised,
+        they seem to assume ownership of the file type. Writing directly the
+        registry entries and relying on Set Program Defaults seems a safer,
+        more conservative approach.
+        -->
+
+        <!-- OpenEXR -->
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)"
                        Value="OpenEXR Image file" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)"
@@ -53,10 +48,8 @@
                        Value="[#qt4Image.exe],1" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.exr)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
-      </Component>
 
-      <!-- RGBE -->
-      <Component Id="qt4image.registry.rgbe" Guid="$(var.qt4image.registry.rgbe)" Win64="$(var.IsX64)">
+        <!-- RGBE -->
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)"
                        Value="RGBE Image file" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)"
@@ -65,10 +58,8 @@
                        Value="[#qt4Image.exe],2" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.rgbe)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
-      </Component>
 
-      <!-- HDR -->
-      <Component Id="qt4image.registry.hdr" Guid="$(var.qt4image.registry.hdr)" Win64="$(var.IsX64)">
+        <!-- HDR -->
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)"
                        Value="Radiance Image file" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)"
@@ -77,10 +68,8 @@
                        Value="[#qt4Image.exe],3" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.hdr)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
-      </Component>
 
-      <!-- PBM -->
-      <Component Id="qt4image.registry.pbm" Guid="$(var.qt4image.registry.pbm)" Win64="$(var.IsX64)">
+        <!-- PBM -->
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)"
                        Value="Portable Float Map Image file" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)"
@@ -89,14 +78,11 @@
                        Value="[#qt4Image.exe],4" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\$(var.progid.pbm)\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
-      </Component>
-      
-      
-      <Component Id="qt4image.registry.appregistration" Guid="$(var.qt4image.registry.appregistration)" Win64="$(var.IsX64)">
+
         <!-- App Paths to find the executable without modifying the PATH -->
         <RegistryValue Root="HKLM"
                                Key="SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\qt4Image.exe"
-                               Value="[#qt4Image.exe]" Type="string" KeyPath="yes" />
+                               Value="[#qt4Image.exe]" Type="string" />
         <!-- Support for openwith through the Applications subkey -->
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\SupportedTypes"
                        Name=".exr" Value="" Type="string" />
@@ -111,16 +97,13 @@
                        Value="[#qt4Image.exe],0" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\Applications\qt4Image.exe\shell\open\command"
                        Value="&quot;[#qt4Image.exe]&quot; &quot;%1&quot;" Type="string" />
-      </Component>
-      
 
-      <!-- Capabilities for Set Program Defaults -->
-      <Component Id="qt4image.registry.capabilities" Guid="$(var.qt4image.registry.capabilities)" Win64="$(var.IsX64)">
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities"
                        Name="ApplicationName" Value="Qt4Image" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities"
                        Name="ApplicationDescription" Value="@[#qt4Image.exe],-20" Type="string" />
 
+        <!-- Capabilities for Set Program Defaults -->
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
                        Name=".exr" Value="$(var.progid.exr)" Type="string" />
         <RegistryValue Root="HKLM" Key="SOFTWARE\PCG\qt4Image\Capabilities\FileAssociations"
@@ -132,20 +115,9 @@
 
         <RegistryValue Root="HKLM" Key="SOFTWARE\RegisteredApplications"
                        Name="PCG.qt4Image.1" Value="SOFTWARE\PCG\qt4Image\Capabilities" Type="string" />
+        
       </Component>
-      
     </DirectoryRef>
-
-
-    <!--- Keep all the registry-related components together -->
-    <ComponentGroup Id="qt4image.group.registry">
-      <ComponentRef Id="qt4image.registry.exr"/>
-      <ComponentRef Id="qt4image.registry.rgbe"/>
-      <ComponentRef Id="qt4image.registry.hdr"/>
-      <ComponentRef Id="qt4image.registry.pbm"/>
-      <ComponentRef Id="qt4image.registry.appregistration"/>
-      <ComponentRef Id="qt4image.registry.capabilities"/>
-    </ComponentGroup>
 
 
     <Feature Id="qt4image" Title="Qt4Image"
@@ -154,7 +126,6 @@
       <ComponentRef Id="qt4image.qt4Image.exe"/>
       <ComponentGroupRef Id="pcgimageio.runtime" Primary="yes"/>
       <ComponentGroupRef Id="runtime.Qt4" Primary="yes"/>
-      <ComponentGroupRef Id="qt4image.group.registry"/>
     </Feature>
   
   </Fragment>
