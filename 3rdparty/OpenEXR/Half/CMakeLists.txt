@@ -32,4 +32,4 @@ add_custom_command(OUTPUT ${LUT_DIRECTORY}/toFloat.h
 # Creates the special target  
 ADD_OPENEXR_LIBRARY(Half HALF_HEADERS HALF_SOURCES
     "Half is a class that encapsulates the IEEE 754-2008 half precision (16-bit floating-point) format."
-	${ILMBASE_VERSION} "2002")
+    ${ILMBASE_VERSION} ${ILMBASE_SOVERSION} "2002")

@@ -18,7 +18,7 @@ set(IEX_SOURCES
 # Creates the special target  
 ADD_OPENEXR_LIBRARY(Iex IEX_HEADERS IEX_SOURCES
   "Iex is an exception-handling library."
-  ${ILMBASE_VERSION} "2002")
+  ${ILMBASE_VERSION} ${ILMBASE_SOVERSION} "2002")
 
 # Disable recurrent warnings in MSVC
 MSVC_COMPILE_FLAGS(Iex "/wd4996 /wd4267")

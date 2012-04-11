@@ -40,6 +40,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ImfStringVectorAttribute.h>
+#include <cassert>
 
 
 namespace Imf {
@@ -63,7 +64,7 @@ StringVectorAttribute::writeValueTo (OStream &os, int version) const
     {
         int strSize = _value[i].size();
         Xdr::write <StreamIO> (os, strSize);
-	Xdr::write <StreamIO> (os, &_value[i][0], strSize);
+        Xdr::write <StreamIO> (os, &_value[i][0], strSize);
     }
 }
 
@@ -78,13 +79,16 @@ StringVectorAttribute::readValueFrom (IStream &is, int size, int version)
     {   
        int strSize;
        Xdr::read <StreamIO> (is, strSize);
+       assert (strSize >= 0);
        read += Xdr::size<int>();       
 
        std::string str;
-       str.resize (strSize);
-  
-       Xdr::read<StreamIO> (is, &str[0], strSize);
-       read += strSize;
+
+       if (strSize != 0) {
+           str.resize (strSize);
+           Xdr::read<StreamIO> (is, &str[0], strSize);
+           read += strSize;
+       }
 
        _value.push_back (str);
     }

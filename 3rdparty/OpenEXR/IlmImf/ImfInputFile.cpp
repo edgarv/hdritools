@@ -52,6 +52,7 @@
 #include <fstream>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 
 
 namespace Imf {
@@ -282,12 +283,12 @@ bufferedReadPixels (InputFile::Data* ifd, int scanLine1, int scanLine2)
 		//
                 
                 fromPtr = fromSlice.base +
-                          (y - tileRange.min.y) * static_cast<off_t>(fromSlice.yStride) +
-                          xStart * static_cast<off_t>(fromSlice.xStride);
+                          (y - tileRange.min.y) * static_cast<ptrdiff_t>(fromSlice.yStride) +
+                          xStart * static_cast<ptrdiff_t>(fromSlice.xStride);
 
                 toPtr = toSlice.base +
-                        divp (y, toSlice.ySampling) * static_cast<off_t>(toSlice.yStride) +
-                        divp (xStart, toSlice.xSampling) * static_cast<off_t>(toSlice.xStride);
+                        divp (y, toSlice.ySampling) * static_cast<ptrdiff_t>(toSlice.yStride) +
+                        divp (xStart, toSlice.xSampling) * static_cast<ptrdiff_t>(toSlice.xStride);
 
 		//
                 // Copy all pixels for the scanline in this row of tiles
@@ -452,7 +453,7 @@ InputFile::setFrameBuffer (const FrameBuffer &frameBuffer)
 	    // Invalidate the cached buffer.
 	    //
 
-            _data->deleteCachedBuffer ();
+	    _data->deleteCachedBuffer ();
 	    _data->cachedTileY = -1;
 
 	    //

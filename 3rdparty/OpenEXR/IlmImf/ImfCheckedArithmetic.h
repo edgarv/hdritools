@@ -51,7 +51,7 @@ namespace Imf {
 #define IMF_STATIC_ASSERT(x) static_assert(x, "ImfCheckedArithmetic: " #x)
 #else
 
-#if _MSC_VER < 1600
+#if defined(_MSC_VER) && _MSC_VER < 1600
 #pragma warning( push )
 #pragma warning( disable : 4101 )
 #endif
@@ -166,7 +166,7 @@ checkArraySize (T n, size_t s)
     return size_t (n);
 }
 
-#if _MSC_VER < 1600
+#if defined(_MSC_VER) && _MSC_VER < 1600
 #pragma warning( pop )
 #endif
 

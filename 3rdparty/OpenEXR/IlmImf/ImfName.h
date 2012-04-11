@@ -100,8 +100,8 @@ bool operator < (const Name &x, const Name &y);
 inline Name &
 Name::operator = (const char text[])
 {
-#if _MSC_VER >= 1400
-    strncpy_s(_text, text, MAX_LENGTH);
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+    strncpy_s (_text, text, MAX_LENGTH);
 #else
     strncpy (_text, text, MAX_LENGTH);
 #endif

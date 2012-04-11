@@ -46,7 +46,8 @@ namespace IlmThread {
 
 Mutex::Mutex ()
 {
-    ::InitializeCriticalSection (&_mutex);
+    // According to MSDN, the heap uses a spin count of 4000
+    ::InitializeCriticalSectionAndSpinCount (&_mutex, 4000);
 }
 
 

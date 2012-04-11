@@ -409,11 +409,17 @@ TypedAttribute<T>::unRegisterAttributeType ()
     #if defined (ILMIMF_EXPORTS)
  	#define IMF_EXPIMP_TEMPLATE
     #else
+ 	#pragma warning( push )
+ 	#pragma warning( disable : 4231 ) // nonstandard extension: extern template
  	#define IMF_EXPIMP_TEMPLATE extern
     #endif
 
     IMF_EXPIMP_TEMPLATE template class Imf::TypedAttribute<float>;
     IMF_EXPIMP_TEMPLATE template class Imf::TypedAttribute<double>;
+
+    #if !defined(ILMIMF_EXPORTS)
+    #pragma warning (pop)
+    #endif
 
     #pragma warning(default : 4251)
     #undef EXTERN_TEMPLATE

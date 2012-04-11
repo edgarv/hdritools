@@ -38,6 +38,19 @@
 //
 //-----------------------------------------------------------------------------
 
+#if defined(_MSC_VER)
+    #if ILM_THREAD_WINNT_VISTA
+        #define _WIN32_WINNT 0x0600
+    #else
+        #define _WIN32_WINNT 0x0501
+    #endif
+    #define NOMINMAX
+    #define VC_EXTRALEAN
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+    #include <memory>
+#endif
+
 #include "IlmThread.h"
 #include "IlmThreadMutex.h"
 #include "IlmThreadSemaphore.h"
@@ -433,9 +446,30 @@ ThreadPool::addTask (Task* task)
 }
 
 
+namespace
+{
+#if defined(_MSC_VER) && ILM_THREAD_WINNT_VISTA
+
+// Single initialization callback
+BOOL CALLBACK
+initGlobalThreadPool(PINIT_ONCE initOnce, PVOID param, PVOID *context)
+{
+    typedef std::auto_ptr<ThreadPool> ThreadAutoPtr;
+    ThreadAutoPtr *ptr = static_cast<ThreadAutoPtr *>(param);
+    ptr->reset(new(nothrow) ThreadPool (0));
+    return ptr->get() != NULL;
+}
+#else
+// Mutex for the global thread pool creation
+static Mutex gThreadPoolMutex;
+#endif
+} // namespace
+
+
 ThreadPool&
 ThreadPool::globalThreadPool ()
 {
+#if !defined(_MSC_VER)
     //
     // The global thread pool
     //
@@ -443,6 +477,34 @@ ThreadPool::globalThreadPool ()
     static ThreadPool gThreadPool (0);
 
     return gThreadPool;
+#else
+    // MSVC (as of version 11) does not perform thread-safe initialization
+    // of static local variables. This translates into Mutex crashes on Windows
+    // when multiple threads try to initialize the global thread pool
+#if ILM_THREAD_WINNT_VISTA
+    static INIT_ONCE gInitOnce = INIT_ONCE_STATIC_INIT;
+    static std::auto_ptr<ThreadPool> gThreadPool;
+    
+    InitOnceExecuteOnce (&gInitOnce, initGlobalThreadPool, &gThreadPool, NULL);
+    return *gThreadPool;
+#else
+    // Use the double lock pattern
+    #if _MSC_VER < 1400
+        #pragma message(__FILE__ " : Warning : double lock needs at least MSVC 2005.")
+    #endif
+    //volatile ThreadPool *gThreadPool(NULL);
+    static std::auto_ptr<volatile ThreadPool> gThreadPool;
+
+    if (gThreadPool.get() == NULL) {
+        Lock lock (gThreadPoolMutex);
+        if (gThreadPool.get() == NULL) {
+            gThreadPool.reset(new ThreadPool (0));
+        }
+    }
+    return const_cast<ThreadPool&> (*gThreadPool);
+
+#endif // ILM_THREAD_WINNT_VISTA
+#endif // !defined(_MSC_VER)
 }
 
 

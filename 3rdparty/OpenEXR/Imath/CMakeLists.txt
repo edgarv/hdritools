@@ -23,8 +23,8 @@ set(IMATH_SOURCES
 
 # Creates the special target  
 ADD_OPENEXR_LIBRARY(Imath IMATH_HEADERS IMATH_SOURCES
-  "Imath implements 2D and 3D vectors, 3x3 and 4x4 matrices, quaternions and other useful 2D and 3D math functions."
-  ${ILMBASE_VERSION} "2004")
+  "Imath implements 2D and 3D vectors, 3x3 and 4x4 matrices, quaternions and other 2D and 3D math functions."
+  ${ILMBASE_VERSION} ${ILMBASE_SOVERSION} "2004")
 
 target_link_libraries(Imath Iex)
 

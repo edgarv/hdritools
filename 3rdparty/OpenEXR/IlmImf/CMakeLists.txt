@@ -20,85 +20,130 @@ add_custom_command(OUTPUT ${LUT_DIRECTORY}/b44ExpLogTable.h
   )
 
 set(ILMIMF_HEADERS
-  ImfAttribute.h ImfBoxAttribute.h
-  ImfCRgbaFile.h ImfChannelList.h
+  ImfAcesFile.h
+  ImfArray.h
+  ImfAttribute.h
+  ImfB44Compressor.h
+  ImfBoxAttribute.h
+  ImfCRgbaFile.h
+  ImfChannelList.h
   ImfChannelListAttribute.h
-  ImfCompressionAttribute.h
-  ImfDoubleAttribute.h ImfFloatAttribute.h
-  ImfFrameBuffer.h ImfHeader.h ImfIO.h
-  ImfInputFile.h ImfIntAttribute.h
-  ImfLineOrderAttribute.h ImfMatrixAttribute.h
-  ImfOpaqueAttribute.h ImfOutputFile.h
-  ImfRgbaFile.h ImfStringAttribute.h
-  ImfVecAttribute.h ImfHuf.h ImfWav.h ImfLut.h
-  ImfArray.h ImfCompression.h ImfLineOrder.h
-  ImfName.h ImfPixelType.h ImfVersion.h ImfXdr.h
-  ImfConvert.h ImfPreviewImage.h
-  ImfPreviewImageAttribute.h ImfChromaticities.h
+  ImfChromaticities.h
   ImfChromaticitiesAttribute.h
-  ImfKeyCode.h ImfKeyCodeAttribute.h
-  ImfTimeCode.h ImfTimeCodeAttribute.h
-  ImfRational.h ImfRationalAttribute.h
-  ImfFramesPerSecond.h
-  ImfStandardAttributes.h
+  ImfCompression.h
+  ImfCompressionAttribute.h
+  ImfConvert.h
+  ImfDoubleAttribute.h
   ImfEnvmap.h
   ImfEnvmapAttribute.h
-  ImfInt64.h ImfRgba.h
+  ImfFloatAttribute.h
+  ImfFrameBuffer.h
+  ImfFramesPerSecond.h
+  ImfHeader.h
+  ImfHuf.h
+  ImfIO.h
+  ImfInputFile.h
+  ImfInt64.h
+  ImfIntAttribute.h
+  ImfKeyCode.h
+  ImfKeyCodeAttribute.h
+  ImfLineOrder.h
+  ImfLineOrderAttribute.h
+  ImfLut.h
+  ImfMatrixAttribute.h
+  ImfMultiView.h
+  ImfName.h
+  ImfOpaqueAttribute.h
+  ImfOutputFile.h
+  ImfPixelType.h
+  ImfPreviewImage.h
+  ImfPreviewImageAttribute.h
+  ImfRational.h
+  ImfRationalAttribute.h
+  ImfRgba.h
+  ImfRgbaFile.h
+  ImfRgbaYca.h
+  ImfStandardAttributes.h
+  ImfStringAttribute.h
+  ImfStringVectorAttribute.h
+  ImfTestFile.h
+  ImfThreading.h
   ImfTileDescription.h
   ImfTileDescriptionAttribute.h
   ImfTiledInputFile.h
-  ImfTiledOutputFile.h ImfTiledRgbaFile.h
-  ImfRgbaYca.h
-  ImfTestFile.h ImfThreading.h
-  ImfB44Compressor.h
-  ImfAcesFile.h
-  ImfCheckedArithmetic.h
-  ImfMultiView.h
-  ImfStringVectorAttribute.h
+  ImfTiledOutputFile.h
+  ImfTiledRgbaFile.h
+  ImfTimeCode.h
+  ImfTimeCodeAttribute.h
+  ImfVecAttribute.h
+  ImfVersion.h
+  ImfWav.h
+  ImfXdr.h
   )
   
 set(ILMIMF_SOURCES
-  ImfAttribute.cpp ImfBoxAttribute.cpp ImfCRgbaFile.cpp
-  ImfChannelList.cpp ImfChannelListAttribute.cpp
-  ImfFloatAttribute.cpp ImfFrameBuffer.cpp
-  ImfHeader.cpp ImfIO.cpp ImfInputFile.cpp
-  ImfIntAttribute.cpp ImfLineOrderAttribute.cpp
-  ImfMatrixAttribute.cpp ImfOpaqueAttribute.cpp
-  ImfOutputFile.cpp ImfRgbaFile.cpp
-  ImfStringAttribute.cpp ImfVecAttribute.cpp ImfHuf.cpp
-  ImfThreading.cpp
-  ImfWav.cpp ImfLut.cpp ImfCompressor.cpp
-  ImfRleCompressor.cpp ImfZipCompressor.cpp
-  ImfPizCompressor.cpp ImfB44Compressor.cpp ImfMisc.cpp
-  ImfCompressionAttribute.cpp ImfDoubleAttribute.cpp
-  ImfCompressor.h ImfRleCompressor.h ImfZipCompressor.h
-  ImfPizCompressor.h ImfMisc.h ImfAutoArray.h
-  ImfPxr24Compressor.cpp ImfPxr24Compressor.h
-  ImfConvert.cpp ImfPreviewImage.cpp
-  ImfPreviewImageAttribute.cpp
-  ImfVersion.cpp
+  ImfAcesFile.cpp
+  ImfAttribute.cpp
+  ImfAutoArray.h
+  ImfB44Compressor.cpp
+  ImfBoxAttribute.cpp
+  ImfCRgbaFile.cpp
+  ImfChannelList.cpp
+  ImfChannelListAttribute.cpp
+  ImfCheckedArithmetic.h
   ImfChromaticities.cpp
   ImfChromaticitiesAttribute.cpp
+  ImfCompressionAttribute.cpp
+  ImfCompressor.h ImfCompressor.cpp
+  ImfConvert.cpp
+  ImfDoubleAttribute.cpp
+  ImfEnvmap.cpp
+  ImfEnvmapAttribute.cpp
+  ImfFloatAttribute.cpp
+  ImfFrameBuffer.cpp
+  ImfFramesPerSecond.cpp
+  ImfHeader.cpp
+  ImfHuf.cpp
+  ImfIO.cpp
+  ImfInputFile.cpp
+  ImfIntAttribute.cpp
   ImfKeyCode.cpp
   ImfKeyCodeAttribute.cpp
-  ImfTimeCode.cpp
-  ImfTimeCodeAttribute.cpp
+  ImfLineOrderAttribute.cpp
+  ImfLut.cpp
+  ImfMatrixAttribute.cpp
+  ImfMisc.h ImfMisc.cpp
+  ImfMultiView.cpp
+  ImfOpaqueAttribute.cpp
+  ImfOutputFile.cpp
+  ImfPizCompressor.h ImfPizCompressor.cpp
+  ImfPreviewImage.cpp
+  ImfPreviewImageAttribute.cpp
+  ImfPxr24Compressor.h ImfPxr24Compressor.cpp
   ImfRational.cpp
   ImfRationalAttribute.cpp
-  ImfFramesPerSecond.cpp
-  ImfStandardAttributes.cpp
-  ImfStdIO.cpp ImfStdIO.h ImfEnvmap.cpp
-  ImfEnvmapAttribute.cpp
-  ImfScanLineInputFile.cpp
-  ImfScanLineInputFile.h ImfTiledInputFile.cpp
-  ImfTiledMisc.cpp ImfTiledOutputFile.cpp
-  ImfTiledRgbaFile.cpp ImfTileDescriptionAttribute.cpp
-  ImfTileOffsets.cpp
+  ImfRgbaFile.cpp
   ImfRgbaYca.cpp
-  ImfTestFile.cpp
-  ImfAcesFile.cpp
-  ImfMultiView.cpp
+  ImfRleCompressor.h ImfRleCompressor.cpp
+  ImfScanLineInputFile.h ImfScanLineInputFile.cpp
+  ImfStandardAttributes.cpp
+  ImfStdIO.h ImfStdIO.cpp
+  ImfStringAttribute.cpp
   ImfStringVectorAttribute.cpp
+  ImfTestFile.cpp
+  ImfThreading.cpp
+  ImfTileDescriptionAttribute.cpp
+  ImfTileOffsets.cpp
+  ImfTiledInputFile.cpp
+  ImfTiledMisc.cpp
+  ImfTiledOutputFile.cpp
+  ImfTiledRgbaFile.cpp
+  ImfTimeCode.cpp
+  ImfTimeCodeAttribute.cpp
+  ImfVecAttribute.cpp
+  ImfVersion.cpp
+  ImfWav.cpp
+  ImfZipCompressor.h ImfZipCompressor.cpp
   ${LUT_DIRECTORY}/b44ExpLogTable.h
   )
 
@@ -112,11 +157,11 @@ endif()
 # Creates the special target 
 ADD_OPENEXR_LIBRARY(IlmImf ILMIMF_HEADERS ILMIMF_SOURCES
   "IlmImf is a library that reads and writes OpenEXR images."
-  ${OPENEXR_VERSION} "2002" ${ZLIB_EXTRA_ARG})
+  ${OPENEXR_VERSION} ${OPENEXR_SOVERSION} "2002" ${ZLIB_EXTRA_ARG})
 
 # Link against zlib as it was found in the top level CMakeLists.txt
 include_directories(${ZLIB_INCLUDE_DIRS})
-target_link_libraries(IlmImf Half Iex IlmThread "${ZLIB_LIBRARIES}")
+target_link_libraries(IlmImf Half Iex IlmThread ${ZLIB_LIBRARIES})
 
 # Disable recurrent warnings in MSVC
 MSVC_COMPILE_FLAGS(IlmImf "/wd4244 /wd4018 /wd4996 /wd4800 /wd4267")
