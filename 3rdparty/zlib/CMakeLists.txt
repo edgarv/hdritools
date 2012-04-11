@@ -3,24 +3,28 @@
 # Otherwise the internal library (targetname is still zlib) will be static
 
 if(NOT ZLIB_IS_INTERNAL)
-  project(zlib C)
-  cmake_minimum_required(VERSION 2.4.4)
-  set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
-  if(NOT DEFINED BUILD_SHARED_LIBS)
+cmake_minimum_required(VERSION 2.4.4)
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
+
+project(zlib C)
+
+if(NOT DEFINED BUILD_SHARED_LIBS)
     option(BUILD_SHARED_LIBS "Build a shared library form of zlib" ON)
-  endif()
-else()
+endif()
+
+else() # ZLIB_IS_INTERNAL
   option(ZLIB_SHARED_LIB
     "Build a shared library form of zlib" OFF)
   set(BUILD_SHARED_LIBS ${ZLIB_SHARED_LIB})
 endif()
 
-
-
 include(CheckTypeSize)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckCSourceCompiles)
+if(NOT ZLIB_IS_INTERNAL)
+enable_testing()
+endif()
 
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(stdint.h    HAVE_STDINT_H)
@@ -66,7 +70,6 @@ if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
     add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
 endif()
-
 
 if (NOT DEFINED ZLIB_ZCONF_CMAKE_DIR)
   set(ZLIB_ZCONF_CMAKE_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -124,8 +127,11 @@ set(ZLIB_SRCS
     uncompr.c
     zutil.c
 )
-if (BUILD_SHARED_LIBS)
-  set(ZLIB_SRCS ${ZLIB_SRCS} win32/zlib1.rc)
+
+if(NOT MINGW AND BUILD_SHARED_LIBS)
+    set(ZLIB_SRCS ${ZLIB_SRCS}
+        win32/zlib1.rc # If present will override custom build rule below.
+    )
 endif()
 
 # parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
@@ -135,8 +141,12 @@ string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([0-9A-Za-z.]+)\".*"
 
 if(MINGW AND BUILD_SHARED_LIBS)
     # This gets us DLL resource information when compiling on MinGW.
+    if(NOT CMAKE_RC_COMPILER)
+        SET(CMAKE_RC_COMPILER windres.exe)
+    endif()
+
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj
-                       COMMAND windres.exe
+                       COMMAND ${CMAKE_RC_COMPILER}
                             -D GCC_WINDRES
                             -I ${CMAKE_CURRENT_SOURCE_DIR}
                             -I ${CMAKE_CURRENT_BINARY_DIR}
@@ -146,8 +156,8 @@ if(MINGW AND BUILD_SHARED_LIBS)
 endif()
 
 add_library(zlib ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
-if (BUILD_SHARED_LIBS)
-  set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
+if(BUILD_SHARED_LIBS)
+set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 endif()
 
 set_target_properties(zlib PROPERTIES SOVERSION 1)
@@ -181,24 +191,47 @@ elseif(BUILD_SHARED_LIBS AND WIN32)
     set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
 endif()
 
-if (NOT ZLIB_IS_INTERNAL)
-  if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
-      install(TARGETS zlib
-          RUNTIME DESTINATION bin
-          ARCHIVE DESTINATION lib
-          LIBRARY DESTINATION lib )
-  endif()
-  if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL)
-      install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION include)
-  endif()
-  if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL)
-      install(FILES zlib.3 DESTINATION share/man/man3)
-  endif()
-endif()
-
 if (ZLIB_IS_INTERNAL AND ZLIB_SHARED_LIB)
   install(TARGETS zlib
     RUNTIME DESTINATION "bin" COMPONENT "zlib"
-	LIBRARY DESTINATION "lib" COMPONENT "zlib"
+    LIBRARY DESTINATION "lib" COMPONENT "zlib"
   )
 endif()
+
+if(NOT ZLIB_IS_INTERNAL)
+if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
+    install(TARGETS zlib
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib )
+endif()
+if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
+    install(FILES ${ZLIB_PUBLIC_HDRS} DESTINATION include)
+endif()
+if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
+    install(FILES zlib.3 DESTINATION share/man/man3)
+endif()
+
+#============================================================================
+# Example binaries
+#============================================================================
+
+add_executable(example test/example.c)
+target_link_libraries(example zlib)
+add_test(example example)
+
+add_executable(minigzip test/minigzip.c)
+target_link_libraries(minigzip zlib)
+
+if(HAVE_OFF64_T)
+    add_executable(example64 test/example.c)
+    target_link_libraries(example64 zlib)
+    set_target_properties(example64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+    add_test(example64 example64)
+
+    add_executable(minigzip64 test/minigzip.c)
+    target_link_libraries(minigzip64 zlib)
+    set_target_properties(minigzip64 PROPERTIES COMPILE_FLAGS "-D_FILE_OFFSET_BITS=64")
+endif()
+
+endif() # NOT ZLIB_IS_INTERNAL
