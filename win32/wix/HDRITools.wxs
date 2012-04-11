@@ -85,7 +85,7 @@
 
 
     <!-- DLL with our custom actions -->
-    <Binary Id="HDRIToolsCA" SourceFile="HDRIToolsCA.dll" />
+    <Binary Id="HDRIToolsCA" SourceFile="!(bindpath.ca)\HDRIToolsCA.dll" />
 
     <Upgrade Id="$(var.UpgradeGUID)">
       <UpgradeVersion OnlyDetect="no" Property="INSTALLEDHDRITOOLS"
@@ -120,7 +120,7 @@
     <!--Auto-accept the license page-->
     <Property Id="LicenseAccepted">1</Property>
     <!-- Custom WixUI -->
-    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+    <WixVariable Id="WixUILicenseRtf" Value="!(bindpath.wix)\License.rtf" />
 
   </Product>
 </Wix>

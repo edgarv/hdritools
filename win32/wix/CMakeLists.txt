@@ -68,6 +68,9 @@ function(add_wix msi_name out_result_var)
   add_custom_command(OUTPUT "${msi}"
     COMMAND "${WiX_LIGHT_EXECUTABLE}" -nologo
             -b "${CMAKE_INSTALL_PREFIX}"
+            -b "ca=${CMAKE_CURRENT_BINARY_DIR}\\${CMAKE_CFG_INTDIR}"
+            -b "qt4Image=${PROJECT_SOURCE_DIR}\\qt4Image\\res"
+            -b "wix=${CMAKE_CURRENT_SOURCE_DIR}"
             -ext WixUIExtension ${WiX_DEFINES} -spdb
             -o "${msi}" ${depends}
     DEPENDS ${depends}
