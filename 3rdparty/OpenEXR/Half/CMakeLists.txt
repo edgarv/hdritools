@@ -3,6 +3,7 @@
 # Programs which build the LUTs
 add_executable(eLut eLut.cpp)
 add_executable(toFloat toFloat.cpp)
+OPENEXR_TOOL_FOLDER(eLut toFloat)
 
 # Directory with the LUTs
 set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

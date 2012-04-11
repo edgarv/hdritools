@@ -3,6 +3,7 @@
 # Programs which build the LUTs
 add_executable(b44ExpLogTable b44ExpLogTable.cpp)
 target_link_libraries(b44ExpLogTable Half)
+OPENEXR_TOOL_FOLDER(b44ExpLogTable)
 
 # Directory with the LUTs
 set(LUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

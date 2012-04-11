@@ -18,6 +18,7 @@ project(HDRImageTools)
 
 cmake_minimum_required(VERSION 2.6.4)
 enable_testing()
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -69,7 +70,7 @@ if(UNIX)
   else()
     # Use the default settings
     set(CMAKE_INSTALL_RPATH "")
-	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
   endif()
   
 endif()
@@ -142,12 +143,13 @@ if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
 	get_filename_component(ZLIB_LIB_FILENAME "${ZLIB_LIBRARIES}" ABSOLUTE)
   else()
     set(ZLIB_IS_INTERNAL TRUE)
-	set(ZLIB_ZCONF_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/headers/")
+    set(ZLIB_ZCONF_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/headers/")
     add_subdirectory(3rdparty/zlib)
     get_filename_component(ZLIB_MAIN_DIR "3rdparty/zlib" ABSOLUTE)
-	set(ZLIB_INCLUDE_DIRS ${ZLIB_MAIN_DIR} ${ZLIB_ZCONF_CMAKE_DIR})
+    set(ZLIB_INCLUDE_DIRS ${ZLIB_MAIN_DIR} ${ZLIB_ZCONF_CMAKE_DIR})
     set(ZLIB_LIBRARIES "zlib")
-	get_target_property(ZLIB_LIB_FILENAME zlib "LOCATION")
+    get_target_property(ZLIB_LIB_FILENAME zlib "LOCATION")
+    set_target_properties(zlib PROPERTIES FOLDER "3rdparty")
     message(STATUS "Using the internal zlib.")
   endif()
   
@@ -176,16 +178,16 @@ if (WIN32)
     string(REGEX REPLACE ".*([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1,\\2,\\3,0"
       RC_VERSION_COMMA ${HDRITOOLS_VERSION})
     set(RC_VERSION ${HDRITOOLS_VERSION})
-	set(RC_COMPANY "Program of Computer Graphics, Cornell University")
-	set(RC_COPYRIGHT "Copyright (c) 2008-2011, Program of Computer Graphics, Cornell University")
-	set(RC_DESCRIPTION ${description})
-	set(RC_NAME ${product_name})
-	set(RC_FILENAME ${filename})
+    set(RC_COMPANY "Program of Computer Graphics, Cornell University")
+    set(RC_COPYRIGHT "Copyright (c) 2008-2011, Program of Computer Graphics, Cornell University")
+    set(RC_DESCRIPTION ${description})
+    set(RC_NAME ${product_name})
+    set(RC_FILENAME ${filename})
 	
-	configure_file("${HDRITOOLS_RC_TEMPLATE}"
-	  "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc")
-	set(${out_variable}
-	  "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc" PARENT_SCOPE)
+    configure_file("${HDRITOOLS_RC_TEMPLATE}"
+      "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc")
+    set(${out_variable}
+      "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc" PARENT_SCOPE)
   endfunction()
 endif()
 
@@ -209,9 +211,10 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     set(PNG_IS_INTERNAL TRUE)
     add_subdirectory(3rdparty/libpng)
     get_filename_component(PNG_INCLUDE_DIR "3rdparty/libpng" ABSOLUTE)
-	set(PNG_INCLUDE_DIR ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
+    set(PNG_INCLUDE_DIR ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
     # PNG_LIBRARIES is set within the subdir with the proper target name, but it still depends on zlib
-	set(PNG_LIBRARIES ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
+    set_target_properties(${PNG_LIBRARIES} PROPERTIES FOLDER "3rdparty")
+    set(PNG_LIBRARIES ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
     message(STATUS "Using the internal libpng.")
   endif()
   

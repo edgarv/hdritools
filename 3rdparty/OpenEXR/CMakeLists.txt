@@ -9,9 +9,9 @@
 # this as a Windows DLL.
 # In this case it also defines:
 #  OpenEXR_INCLUDE_DIR
-# OpenEXR_LIBRARIES
-# OpenEXR_DEFINITIONS
-# OPENEXR_FOUND
+#  OpenEXR_LIBRARIES
+#  OpenEXR_DEFINITIONS
+#  OPENEXR_FOUND
 
 if(NOT OPENEXR_IS_INTERNAL)
   project(OpenEXR)
@@ -229,7 +229,6 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
 
   # Adds the resource file if necessary
   if(OPENEXR_DLL)
-  
     ADD_RESOURCE(${targetname} ${sources_var} 
 	  ${description} ${version} ${year})
   endif()
@@ -238,8 +237,8 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
   add_library(${targetname} ${OPENEXR_LIBTYPE} ${${publicheaders_var}} ${${sources_var}})
   set_target_properties(${targetname} PROPERTIES 
     VERSION ${version}
-	SOVERSION "${OPENEXR_SOVERSION}"
-	DEBUG_POSTFIX "d"
+    SOVERSION "${OPENEXR_SOVERSION}"
+    DEBUG_POSTFIX "d"
   )
   
   # If built as a static library in gcc we need to add the fpic flag, so that the code will work when linked into a shared lib
@@ -251,10 +250,10 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
   
   if(NOT OPENEXR_IS_INTERNAL)
     set_target_properties(${targetname} PROPERTIES
-	  PUBLIC_HEADER "${${publicheaders_var}}"
-	)
+      PUBLIC_HEADER "${${publicheaders_var}}")
   else()
     HDRITOOLS_LTCG(${targetname})
+    set_target_properties(${targetname} PROPERTIES FOLDER "3rdparty/OpenEXR")
   endif()
   
   # For the windows dll we need extra definitions and use createDLL
@@ -268,6 +267,15 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description v
   INSTALL_TARGET(${targetname})
 
 endmacro()
+
+# Helper macro to set up a target folder for the extra build tools
+macro(OPENEXR_TOOL_FOLDER)
+  if (OPENEXR_IS_INTERNAL)
+    set_target_properties(${ARGN} PROPERTIES
+      FOLDER "3rdparty/OpenEXR/Build Tools")
+  endif()
+endmacro()
+
   
 # Process each actual library
 add_subdirectory(Half)

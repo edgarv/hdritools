@@ -114,6 +114,8 @@ set(SRCS
 add_wix(HDRTools.msi HDRITOOLS_MSI ${SRCS})
 add_custom_target(WIX_PACKAGE DEPENDS "${HDRITOOLS_MSI}")
 add_dependencies(WIX_PACKAGE HDRIToolsCA)
+
+set_target_properties(HDRIToolsCA WIX_PACKAGE PROPERTIES FOLDER "WiX")
   
 # Copy and rename the finalized package
 set(HDRITOOLS_MSI_FILE_NAME HDRITools-${HDRITOOLS_VERSION}-${HDRITOOLS_VERSION_BUILD}-${HDRITOOLS_PLATFORM}.msi)

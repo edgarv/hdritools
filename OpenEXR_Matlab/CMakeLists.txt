@@ -37,10 +37,10 @@ if(NOT MATLABROOT)
         get_filename_component(MATLABROOT "${MATLAB_BIN_DIR}/../" ABSOLUTE CACHE)
         message(STATUS "Found Matlab 7.${m_minor} at ${MATLABROOT}")
         break()
-      endif(MATLAB_BIN_DIR)
+      endif()
     endforeach()
     mark_as_advanced(MATLAB_BIN_DIR MATLABROOT)
-  else(WIN32)
+  else()
     # Standard Unix directories
     set(MATLABROOT
       /usr/local/matlab-7sp1/
@@ -73,8 +73,8 @@ if(NOT MATLABROOT)
       endif()
     endif() 
 
-  endif (WIN32)
-endif(NOT MATLABROOT)
+  endif ()
+endif()
 
 # Directory of the includes
 find_path(MATLAB_INCLUDE_DIR "mex.h"
@@ -89,10 +89,10 @@ if(MSVC)
   if(CMAKE_CL_64)
     set(MATLABLIB extern/lib/win64/microsoft)
     set(MEX_EXT "mexw64")
-  else(CMAKE_CL_64)
+  else()
     set(MATLABLIB extern/lib/win32/microsoft)
     set(MEX_EXT "mexw32")
-  endif(CMAKE_CL_64)
+  endif()
 
   # Linker settings: it just avoids dll_export stuff
   set(MEX_LDFLAGS /export:mexFunction)
@@ -188,9 +188,9 @@ elseif(UNIX)
      set(MEX_LDFLAGS_EXTRA "${MEX_LDFLAGS_EXTRA},${MEX_MAPFILE_EXTRA}")
    endif()
   endif()
-else(MSVC)
+else()
   message(FATAL_ERROR "TODO: Add support for the ${CMAKE_SYSTEM_NAME} platform!")
-endif(MSVC)
+endif()
 
 # Type of library target
 set(MEX_TARGET_TYPE "MODULE")
@@ -271,6 +271,7 @@ function(add_mex name)
     LINK_FLAGS "${MEX_LDFLAGS}"
     INSTALL_RPATH_USE_LINK_PATH TRUE
     OSX_ARCHITECTURES "${MATLAB_OSX_ARCH}"
+    FOLDER "Matlab-MEX"
   )
   target_link_libraries(${name} ${MATLAB_LIBRARIES})
   
@@ -286,10 +287,11 @@ function(add_mex name)
       LINK_FLAGS "${MEX_LDFLAGS_EXTRA}"
       INSTALL_RPATH_USE_LINK_PATH TRUE
       OSX_ARCHITECTURES "${MATLAB_OSX_ARCH_EXTRA}"
+      FOLDER "Matlab-MEX"
     )
     target_link_libraries(${name}_extra ${MATLAB_LIBRARIES_EXTRA})
   endif()
-endfunction(add_mex)
+endfunction()
 
 # For automatic multithreading support, find out a way to get the number of CPUs
 # For non-msvc platforms try with the POSIX sysconf
@@ -301,12 +303,12 @@ if(NOT MSVC)
   )
   if(SYSCONF_WORKS)
     add_definitions(-DUSE_SYSCONF=1)
-  else(SYSCONF_WORKS)
+  else()
     add_definitions(-DUSE_SYSCONF=0)
-  endif(SYSCONF_WORKS)
-else(NOT MSVC)
+  endif()
+else()
   add_definitions(-DUSE_SYSCONF=0)
-endif(NOT MSVC)
+endif()
 
 # Creates the projects.
 set(COMMON_SRC util.h util.cpp)

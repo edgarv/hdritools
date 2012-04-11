@@ -92,6 +92,7 @@ add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
 )
 # Adds a target so that dependencies are properly tracked
 add_custom_target(openexrjni_jar DEPENDS ${OPENEXRJNI_JAR})
+set_target_properties(openexrjni_jar PROPERTIES FOLDER "Java-JNI")
   
 # Build the jni headers using the jar
 add_custom_command(OUTPUT ${JNI_HEADERS}
@@ -120,6 +121,7 @@ add_dependencies(openexrjni openexrjni_jar)
 # This is version 2 of the OpenEXR JNI addin
 set_target_properties(openexrjni PROPERTIES
   VERSION "${OPENEXRJNI_VERSION}"
+  FOLDER "Java-JNI"
 )
 
 # On Mac OS X the jni libs need an especial suffix
@@ -190,6 +192,8 @@ add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
 # Adds a target so that dependencies are properly tracked
 add_custom_target(openexrjni_test_jar DEPENDS ${OPENEXRJNI_TEST_JAR})
 add_dependencies(openexrjni openexrjni_test_jar)
+set_target_properties(openexrjni_test_jar PROPERTIES
+  FOLDER "Java-JNI/test")
 
 add_test(NAME JUnit4_EXRSimpleImageTest COMMAND
   "${Java_JAVA_EXECUTABLE}"
