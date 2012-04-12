@@ -27,7 +27,11 @@
 #include <ImfInputFile.h>
 #include <ImfChannelList.h>
 #include <ImfIO.h>
-#include <errno.h>
+#include <IlmThreadPool.h>
+
+#include <tbb/task_scheduler_init.h>
+
+#include <cerrno>
 
 // Almost a copy of Imf::StdIFStream, but this one works with any kind of istreams,
 // it won't close them when it's done
@@ -105,6 +109,9 @@ namespace pcg {
 using namespace pcg;
 
 
+namespace
+{
+
 // Small function to actually copy the pixels from the already open file into the image
 void ReadImage(Image<Rgba32F, TopDown> &img, Imf::RgbaInputFile &file)
 {
@@ -180,10 +187,28 @@ void ReadImage(Image<Rgba32F, TopDown> &img, Imf::InputFile &file)
     file.readPixels (dw.min.y, dw.max.y);	// Ossia, (0, height-1);
 }
 
+} // namespace
+
+
+
+
+int OpenEXRIO::numThreads = tbb::task_scheduler_init::default_num_threads();
+
+
+void OpenEXRIO::setNumThreads(int num)
+{
+    if (num < 0) {
+        throw IllegalArgumentException("The number of threads for OpenEXR IO "
+            "cannot be negative.");
+    }
+    numThreads = num;
+}
+
 
 void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename) {
 
     try {
+        IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
         Imf::InputFile file(filename);
         const Imf::ChannelList & channels = file.header().channels();
         const bool isYC = channels.findChannel("Y") != NULL  || 
@@ -206,6 +231,7 @@ void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename) 
 void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  istream &is) {
 
     try {
+        IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
         StdIStream stdis(is);
         Imf::InputFile file(stdis);
         ReadImage(img, file);
@@ -286,6 +312,7 @@ void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename,
     Compression compression, RgbaChannels rgbaChannels)
 {
     try {
+        IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
         const int width  = img.Width();
         const int height = img.Height();
 

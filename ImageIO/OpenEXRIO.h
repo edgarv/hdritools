@@ -96,14 +96,19 @@ namespace pcg {
         static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename,
             RgbaChannels rgbaChannels, Compression compression = ZIP);
 
+        // Lazily set the number of threads to use for OpenEXR IO
+        static void IMAGEIO_API setNumThreads(int num);
+
     private:
         static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, const char *filename);
         static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, istream &is);
 
         // Declare the super utility function for saving
         template<ScanLineMode S>
-        static void SaveHelper(Image<Rgba32F, S> &img, const char *filename,
+        static void SaveHelper(Image<Rgba32F, S> &image, const char *filename,
             Compression compression, RgbaChannels rgbaChannels);
+        
+        static int numThreads;
     };
 }
 

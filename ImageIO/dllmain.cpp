@@ -30,17 +30,11 @@ tbb::task_scheduler_init *tbbInit = NULL;
 
 #endif // !IMAGEIO_TBB_DEFAULT_INIT
 
-// Also set up the number of OpenEXR worker threads
-#include <IlmThreadPool.h>
-
 
 #if defined(_WIN32)
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
-
-
-
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -55,11 +49,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         tbbInit = new task_scheduler_init;
         assert(tbbInit != NULL);
 #endif
-        {
-            const int nThreads = task_scheduler_init::default_num_threads();
-            assert(nThreads > 0);
-            IlmThread::ThreadPool::globalThreadPool().setNumThreads(nThreads);
-        }
         break;
 
     case DLL_THREAD_ATTACH:
@@ -89,10 +78,6 @@ void __attribute__ ((constructor)) pcg_imageio_load(void)
     tbbInit = new task_scheduler_init;
     assert(tbbInit != NULL);
 #endif
-
-    const int numThreads = task_scheduler_init::default_num_threads();
-    assert(numThreads > 0);
-    IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
 }
 
 // Called when the library is unloaded and before dlclose()
