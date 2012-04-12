@@ -562,7 +562,7 @@ namespace pcg {
 		inline void Load(Image<T,S> &img, const char *filename, bool closeStream = true) {
 			
 			ifstream rgbeFile(filename, ios_base::binary);
-			if (! rgbeFile.bad() ) {
+			if (! rgbeFile.fail() ) {
 				Load(img, rgbeFile);
 				if (closeStream) {
 					rgbeFile.close();
@@ -605,7 +605,7 @@ namespace pcg {
 		inline void Save(Image<T,S> &img, const char *filename, bool closeStream = true) {
 
 			ofstream rgbeFile(filename, ios_base::binary);
-			if (! rgbeFile.bad() ) {
+			if (! rgbeFile.fail() ) {
 				Save(img, rgbeFile);
 				if (closeStream) {
 					rgbeFile.close();

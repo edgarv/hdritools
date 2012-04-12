@@ -231,7 +231,7 @@ void PfmIO_Save_helper(const Image<Rgba32F, S> &img,
 					   const char *filename, bool closeStream)
 {
 	ofstream pfmFile(filename, ios_base::binary);
-	if (! pfmFile.bad() ) {
+	if (! pfmFile.fail() ) {
 		PfmIO::Save(img, pfmFile);
 		if (closeStream) {
 			pfmFile.close();
@@ -248,7 +248,7 @@ void PfmIO_Load_helper(Image<Rgba32F, S> &img,
 					   const char *filename, bool closeStream) 
 {
 	ifstream pfmFile(filename, ios_base::binary);
-	if (! pfmFile.bad() ) {
+	if (! pfmFile.fail() ) {
 		PfmIO::Load(img, pfmFile);
 		if (closeStream) {
 			pfmFile.close();
