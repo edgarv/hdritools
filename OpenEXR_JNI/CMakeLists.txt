@@ -82,7 +82,7 @@ endif()
 
 # Commands to builds the jar file
 add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
-  COMMAND ${JAVA_COMPILE} -target 1.5
+  COMMAND ${JAVA_COMPILE} -source 1.5
     -d ${CMAKE_CURRENT_BINARY_DIR}
     ${JAVA_SRCS}
   COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_JAR} -C ${CMAKE_CURRENT_BINARY_DIR} edu
@@ -181,7 +181,7 @@ if (NOT EXISTS ${TEST_OUT_DIR})
   file(MAKE_DIRECTORY ${TEST_OUT_DIR})
 endif()
 add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
-  COMMAND ${JAVA_COMPILE} -target 1.5
+  COMMAND ${JAVA_COMPILE} -source 1.5
     -d ${TEST_OUT_DIR} -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
     ${JAVA_TEST_SRCS}
   COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu
