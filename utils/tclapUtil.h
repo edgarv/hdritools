@@ -317,15 +317,20 @@ private:
 
 
 
-// TCLAP Argument Traits defined in the global namespace
+// TCLAP Argument Traits defined in the appropriate namespace
+namespace TCLAP
+{
+
 template <>
-struct TCLAP::ArgTraits<util::Compression>
+struct ArgTraits<util::Compression>
 {
     typedef ValueLike ValueCategory;
 };
 
 template <>
-struct TCLAP::ArgTraits<util::WriteChannels>
+struct ArgTraits<util::WriteChannels>
 {
     typedef ValueLike ValueCategory;
 };
+
+} // namespace TCLAP
