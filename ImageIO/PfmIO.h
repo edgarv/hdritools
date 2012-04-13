@@ -29,43 +29,43 @@
 
 namespace pcg {
 
-	PCG_DEFINE_EXC(PfmIOException, IOException)
+    PCG_DEFINE_EXC(PfmIOException, IOException)
 
-	class PfmIO {
+    class PfmIO {
 
-	private:
-		enum ByteOrder {
-			LittleEndian,
-			BigEndian
-		};
+    private:
+        enum ByteOrder {
+            LittleEndian,
+            BigEndian
+        };
 
-		struct Header {
-			bool isColor;
-			int  width;
-			int  height;
-			ByteOrder order;
+        struct Header {
+            bool isColor;
+            int  width;
+            int  height;
+            ByteOrder order;
 
-			Header();
-			Header(const Image<Rgba32F, TopDown> &img);
-			Header(const Image<Rgba32F, BottomUp> &img);
-			Header(istream &is);
+            Header();
+            Header(const Image<Rgba32F, TopDown> &img);
+            Header(const Image<Rgba32F, BottomUp> &img);
+            Header(istream &is);
 
-			void write(ostream &os);
-		};
+            void write(ostream &os);
+        };
 
-		static ByteOrder getNativeOrder();
+        static ByteOrder getNativeOrder();
 
-	public:
-		static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, const char *filename);
-		static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, const char *filename);
-		static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, istream &is);
-		static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, istream &is);
+    public:
+        static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, const char *filename);
+        static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, const char *filename);
+        static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, istream &is);
+        static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, istream &is);
 
-		static IMAGEIO_API void Save(const Image<Rgba32F, TopDown>  &img, ostream &os);
-		static IMAGEIO_API void Save(const Image<Rgba32F, BottomUp> &img, ostream &os);
-		static void IMAGEIO_API Save(const Image<Rgba32F, TopDown>  &img, const char *filename);
-		static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename);
-	};
+        static IMAGEIO_API void Save(const Image<Rgba32F, TopDown>  &img, ostream &os);
+        static IMAGEIO_API void Save(const Image<Rgba32F, BottomUp> &img, ostream &os);
+        static void IMAGEIO_API Save(const Image<Rgba32F, TopDown>  &img, const char *filename);
+        static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename);
+    };
 
 }
 
