@@ -21,6 +21,9 @@
 #include <ctype.h>
 #include <iostream>
 #include <memory>
+#if defined(_MSC_VER)
+#include <cstdlib>
+#endif
 
 using namespace pcg;
 
@@ -139,10 +142,16 @@ void PfmIO_Save_data(const Image<Rgba32F, S>  &img, ostream &os)
 inline void swapByteOrder(unsigned int *ptr, int count)
 {
 	for (int i = 0; i < count; ++i) {
+#if defined(_MSC_VER)
+		ptr[i] = _byteswap_ulong(ptr[i]);
+#elif defined(__GNUC__)
+		ptr[i] = __builtin_bswap32(ptr[i]);
+#else
 		ptr[i] = ((ptr[i] << 24) & 0xFF000000u) |
                  ((ptr[i] <<  8) & 0xFF0000u) |
                  ((ptr[i] >>  8) & 0x00FFu) |
                  ((ptr[i] >> 24) & 0xFFu);
+#endif
 	}
 }
 
