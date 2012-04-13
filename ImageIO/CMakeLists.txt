@@ -56,6 +56,7 @@ set(SRCS
   ${LUT_DIRECTORY}/rgbeLUT.h
   Exception.h
   PfmIO.h PfmIO.cpp
+  LoadHDR.h LoadHDR.cpp
   
   # Also include the version header, defined in the root directory
   "${HDRITOOLS_VERSION_FILENAME}"
@@ -79,6 +80,7 @@ set(SRCS_PUBLIC
   Exception.h
   PngIO.h
   PfmIO.h
+  LoadHDR.h
   
   # Also include the version header, defined in the root directory
   "${HDRITOOLS_VERSION_FILENAME}"
