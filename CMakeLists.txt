@@ -97,6 +97,10 @@ option(BUILD_BATCH_TONEMAPPER
 option(BUILD_QT4IMAGE
   "Builds the QT4 successor of glimage." OFF)
   
+option(BUILD_UTILS
+  "Builds small, limited function utilities." OFF)
+
+  
 # Extra compiler flags for enabling SSE & SSE2. These will always be enabled.
 if(MSVC AND NOT CMAKE_CL_64)
   set(SSE2_COMPILER_FLAGS "/arch:SSE2")
@@ -256,6 +260,10 @@ if(BUILD_QT4IMAGE)
   add_subdirectory(qt4Image)
 endif()
 
+if(BUILD_UTILS)
+  add_subdirectory(utils)
+endif()
+
 
 
 # WiX Package for Windows
@@ -324,6 +332,12 @@ cpack_add_component("batchtonemapper"
 )
 cpack_add_component("qt4image"
   DISPLAY_NAME "Qt4Image"
+  GROUP   "apps"
+  DEPENDS "imageio"
+)
+
+cpack_add_component("utils"
+  DISPLAY_NAME "Simple command line utilities"
   GROUP   "apps"
   DEPENDS "imageio"
 )
