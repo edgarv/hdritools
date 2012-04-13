@@ -556,17 +556,13 @@ namespace pcg {
 			}
 		}
 
-		// The same as above, only that it creates the stream for you and
-		// optionaly closes it
+		// The same as above, only that it creates the stream for you
 		template < class T, ScanLineMode S >
-		inline void Load(Image<T,S> &img, const char *filename, bool closeStream = true) {
+		inline void Load(Image<T,S> &img, const char *filename) {
 			
 			ifstream rgbeFile(filename, ios_base::binary);
 			if (! rgbeFile.fail() ) {
 				Load(img, rgbeFile);
-				if (closeStream) {
-					rgbeFile.close();
-				}
 			}
 			else {
 				// Something terrible takes place here
@@ -602,14 +598,11 @@ namespace pcg {
 		}
 		
 		template < class T, ScanLineMode S >
-		inline void Save(Image<T,S> &img, const char *filename, bool closeStream = true) {
+		inline void Save(Image<T,S> &img, const char *filename) {
 
 			ofstream rgbeFile(filename, ios_base::binary);
 			if (! rgbeFile.fail() ) {
 				Save(img, rgbeFile);
-				if (closeStream) {
-					rgbeFile.close();
-				}
 			}
 			else {
 				// Something terrible takes place here
@@ -638,11 +631,11 @@ void RgbeIO::Load(Image<Rgbe,TopDown>  &img, istream &is) {
 void RgbeIO::Load(Image<Rgbe,BottomUp> &img, istream &is) {
 	rgbeions::Load(img, is);
 }
-void RgbeIO::Load(Image<Rgbe,TopDown>  &img, const char *filename, bool closeStream) {
-	rgbeions::Load(img, filename, closeStream);
+void RgbeIO::Load(Image<Rgbe,TopDown>  &img, const char *filename) {
+	rgbeions::Load(img, filename);
 }
-void RgbeIO::Load(Image<Rgbe,BottomUp> &img, const char *filename, bool closeStream) {
-	rgbeions::Load(img, filename, closeStream);
+void RgbeIO::Load(Image<Rgbe,BottomUp> &img, const char *filename) {
+	rgbeions::Load(img, filename);
 }
 
 // Rgba32F
@@ -652,11 +645,11 @@ void RgbeIO::Load(Image<Rgba32F,TopDown>  &img, istream &is) {
 void RgbeIO::Load(Image<Rgba32F,BottomUp> &img, istream &is) {
 	rgbeions::Load(img, is);
 }
-void RgbeIO::Load(Image<Rgba32F,TopDown>  &img, const char *filename, bool closeStream) {
-	rgbeions::Load(img, filename, closeStream);
+void RgbeIO::Load(Image<Rgba32F,TopDown>  &img, const char *filename) {
+	rgbeions::Load(img, filename);
 }
-void RgbeIO::Load(Image<Rgba32F,BottomUp> &img, const char *filename, bool closeStream) {
-	rgbeions::Load(img, filename, closeStream);
+void RgbeIO::Load(Image<Rgba32F,BottomUp> &img, const char *filename) {
+	rgbeions::Load(img, filename);
 }
 
 // Rgb32F
@@ -666,11 +659,11 @@ void RgbeIO::Load(Image<Rgb32F,TopDown>  &img, istream &is) {
 void RgbeIO::Load(Image<Rgb32F,BottomUp> &img, istream &is) {
 	rgbeions::Load(img, is);
 }
-void RgbeIO::Load(Image<Rgb32F,TopDown>  &img, const char *filename, bool closeStream) {
-	rgbeions::Load(img, filename, closeStream);
+void RgbeIO::Load(Image<Rgb32F,TopDown>  &img, const char *filename) {
+	rgbeions::Load(img, filename);
 }
-void RgbeIO::Load(Image<Rgb32F,BottomUp> &img, const char *filename, bool closeStream) {
-	rgbeions::Load(img, filename, closeStream);
+void RgbeIO::Load(Image<Rgb32F,BottomUp> &img, const char *filename) {
+	rgbeions::Load(img, filename);
 }
 
 
@@ -684,11 +677,11 @@ void RgbeIO::Save(Image<Rgbe,TopDown>  &img, ostream &os) {
 void RgbeIO::Save(Image<Rgbe,BottomUp> &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgbe,TopDown>  &img, const char *filename, bool closeStream) {
-	rgbeions::Save(img, filename, closeStream);
+void RgbeIO::Save(Image<Rgbe,TopDown>  &img, const char *filename) {
+	rgbeions::Save(img, filename);
 }
-void RgbeIO::Save(Image<Rgbe,BottomUp> &img, const char *filename, bool closeStream) {
-	rgbeions::Save(img, filename, closeStream);
+void RgbeIO::Save(Image<Rgbe,BottomUp> &img, const char *filename) {
+	rgbeions::Save(img, filename);
 }
 
 // Rgba32F
@@ -698,11 +691,11 @@ void RgbeIO::Save(Image<Rgba32F,TopDown>  &img, ostream &os) {
 void RgbeIO::Save(Image<Rgba32F,BottomUp> &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgba32F,TopDown>  &img, const char *filename, bool closeStream) {
-	rgbeions::Save(img, filename, closeStream);
+void RgbeIO::Save(Image<Rgba32F,TopDown>  &img, const char *filename) {
+	rgbeions::Save(img, filename);
 }
-void RgbeIO::Save(Image<Rgba32F,BottomUp> &img, const char *filename, bool closeStream) {
-	rgbeions::Save(img, filename, closeStream);
+void RgbeIO::Save(Image<Rgba32F,BottomUp> &img, const char *filename) {
+	rgbeions::Save(img, filename);
 }
 
 // Rgb32F
@@ -712,9 +705,9 @@ void RgbeIO::Save(Image<Rgb32F,TopDown>  &img, ostream &os) {
 void RgbeIO::Save(Image<Rgb32F,BottomUp> &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgb32F,TopDown>  &img, const char *filename, bool closeStream) {
-	rgbeions::Save(img, filename, closeStream);
+void RgbeIO::Save(Image<Rgb32F,TopDown>  &img, const char *filename) {
+	rgbeions::Save(img, filename);
 }
-void RgbeIO::Save(Image<Rgb32F,BottomUp> &img, const char *filename, bool closeStream) {
-	rgbeions::Save(img, filename, closeStream);
+void RgbeIO::Save(Image<Rgb32F,BottomUp> &img, const char *filename) {
+	rgbeions::Save(img, filename);
 }

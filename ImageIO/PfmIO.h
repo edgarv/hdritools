@@ -56,15 +56,15 @@ namespace pcg {
 		static ByteOrder getNativeOrder();
 
 	public:
-		static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, const char *filename, bool closeStream = true);
-		static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, const char *filename, bool closeStream = true);
+		static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, const char *filename);
+		static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, const char *filename);
 		static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, istream &is);
 		static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, istream &is);
 
 		static IMAGEIO_API void Save(const Image<Rgba32F, TopDown>  &img, ostream &os);
 		static IMAGEIO_API void Save(const Image<Rgba32F, BottomUp> &img, ostream &os);
-		static void IMAGEIO_API Save(const Image<Rgba32F, TopDown>  &img, const char *filename, bool closeStream = true);
-		static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename, bool closeStream = true);
+		static void IMAGEIO_API Save(const Image<Rgba32F, TopDown>  &img, const char *filename);
+		static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename);
 	};
 
 }

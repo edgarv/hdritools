@@ -37,20 +37,20 @@ namespace pcg {
 		// Rgbe pixels
 		static IMAGEIO_API void Load(Image<Rgbe,TopDown>  &img, istream &is);
 		static IMAGEIO_API void Load(Image<Rgbe,BottomUp> &img, istream &is);
-		static IMAGEIO_API void Load(Image<Rgbe,TopDown>  &img, const char *filename, bool closeStream = true);
-		static IMAGEIO_API void Load(Image<Rgbe,BottomUp> &img, const char *filename, bool closeStream = true);
+		static IMAGEIO_API void Load(Image<Rgbe,TopDown>  &img, const char *filename);
+		static IMAGEIO_API void Load(Image<Rgbe,BottomUp> &img, const char *filename);
 
 		// Rgba32F pixels
 		static IMAGEIO_API void Load(Image<Rgba32F,TopDown>  &img, istream &is);
 		static IMAGEIO_API void Load(Image<Rgba32F,BottomUp> &img, istream &is);
-		static IMAGEIO_API void Load(Image<Rgba32F,TopDown>  &img, const char *filename, bool closeStream = true);
-		static IMAGEIO_API void Load(Image<Rgba32F,BottomUp> &img, const char *filename, bool closeStream = true);
+		static IMAGEIO_API void Load(Image<Rgba32F,TopDown>  &img, const char *filename);
+		static IMAGEIO_API void Load(Image<Rgba32F,BottomUp> &img, const char *filename);
 
 		// Rgb32F pixels
 		static IMAGEIO_API void Load(Image<Rgb32F,TopDown>  &img, istream &is);
 		static IMAGEIO_API void Load(Image<Rgb32F,BottomUp> &img, istream &is);
-		static IMAGEIO_API void Load(Image<Rgb32F,TopDown>  &img, const char *filename, bool closeStream = true);
-		static IMAGEIO_API void Load(Image<Rgb32F,BottomUp> &img, const char *filename, bool closeStream = true);
+		static IMAGEIO_API void Load(Image<Rgb32F,TopDown>  &img, const char *filename);
+		static IMAGEIO_API void Load(Image<Rgb32F,BottomUp> &img, const char *filename);
 
 
 		// ### Save functions ###
@@ -58,20 +58,20 @@ namespace pcg {
 		// Rgbe pixels
 		static IMAGEIO_API void Save(Image<Rgbe,TopDown>  &img, ostream &os);
 		static IMAGEIO_API void Save(Image<Rgbe,BottomUp> &img, ostream &os);
-		static IMAGEIO_API void Save(Image<Rgbe,TopDown>  &img, const char *filename, bool closeStream = true);
-		static IMAGEIO_API void Save(Image<Rgbe,BottomUp> &img, const char *filename, bool closeStream = true);
+		static IMAGEIO_API void Save(Image<Rgbe,TopDown>  &img, const char *filename);
+		static IMAGEIO_API void Save(Image<Rgbe,BottomUp> &img, const char *filename);
 
 		// Rgba32F pixels
 		static IMAGEIO_API void Save(Image<Rgba32F,TopDown>  &img, ostream &os);
 		static IMAGEIO_API void Save(Image<Rgba32F,BottomUp> &img, ostream &os);
-		static IMAGEIO_API void Save(Image<Rgba32F,TopDown>  &img, const char *filename, bool closeStream = true);
-		static IMAGEIO_API void Save(Image<Rgba32F,BottomUp> &img, const char *filename, bool closeStream = true);
+		static IMAGEIO_API void Save(Image<Rgba32F,TopDown>  &img, const char *filename);
+		static IMAGEIO_API void Save(Image<Rgba32F,BottomUp> &img, const char *filename);
 
 		// Rgb32F pixels
 		static IMAGEIO_API void Save(Image<Rgb32F,TopDown>  &img, ostream &os);
 		static IMAGEIO_API void Save(Image<Rgb32F,BottomUp> &img, ostream &os);
-		static IMAGEIO_API void Save(Image<Rgb32F,TopDown>  &img, const char *filename, bool closeStream = true);
-		static IMAGEIO_API void Save(Image<Rgb32F,BottomUp> &img, const char *filename, bool closeStream = true);
+		static IMAGEIO_API void Save(Image<Rgb32F,TopDown>  &img, const char *filename);
+		static IMAGEIO_API void Save(Image<Rgb32F,BottomUp> &img, const char *filename);
 
 	};
 

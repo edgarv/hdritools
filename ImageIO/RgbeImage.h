@@ -15,6 +15,7 @@
 
 // Just a convenience class
 
+#pragma once
 #if !defined(PCG_RGBEIMAGE_H)
 #define PCG_RGBEIMAGE_H
 
@@ -43,11 +44,9 @@ namespace pcg {
 		}
 
 		// Creates a new instance by reading from the specified file.
-		// If something fails an exception is thrown. By default
-		// it closes the stream after it's done, but you can change
-		// that by setting the behaviour explicitly
-		RgbeImage(const char *filename, bool closeStream = true) {
-			RgbeIO::Load(*this, filename, closeStream);
+		// If something fails an exception is thrown.
+		RgbeImage(const char *filename) {
+			RgbeIO::Load(*this, filename);
 		}
 	};
 

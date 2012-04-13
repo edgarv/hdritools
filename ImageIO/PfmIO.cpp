@@ -108,6 +108,9 @@ void PfmIO::Header::write(std::ostream &os)
 }
 
 
+
+namespace {
+
 template <ScanLineMode S>
 void PfmIO_Save_data(const Image<Rgba32F, S>  &img, ostream &os)
 {
@@ -132,21 +135,6 @@ void PfmIO_Save_data(const Image<Rgba32F, S>  &img, ostream &os)
 
 	delete [] buffer;
 }
-
-void PfmIO::Save(const Image<Rgba32F, TopDown>  &img, ostream &os)
-{
-	Header hdr(img);
-	hdr.write(os);
-	PfmIO_Save_data(img, os);
-}
-
-void PfmIO::Save(const Image<Rgba32F, BottomUp>  &img, ostream &os)
-{
-	Header hdr(img);
-	hdr.write(os);
-	PfmIO_Save_data(img, os);
-}
-
 
 inline void swapByteOrder(unsigned int *ptr, int count)
 {
@@ -200,6 +188,49 @@ void Pfm_Load_data(Image<Rgba32F, S> &img, istream &is,
 	delete [] buffer;
 }
 
+template <ScanLineMode S>
+void PfmIO_Save_helper(const Image<Rgba32F, S> &img, const char *filename)
+{
+	ofstream pfmFile(filename, ios_base::binary);
+	if (! pfmFile.fail() ) {
+		PfmIO::Save(img, pfmFile);
+	}
+	else {
+		// Something terrible takes place here
+		throw PfmIOException((std::string)"Couldn't save the file " + filename);
+	}
+}
+
+template <ScanLineMode S>
+void PfmIO_Load_helper(Image<Rgba32F, S> &img, const char *filename) 
+{
+	ifstream pfmFile(filename, ios_base::binary);
+	if (! pfmFile.fail() ) {
+		PfmIO::Load(img, pfmFile);
+	}
+	else {
+		// Something terrible takes place here
+		throw PfmIOException((std::string)"Couldn't open the file " + filename);
+	}
+}
+
+} // namespace
+
+
+
+void PfmIO::Save(const Image<Rgba32F, TopDown>  &img, ostream &os)
+{
+	Header hdr(img);
+	hdr.write(os);
+	PfmIO_Save_data(img, os);
+}
+
+void PfmIO::Save(const Image<Rgba32F, BottomUp>  &img, ostream &os)
+{
+	Header hdr(img);
+	hdr.write(os);
+	PfmIO_Save_data(img, os);
+}
 
 void PfmIO::Load(Image<Rgba32F, TopDown> &img, istream &is)
 {
@@ -226,61 +257,18 @@ void PfmIO::Load(Image<Rgba32F, BottomUp> &img, istream &is)
 }
 
 
-template <ScanLineMode S>
-void PfmIO_Save_helper(const Image<Rgba32F, S> &img, 
-					   const char *filename, bool closeStream)
-{
-	ofstream pfmFile(filename, ios_base::binary);
-	if (! pfmFile.fail() ) {
-		PfmIO::Save(img, pfmFile);
-		if (closeStream) {
-			pfmFile.close();
-		}
-	}
-	else {
-		// Something terrible takes place here
-		throw PfmIOException((std::string)"Couldn't save the file " + filename);
-	}
-}
-
-template <ScanLineMode S>
-void PfmIO_Load_helper(Image<Rgba32F, S> &img, 
-					   const char *filename, bool closeStream) 
-{
-	ifstream pfmFile(filename, ios_base::binary);
-	if (! pfmFile.fail() ) {
-		PfmIO::Load(img, pfmFile);
-		if (closeStream) {
-			pfmFile.close();
-		}
-	}
-	else {
-		// Something terrible takes place here
-		throw PfmIOException((std::string)"Couldn't open the file " + filename);
-	}
-}
-
-
 // Instanciate the templates
-void PfmIO::Save(const Image<Rgba32F, TopDown> &img, 
-				 const char *filename, bool closeStream) 
-{
-	PfmIO_Save_helper(img, filename, closeStream);
+void PfmIO::Save(const Image<Rgba32F, TopDown> &img, const char *filename) {
+	PfmIO_Save_helper(img, filename);
 }
-void PfmIO::Save(const Image<Rgba32F, BottomUp> &img, 
-				 const char *filename, bool closeStream) 
-{
-	PfmIO_Save_helper(img, filename, closeStream);
+void PfmIO::Save(const Image<Rgba32F, BottomUp> &img, const char *filename) {
+	PfmIO_Save_helper(img, filename);
 }
 
 
-void PfmIO::Load(Image<Rgba32F, TopDown>  &img, 
-				 const char *filename, bool closeStream)
-{
-	PfmIO_Load_helper(img, filename, closeStream);
+void PfmIO::Load(Image<Rgba32F, TopDown>  &img, const char *filename) {
+	PfmIO_Load_helper(img, filename);
 }
-void PfmIO::Load(Image<Rgba32F, BottomUp> &img, 
-				 const char *filename, bool closeStream)
-{
-	PfmIO_Load_helper(img, filename, closeStream);
+void PfmIO::Load(Image<Rgba32F, BottomUp> &img, const char *filename) {
+	PfmIO_Load_helper(img, filename);
 }
