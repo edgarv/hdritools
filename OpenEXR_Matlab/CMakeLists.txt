@@ -20,6 +20,39 @@
 #set(CMAKE_REQUIRED_LIBRARIES ${OpenEXR_LIBRARIES})
 #CHECK_CXX_SOURCE_COMPILES("#include <half.h>\nint main(){ half h1=1.0f;float f1=h1-1.0f;return 0;}\n" OpenEXR_WIN_STATIC)
 
+# When not using the built-in OpenEXR, check if it supports the features
+# introduced in OpenEXR 1.7
+if(USE_SYSTEM_OPENEXR)
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_INCLUDES  ${OpenEXR_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES ${OpenEXR_LIBRARIES})
+  CHECK_CXX_SOURCE_COMPILES("
+#include <ImathVec.h>
+#include <ImathMatrix.h>
+#include <ImfVecAttribute.h>
+#include <ImfMatrixAttribute.h>
+#include <ImfStringVectorAttribute.h>
+
+Imath::V2d v2;
+Imath::V3d v3;
+Imath::M33d m33;
+Imath::M44d m44;
+
+Imf::StringVector svec;
+Imf::V2dAttribute v2attr;
+Imf::V3dAttribute v3attr;
+Imf::M33dAttribute m33attr;
+Imf::M44dAttribute m44attr;
+Imf::StringVectorAttribute svecattr;
+
+int main(int argc, char** argv) { return 0; }
+" HAVE_OPENEXR_1_7)
+
+  if(NOT HAVE_OPENEXR_1_7)
+    add_definitions(-DHAVE_OPENEXR_1_7=0)
+  endif()
+endif()
+
 
 find_package(Matlab REQUIRED)
 

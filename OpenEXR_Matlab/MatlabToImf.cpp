@@ -13,6 +13,10 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#ifndef HAVE_OPENEXR_1_7
+# define HAVE_OPENEXR_1_7 1
+#endif
+
 #include "MatlabToImf.h"
 
 #include <mex.h>
@@ -24,10 +28,12 @@
 
 #include <ImfAttribute.h>
 #include <ImfStringAttribute.h>
-#include <ImfStringVectorAttribute.h>
 #include <ImfIntAttribute.h>
 #include <ImfFloatAttribute.h>
 #include <ImfDoubleAttribute.h>
+#if HAVE_OPENEXR_1_7
+#include <ImfStringVectorAttribute.h>
+#endif
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -61,6 +67,7 @@ StringAttribute* toAttributeImp(const mxArray * pa)
 }
 
 
+#if HAVE_OPENEXR_1_7
 template <>
 StringVectorAttribute* toAttributeImp(const mxArray * pa)
 {
@@ -75,6 +82,7 @@ StringVectorAttribute* toAttributeImp(const mxArray * pa)
     StringVectorAttribute * attr = new StringVectorAttribute(value);
     return attr;
 }
+#endif
 
 
 template <>
@@ -115,6 +123,7 @@ Attribute* pcg::toAttribute(const mxArray * pa)
     if (mxIsChar(pa)) {
         return toAttributeImp<StringAttribute> (pa);
     }
+#if HAVE_OPENEXR_1_7
     else if (mxIsCell(pa)) {
         mwSize numel = 0;
         if (isVector(pa, numel)) {
@@ -127,6 +136,7 @@ Attribute* pcg::toAttribute(const mxArray * pa)
             return toAttributeImp<StringVectorAttribute> (pa);
         }
     }
+#endif
     else if (mxIsNumeric(pa)) {
         mwSize M = 0, N = 0;
         if (!isMatrix(pa, M, N)) {

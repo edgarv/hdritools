@@ -128,14 +128,14 @@ void prepareFrameBuffer(FrameBuffer & fb, const Box2i & dataWindow,
 
         // Get the appropriate sampling factors
         int xSampling = 1, ySampling = 1;
-        ChannelList::ConstIterator cIt = channels.find(requestedChannels[i]);
+        ChannelList::ConstIterator cIt = channels.find(requestedChannels[i].c_str());
         if (cIt != channels.end()) {
             xSampling = cIt.channel().xSampling;
             ySampling = cIt.channel().ySampling;
         }
         
         // Insert the slice in the framebuffer
-        fb.insert(requestedChannels[i], Slice(FLOAT, (char*)(ptr + offset),
+        fb.insert(requestedChannels[i].c_str(), Slice(FLOAT, (char*)(ptr + offset),
             sizeof(float) * xStride,
             sizeof(float) * yStride,
             xSampling, ySampling));
@@ -222,7 +222,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             // Validate that the channels are actually on the file
             const ChannelList & channels = img.header().channels();
             for (size_t i = 0; i != channelNames.size(); ++i) {
-                if (channels.find(channelNames[i]) == channels.end()) {
+                if (channels.find(channelNames[i].c_str()) == channels.end()) {
                     mexErrMsgIdAndTxt("OpenEXR:argument",
                         "Channel not in file: %s", channelNames[i].c_str());
                 }

@@ -13,6 +13,10 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#ifndef HAVE_OPENEXR_1_7
+# define HAVE_OPENEXR_1_7 1
+#endif
+
 #include "ImfToMatlab.h"
 
 #include <mex.h>
@@ -39,10 +43,12 @@
 #include <ImfPreviewImageAttribute.h>
 #include <ImfRationalAttribute.h>
 #include <ImfStringAttribute.h>
-#include <ImfStringVectorAttribute.h>
 #include <ImfTileDescriptionAttribute.h>
 #include <ImfTimeCodeAttribute.h>
 #include <ImfVecAttribute.h>
+#if HAVE_OPENEXR_1_7
+#include <ImfStringVectorAttribute.h>
+#endif
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -198,6 +204,7 @@ inline mxArray * fromMatrix(const MatrixType<T> &m)
 }
 
 
+#if HAVE_OPENEXR_1_7
 inline mxArray * fromStringVector(const StringVector & vec)
 {
 	assert(!vec.empty());
@@ -207,6 +214,7 @@ inline mxArray * fromStringVector(const StringVector & vec)
 	}
 	return cells;
 }
+#endif
 
 
 // Represent channels as structs with each member
@@ -302,15 +310,18 @@ mxArray* pcg::toMatlab(const Imf::Attribute & attr)
 	}
 
 	// Matrices
-	else if (canCastTo<M33dAttribute>(attr)) {
-		return fromMatrix<3>(getValue<M33d>(attr));
-	} else if (canCastTo<M33fAttribute>(attr)) {
+	else if (canCastTo<M33fAttribute>(attr)) {
 		return fromMatrix<3>(getValue<M33f>(attr));
-	} else if (canCastTo<M44dAttribute>(attr)) {
-		return fromMatrix<4>(getValue<M44d>(attr));
 	} else if (canCastTo<M44fAttribute>(attr)) {
 		return fromMatrix<4>(getValue<M44f>(attr));
 	}
+#if HAVE_OPENEXR_1_7
+	else if (canCastTo<M33dAttribute>(attr)) {
+		return fromMatrix<3>(getValue<M33d>(attr));
+	} else if (canCastTo<M44dAttribute>(attr)) {
+		return fromMatrix<4>(getValue<M44d>(attr));
+	}
+#endif
 
 	// Preview Image
 	else if (canCastTo<PreviewImageAttribute>(attr)) {
@@ -324,9 +335,12 @@ mxArray* pcg::toMatlab(const Imf::Attribute & attr)
 	else if (canCastTo<StringAttribute>(attr)) {
 		const std::string & value = getValue<std::string>(attr);
 		return mxCreateString(value.c_str());
-	} else if (canCastTo<StringVectorAttribute>(attr)) {
+	}
+#if HAVE_OPENEXR_1_7
+	else if (canCastTo<StringVectorAttribute>(attr)) {
 		return fromStringVector(getValue<StringVector>(attr));
 	}
+#endif
 	// Tile description
 	else if (canCastTo<TileDescriptionAttribute>(attr)) {
 		// TODO Support TileDescriptionAttribute
@@ -337,19 +351,22 @@ mxArray* pcg::toMatlab(const Imf::Attribute & attr)
 	}
 
 	// Vectors
-	else if (canCastTo<V2dAttribute>(attr)) {
-		return fromVector(getValue<V2d>(attr));
-	} else if (canCastTo<V2fAttribute>(attr)) {
+	else if (canCastTo<V2fAttribute>(attr)) {
 		return fromVector(getValue<V2f>(attr));
 	} else if (canCastTo<V2iAttribute>(attr)) {
 		return fromVector(getValue<V2i>(attr));
-	} else if (canCastTo<V3dAttribute>(attr)) {
-		return fromVector(getValue<V3d>(attr));
 	} else if (canCastTo<V3fAttribute>(attr)) {
 		return fromVector(getValue<V3f>(attr));
 	} else if (canCastTo<V3iAttribute>(attr)) {
 		return fromVector(getValue<V3i>(attr));
 	}
+#if HAVE_OPENEXR_1_7
+	else if (canCastTo<V2dAttribute>(attr)) {
+		return fromVector(getValue<V2d>(attr));
+	} else if (canCastTo<V3dAttribute>(attr)) {
+		return fromVector(getValue<V3d>(attr));
+	}
+#endif
 
 
 	return NULL;

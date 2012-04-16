@@ -423,12 +423,12 @@ void WriteData::writeEXR() const
     for (AttributeVector::const_iterator it = m_attributes.begin();
         it != m_attributes.end(); ++it)
     {
-        header.insert(it->first, *(it->second));
+        header.insert(it->first.c_str(), *(it->second));
     }
 
     // Insert channels in the header
     for (size_t i = 0; i != size(); ++i) {
-        header.channels().insert(channelName(i), Channel(type()));
+        header.channels().insert(channelName(i).c_str(), Channel(type()));
     }
 
     OutputFile file(filename().c_str(), header);
@@ -436,11 +436,11 @@ void WriteData::writeEXR() const
     // Create and populate the frame buffer
     FrameBuffer frameBuffer;
     for (size_t i = 0; i != size(); ++i) {
-        frameBuffer.insert(channelName(i),  // name
-            Slice(type(),                   // type
-                  channelData(i),           // base
-                  typeSize() * xStride(),   // xStride
-                  typeSize() * yStride())); // yStride
+        frameBuffer.insert(channelName(i).c_str(),  // name
+            Slice(type(),                           // type
+                  channelData(i),                   // base
+                  typeSize() * xStride(),           // xStride
+                  typeSize() * yStride()));         // yStride
     }
 
     file.setFrameBuffer(frameBuffer);
