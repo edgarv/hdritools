@@ -129,27 +129,29 @@ else()
     PATH_SUFFIXES "bin" NO_DEFAULT_PATH)
   if (MATLAB_BIN)
     _MATLAB_DBG_MSG("Found matlab binary: \"${MATLAB_BIN}\"")
-    if(IS_SYMLINK "${MATLAB_BIN}")
-      find_program(READLINK_BIN readlink PATHS /bin /usr/bin /usr/local/bin /sbin)
-      mark_as_advanced(MATLAB_BIN READLINK_BIN)
-      if(READLINK_BIN)
-        execute_process(COMMAND "${READLINK_BIN}" "${MATLAB_BIN}"
-          RESULT_VARIABLE out_ret OUTPUT_VARIABLE out_tmp)
-        if(NOT out_ret)
-          # At this point ${out_ret} should have the shape ${MATLABROOT}/bin/matlab
-          get_filename_component(out_tmp "${out_tmp}" PATH)
-          get_filename_component(out_tmp "${out_tmp}/../" ABSOLUTE)
-          set(_MATLAB_SEARCH_UNIX HINTS ${out_tmp})
-          list(APPEND _MATLAB_SEARCHES _MATLAB_SEARCH_UNIX)
-        endif()
+    find_program(READLINK_BIN readlink PATHS /bin /usr/bin /usr/local/bin /sbin)
+    mark_as_advanced(MATLAB_BIN READLINK_BIN)
+    if(READLINK_BIN)
+      execute_process(COMMAND "${READLINK_BIN}" "${MATLAB_BIN}"
+        RESULT_VARIABLE out_ret OUTPUT_VARIABLE out_tmp)
+      if(NOT out_ret)
+        # At this point ${out_ret} should have the shape ${MATLABROOT}/bin/matlab
+        get_filename_component(out_tmp "${out_tmp}" PATH)
+        get_filename_component(out_tmp "${out_tmp}/../" ABSOLUTE)
+        set(_MATLAB_SEARCH_UNIX HINTS ${out_tmp})
+        list(APPEND _MATLAB_SEARCHES _MATLAB_SEARCH_UNIX)
       endif()
-    else()
+    endif()
+
+    if(NOT _MATLAB_SEARCH_UNIX)
       # Assume MATLAB_BIN has the shape ${MATLAB_ROOT}/bin/matlab
+      # when it was not possible to read the symlink
       get_filename_component(_MATLAB_BIN_DIR "${MATLAB_BIN}" PATH)
       get_filename_component(_MATLAB_UNIX_ROOT "${_MATLAB_BIN_DIR}/../" ABSOLUTE)
       set(_MATLAB_SEARCH_UNIX HINTS ${_MATLAB_UNIX_ROOT})
       list(APPEND _MATLAB_SEARCHES _MATLAB_SEARCH_UNIX)
-    endif() 
+    endif()
+
   endif()
 endif ()
 
