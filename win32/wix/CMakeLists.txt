@@ -107,6 +107,7 @@ set(SRCS
   pcgimageio.wxs
   qt4image.wxs
   batchtonemapper.wxs
+  utils.wxs
   openexrjni.wxs
   openexrmex.wxs
 )

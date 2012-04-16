@@ -37,5 +37,8 @@
   <?define openexrmex.exrwrite.m="a847d1ee-6e1c-432e-9ead-4238c5034d08" ?>
   <?define openexrmex.exrwritechannels.mexw="915a7570-4475-4510-8406-1fd8ae107b6d" ?>
   <?define openexrmex.exrwritechannels.m="947243aa-2178-4777-afd8-1483c50f49ce" ?>
+  
+  <!-- Utilities -->
+  <?define utils.exrcompress.exe="daf79254-9893-4ba7-9465-8f681c1de641" ?>
 
 </Include>
