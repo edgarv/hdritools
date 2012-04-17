@@ -247,9 +247,6 @@
     <addaction name="actionZoom_Out"/>
     <addaction name="action_Fit_on_Screen"/>
     <addaction name="action_Actual_Pixels"/>
-    <addaction name="separator"/>
-    <addaction name="action_Pixel_Info"/>
-    <addaction name="action_Tone_mapping"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -263,9 +260,19 @@
     </property>
     <addaction name="action_Copy"/>
    </widget>
+   <widget class="QMenu" name="menu_Tools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <addaction name="action_Pixel_Info"/>
+    <addaction name="action_Tone_mapping"/>
+    <addaction name="separator"/>
+    <addaction name="action_File_associations"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_View"/>
+   <addaction name="menu_Tools"/>
    <addaction name="menu_Window"/>
    <addaction name="menu_Help"/>
   </widget>
@@ -436,7 +443,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>&amp;Tone mapping</string>
+    <string>&amp;Tone mapping...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
@@ -451,6 +458,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="action_File_associations">
+   <property name="text">
+    <string>File associations...</string>
    </property>
   </action>
  </widget>

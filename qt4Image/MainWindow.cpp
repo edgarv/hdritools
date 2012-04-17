@@ -26,6 +26,7 @@
 // This is the easiest way to solve the includes, altough it must be defining much
 // more stuff than it's actually needed
 #include <QtGui>
+#include <QSysInfo>
 
 #include "DoubleSpinSliderConnect.h"
 #include "PixelInfoDialog.h"
@@ -141,6 +142,18 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     // Initial values for the tone mapper
     hdrDisplay->setExposure(0.0f);
     setSRGB(true);
+
+    // Disable the file associations action in non-Windows for now
+#if !defined(Q_WS_WIN)
+    action_File_associations->setEnabled(false);
+#else
+    if (QSysInfo::WindowsVersion >= QSysInfo::WV_VISTA) {
+        connect( action_File_associations, SIGNAL(triggered()),
+                 this,                     SLOT(fileAssociations()) );
+    } else {
+        action_File_associations->setEnabled(false);
+    }
+#endif
 
     // Finally we activate both the window's layout and the central widget's layout
     // so that everything is distributed before showing the window

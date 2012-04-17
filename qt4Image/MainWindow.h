@@ -144,6 +144,8 @@ protected slots:
     // To be used when the tone mapping dialog is closed, to update the GUI
     void toneMapClosed();
 
+    // Launch the file associations
+    void fileAssociations();
 
 
 signals:

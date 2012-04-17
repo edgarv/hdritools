@@ -20,7 +20,7 @@ set(SRCS
   DoubleSpinSliderConnect.h DoubleSpinSliderConnect.cpp
   HDRImageLabel.h HDRImageLabel.cpp
   ImageDataProvider.h ImageDataProvider.cpp
-  MainWindow.h MainWindow.cpp
+  MainWindow.h MainWindow.cpp MainWindowPlatform.cpp
   PixelInfoDialog.h PixelInfoDialog.cpp
   HDRImageDisplay.h HDRImageDisplay.cpp
   ImageApp.h ImageApp.cpp
