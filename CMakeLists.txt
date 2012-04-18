@@ -256,12 +256,12 @@ if(BUILD_BATCH_TONEMAPPER)
   add_subdirectory(batchToneMapper)
 endif()
 
-if(BUILD_QT4IMAGE)
-  add_subdirectory(qt4Image)
-endif()
-
 if(BUILD_UTILS)
   add_subdirectory(utils)
+endif()
+
+if(BUILD_QT4IMAGE)
+  add_subdirectory(qt4Image)
 endif()
 
 
