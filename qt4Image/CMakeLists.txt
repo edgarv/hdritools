@@ -116,8 +116,10 @@ add_executable(qt4Image ${EXECUTABLE_TYPE}
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
 HDRITOOLS_LTCG(qt4Image)
 target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
-set_target_properties(qt4Image PROPERTIES
-  VERSION "${HDRITOOLS_VERSION}")
+if(WIN32)
+  set_target_properties(qt4Image PROPERTIES
+    VERSION "${HDRITOOLS_VERSION}")
+endif()
 
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( qt4Image )

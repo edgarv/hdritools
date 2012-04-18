@@ -21,8 +21,10 @@ include_directories(../3rdparty/tclap/include)
   
 add_executable(exrcompress exrcompress.cpp tclapUtil.h tclapUtil.cpp)
 target_link_libraries(exrcompress ImageIO)
-set_target_properties(exrcompress PROPERTIES
-  VERSION "${HDRITOOLS_VERSION}")
+if(WIN32)
+  set_target_properties(exrcompress PROPERTIES
+    VERSION "${HDRITOOLS_VERSION}")
+endif()
 
 # TODO Fix this nasty hack (adds the utils to the qt4Image bundle!)
 if (APPLE AND BUILD_QT4IMAGE AND QT4IMAGE_BUNDLE)

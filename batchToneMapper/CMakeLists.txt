@@ -41,8 +41,10 @@ include(${QT_USE_FILE})
 add_executable(batchToneMapper ${SRCS})
 HDRITOOLS_LTCG(batchToneMapper)
 target_link_libraries(batchToneMapper ImageIO zipfile ${QT_LIBRARIES})
-set_target_properties(batchToneMapper PROPERTIES
-  VERSION "${HDRITOOLS_VERSION}")
+if(WIN32)
+  set_target_properties(batchToneMapper PROPERTIES
+    VERSION "${HDRITOOLS_VERSION}")
+endif()
 
 
 # Add the image plugins with the fancy macro
