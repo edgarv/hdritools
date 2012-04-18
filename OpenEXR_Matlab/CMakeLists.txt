@@ -184,3 +184,12 @@ install(TARGETS ${MATLAB_MEX_TARGETS}
 install(FILES exrread.m exrwrite.m exrinfo.m exrreadchannels.m exrwritechannels.m
   DESTINATION "${HDRITOOLS_SHARE_DIR}/matlab" COMPONENT "openexrmex"
   )
+  
+
+if(NOT CMAKE_VERSION VERSION_LESS "2.8")
+  option("BUILD_OPENEXR_MATLAB_TEST"
+    "Add test cases for the Matlab OpenEXR MEX modules." OFF)
+  if(BUILD_OPENEXR_MATLAB_TEST)
+    add_subdirectory(test)
+  endif()
+endif()
