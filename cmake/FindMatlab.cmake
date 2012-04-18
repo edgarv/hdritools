@@ -6,13 +6,15 @@
 #  MATLAB_LIBRARIES       - required libraries for MEX files: libmex, etc.
 #  MATLAB_MEX_EXT         - extension (without the dot) for the mex files
 #
-#  MATLAB_UNIVERSAL       - defined only in OSX, indicates the system is
-#                           set up for building both 64-bit and 32-binaries.
+# Only defined in OSX
+#  MATLAB_UNIVERSAL       - indicates if the system is set up for building
+#                           64-bit and 32-binaries and Matlab supports both.
 #                           Matlab MEX files cannot be universal binaries,
 #                           Furthermore support for 32-bit Matlab on OSX
 #                           ended in 2011.
+#  MATLAB_OSX_ARCH        - primary architecture (e.g. x86_64 or i386)
 #
-# Only defined in Unix
+# Only defined in Unix and OSX
 #  MATLAB_MEX_MAPFILE     - gcc version script for MEX files.
 #  MATLAB_MEX_VERSION_SRC - source file for the MEX version information.
 #                           This file was removed in Matlab R2009a.
@@ -25,6 +27,7 @@
 #  MATLAB_MEX_EXT_EXTRA   - extension (without the dot) for the mex files
 #                           for the non-primary OSX architecture.
 #  MATLAB_MEX_MAPFILE_EXTRA - gcc version script for the non primar arch.
+#  MATLAB_OSX_ARCH_EXTRA  - secondary architecture (e.g. x86_64 or i386)
 #
 # An includer may set MATLAB_ROOT to a Matlab installation root to tell
 # this module where to look.
@@ -192,7 +195,8 @@ elseif(UNIX)
   
   set(_MATLABLIB bin/${_MATLAB_ARCH})
   
-  # Matlab doesn't support universal binaries. We'll build both architectures.
+  # Matlab doesn't support universal binaries. We build both architectures
+  # if Matlab provides both 64-bit and 32-bit libraries as separate targets.
   # Note that as of Matlab 2011, 32-bit Macs are no longer supported.
   if (APPLE)
     set(MATLAB_UNIVERSAL OFF)
@@ -213,12 +217,12 @@ elseif(UNIX)
       set(MATLAB_UNIVERSAL ON) # Where "Universal" indicates both architectures
       if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         set(MATLAB_OSX_ARCH_EXTRA x86_64)
-        set(_MATLAB_ARCH_EXTRA maci64)
-        set(MATLAB_MEX_EXT_EXTRA     mexmaci64)
+        set(_MATLAB_ARCH_EXTRA    maci64)
+        set(MATLAB_MEX_EXT_EXTRA  mexmaci64)
       else()
         set(MATLAB_OSX_ARCH_EXTRA i386)
-        set(_MATLAB_ARCH_EXTRA maci)
-        set(MATLAB_MEX_EXT_EXTRA     mexmaci)
+        set(_MATLAB_ARCH_EXTRA    maci)
+        set(MATLAB_MEX_EXT_EXTRA  mexmaci)
       endif()
     endif()
   endif()
@@ -302,7 +306,7 @@ endforeach()
 
 
 _MATLAB_DBG_MSG("Matlab extra variables: \"${_MATLAB_EXTRA_VARS}\"")
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(MATLAB DEFAULT_MSG 
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Matlab DEFAULT_MSG 
   MATLAB_INCLUDE_DIR
   MATLAB_MX_LIBRARY
   MATLAB_MEX_LIBRARY
