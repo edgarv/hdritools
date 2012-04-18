@@ -116,7 +116,7 @@ add_executable(qt4Image ${EXECUTABLE_TYPE}
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
 HDRITOOLS_LTCG(qt4Image)
 target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
-if(WIN32)
+if(WIN32 OR APPLE)
   set_target_properties(qt4Image PROPERTIES
     VERSION "${HDRITOOLS_VERSION}")
 endif()
