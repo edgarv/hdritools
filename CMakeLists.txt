@@ -23,7 +23,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Also add the compatibility modules for CMake < 2.8.3
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" VERSION_LESS "2.8.3")
+if(CMAKE_VERSION VERSION_LESS "2.8.3")
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat")
 endif()
 

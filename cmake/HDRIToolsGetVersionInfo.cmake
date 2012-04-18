@@ -56,7 +56,7 @@ macro(HDRITOOLS_GET_VERSION_INFO)
   mark_as_advanced(HG_CMD)
   if (HG_CMD)
     execute_process(
-      COMMAND "${HG_CMD}" -R "${CMAKE_CURRENT_SOURCE_DIR}"
+      COMMAND "${HG_CMD}" -R "${PROJECT_SOURCE_DIR}"
                           parents --template "{node|short},{date|shortdate}"
       OUTPUT_VARIABLE HG_INFO
       OUTPUT_STRIP_TRAILING_WHITESPACE
