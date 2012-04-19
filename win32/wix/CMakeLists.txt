@@ -87,7 +87,7 @@ foreach (suffix DEBUG MINSIZEREL RELEASE RELWITHDEBINFO)
   string(REGEX REPLACE "/MD(d?)" "/MT\\1" newflags "${${var}}")
   set(${var} "${newflags}")
 endforeach ()
-add_library(HDRIToolsCA SHARED EXCLUDE_FROM_ALL HDRIToolsCA.c)
+add_library(HDRIToolsCA SHARED EXCLUDE_FROM_ALL HDRIToolsCA.c HDRIToolsCA.def)
 
 
 if (CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8 OR CMAKE_CL_64)
