@@ -227,7 +227,8 @@ namespace pcg {
         }
 
         static void* operator new[] (size_t size) {
-            void *ptr = pcg::alloc_align<Rgba32F> (16, size);
+            assert(size % sizeof(Rgba32F) == 0);
+            void *ptr = pcg::alloc_align<char> (16, size);
             return ptr;
         }
 

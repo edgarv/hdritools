@@ -13,8 +13,9 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
-#ifndef IMAGEIO_H
-#define IMAGEIO_H
+#pragma once
+#if !defined(PCG_IMAGEIO_H)
+#define PCG_IMAGEIO_H
 
 // The following ifdef block is the standard way of creating macros which make exporting 
 // from a DLL simpler. All files within this DLL are compiled with the IMAGEIO_EXPORTS
@@ -48,9 +49,10 @@
 namespace pcg {
 
 template <typename T>
-inline T* alloc_align (size_t alignment, size_t size = sizeof(T))
+inline T* alloc_align (size_t alignment, size_t count = 1)
 {
     T* ptr = 0;
+    const size_t size = sizeof(T) * count;
 #if PCG_USE_MEMALIGN
     if (posix_memalign ((void**)&ptr, alignment, size) != 0) {
 		ptr = 0;
@@ -79,4 +81,4 @@ inline void free_align (T *ptr)
 } // namespace pcg
 
 
-#endif
+#endif /* PCG_IMAGEIO_H */

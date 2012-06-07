@@ -785,7 +785,7 @@ Reinhard02::Params
 Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
 {
     // Allocate the array with the luminances
-    afloat_t * PCG_RESTRICT Lw = alloc_align<float> (16, count*sizeof(float));  
+    afloat_t * PCG_RESTRICT Lw = alloc_align<float> (16, count);  
     if (Lw == NULL) {
         throw RuntimeException("Couldn't allocate the memory for the "
             "luminance buffer");

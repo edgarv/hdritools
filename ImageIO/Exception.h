@@ -13,6 +13,7 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#pragma once
 #if !defined(PCG_EXCEPTION_H)
 #define PCG_EXCEPTION_H
 
