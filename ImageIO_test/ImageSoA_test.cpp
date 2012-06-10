@@ -57,11 +57,12 @@ protected:
     template <pcg::ScanLineMode S>
     void fillRnd (pcg::Image<pcg::Rgba32F, S> &img) {
         for (int i = 0; i < img.Size(); ++i) {
-            const float s = 1000.0f * rnd.nextFloat();
-            const float r = s * rnd.nextFloat();
-            const float g = s * rnd.nextFloat();
-            const float b = s * rnd.nextFloat();
-            img[i].set (r, g, b, 1.0f);
+            const float s = 1000.0f * m_rnd.nextFloat();
+            const float r = s * m_rnd.nextFloat();
+            const float g = s * m_rnd.nextFloat();
+            const float b = s * m_rnd.nextFloat();
+            const float a = m_rnd.nextFloat();
+            img[i].set (r, g, b, a);
         }
     }
 
@@ -74,9 +75,9 @@ protected:
     }
 
     typedef pcg::ImageBaseSoA<float, float, float> Image;
-    typedef Image::ChannelSpecTag<1> R;
-    typedef Image::ChannelSpecTag<2> G;
-    typedef Image::ChannelSpecTag<3> B;
+    typedef Image::Channel_1 R;
+    typedef Image::Channel_2 G;
+    typedef Image::Channel_3 B;
 
     RandomMT m_rnd;
 };

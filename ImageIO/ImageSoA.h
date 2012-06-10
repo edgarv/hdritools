@@ -32,6 +32,16 @@
 namespace pcg
 {
 
+/** Tag-structure to query each channel in a type-safe way */
+template <typename T, int channelIdx>
+struct ChannelSpecTag
+{
+    static const int IDX = channelIdx;
+    typedef T data_t;
+};
+
+
+
 /**
  * Base for a multi-channel image as Struct-of-Arrays (SoA) which is better
  * for SIMD CPU processing.
@@ -51,38 +61,10 @@ public:
     // so that 16-single precision number may be read without issues
     static const int PADDING = 64;
 
-    // Tag-structure to query each channel in a type-safe way
-    template <int channel>
-    struct ChannelSpecTag;
-
-    // Specializations for each channel
-    template <>
-    struct ChannelSpecTag<1>
-    {
-        static const int IDX = 0;
-        typedef typename T1 data_t;
-    private:
-        ChannelSpecTag() {}
-    };
-
-    template <>
-    struct ChannelSpecTag<2>
-    {
-        static const int IDX = 1;
-        typedef typename T2 data_t;
-    private:
-        ChannelSpecTag() {}
-    };
-
-    template <>
-    struct ChannelSpecTag<3>
-    {
-        static const int IDX = 2;
-        typedef typename T3 data_t;
-    private:
-        ChannelSpecTag() {}
-    };
-
+    // Typedef for each channel
+    typedef ChannelSpecTag<T1, 0> Channel_1;
+    typedef ChannelSpecTag<T2, 1> Channel_2;
+    typedef ChannelSpecTag<T3, 2> Channel_3;
 
     static const int NUM_CHANNELS = 3;
 
@@ -254,9 +236,9 @@ protected:
 class RGBImageSoA : public ImageBaseSoA<float, float, float>
 {
 public:
-    typedef ImageBaseSoA::ChannelSpecTag<1> R;
-    typedef ImageBaseSoA::ChannelSpecTag<2> G;
-    typedef ImageBaseSoA::ChannelSpecTag<3> B;
+    typedef Channel_1 R;
+    typedef Channel_2 G;
+    typedef Channel_3 B;
 
     RGBImageSoA() : ImageBaseSoA() {}
 
@@ -280,17 +262,17 @@ public:
         }
     }
 
-    template <>
-    RGBImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
-    ImageBaseSoA(img.Width(), img.Height())
-    {
-        copyImage(img);
-    }
-
-
 protected:
     void IMAGEIO_API copyImage(const Image<pcg::Rgba32F, pcg::TopDown> &img);
 };
+
+// Constructor specialization
+template <>
+RGBImageSoA::RGBImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
+ImageBaseSoA(img.Width(), img.Height())
+{
+    copyImage(img);
+}
 
 } // namespace pcg
 
