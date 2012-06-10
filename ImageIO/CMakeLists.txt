@@ -38,6 +38,7 @@ add_custom_command(OUTPUT ${LUT_DIRECTORY}/rgbeLUT.h
 set(SRCS
   dllmain.cpp StdAfx.h
   Image.h
+  ImageSoA.h ImageSoA.cpp
   ImageComparator.h ImageComparator.cpp
   ImageIO.h ImageIO.cpp
   LDRPixels.h
@@ -65,6 +66,7 @@ set(SRCS
 # Subset of the sources which are the public headers
 set(SRCS_PUBLIC
   Image.h
+  ImageSoA.h
   ImageComparator.h
   ImageIO.h
   LDRPixels.h
