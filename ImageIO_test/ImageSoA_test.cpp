@@ -250,11 +250,7 @@ TEST_F(ImageSoATest, CopyConstruct)
         const int height = 1 + m_rnd.nextInt(2048);
         pcg::Image<pcg::Rgba32F> imgOrig(width, height);
 
-        pcg::Rgba32F * imgData = imgOrig.GetDataPointer();
-        for (int i = 0; i < imgOrig.Size(); ++i) {
-            imgData[i].set(
-                m_rnd.nextFloat(), m_rnd.nextFloat(), m_rnd.nextFloat());
-        }
+        fillRnd(imgOrig);
 
         t1.start();
         pcg::RGBImageSoA img(imgOrig);
@@ -267,9 +263,11 @@ TEST_F(ImageSoATest, CopyConstruct)
             const pcg::Rgba32F *p = imgOrig.GetScanlinePointer(j, pcg::TopDown);
 
             for (int i = 0; i != width; ++i) {
-                ASSERT_EQ(p[i].r(), r[i]);
-                ASSERT_EQ(p[i].g(), g[i]);
-                ASSERT_EQ(p[i].b(), b[i]);
+                pcg::Rgba32F pixel(p[i]);
+                pixel.applyAlpha();
+                ASSERT_EQ(pixel.r(), r[i]);
+                ASSERT_EQ(pixel.g(), g[i]);
+                ASSERT_EQ(pixel.b(), b[i]);
             }
         }
     }

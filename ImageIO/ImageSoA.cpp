@@ -45,9 +45,11 @@ struct CopyFunctor
     inline void
     copy1(float& r, float& g, float& b, const pcg::Rgba32F& src) const
     {
-        r = src.r();
-        g = src.g();
-        b = src.b();
+        pcg::Rgba32F pixel(src);
+        pixel.applyAlpha();
+        r = pixel.r();
+        g = pixel.g();
+        b = pixel.b();
     }
 
     inline void
@@ -59,10 +61,10 @@ struct CopyFunctor
         __m128 p3 = src[off + 3];
         PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
 
-        // FIXME Is it OK to ignore alpha?
-        _mm_stream_ps(r + off, p3);
-        _mm_stream_ps(g + off, p2);
-        _mm_stream_ps(b + off, p1);
+        // Multiply by alpha
+        _mm_stream_ps(r + off, _mm_mul_ps(p3, p0));
+        _mm_stream_ps(g + off, _mm_mul_ps(p2, p0));
+        _mm_stream_ps(b + off, _mm_mul_ps(p1, p0));
     }
 
     void operator() (Range& range) const
