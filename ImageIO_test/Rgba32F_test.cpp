@@ -159,9 +159,6 @@ TEST_F(Rgba32FTest, Setters)
 }
 
 
-#if defined(__clang__)
-#warning "Rgba32FTest::ApplyAlpha test disabled because it causes clang 2.8 to crash"
-#else
 TEST_F(Rgba32FTest, ApplyAlpha)
 {
     pcg::Rgba32F v;
@@ -210,7 +207,6 @@ TEST_F(Rgba32FTest, ApplyAlpha)
         ASSERT_EQ(a, v.a());
     }
 }
-#endif // defined(__clang__)
 
 
 
