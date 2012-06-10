@@ -83,7 +83,7 @@ protected:
 
 
 
-TEST_F(ImageSoATest, ImageSoA_Basic)
+TEST_F(ImageSoATest, Basic)
 {
     // Test the most basic methods
     Image img;
@@ -106,7 +106,7 @@ TEST_F(ImageSoATest, ImageSoA_Basic)
 }
 
 
-TEST_F(ImageSoATest, ImageSoA_BasicAccess)
+TEST_F(ImageSoATest, BasicAccess)
 {
     // Test the most basic methods
     const int N = 100;
@@ -177,7 +177,7 @@ TEST_F(ImageSoATest, ImageSoA_BasicAccess)
 }
 
 
-TEST_F(ImageSoATest, ImageSoA_ElementAccess)
+TEST_F(ImageSoATest, ElementAccess)
 {
     const int N = 100;
 
@@ -239,7 +239,7 @@ TEST_F(ImageSoATest, ImageSoA_ElementAccess)
 
 
 
-TEST_F(ImageSoATest, ImageSoA_CopyConstruct)
+TEST_F(ImageSoATest, CopyConstruct)
 {
     const int N = 100;
     Timer t1;
