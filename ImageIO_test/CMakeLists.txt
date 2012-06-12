@@ -30,6 +30,7 @@ set(SRCS
   ImageComparator_test.cpp
   ImageSoA_test.cpp
   ToneMapper_test.cpp
+  ToneMapperSoA_test.cpp
   Reinhard02Params_test.cpp
   
   tableau_f32.h tableau_f32.cpp
