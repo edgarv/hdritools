@@ -90,16 +90,19 @@ inline int abs_diff (T a, T b)
 }
 
 // Applies the Reinhard02 operations to the given pixel (inout parameter)
+// This uses the standard approach: sRGB -> xyY -> TMO(Y) -> xy,TMO(Y) -> sRGB
 void applyReinhard02(pcg::Rgba32F &p, const pcg::Reinhard02::Params &params)
 {
     const float Lwhite2 = params.l_white * params.l_white;
     const float &Lwp = params.l_w;
     const float &a = params.key;
-    const float Lw = 0.27f*p.r() + 0.67f*p.g() + 0.06f*p.b();
+    const float Lw = 0.212639005871510f*p.r() +
+        0.715168678767756f*p.g() + 0.072192315360734f*p.b();
 
-    const float partA = Lwp / (a * Lwhite2);
-    const float partB = (a*a*Lwhite2 - Lwp*Lwp) / (a * Lwhite2);
-    const float Ls = partA + partB / (Lwp + a*Lw);
+    const float partP = Lwp * a * Lwhite2;
+    const float partQ = Lwp*Lwp * Lwhite2;
+    const float partR = a * a;
+    const float Ls = (partP + partR * Lw) / (partQ + partP * Lw);
 
     const pcg::Rgba32F res = p * Ls;
     p = res;

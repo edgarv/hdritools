@@ -479,6 +479,24 @@ public:
 
 
 // Specialization of the ApplyToneMap class to handle Reinhard02
+//
+// The canonical approach is
+//   a. Transform sRGB to xyY
+//   b. Apply the TMO to Y
+//   c. Transform x,y,TMO(Y) back to sRGB
+//
+// However, having only Y and assuming that TMO(Y) == k*Y, then the
+// result of all the transformation is just k*[r,g,b]
+// Thus:
+//         (avgLogLum*key*pow(Lwhite,2) + pow(key,2)*Y)
+//    k == ------------------------------------------------
+//         (pow(avgLogLum,2)*pow(Lwhite,2) + avgLogLum*key*pow(Lwhite,2)*Y)
+//
+//    k == (P + R*Y) / (Q + P*Y)
+//    P == avgLogLum*key*pow(Lwhite,2)
+//    Q == (pow(avgLogLum,2)*pow(Lwhite,2)
+//    R == pow(key,2)
+//  
 template <typename T, ScanLineMode S1, ScanLineMode S2/* = S1*/, 
 bool useLUT, bool isSRGB>
 class ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>
@@ -494,10 +512,10 @@ public:
     Lwhite2(tm.ParamsReinhard02().l_white * tm.ParamsReinhard02().l_white),
     Lwp(tm.ParamsReinhard02().l_w),
     key(tm.ParamsReinhard02().key),
-    partA(Lwp / (key * Lwhite2)),
-    partB((key*key*Lwhite2 - Lwp*Lwp) / (key * Lwhite2)),
-    vec_Lwp(Lwp), vec_key(key),
-    vec_partA(partA), vec_partB(partB),
+    partP(Lwp * key * Lwhite2),
+    partQ(Lwp*Lwp * Lwhite2),
+    partR(key*key),
+    vec_partP(partP), vec_partQ(partQ), vec_partR(partR),
     threshold(isSRGB ? (1.0f/(12.92f*512.0f)) : pow(1.0f/512.0f, tm.Gamma())),
     lut(useLUT ? tm.lut : NULL)
     {
@@ -542,7 +560,7 @@ private:
     FORCEINLINE_BEG Rgba32F reinhard02(const Rgba32F &pix) const FORCEINLINE_END
     {
         const float Lw = dot_float(pix, vec_LUM);
-        const float Ls = partA + partB / (Lwp + key*Lw);
+        const float Ls = (partP + partR * Lw) / (partQ + partP * Lw);
 
         const Rgba32F res = pix * Ls;
         return res;
@@ -668,7 +686,8 @@ private:
         const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
 
         // Apply the Reinhard02 scalling on the vector
-        Rgba32F vec_Ls = vec_partA + vec_partB/(vec_Lwp + vec_key*vec_Lw);
+        Rgba32F vec_Ls = (vec_partP + vec_partR * vec_Lw) /
+                         (vec_partQ + vec_partP * vec_Lw);
 
         // Scale each pixel by the appropriate value
         const Rgba32F Ls0 = broadcast_idx<0> (vec_Ls);
@@ -719,14 +738,14 @@ private:
     const float key;
 
     // Helper constant parts of the computations
-    const float partA;
-    const float partB;
+    const float partP;
+    const float partQ;
+    const float partR;
 
     // Vector version of the helper constants
-    const Rgba32F vec_Lwp;
-    const Rgba32F vec_key;
-    const Rgba32F vec_partA;
-    const Rgba32F vec_partB;
+    const Rgba32F vec_partP;
+    const Rgba32F vec_partQ;
+    const Rgba32F vec_partR;
 
     // Helper value to know when to ignore the lut and set the value to zero
     const Rgba32F threshold;
@@ -747,13 +766,13 @@ private:
 
 // Initialize the class constants
 template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
-const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_R = 0.27f;
+const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_R = 0.212639005871510f;
 
 template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
-const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_G = 0.67f;
+const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_G = 0.715168678767756f;
 
 template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
-const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_B = 0.06f;
+const float ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>::LUM_B = 0.072192315360734f;
 
 template <typename T, ScanLineMode S1, ScanLineMode S2, bool useLUT, bool isSRGB>
 const Rgba32F
