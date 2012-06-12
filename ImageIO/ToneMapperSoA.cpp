@@ -444,9 +444,9 @@ struct ToneMappingKernel
         const float bDisplay = displayTransformer(bClamped);
 
         // Quantize the values
-        const Quantizer::quantized_t rQ = quantizer(rDisplay);
-        const Quantizer::quantized_t gQ = quantizer(gDisplay);
-        const Quantizer::quantized_t bQ = quantizer(bDisplay);
+        const typename Quantizer::quantized_t rQ = quantizer(rDisplay);
+        const typename Quantizer::quantized_t gQ = quantizer(gDisplay);
+        const typename Quantizer::quantized_t bQ = quantizer(bDisplay);
 
         *pixelOut = pixelAssembler(rQ, gQ, bQ);
     }
@@ -516,8 +516,10 @@ void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
     // Fixed quantization!! (that can be fixed at compile time)
     Quantizer8bit quantizer;
     PixelAssembler_BGRA8 assembler;
+    typedef ToneMappingKernel<LuminanceScaler, DisplayTransform,
+        Quantizer8bit, PixelAssembler_BGRA8> kernel_t;
 
-    auto kernel=setupKernel(scaler, display, quantizer, assembler);
+    kernel_t kernel=setupKernel(scaler, display, quantizer, assembler);
     processPixels(kernel, begin, end, dest);
 }
 

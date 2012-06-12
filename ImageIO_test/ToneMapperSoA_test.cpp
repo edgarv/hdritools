@@ -195,10 +195,6 @@ public:
 
         assert(src.Width()  == dest.Width());
         assert(src.Height() == dest.Height());
-
-        const pcg::Rgba32F* begin = src.GetDataPointer();
-        const pcg::Rgba32F* end   = begin + src.Size();
-        pcg::Bgra8* out = dest.GetDataPointer();
         const int size = src.Size();
 
         for (int i = 0; i != size; ++i) {
