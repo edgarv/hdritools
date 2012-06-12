@@ -165,9 +165,9 @@ struct Reinhard02_Method
         key = params.key / params.l_w;
         invWpSqr = 1.0f / (params.l_white * params.l_white);
 
-        P = float(params.l_w * params.key   * (params.l_white * params.l_white));
-        Q = float((params.l_w * params.l_w) * (params.l_white * params.l_white));
-        R = float(params.key * params.key);
+        P = float((params.l_w*params.key) * (params.l_white*params.l_white));
+        Q = float((params.l_w*params.l_w) * (params.l_white*params.l_white));
+        R = float(params.key*params.key);
     }
 
 private:
@@ -176,6 +176,86 @@ private:
 
     // For ImageIO
     float P, Q, R;
+};
+
+
+
+class ReferenceToneMapper
+{
+public:
+    ReferenceToneMapper() :
+    m_exposureFactor(1.0f), m_useSRGB(true), m_invGamma(1.0f/2.2f)
+    {}
+    
+    void ToneMap(pcg::Image<pcg::Bgra8, pcg::TopDown>& dest,
+        const pcg::Image<pcg::Rgba32F, pcg::TopDown>& src,
+        pcg::TmoTechnique technique = pcg::EXPOSURE) const
+    {
+        typedef pcg::Bgra8::pixel_t pixel_t;
+
+        assert(src.Width()  == dest.Width());
+        assert(src.Height() == dest.Height());
+
+        const pcg::Rgba32F* begin = src.GetDataPointer();
+        const pcg::Rgba32F* end   = begin + src.Size();
+        pcg::Bgra8* out = dest.GetDataPointer();
+        const int size = src.Size();
+
+        for (int i = 0; i != size; ++i) {
+            const pcg::Rgba32F pix = technique == pcg::EXPOSURE ?
+                m_exposureFactor * src[i] : m_reinhard02.mitsuba(src[i]);
+            float r = std::min(1.0f, std::max(0.0f, pix.r()));
+            float g = std::min(1.0f, std::max(0.0f, pix.g()));
+            float b = std::min(1.0f, std::max(0.0f, pix.b()));
+
+            // Display correction
+            if (m_useSRGB) {
+                r = sRGB(r);
+                g = sRGB(g);
+                b = sRGB(b);
+            } else {
+                r = gamma(r);
+                g = gamma(g);
+                b = gamma(b);
+            }
+
+            dest[i].set(
+                static_cast<pixel_t>(255*r + 0.5f),
+                static_cast<pixel_t>(255*g + 0.5f),
+                static_cast<pixel_t>(255*b + 0.5f));
+        }
+    }
+
+    inline void setExposure(float exposure) {
+        m_exposureFactor = pow(2.0f, exposure);
+    }
+
+    inline void SetSRGB(bool enable) {
+        m_useSRGB = enable;
+    }
+
+    inline void SetParams(const pcg::Reinhard02::Params& params) {
+        m_reinhard02.setParams(params);
+    }
+
+
+private:
+
+    inline float gamma(float x) const {
+        return pow(x, m_invGamma);
+    }
+
+    inline float sRGB(float x) const {
+        const static float CUTOFF_sRGB = float(0.00304f);
+        return x > CUTOFF_sRGB ?
+            (1.055f * pow(x, 1.0f/2.4f) - 0.055f) :
+            (12.92f * x);
+    }
+
+    float m_exposureFactor;
+    float m_useSRGB;
+    float m_invGamma;
+    Reinhard02_Method m_reinhard02;
 };
 
 
@@ -298,4 +378,74 @@ TEST_F(ToneMapperSoATest, Reinhard02Benchmark1)
     cout << "Time ImageIO:    " << tImageIO.nanoTime()*1e-9 << "s" << endl;
     cout << "ImageIO/mitsuba: "
          << (100.0*tImageIO.nanoTime())/tMts.nanoTime() << "%" << endl;
+}
+
+
+
+TEST_F(ToneMapperSoATest, Process1)
+{
+    pcg::Image<pcg::Rgba32F> img(3, 3);
+    pcg::Image<pcg::Bgra8> outImg(img.Width(), img.Height());
+    pcg::Image<pcg::Bgra8> outImgOld(img.Width(), img.Height());
+    pcg::Image<pcg::Bgra8> outImgRef(img.Width(), img.Height());
+    fillRnd(img);
+    pcg::Reinhard02::Params params = pcg::Reinhard02::EstimateParams(img);
+    const int size = img.Size();
+    
+    // There should be a better way...
+    for (int i = 0; i != size; ++i) {
+        outImg[i].set(0, 0, 0, 0);
+        outImgOld[i].set(0, 0, 0, 0);
+        outImgRef[i].set(0, 0, 0, 0);
+    }
+
+    pcg::ToneMapperSoA tm;
+    tm.SetParams(params);
+    tm.SetSRGB(true);
+    
+
+    pcg::ToneMapper tmOld(0.0f, 4096); // QtImage settings
+    tmOld.SetParams(params);
+    tmOld.SetSRGB(true);
+    
+
+    ReferenceToneMapper tmRef;
+    tmRef.SetParams(params);
+    tmRef.SetSRGB(true);
+    
+
+    Timer tSoA;
+    Timer tOld;
+    Timer tRef;
+    const int N = 10;
+    for (int i = 0; i != N; ++i) {
+        tSoA.start();
+        tm.ToneMap(outImg, img, pcg::REINHARD02);
+        tSoA.stop();
+
+        tOld.start();
+        tmOld.ToneMap(outImgOld, img, true, pcg::REINHARD02);
+        tOld.stop();
+
+        tRef.start();
+        tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
+        tRef.stop();
+    }
+
+    // Conversion factor to get the average time in ms
+    const double factor = 1e-6 / N;
+
+    // Only print if the size is small enough
+    if (size <= 10) {
+        for (int i = 0; i != size; ++i) {
+            cout << img[i] << endl;
+            cout << "   " << outImg[i]    << endl;
+            cout << "   " << outImgOld[i] << endl;
+            cout << "  *" << outImgRef[i] << endl;
+        }
+    }
+
+    cout << "Time SoA: " << tSoA.nanoTime()*factor << " ms" << endl;
+    cout << "Time Old: " << tOld.nanoTime()*factor << " ms" << endl;
+    cout << "Time Ref: " << tRef.nanoTime()*factor << " ms" << endl;
 }

@@ -19,7 +19,8 @@
 
 #include "ImageSoA.h"
 #include "Reinhard02.h"
-///
+#include "LDRPixels.h"
+#include "ToneMapper.h"
 
 namespace pcg
 {
@@ -31,24 +32,37 @@ public:
     
     // Creates a new tone mapper for SoA images specifying wheter to use sRGB
     // or simple gamma. If sRGB is disabled it will use the specified gamma
-    ToneMapperSoA(bool useSRGB, float gamma = 2.2f);
+    ToneMapperSoA(bool useSRGB = true, float gamma = 2.2f) :
+    m_exposure(0.0f), m_exposureFactor(1.0f),
+    m_gamma(gamma), m_invGamma(1.0f / gamma), m_useSRGB(useSRGB)
+    {
+        assert(gamma > 0.0f);
+    }
 
     // Set the exposure. Each pixel will be scaled by 2^exposure prior to sRGB /
     // gamma correction.
     void SetExposure(float exposure);
 
     // Replaces the current set of parameters for the Reinhard02 global TMO
-    void SetParams(const Reinhard02::Params& params);
+    inline void SetParams(const Reinhard02::Params& params) {
+        m_paramsTMO = params;
+    }
 
     // Sets the gamma correction. Each pixel's component p, will be raised to
     // the power of 1/gamma (after the exposure correction and clamping to the
     // range [0,1]); the final value is p^(1/gamma). Therefore gamma must be
     // greater than zero; the typical value for LCDs is 2.2.
     // Calling this method implies disabling sRGB
-    void setGamma(float gamma);
+    inline void setGamma(float gamma) {
+        assert(gamma > 0.0f);
+        m_gamma    = gamma;
+        m_invGamma = 1.0f / gamma;
+    }
 
     // Enables or disables the sRGB curve
-    void SetSRGB(bool enable);
+    inline void SetSRGB(bool enable) {
+        m_useSRGB = enable;
+    }
 
     // Returns the gamma employed when sRGB is not used
     inline float Gamma() const {
@@ -74,6 +88,12 @@ public:
     inline bool isSRGB() const {
         return m_useSRGB;
     }
+
+
+
+    void ToneMap(Image<Bgra8, TopDown>& dest,
+        const Image<Rgba32F, TopDown>& src,
+        TmoTechnique technique = EXPOSURE) const;
 
 
 private:

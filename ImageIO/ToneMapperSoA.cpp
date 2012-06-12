@@ -146,10 +146,10 @@ struct LuminanceScaler_Exposure
         *bOut = m_multiplier * bLinear;
     }
 
-    // Scales each pixel by exp2(exposure) [ossia 2^exposure]
-    inline void setExposure(float exposure)
+    // Scales each pixel by multiplier
+    inline void setExposureFactor(float multiplier)
     {
-        m_multiplier = float(pow(2.0f, exposure));
+        m_multiplier = float(multiplier);
     }
 
 private:
@@ -169,14 +169,14 @@ private:
 // However, having only Y and assuming that TMO(Y) == k*Y, then the
 // result of all the transformation is just k*[r,g,b]
 // Thus:
-//         (avgLogLum*key*Power(Lwhite,2) + Power(key,2)*Y)
+//         (avgLogLum*key*pow(Lwhite,2) + pow(key,2)*Y)
 //    k == ------------------------------------------------
-//         (Power(avgLogLum,2)*Power(Lwhite,2) + avgLogLum*key*Power(Lwhite,2)*Y)
+//         (pow(avgLogLum,2)*pow(Lwhite,2) + avgLogLum*key*pow(Lwhite,2)*Y)
 //
 //    k == (P + R*Y) / (Q + P*Y)
-//    P == avgLogLum*key*Power(Lwhite,2)
-//    Q == (Power(avgLogLum,2)*Power(Lwhite,2)
-//    R == Power(key,2)
+//    P == avgLogLum*key*pow(Lwhite,2)
+//    Q == (pow(avgLogLum,2)*pow(Lwhite,2)
+//    R == pow(key,2)
 //    
 struct LuminanceScaler_Reinhard02
 {
@@ -185,10 +185,11 @@ struct LuminanceScaler_Reinhard02
     m_P(0.0324f), m_Q(0.0324f), m_R(0.0324f)
     {}
 
+    // Setup the internal constants
     inline void SetParams(const pcg::Reinhard02::Params &params)
     {
-        m_P = float(params.l_w * params.key   * (params.l_white * params.l_white));
-        m_Q = float((params.l_w * params.l_w) * (params.l_white * params.l_white));
+        m_P = float((params.l_w*params.key) * (params.l_white*params.l_white));
+        m_Q = float((params.l_w*params.l_w) * (params.l_white*params.l_white));
         m_R = float(params.key * params.key);
     }
 
@@ -197,11 +198,13 @@ struct LuminanceScaler_Reinhard02
         float *rOut, float *gOut, float *bOut) const
     {
         static const float LVec[] = {
-            float(0.212639005871510f), float(0.715168678767756f), float(0.072192315360734f)
+            float(0.212639005871510f),
+            float(0.715168678767756f),
+            float(0.072192315360734f)
         };
 
         // Get the luminance
-        const float Y = LVec[0] * rLinear + LVec[1] * gLinear + LVec[2] * bLinear;
+        const float Y = LVec[0]*rLinear + LVec[1]*gLinear + LVec[2]*bLinear;
 
         // Compute the scale
         const float k = (m_P + m_R * Y) * rcp(m_Q + m_P * Y);
@@ -239,10 +242,15 @@ struct DisplayTransformer_Gamma
     m_invGamma(1.0f/2.2f)
     {}
 
-    inline void setGamma(float gamma)
+    DisplayTransformer_Gamma(float invGamma) : m_invGamma(invGamma)
     {
-        assert(gamma > 0);
-        m_invGamma = float(1.0f / gamma);
+        assert(invGamma > 0);
+    }
+
+    inline void setInvGamma(float invGamma)
+    {
+        assert(invGamma > 0);
+        m_invGamma = invGamma;
     }
 
     inline float operator() (const float& x) const
@@ -410,11 +418,14 @@ struct PixelAssembler_BGRA8
 };
 
 
+
+template<class LuminanceScaler, class DisplayTransformer, class Quantizer,
+         class PixelAssembler>
 struct ToneMappingKernel
 {
     void operator() (
         const float& rLinear, const float& gLinear, const float& bLinear,
-            PixelAssembler_BGRA8::pixel_t *pixelOut) const
+            typename PixelAssembler::pixel_t *pixelOut) const
     {
         float rScaled, gScaled, bScaled;
 
@@ -433,20 +444,167 @@ struct ToneMappingKernel
         const float bDisplay = displayTransformer(bClamped);
 
         // Quantize the values
-        const Quantizer8bit::quantized_t rQ = quantizer(rDisplay);
-        const Quantizer8bit::quantized_t gQ = quantizer(gDisplay);
-        const Quantizer8bit::quantized_t bQ = quantizer(bDisplay);
+        const Quantizer::quantized_t rQ = quantizer(rDisplay);
+        const Quantizer::quantized_t gQ = quantizer(gDisplay);
+        const Quantizer::quantized_t bQ = quantizer(bDisplay);
 
         *pixelOut = pixelAssembler(rQ, gQ, bQ);
     }
 
     // Functors which implement the actual functionality
-    LuminanceScaler_Exposure luminanceScaler;
+    LuminanceScaler luminanceScaler;
     Clamper01 clamper;
-    Display_sRGB_Fast2 displayTransformer;
-    Quantizer8bit quantizer;
-    PixelAssembler_BGRA8 pixelAssembler;
+    DisplayTransformer displayTransformer;
+    Quantizer quantizer;
+    PixelAssembler pixelAssembler;
 };
 
 
+// Move the processing here, to avoid having way too many parameters
+template <class Kernel>
+struct ProcessorA
+{
+    void operator() (const pcg::Rgba32F &pixel, pcg::Bgra8 &outPixel)
+    {
+        kernel(pixel.r(), pixel.g(), pixel.b(), &outPixel);
+    }
+
+
+    Kernel kernel;
+};
+
+
+template <class Kernel>
+void processPixels(const Kernel& kernel,
+    const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
+{
+    ProcessorA<Kernel> p;
+    p.kernel = kernel;
+
+    for (const pcg::Rgba32F* it = begin; it != end; ++it) {
+        p(*it, *dest++);
+    }
+}
+
+
+template<class LuminanceScaler, class DisplayTransformer, class Quantizer,
+         class PixelAssembler>
+ToneMappingKernel<LuminanceScaler,DisplayTransformer,Quantizer,PixelAssembler>
+setupKernel(const LuminanceScaler& luminanceScaler,
+            const DisplayTransformer& displayTransformer,
+            const Quantizer& quantizer,
+            const PixelAssembler& pixelAssembler)
+{
+    ToneMappingKernel<LuminanceScaler, DisplayTransformer,
+        Quantizer, PixelAssembler> kernel;
+
+    kernel.luminanceScaler = luminanceScaler;
+    kernel.displayTransformer = displayTransformer;
+    kernel.quantizer = quantizer;
+    kernel.pixelAssembler = pixelAssembler;
+
+    return kernel;
+}
+
+
+
+
+template <class LuminanceScaler, class DisplayTransform>
+void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
+    const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
+{
+    // Fixed quantization!! (that can be fixed at compile time)
+    Quantizer8bit quantizer;
+    PixelAssembler_BGRA8 assembler;
+
+    auto kernel=setupKernel(scaler, display, quantizer, assembler);
+    processPixels(kernel, begin, end, dest);
+}
+
+
+enum DisplayMethod
+{
+    EDISPLAY_GAMMA,
+    EDISPLAY_SRGB_REF,
+    EDISPLAY_SRGB_FAST1,
+    EDISPLAY_SRGB_FAST2
+};
+
+
+
+template <class LuminanceScaler>
+void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
+    float invGamma,
+    const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
+{
+    // Setup the display transforms
+    DisplayTransformer_Gamma displayGamma(invGamma);
+    Display_sRGB_Ref displaySRGB0;
+    Display_sRGB_Fast1 displaySRGB1;
+    Display_sRGB_Fast2 displaySRGB2;
+
+    switch(dMethod) {
+    case EDISPLAY_GAMMA:
+        ToneMapAux(scaler, displayGamma, begin, end, dest);
+        break;
+    case EDISPLAY_SRGB_REF:
+        ToneMapAux(scaler, displaySRGB0, begin, end, dest);
+        break;
+    case EDISPLAY_SRGB_FAST1:
+        ToneMapAux(scaler, displaySRGB1, begin, end, dest);
+        break;
+    case EDISPLAY_SRGB_FAST2:
+        ToneMapAux(scaler, displaySRGB2, begin, end, dest);
+        break;
+    default:
+        // ERROR!!
+        break;
+    }
+}
+
 } // namespace
+
+
+
+
+void pcg::ToneMapperSoA::SetExposure(float exposure)
+{
+    m_exposure = exposure;
+    m_exposureFactor = pow(2.0f, exposure);
+}
+
+
+
+void pcg::ToneMapperSoA::ToneMap(
+    pcg::Image<pcg::Bgra8, pcg::TopDown>& dest,
+    const pcg::Image<pcg::Rgba32F, pcg::TopDown>& src,
+    pcg::TmoTechnique technique) const
+{
+    assert(src.Width()  == dest.Width());
+    assert(src.Height() == dest.Height());
+
+    const pcg::Rgba32F* begin = src.GetDataPointer();
+    const pcg::Rgba32F* end   = begin + src.Size();
+    pcg::Bgra8* out = dest.GetDataPointer();
+
+    // TODO Select an specific sRGB method
+    const DisplayMethod dMethod = this->isSRGB() ?
+        EDISPLAY_SRGB_FAST2 : EDISPLAY_GAMMA;
+
+    LuminanceScaler_Reinhard02 sReinhard02;
+    LuminanceScaler_Exposure sExposure;
+
+    switch(technique) {
+    case pcg::REINHARD02:
+        sReinhard02.SetParams(this->ParamsReinhard02());
+        ToneMapAuxDelegate(sReinhard02, dMethod, m_invGamma, begin, end, out);
+        break;
+    case pcg::EXPOSURE:
+        sExposure.setExposureFactor(this->m_exposureFactor);
+        ToneMapAuxDelegate(sExposure, dMethod, m_invGamma, begin, end, out);
+        break;
+    default:
+        // ERROR!!
+        break;
+    }
+}
