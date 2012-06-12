@@ -16,8 +16,12 @@
 // Simple header file with the definitions of some
 // common low dynaic range pixel formats
 
+#pragma once
 #if !defined(PCG_LDRPIXELS_H)
 #define PCG_LDRPIXELS_H
+
+#include <ostream>
+
 
 namespace pcg {
 
@@ -42,6 +46,15 @@ namespace pcg {
 			this->a = a;
 		}
 
+        friend std::ostream& operator<<(std::ostream & os, const Bgra8 &p) 
+		{
+			os  << "{ [R]:" << static_cast<int>(p.r)
+				<<  " [G]:" << static_cast<int>(p.g)
+				<<  " [B]:" << static_cast<int>(p.b)
+				<<  " [A]:" << static_cast<int>(p.a)
+				<< " }";
+			return os;
+		}
 	};
 
 	// This is the classic pixel format used by OpenGL
@@ -63,6 +76,15 @@ namespace pcg {
 			this->a = a;
 		}
 
+        friend std::ostream& operator<<(std::ostream & os, const Rgba8 &p) 
+		{
+			os  << "{ [R]:" << static_cast<int>(p.r)
+				<<  " [G]:" << static_cast<int>(p.g)
+				<<  " [B]:" << static_cast<int>(p.b)
+				<<  " [A]:" << static_cast<int>(p.a)
+				<< " }";
+			return os;
+		}
 	};
 
 
@@ -85,6 +107,15 @@ namespace pcg {
 			this->a = a;
 		}
 
+        friend std::ostream& operator<<(std::ostream & os, const Rgba16 &p) 
+		{
+			os  << "{ [R]:" << p.r
+				<<  " [G]:" << p.g
+				<<  " [B]:" << p.b
+				<<  " [A]:" << p.a
+				<< " }";
+			return os;
+		}
 	};
 
 }

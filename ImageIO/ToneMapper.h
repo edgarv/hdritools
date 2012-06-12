@@ -17,6 +17,7 @@
 // inspired on the original glimage code.
 // To keep things simple, this guy only know how to tone map Rgba32F images
 
+#pragma once
 #if !defined(PCG_TONEMAPPER_H)
 #define PCG_TONEMAPPER_H
 
