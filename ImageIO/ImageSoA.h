@@ -268,7 +268,7 @@ protected:
 
 // Constructor specialization
 template <>
-RGBImageSoA::RGBImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
+inline RGBImageSoA::RGBImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
 ImageBaseSoA(img.Width(), img.Height())
 {
     copyImage(img);

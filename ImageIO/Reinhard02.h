@@ -29,7 +29,7 @@ public:
     // Struct to hold the required statistics so that the tone mapper may
     // be applied efficiently. Keeping this values assures that the tone
     // mapping curve will be the same
-    struct Params
+    struct IMAGEIO_API Params
     {
         // Key, referenced as "a" in the paper's equations
         float key;
