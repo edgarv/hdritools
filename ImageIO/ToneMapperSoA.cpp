@@ -31,7 +31,8 @@
 namespace
 {
 // Computes the reciprocal
-float rcp(float x)
+template <typename T>
+T rcp(const T& x)
 {
     return 1.0f / x;
 }
@@ -135,11 +136,12 @@ float rcp(float x)
 
 
 // Simple scaler which only multiplies all pixels by a constant
+template <typename T>
 struct LuminanceScaler_Exposure
 {
     inline void operator() (
-        const float& rLinear, const float& gLinear, const float& bLinear,
-        float *rOut, float *gOut, float *bOut) const
+        const T& rLinear, const T& gLinear, const T& bLinear,
+        T* rOut, T* gOut, T* bOut) const
     {
         *rOut = m_multiplier * rLinear;
         *gOut = m_multiplier * gLinear;
@@ -147,13 +149,13 @@ struct LuminanceScaler_Exposure
     }
 
     // Scales each pixel by multiplier
-    inline void setExposureFactor(float multiplier)
+    inline void setExposureFactor(const T& multiplier)
     {
-        m_multiplier = float(multiplier);
+        m_multiplier = T(multiplier);
     }
 
 private:
-    float m_multiplier;
+    T m_multiplier;
 };
 
 
@@ -178,6 +180,7 @@ private:
 //    Q == 1 / pow(Lwhite,2)
 //    R == 1
 //
+template <typename T>
 struct LuminanceScaler_Reinhard02
 {
     // Initial values as for key = 0.18, avgLogLum = 0.18, Lwhite = 1.0f
@@ -188,27 +191,27 @@ struct LuminanceScaler_Reinhard02
     // Setup the internal constants
     inline void SetParams(const pcg::Reinhard02::Params &params)
     {
-        m_P = float(params.key / params.l_w);
-        m_Q = float(1.0f / (params.l_white*params.l_white));
+        m_P = T(params.key / params.l_w);
+        m_Q = T(1.0f / (params.l_white*params.l_white));
     }
 
     inline void operator() (
-        const float& rLinear, const float& gLinear, const float& bLinear,
-        float *rOut, float *gOut, float *bOut) const
+        const T& rLinear, const T& gLinear, const T& bLinear,
+        T* rOut, T* gOut, T* bOut) const
     {
-        static const float LVec[] = {
-            float(0.212639005871510f),
-            float(0.715168678767756f),
-            float(0.072192315360734f)
+        static const T LVec[] = {
+            T(0.212639005871510f),
+            T(0.715168678767756f),
+            T(0.072192315360734f)
         };
-        static const float ONE = float(1.0f);
+        static const T ONE = T(1.0f);
 
         // Get the luminance
-        const float Y = LVec[0]*rLinear + LVec[1]*gLinear + LVec[2]*bLinear;
+        const T Y = LVec[0]*rLinear + LVec[1]*gLinear + LVec[2]*bLinear;
 
         // Compute the scale
-        const float Lp = m_P * Y;
-        const float k = (m_P * (ONE + m_Q*Lp)) * rcp(ONE + Lp);
+        const T Lp = m_P * Y;
+        const T k = (m_P * (ONE + m_Q*Lp)) * rcp(ONE + Lp);
 
         // And apply
         *rOut = k * rLinear;
@@ -218,17 +221,18 @@ struct LuminanceScaler_Reinhard02
 
 private:
 
-    float m_P;
-    float m_Q;
+    T m_P;
+    T m_Q;
 };
 
 
 
+template <typename T>
 struct Clamper01
 {
-    inline float operator() (const float& x) const
+    inline T operator() (const T& x) const
     {
-        return std::max(std::min(x, 1.0f), 0.0f);
+        return std::max(std::min(x, T(1.0f)), T(0.0f));
     }
 };
 
@@ -277,11 +281,12 @@ enum EsRGB_MODE
 };
 
 
+template <typename T>
 struct SRGB_NonLinear_Ref
 {
-    inline float operator() (const float& x) const
+    inline T operator() (const T& x) const
     {
-        float r = 1.055f * pow(x, 1.0f/2.4f) - 0.055f;
+        T r = T(1.055f) * pow(x, T(1.0f/2.4f)) - T(0.055f);
         return r;
     }
 };
@@ -289,29 +294,30 @@ struct SRGB_NonLinear_Ref
 
 
 // Rational approximation which should be good enough for 8-bit quantizers
+template <typename T>
 struct SRGB_NonLinear_Remez44
 {
-    inline float operator() (const float& x) const
+    inline T operator() (const T& x) const
     {
-        static const float P[] = {
-            float(-0.01997304708470295f),
-            float(24.95173169159651f),
-            float(3279.752175439042f),
-            float(39156.546674561556f),
-            float(42959.451119871745f)
+        static const T P[] = {
+            T(-0.01997304708470295f),
+            T(24.95173169159651f),
+            T(3279.752175439042f),
+            T(39156.546674561556f),
+            T(42959.451119871745f)
         };
 
-        static const float Q[] = {
-            float(1.f),
-            float(361.5384894448744f),
-            float(13090.206953080155f),
-            float(55800.948825871434f),
-            float(16180.833742684188f)
+        static const T Q[] = {
+            T(1.f),
+            T(361.5384894448744f),
+            T(13090.206953080155f),
+            T(55800.948825871434f),
+            T(16180.833742684188f)
         };
     
-        const float num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] + P[4]*x))));
-        const float den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] + Q[4]*x))));
-        const float result = num * rcp(den);
+        const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] + P[4]*x))));
+        const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] + Q[4]*x))));
+        const T result = num * rcp(den);
         return result;
     }
 };
@@ -319,35 +325,36 @@ struct SRGB_NonLinear_Remez44
 
 
 // Rational approximation which should be good enough for 16-bit quantizers
+template <typename T>
 struct SRGB_NonLinear_Remez77
 {
-    inline float operator() (const float& x) const
+    inline T operator() (const T& x) const
     {
-        static const float P[] = {
-            float(-0.031852703288410084f),
-            float(18.553896638433446f),
-            float(22006.0672110147f),
-            float(2.635850360294788e6f),
-            float(7.352843882592331e7f),
-            float(5.330866283442694e8f),
-            float(9.261676939514283e8f),
-            float(2.632919307024597e8f)
+        static const T P[] = {
+            T(-0.031852703288410084f),
+            T(18.553896638433446f),
+            T(22006.0672110147f),
+            T(2.635850360294788e6f),
+            T(7.352843882592331e7f),
+            T(5.330866283442694e8f),
+            T(9.261676939514283e8f),
+            T(2.632919307024597e8f)
         };
 
-        static const float Q[] = {
-            float(1.f),
-            float(1280.3496360781705f),
-            float(274007.5886695005f),
-            float(1.4492562384924464e7f),
-            float(2.1029015319992256e8f),
-            float(8.142158667694515e8f),
-            float(6.956059106558038e8f),
-            float(6.3853076877794705e7f)
+        static const T Q[] = {
+            T(1.f),
+            T(1280.3496360781705f),
+            T(274007.5886695005f),
+            T(1.4492562384924464e7f),
+            T(2.1029015319992256e8f),
+            T(8.142158667694515e8f),
+            T(6.956059106558038e8f),
+            T(6.3853076877794705e7f)
         };
 
-        const float num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] +
+        const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] +
                                   x*(P[4] + x*(P[5] + x*(P[6] + P[7]*x)))))));
-        const float den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] +
+        const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] +
                                   x*(Q[4] + x*(Q[5] + x*(Q[6] + Q[7]*x)))))));
         const float result = num * rcp(den);
         return result;
@@ -357,47 +364,60 @@ struct SRGB_NonLinear_Remez77
 
 
 // Actual sRGB implementation, with the non-linear functor as a template
-template <class SRGB_NonLinear>
+template <typename T, template<typename> class SRGB_NonLinear>
 struct DisplayTransformer_sRGB
 {
-    inline float operator() (const float &pLinear) const
+    inline T operator() (const T& pLinear) const
     {
-        const static float CUTOFF_sRGB = float(0.00304f);
-        float p = m_nonlinear(pLinear);
+        const static T CUTOFF_sRGB = T(0.00304f);
+        T p = m_nonlinear(pLinear);
 
         // Here comes the blend
-        float result = pLinear > CUTOFF_sRGB ? p : 12.92f * pLinear;
+        T result = pLinear > CUTOFF_sRGB ? p : T(12.92f) * pLinear;
         return result;
     }
 
 private:
-    SRGB_NonLinear m_nonlinear;
+    SRGB_NonLinear<T> m_nonlinear;
 };
 
-typedef DisplayTransformer_sRGB<SRGB_NonLinear_Ref>     Display_sRGB_Ref;
-typedef DisplayTransformer_sRGB<SRGB_NonLinear_Remez77> Display_sRGB_Fast1;
-typedef DisplayTransformer_sRGB<SRGB_NonLinear_Remez44> Display_sRGB_Fast2;
+// Workaround to template aliases (introduced in C++11)
+template <typename T>
+struct Display_sRGB_Ref {
+    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Ref> type;
+};
+
+template <typename T>
+struct Display_sRGB_Fast1 {
+    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Remez77> type;
+};
+
+template <typename T>
+struct Display_sRGB_Fast2 {
+    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Remez44> type;
+};
 
 
-
+template <typename T>
 struct Quantizer8bit
 {
     typedef unsigned char quantized_t;
 
-    quantized_t operator() (const float& x) const
+    quantized_t operator() (const T& x) const
     {
-        return static_cast<unsigned char>(255.0f * x + 0.5f);
+        return static_cast<unsigned char>(T(255.0f) * x + T(0.5f));
     }
 };
 
 
+template <typename T>
 struct Quantizer16bit
 {
     typedef unsigned short quantized_t;
 
-    quantized_t operator() (const float& x) const
+    quantized_t operator() (const T& x) const
     {
-        return static_cast<unsigned short>(65535.0f * x + 0.5f);
+        return static_cast<unsigned short>(T(65535.0f) * x + T(0.5f));
     }
 };
 
@@ -407,9 +427,9 @@ struct PixelAssembler_BGRA8
     typedef pcg::Bgra8 pixel_t;
 
     pixel_t operator() (
-        const Quantizer8bit::quantized_t& r,
-        const Quantizer8bit::quantized_t& g,
-        const Quantizer8bit::quantized_t& b) const
+        const Quantizer8bit<float>::quantized_t& r,
+        const Quantizer8bit<float>::quantized_t& g,
+        const Quantizer8bit<float>::quantized_t& b) const
     {
         pcg::Bgra8 pixel;
         pixel.set(r, g, b);
@@ -453,7 +473,7 @@ struct ToneMappingKernel
 
     // Functors which implement the actual functionality
     LuminanceScaler luminanceScaler;
-    Clamper01 clamper;
+    Clamper01<float> clamper;
     DisplayTransformer displayTransformer;
     Quantizer quantizer;
     PixelAssembler pixelAssembler;
@@ -514,10 +534,10 @@ void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
     // Fixed quantization!! (that can be fixed at compile time)
-    Quantizer8bit quantizer;
+    Quantizer8bit<float> quantizer;
     PixelAssembler_BGRA8 assembler;
     typedef ToneMappingKernel<LuminanceScaler, DisplayTransform,
-        Quantizer8bit, PixelAssembler_BGRA8> kernel_t;
+        Quantizer8bit<float>, PixelAssembler_BGRA8> kernel_t;
 
     kernel_t kernel=setupKernel(scaler, display, quantizer, assembler);
     processPixels(kernel, begin, end, dest);
@@ -541,9 +561,9 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
 {
     // Setup the display transforms
     DisplayTransformer_Gamma displayGamma(invGamma);
-    Display_sRGB_Ref displaySRGB0;
-    Display_sRGB_Fast1 displaySRGB1;
-    Display_sRGB_Fast2 displaySRGB2;
+    Display_sRGB_Ref<float>::type displaySRGB0;
+    Display_sRGB_Fast1<float>::type displaySRGB1;
+    Display_sRGB_Fast2<float>::type displaySRGB2;
 
     switch(dMethod) {
     case EDISPLAY_GAMMA:
@@ -593,8 +613,8 @@ void pcg::ToneMapperSoA::ToneMap(
     const DisplayMethod dMethod = this->isSRGB() ?
         EDISPLAY_SRGB_FAST2 : EDISPLAY_GAMMA;
 
-    LuminanceScaler_Reinhard02 sReinhard02;
-    LuminanceScaler_Exposure sExposure;
+    LuminanceScaler_Reinhard02<float> sReinhard02;
+    LuminanceScaler_Exposure<float> sExposure;
 
     switch(technique) {
     case pcg::REINHARD02:
