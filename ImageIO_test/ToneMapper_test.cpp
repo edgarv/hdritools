@@ -96,16 +96,35 @@ void applyReinhard02(pcg::Rgba32F &p, const pcg::Reinhard02::Params &params)
     const float Lwhite2 = params.l_white * params.l_white;
     const float &Lwp = params.l_w;
     const float &a = params.key;
-    const float Lw = 0.212639005871510f*p.r() +
-        0.715168678767756f*p.g() + 0.072192315360734f*p.b();
 
-    const float partP = Lwp * a * Lwhite2;
-    const float partQ = Lwp*Lwp * Lwhite2;
-    const float partR = a * a;
-    const float Ls = (partP + partR * Lw) / (partQ + partP * Lw);
+    const float& r = p.r();
+    const float& g = p.g();
+    const float& b = p.b();
 
-    const pcg::Rgba32F res = p * Ls;
-    p = res;
+    // from sRGB to XYZ
+    double X = 0.412390799265960*r + 0.357584339383878*g + 0.180480788401834*b;
+    double Y = 0.212639005871510*r + 0.715168678767756*g + 0.072192315360734*b;
+    double Z = 0.019330818715592*r + 0.119194779794626*g + 0.950532152249661*b;
+    const double normalization = 1.0 / (X+Y+Z);
+
+    // from XYZ to xyY
+    const double x = X*normalization;
+    const double y = Y*normalization;
+
+    // Reinhard02 curve
+    const double Lp = Y * (a/Lwp);
+    Y = Lp * (1.0 + Lp/Lwhite2) / (1.0+Lp);
+
+    // from xyY to XYZ
+    X = (Y/y) * x;
+    Z = (Y/y) * (1.0 - x - y);
+
+    // to sRGB
+    double rO =  3.240969941904521*X + -1.537383177570093*Y + -0.498610760293003*Z;
+    double gO = -0.969243636280880*X +  1.875967501507721*Y +  0.041555057407176*Z;
+    double bO =  0.055630079696994*X + -0.203976958888977*Y +  1.056971514242879*Z;
+
+    p.set(static_cast<float>(rO), static_cast<float>(gO), static_cast<float>(bO));
 }
 
 

@@ -93,14 +93,14 @@ namespace
 // sRGB
 struct Reinhard02_Method
 {
-    // As implemented in Mitsuba 0.3
+    // As implemented in Mitsuba 0.3, with re-derives matrices with extra digits
     void mitsuba(const float& r, const float& g, const float& b,
         float *rOut, float *gOut, float *bOut) const
     {
         // from sRGB to XYZ
-        float X = 0.412453f*r + 0.357580f*g + 0.180423f*b;
-        float Y = 0.212671f*r + 0.715160f*g + 0.072169f*b;
-        float Z = 0.019334f*r + 0.119193f*g + 0.950227f*b;
+        float X = 0.4123908f*r + 0.3575843f*g + 0.1804808f*b;
+        float Y = 0.2126390f*r + 0.7151687f*g + 0.0721923f*b;
+        float Z = 0.0193308f*r + 0.1191948f*g + 0.9505321f*b;
         const float normalization = 1.0f/(X+Y+Z);
 
         // from XYZ to xyY
@@ -116,9 +116,9 @@ struct Reinhard02_Method
         Z = (Y/y) * (1.0f - x - y);
 
         // to sRGB
-        *rOut =  3.240479f*X + -1.537150f*Y + -0.498535f*Z;
-        *gOut = -0.969256f*X +  1.875991f*Y +  0.041556f*Z;
-        *bOut =  0.055648f*X + -0.204043f*Y +  1.057311f*Z;
+        *rOut =  3.2409699f*X + -1.5373832f*Y + -0.4986108f*Z;
+        *gOut = -0.9692436f*X +  1.8759675f*Y +  0.0415551f*Z;
+        *bOut =  0.0556301f*X + -0.2039770f*Y +  1.0569715f*Z;
     }
 
     inline pcg::Rgba32F mitsuba(const pcg::Rgba32F& pix) const
@@ -137,12 +137,14 @@ struct Reinhard02_Method
         static const float LVec[] = {
             float(0.212639005871510f), float(0.715168678767756f), float(0.072192315360734f)
         };
+        static const float ONE = float(1.0f);
 
         // Get the luminance
         const float Y = LVec[0] * r + LVec[1] * g + LVec[2] * b;
 
         // Compute the scale
-        const float k = (P + R * Y) / (Q + P * Y);
+        const float Lp = P * Y;
+        const float k = (P * (ONE + Q*Lp)) / (ONE + Lp);
 
         // And apply
         *rOut = k * r;
@@ -165,9 +167,8 @@ struct Reinhard02_Method
         key = params.key / params.l_w;
         invWpSqr = 1.0f / (params.l_white * params.l_white);
 
-        P = float((params.l_w*params.key) * (params.l_white*params.l_white));
-        Q = float((params.l_w*params.l_w) * (params.l_white*params.l_white));
-        R = float(params.key*params.key);
+        P = float(params.key / params.l_w);
+        Q = float(invWpSqr);
     }
 
 private:
@@ -175,7 +176,7 @@ private:
     float key, invWpSqr;
 
     // For ImageIO
-    float P, Q, R;
+    float P, Q;
 };
 
 

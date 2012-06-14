@@ -169,28 +169,27 @@ private:
 // However, having only Y and assuming that TMO(Y) == k*Y, then the
 // result of all the transformation is just k*[r,g,b]
 // Thus:
-//         (avgLogLum*key*pow(Lwhite,2) + pow(key,2)*Y)
-//    k == ------------------------------------------------
-//         (pow(avgLogLum,2)*pow(Lwhite,2) + avgLogLum*key*pow(Lwhite,2)*Y)
+//         (key/avgLogLum) * (1 + (key/avgLogLum)/pow(Lwhite,2) * Y)
+//    k == ---------------------------------------------------------
+//                        1 + (key/avgLogLum)*Y
 //
-//    k == (P + R*Y) / (Q + P*Y)
-//    P == avgLogLum*key*pow(Lwhite,2)
-//    Q == (pow(avgLogLum,2)*pow(Lwhite,2)
-//    R == pow(key,2)
-//    
+//    k == (P * (R + Q*(P*Y)) / (R + P*Y)
+//    P == key / avgLogLum
+//    Q == 1 / pow(Lwhite,2)
+//    R == 1
+//
 struct LuminanceScaler_Reinhard02
 {
-    // Initial values as for key = 0.18, avgLogLum = 0.18, Lwhite = 0.18
+    // Initial values as for key = 0.18, avgLogLum = 0.18, Lwhite = 1.0f
     LuminanceScaler_Reinhard02() :
-    m_P(0.0324f), m_Q(0.0324f), m_R(0.0324f)
+    m_P(1.0f), m_Q(1.0f)
     {}
 
     // Setup the internal constants
     inline void SetParams(const pcg::Reinhard02::Params &params)
     {
-        m_P = float((params.l_w*params.key) * (params.l_white*params.l_white));
-        m_Q = float((params.l_w*params.l_w) * (params.l_white*params.l_white));
-        m_R = float(params.key * params.key);
+        m_P = float(params.key / params.l_w);
+        m_Q = float(1.0f / (params.l_white*params.l_white));
     }
 
     inline void operator() (
@@ -202,12 +201,14 @@ struct LuminanceScaler_Reinhard02
             float(0.715168678767756f),
             float(0.072192315360734f)
         };
+        static const float ONE = float(1.0f);
 
         // Get the luminance
         const float Y = LVec[0]*rLinear + LVec[1]*gLinear + LVec[2]*bLinear;
 
         // Compute the scale
-        const float k = (m_P + m_R * Y) * rcp(m_Q + m_P * Y);
+        const float Lp = m_P * Y;
+        const float k = (m_P * (ONE + m_Q*Lp)) * rcp(ONE + Lp);
 
         // And apply
         *rOut = k * rLinear;
@@ -219,7 +220,6 @@ private:
 
     float m_P;
     float m_Q;
-    float m_R;
 };
 
 

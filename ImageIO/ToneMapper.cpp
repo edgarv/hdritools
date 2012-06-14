@@ -488,15 +488,15 @@ public:
 // However, having only Y and assuming that TMO(Y) == k*Y, then the
 // result of all the transformation is just k*[r,g,b]
 // Thus:
-//         (avgLogLum*key*pow(Lwhite,2) + pow(key,2)*Y)
-//    k == ------------------------------------------------
-//         (pow(avgLogLum,2)*pow(Lwhite,2) + avgLogLum*key*pow(Lwhite,2)*Y)
+//         (key/avgLogLum) * (1 + (key/avgLogLum)/pow(Lwhite,2) * Y)
+//    k == ---------------------------------------------------------
+//                        1 + (key/avgLogLum)*Y
 //
-//    k == (P + R*Y) / (Q + P*Y)
-//    P == avgLogLum*key*pow(Lwhite,2)
-//    Q == (pow(avgLogLum,2)*pow(Lwhite,2)
-//    R == pow(key,2)
-//  
+//    k == (P * (R + Q*(P*Y)) / (R + P*Y)
+//    P == key / avgLogLum
+//    Q == 1 / pow(Lwhite,2)
+//    R == 1
+// 
 template <typename T, ScanLineMode S1, ScanLineMode S2/* = S1*/, 
 bool useLUT, bool isSRGB>
 class ApplyToneMap<T, S1, S2, useLUT, isSRGB, REINHARD02>
@@ -512,9 +512,9 @@ public:
     Lwhite2(tm.ParamsReinhard02().l_white * tm.ParamsReinhard02().l_white),
     Lwp(tm.ParamsReinhard02().l_w),
     key(tm.ParamsReinhard02().key),
-    partP(Lwp * key * Lwhite2),
-    partQ(Lwp*Lwp * Lwhite2),
-    partR(key*key),
+    partP(key / Lwp),
+    partQ(1.0f / Lwhite2),
+    partR(1.0f),
     vec_partP(partP), vec_partQ(partQ), vec_partR(partR),
     threshold(isSRGB ? (1.0f/(12.92f*512.0f)) : pow(1.0f/512.0f, tm.Gamma())),
     lut(useLUT ? tm.lut : NULL)
@@ -560,7 +560,8 @@ private:
     FORCEINLINE_BEG Rgba32F reinhard02(const Rgba32F &pix) const FORCEINLINE_END
     {
         const float Lw = dot_float(pix, vec_LUM);
-        const float Ls = (partP + partR * Lw) / (partQ + partP * Lw);
+        const float Lp = partP * Lw;
+        const float Ls = (partP * (partR + partQ*Lp)) / (partR + Lp);
 
         const Rgba32F res = pix * Ls;
         return res;
@@ -686,8 +687,9 @@ private:
         const Rgba32F vec_Lw = (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
 
         // Apply the Reinhard02 scalling on the vector
-        Rgba32F vec_Ls = (vec_partP + vec_partR * vec_Lw) /
-                         (vec_partQ + vec_partP * vec_Lw);
+        const Rgba32F vec_Lp = vec_partP * vec_Lw;
+        const Rgba32F vec_Ls = (vec_partP * (vec_partR + vec_partQ * vec_Lp)) /
+                               (vec_partR + vec_Lp);
 
         // Scale each pixel by the appropriate value
         const Rgba32F Ls0 = broadcast_idx<0> (vec_Ls);
