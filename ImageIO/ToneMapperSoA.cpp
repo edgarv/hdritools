@@ -23,6 +23,9 @@
 #include "ToneMapper.h"
 #include "ImageSoA.h"
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
 #include <algorithm>
 
 #include <cassert>
@@ -483,15 +486,41 @@ struct ToneMappingKernel
 
 // Move the processing here, to avoid having way too many parameters
 template <class Kernel>
-struct ProcessorA
+class ProcessorA
 {
-    void operator() (const pcg::Rgba32F &pixel, pcg::Bgra8 &outPixel)
+public:
+    ProcessorA(const Kernel& k) : kernel(k) {}
+
+    void operator() (const pcg::Rgba32F &pixel, pcg::Bgra8 &outPixel) const
     {
         kernel(pixel.r(), pixel.g(), pixel.b(), &outPixel);
     }
 
+private:
+    const Kernel& kernel;
+};
 
-    Kernel kernel;
+
+template <class Kernel>
+class ProcessorTBB
+{
+public:
+    ProcessorTBB(const pcg::Rgba32F* src, pcg::Bgra8 *dest, const Kernel &k) :
+    m_src(src), m_dest(dest), m_kernel(k)
+    {}
+
+    void operator() (tbb::blocked_range<int>& range) const
+    {
+        for (int i = range.begin(); i != range.end(); ++i) {
+            const pcg::Rgba32F& pixel = m_src[i];
+            m_kernel(pixel.r(), pixel.g(), pixel.b(), m_dest + i);
+        }
+    }
+
+private:
+    const pcg::Rgba32F* const m_src;
+    pcg::Bgra8* const m_dest;
+    const Kernel& m_kernel;
 };
 
 
@@ -499,12 +528,18 @@ template <class Kernel>
 void processPixels(const Kernel& kernel,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
-    ProcessorA<Kernel> p;
-    p.kernel = kernel;
+#if 0
+    ProcessorA<Kernel> p(kernel);
 
     for (const pcg::Rgba32F* it = begin; it != end; ++it) {
         p(*it, *dest++);
     }
+#else
+    ProcessorTBB<Kernel> pTBB(begin, dest, kernel);
+    int size = static_cast<int>(end - begin);
+    tbb::blocked_range<int> range(0, size);
+    tbb::parallel_for(range, pTBB);
+#endif
 }
 
 
