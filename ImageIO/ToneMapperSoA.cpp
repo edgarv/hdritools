@@ -32,7 +32,7 @@ namespace
 {
 // Computes the reciprocal
 template <typename T>
-T rcp(const T& x)
+inline T rcp(const T& x)
 {
     return 1.0f / x;
 }
@@ -240,6 +240,7 @@ struct Clamper01
 
 // Raises each pixel (already in [0,1]) to 1/gamma. A typical value for gamma
 // and current LCD screens in 2.2. Gamma has to be greater than zero.
+template <typename T>
 struct DisplayTransformer_Gamma
 {
     DisplayTransformer_Gamma() :
@@ -254,17 +255,17 @@ struct DisplayTransformer_Gamma
     inline void setInvGamma(float invGamma)
     {
         assert(invGamma > 0);
-        m_invGamma = invGamma;
+        m_invGamma = T(invGamma);
     }
 
-    inline float operator() (const float& x) const
+    inline T operator() (const T& x) const
     {
         return pow(x, m_invGamma);
     }
 
 
 private:
-    float m_invGamma;
+    T m_invGamma;
 };
 
 
@@ -560,7 +561,7 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
     // Setup the display transforms
-    DisplayTransformer_Gamma displayGamma(invGamma);
+    DisplayTransformer_Gamma<float> displayGamma(invGamma);
     Display_sRGB_Ref<float>::type displaySRGB0;
     Display_sRGB_Fast1<float>::type displaySRGB1;
     Display_sRGB_Fast2<float>::type displaySRGB2;
