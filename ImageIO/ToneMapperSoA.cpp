@@ -538,22 +538,6 @@ struct ToneMappingKernel
 
 // Move the processing here, to avoid having way too many parameters
 template <class Kernel>
-class ProcessorA
-{
-public:
-    ProcessorA(const Kernel& k) : kernel(k) {}
-
-    void operator() (const pcg::Rgba32F &pixel, pcg::Bgra8 &outPixel) const
-    {
-        kernel(pixel.r(), pixel.g(), pixel.b(), &outPixel);
-    }
-
-private:
-    const Kernel& kernel;
-};
-
-
-template <class Kernel>
 class ProcessorTBB
 {
 public:
@@ -580,17 +564,13 @@ template <class Kernel>
 void processPixels(const Kernel& kernel,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
-#if 0
-    ProcessorA<Kernel> p(kernel);
-
-    for (const pcg::Rgba32F* it = begin; it != end; ++it) {
-        p(*it, *dest++);
-    }
-#else
     ProcessorTBB<Kernel> pTBB(begin, dest, kernel);
     int size = static_cast<int>(end - begin);
     tbb::blocked_range<int> range(0, size);
+#if 1
     tbb::parallel_for(range, pTBB);
+#else
+    pTBB(range);
 #endif
 }
 
