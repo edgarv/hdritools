@@ -243,7 +243,7 @@ private:
     }
 
     inline float sRGB(float x) const {
-        const static float CUTOFF_sRGB = float(0.00304f);
+        const static float CUTOFF_sRGB = float(0.003041229589676f);
         return x > CUTOFF_sRGB ?
             (1.055f * pow(x, 1.0f/2.4f) - 0.055f) :
             (12.92f * x);
