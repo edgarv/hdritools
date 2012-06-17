@@ -174,12 +174,13 @@ inline T select_gt(const T& a, const T& b, const T& c, const T& d)
  *   P::P( const P& )    Copy constructor
  *   P::~P()             Destructor
  *   P::pixel_t          typedef with the target packed LDR pixel type
- *   P::pixel_t operator() (
+ *   void operator() (
  *      const Q::quantized_t& r,
  *      const Q::quantized_t& g,
- *      const Q::quantized_t& b ) const
- *                       Takes the quantized pixels and returns the packed
- *                       LDR pixel.
+ *      const Q::quantized_t& b,
+ *      P:pixel_t *outPixel ) const
+ *                       Takes the quantized pixels and saves the packed
+ *                       LDR pixel into outPixel.
  */
 
 
@@ -478,18 +479,30 @@ struct Quantizer16bit
 };
 
 
+
+
+// Packed BGRA8 pixels
+union PixelBGRA8 {
+    uint32_t argb;
+    struct {
+        ubyte_t b;
+	    ubyte_t g;
+	    ubyte_t r;
+	    ubyte_t a;
+    };
+};
+
+
 struct PixelAssembler_BGRA8
 {
-    typedef pcg::Bgra8 pixel_t;
+    typedef PixelBGRA8 pixel_t;
+    typedef Quantizer8bit<float, ubyte_t>::quantized_t quantized_t;
 
-    pixel_t operator() (
-        const Quantizer8bit<float, ubyte_t>::quantized_t& r,
-        const Quantizer8bit<float, ubyte_t>::quantized_t& g,
-        const Quantizer8bit<float, ubyte_t>::quantized_t& b) const
+    void operator() (
+        const quantized_t& r, const quantized_t& g, const quantized_t& b,
+        pixel_t *outPixel) const
     {
-        pcg::Bgra8 pixel;
-        pixel.set(r, g, b);
-        return pixel;
+        outPixel->argb = (0xff000000) | (r << 16) | (g << 8) | (b);
     }
 };
 
@@ -524,7 +537,7 @@ struct ToneMappingKernel
         const typename Quantizer::quantized_t gQ = quantizer(gDisplay);
         const typename Quantizer::quantized_t bQ = quantizer(bDisplay);
 
-        *pixelOut = pixelAssembler(rQ, gQ, bQ);
+        pixelAssembler(rQ, gQ, bQ, pixelOut);
     }
 
     // Functors which implement the actual functionality
@@ -542,7 +555,7 @@ class ProcessorTBB
 {
 public:
     ProcessorTBB(const pcg::Rgba32F* src, pcg::Bgra8 *dest, const Kernel &k) :
-    m_src(src), m_dest(dest), m_kernel(k)
+    m_src(src), m_dest(reinterpret_cast<PixelBGRA8*>(dest)), m_kernel(k)
     {}
 
     void operator() (tbb::blocked_range<int>& range) const
@@ -555,7 +568,7 @@ public:
 
 private:
     const pcg::Rgba32F* const m_src;
-    pcg::Bgra8* const m_dest;
+    PixelBGRA8* const m_dest;
     const Kernel& m_kernel;
 };
 
