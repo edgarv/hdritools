@@ -28,17 +28,63 @@
 
 #include <algorithm>
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#include <stdint.h>
+#endif
+
 #include <cassert>
 
 
 namespace
 {
+#if defined(_MSC_VER) && _MSC_VER < 1600
+    typedef unsigned __int8 ubyte_t;
+#else
+    typedef uint8_t ubyte_t;
+#endif
+
+namespace ops
+{
+
 // Computes the reciprocal
 template <typename T>
 inline T rcp(const T& x)
 {
     return 1.0f / x;
 }
+
+
+
+template <typename T>
+inline T pow(const T& x, const T& y)
+{
+    return ::pow(x, y);
+}
+
+
+
+template <typename IntT, typename T>
+IntT round(const T& x)
+{
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+    const static T OFFSET = T(0.5f);
+    return static_cast<IntT> (x < 0 ? x - OFFSET : x + OFFSET);
+#else
+    return static_cast<IntT> (round(x));
+#endif
+}
+
+
+
+// Select
+// (a OP b) ? c : d
+template <typename T>
+inline T select_gt(const T& a, const T& b, const T& c, const T& d)
+{
+    return (a > b) ? c : d;
+}
+
+} // namespace ops
 
 
 // ******************************************************
@@ -214,7 +260,7 @@ struct LuminanceScaler_Reinhard02
 
         // Compute the scale
         const T Lp = m_P * Y;
-        const T k = (m_P * (ONE + m_Q*Lp)) * rcp(ONE + Lp);
+        const T k = (m_P * (ONE + m_Q*Lp)) * ops::rcp(ONE + Lp);
 
         // And apply
         *rOut = k * rLinear;
@@ -263,7 +309,7 @@ struct DisplayTransformer_Gamma
 
     inline T operator() (const T& x) const
     {
-        return pow(x, m_invGamma);
+        return ops::pow(x, m_invGamma);
     }
 
 
@@ -290,7 +336,10 @@ struct SRGB_NonLinear_Ref
 {
     inline T operator() (const T& x) const
     {
-        T r = T(1.055f) * pow(x, T(1.0f/2.4f)) - T(0.055f);
+        const static T FACTOR   = T(1.055f);
+        const static T EXPONENT = T(1.0f/2.4f);
+        const static T OFFSET   = T(0.055f);
+        T r = FACTOR * ops::pow(x, EXPONENT) - OFFSET;
         return r;
     }
 };
@@ -321,7 +370,7 @@ struct SRGB_NonLinear_Remez44
     
         const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] + P[4]*x))));
         const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] + Q[4]*x))));
-        const T result = num * rcp(den);
+        const T result = num * ops::rcp(den);
         return result;
     }
 };
@@ -360,7 +409,7 @@ struct SRGB_NonLinear_Remez77
                                   x*(P[4] + x*(P[5] + x*(P[6] + P[7]*x)))))));
         const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] +
                                   x*(Q[4] + x*(Q[5] + x*(Q[6] + Q[7]*x)))))));
-        const float result = num * rcp(den);
+        const T result = num * ops::rcp(den);
         return result;
     }
 };
@@ -373,11 +422,12 @@ struct DisplayTransformer_sRGB
 {
     inline T operator() (const T& pLinear) const
     {
-        const static T CUTOFF_sRGB = T(0.00304f);
+        const static T CUTOFF_sRGB = T(0.003041229589676f);
+        const static T FACTOR      = T(12.92f);
         T p = m_nonlinear(pLinear);
 
         // Here comes the blend
-        T result = pLinear > CUTOFF_sRGB ? p : T(12.92f) * pLinear;
+        T result = ops::select_gt(pLinear, CUTOFF_sRGB, p, FACTOR * pLinear);
         return result;
     }
 
@@ -402,26 +452,28 @@ struct Display_sRGB_Fast2 {
 };
 
 
-template <typename T>
+template <typename T, typename QT>
 struct Quantizer8bit
 {
-    typedef unsigned char quantized_t;
+    typedef QT quantized_t;
 
     quantized_t operator() (const T& x) const
     {
-        return static_cast<unsigned char>(T(255.0f) * x + T(0.5f));
+        const static T FACTOR = T(255.0f);
+        return ops::round<QT>(FACTOR * x);
     }
 };
 
 
-template <typename T>
+template <typename T, typename QT>
 struct Quantizer16bit
 {
-    typedef unsigned short quantized_t;
+    typedef QT quantized_t;
 
     quantized_t operator() (const T& x) const
     {
-        return static_cast<unsigned short>(T(65535.0f) * x + T(0.5f));
+        const static T FACTOR = T(65535.0f);
+        return ops::round<QT>(FACTOR * x);
     }
 };
 
@@ -431,9 +483,9 @@ struct PixelAssembler_BGRA8
     typedef pcg::Bgra8 pixel_t;
 
     pixel_t operator() (
-        const Quantizer8bit<float>::quantized_t& r,
-        const Quantizer8bit<float>::quantized_t& g,
-        const Quantizer8bit<float>::quantized_t& b) const
+        const Quantizer8bit<float, ubyte_t>::quantized_t& r,
+        const Quantizer8bit<float, ubyte_t>::quantized_t& g,
+        const Quantizer8bit<float, ubyte_t>::quantized_t& b) const
     {
         pcg::Bgra8 pixel;
         pixel.set(r, g, b);
@@ -570,10 +622,10 @@ void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
     // Fixed quantization!! (that can be fixed at compile time)
-    Quantizer8bit<float> quantizer;
+    Quantizer8bit<float, ubyte_t> quantizer;
     PixelAssembler_BGRA8 assembler;
     typedef ToneMappingKernel<LuminanceScaler, DisplayTransform,
-        Quantizer8bit<float>, PixelAssembler_BGRA8> kernel_t;
+        Quantizer8bit<float, ubyte_t>, PixelAssembler_BGRA8> kernel_t;
 
     kernel_t kernel=setupKernel(scaler, display, quantizer, assembler);
     processPixels(kernel, begin, end, dest);
