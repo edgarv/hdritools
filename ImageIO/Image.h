@@ -30,10 +30,12 @@
 	#define PCG_IMAGE_CRAZY_TEMPLATES 0
 #endif
 
+#include "ImageIO.h"
+#include "Exception.h"
+
 #include <cstdlib>
 #include <cassert>
 
-#include "Exception.h"
 
 namespace pcg {
 
@@ -127,10 +129,14 @@ namespace pcg {
 
 #endif /* PCG_IMAGE_CRAZY_TEMPLATES */
 
-		// Helper function to allocate the memory. It assumes that the alignment
-        // is provided by T::operator new[] (size_t)
+		// Helper function to allocate the memory. It allocates excess data so
+		// that the total memory is a multiple of 64. The memory is aligned to
+		// 64-bytes as well.
 		inline void alloc() {
-			this->d = new T[w*h];
+			const size_t totalBytes = ((static_cast<size_t>(w)*h) + 63) & ~0x3F;
+			assert (totalBytes >= w*h);
+			assert (totalBytes % 64 == 0);
+			this->d = alloc_align<T>(64, totalBytes);
             if (this->d == NULL) {
                 throw RuntimeException("Couldn't allocate the memory "
                     "for the image");
@@ -171,9 +177,9 @@ namespace pcg {
 		// Deallocates the memory and resets the image dimensions to 0
 		void Clear() {
 			if(d != NULL) {
-				delete [] d;
+				free_align(d);
+				d = NULL;
 			}
-			d = 0;
 			w = h = 0;
 		}
 

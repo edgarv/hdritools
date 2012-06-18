@@ -115,7 +115,7 @@ public:
 
         // At this point offset contains the total requested memory
         const size_t totalBytes = offset;
-        m_data = alloc_align<byte_t>(16, totalBytes);
+        m_data = alloc_align<byte_t>(64, totalBytes);
         if (m_data == NULL) {
             throw RuntimeException("Couldn't allocate memory for the image.");
         }
