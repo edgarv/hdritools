@@ -84,6 +84,28 @@ inline T select_gt(const T& a, const T& b, const T& c, const T& d)
     return (a > b) ? c : d;
 }
 
+
+
+template <typename T>
+inline T min(const T& a, const T& b) {
+    return std::min(a, b);
+}
+
+
+
+
+template <typename T>
+inline T max(const T& a, const T& b) {
+    return std::max(a, b);
+}
+
+
+
+template <typename T>
+inline T clamp(const T& x, const T& minValue, const T& maxValue) {
+    return ops::max(ops::min(x, maxValue), minValue);
+}
+
 } // namespace ops
 
 
@@ -285,7 +307,9 @@ struct Clamper01
 {
     inline T operator() (const T& x) const
     {
-        return std::max(std::min(x, T(1.0f)), T(0.0f));
+        const static T ONE  = T(1.0f);
+        const static T ZERO = T(0.0f);
+        return ops::clamp(x, ZERO, ONE);
     }
 };
 
