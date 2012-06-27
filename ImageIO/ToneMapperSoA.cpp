@@ -64,7 +64,7 @@ inline T pow(const T& x, const T& y)
 
 
 template <typename IntT, typename T>
-IntT round(const T& x)
+inline IntT round(const T& x)
 {
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
     const static T OFFSET = T(0.5f);
@@ -224,7 +224,7 @@ struct LuminanceScaler_Exposure
     }
 
     // Scales each pixel by multiplier
-    inline void setExposureFactor(const T& multiplier)
+    inline void setExposureFactor(float multiplier)
     {
         m_multiplier = T(multiplier);
     }
