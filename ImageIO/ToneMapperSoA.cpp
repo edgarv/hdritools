@@ -707,8 +707,7 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
         ToneMapAux(scaler, displaySRGB2, begin, end, dest);
         break;
     default:
-        // FIXME Signal error on invalid display method ERROR!!
-        break;
+        throw pcg::IllegalArgumentException("Unknown display method");
     }
 }
 
@@ -737,9 +736,25 @@ void pcg::ToneMapperSoA::ToneMap(
     const pcg::Rgba32F* end   = begin + src.Size();
     pcg::Bgra8* out = dest.GetDataPointer();
 
-    // TODO Select an specific sRGB method
-    const DisplayMethod dMethod = this->isSRGB() ?
-        EDISPLAY_SRGB_FAST2 : EDISPLAY_GAMMA;
+    DisplayMethod dMethod;
+    if (this->isSRGB()) {
+        switch (m_sRGBMethod) {
+        case ToneMapperSoA::SRGB_REF:
+            dMethod = EDISPLAY_SRGB_REF;
+            break;
+        case ToneMapperSoA::SRGB_FAST1:
+            dMethod = EDISPLAY_SRGB_FAST1;
+            break;
+        case ToneMapperSoA::SRGB_FAST2:
+            dMethod = EDISPLAY_SRGB_FAST2;
+            break;
+        default:
+            throw RuntimeException("Unexpected sRGB method");
+        }
+    }
+    else {
+        dMethod = EDISPLAY_GAMMA;
+    }
 
     LuminanceScaler_Reinhard02<float> sReinhard02;
     LuminanceScaler_Exposure<float> sExposure;
@@ -754,7 +769,7 @@ void pcg::ToneMapperSoA::ToneMap(
         ToneMapAuxDelegate(sExposure, dMethod, m_invGamma, begin, end, out);
         break;
     default:
-        // FIXME Signal invalid tonemapping technique
+        throw IllegalArgumentException("Invalid tone mapping technique");
         break;
     }
 }

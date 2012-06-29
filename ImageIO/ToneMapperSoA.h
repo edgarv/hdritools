@@ -29,12 +29,27 @@ namespace pcg
 class IMAGEIO_API ToneMapperSoA
 {
 public:
+
+    // Method to evaluate sRGB
+    enum SRGBMethod
+    {
+        // Reference, most accurate and slowest
+        SRGB_REF,
+        // Rational approximation with maximum relative error < 6.368e-7
+        // This is as fast the old 4K LUT but vastly more accurate.
+        SRGB_FAST1,
+        // Rational approximation with maximum relative error < 1.623e-4
+        SRGB_FAST2
+    };
+
     
     // Creates a new tone mapper for SoA images specifying wheter to use sRGB
-    // or simple gamma. If sRGB is disabled it will use the specified gamma
+    // or simple gamma. If sRGB is disabled it will use the specified gamma.
+    // The default sRGB method is FAST2
     ToneMapperSoA(bool useSRGB = true, float gamma = 2.2f) :
     m_exposure(0.0f), m_exposureFactor(1.0f),
-    m_gamma(gamma), m_invGamma(1.0f / gamma), m_useSRGB(useSRGB)
+    m_gamma(gamma), m_invGamma(1.0f / gamma), m_useSRGB(useSRGB),
+    m_sRGBMethod(SRGB_FAST2)
     {
         assert(gamma > 0.0f);
     }
@@ -62,6 +77,11 @@ public:
     // Enables or disables the sRGB curve
     inline void SetSRGB(bool enable) {
         m_useSRGB = enable;
+    }
+
+    // Selects the sRGB method to use. This does not enable sRGB automatically.
+    inline void SetSRGBMethod(SRGBMethod sRGBMethod) {
+        m_sRGBMethod = sRGBMethod;
     }
 
     // Returns the gamma employed when sRGB is not used
@@ -112,6 +132,9 @@ private:
 
     // A flag to know whether to use the simple gamma curve of the sRGB one
     bool m_useSRGB;
+
+    // Method used for sRGB
+    SRGBMethod m_sRGBMethod;
 
     // Parameters for the global Reinhard02 TMO
     Reinhard02::Params m_paramsTMO;
