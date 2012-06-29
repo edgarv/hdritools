@@ -214,6 +214,8 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
 template <typename T>
 struct LuminanceScaler_Exposure
 {
+    typedef T value_t;
+
     inline void operator() (
         const T& rLinear, const T& gLinear, const T& bLinear,
         T* rOut, T* gOut, T* bOut) const
@@ -258,6 +260,8 @@ private:
 template <typename T>
 struct LuminanceScaler_Reinhard02
 {
+    typedef T value_t;
+
     // Initial values as for key = 0.18, avgLogLum = 0.18, Lwhite = 1.0f
     LuminanceScaler_Reinhard02() :
     m_P(1.0f), m_Q(1.0f)
@@ -295,7 +299,6 @@ struct LuminanceScaler_Reinhard02
     }
 
 private:
-
     T m_P;
     T m_Q;
 };
@@ -540,25 +543,33 @@ struct PixelAssembler_BGRA8
 template<class LuminanceScaler, class DisplayTransformer, class PixelAssembler>
 struct ToneMappingKernel
 {
+    typedef typename LuminanceScaler::value_t value_t;
+
+    ToneMappingKernel(const LuminanceScaler& scaler,
+        const DisplayTransformer& display, const PixelAssembler& assembler) :
+    luminanceScaler(scaler), displayTransformer(display),
+    pixelAssembler(assembler)
+    {}
+
     void operator() (
-        const float& rLinear, const float& gLinear, const float& bLinear,
+        const value_t& rLinear, const value_t& gLinear, const value_t& bLinear,
             typename PixelAssembler::pixel_t *pixelOut) const
     {
-        float rScaled, gScaled, bScaled;
+        value_t rScaled, gScaled, bScaled;
 
         // Scale the luminance according to the current settings
         luminanceScaler(rLinear, gLinear, bLinear,
             &rScaled, &gScaled, &bScaled);
 
         // Clamp to [0,1]
-        const float rClamped = clamper(rScaled);
-        const float gClamped = clamper(gScaled);
-        const float bClamped = clamper(bScaled);
+        const value_t rClamped = clamper(rScaled);
+        const value_t gClamped = clamper(gScaled);
+        const value_t bClamped = clamper(bScaled);
 
         // Nonlinear display transform
-        const float rDisplay = displayTransformer(rClamped);
-        const float gDisplay = displayTransformer(gClamped);
-        const float bDisplay = displayTransformer(bClamped);
+        const value_t rDisplay = displayTransformer(rClamped);
+        const value_t gDisplay = displayTransformer(gClamped);
+        const value_t bDisplay = displayTransformer(bClamped);
 
         // Quantize the values
         const typename PixelAssembler::value_t rQ = quantizer(rDisplay);
@@ -569,10 +580,11 @@ struct ToneMappingKernel
     }
 
     // Functors which implement the actual functionality
-    LuminanceScaler luminanceScaler;
-    Clamper01<float> clamper;
-    DisplayTransformer displayTransformer;
-    PixelAssembler pixelAssembler;
+    const LuminanceScaler& luminanceScaler;
+    const DisplayTransformer& displayTransformer;
+    const PixelAssembler& pixelAssembler;
+
+    Clamper01<value_t> clamper;
     typename PixelAssembler::quantizer_t quantizer;
 };
 
@@ -622,14 +634,23 @@ setupKernel(const LuminanceScaler& luminanceScaler,
             const DisplayTransformer& displayTransformer,
             const PixelAssembler& pixelAssembler)
 {
-    ToneMappingKernel<LuminanceScaler,DisplayTransformer,PixelAssembler> kernel;
-
-    kernel.luminanceScaler = luminanceScaler;
-    kernel.displayTransformer = displayTransformer;
-    kernel.pixelAssembler = pixelAssembler;
-
+    ToneMappingKernel<LuminanceScaler,DisplayTransformer,PixelAssembler>
+        kernel(luminanceScaler, displayTransformer, pixelAssembler);
     return kernel;
 }
+
+
+
+
+// Traits to choose a pixel assembler
+template <typename LuminanceScalerValueType, typename DestinationType>
+struct pixel_assembler_traits;
+
+template <>
+struct pixel_assembler_traits<float, pcg::Bgra8>
+{
+    typedef PixelAssembler_BGRA8 assembler_t;
+};
 
 
 
@@ -639,9 +660,11 @@ void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
     // Fixed pixel assembler!! (that can be fixed at compile time)
-    PixelAssembler_BGRA8 assembler;
+    typedef pixel_assembler_traits<typename LuminanceScaler::value_t,
+        pcg::Bgra8>::assembler_t assembler_t;
+    assembler_t assembler;
     typedef ToneMappingKernel<LuminanceScaler, DisplayTransform,
-        PixelAssembler_BGRA8> kernel_t;
+        assembler_t> kernel_t;
 
     kernel_t kernel=setupKernel(scaler, display, assembler);
     processPixels(kernel, begin, end, dest);
@@ -664,10 +687,11 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
     // Setup the display transforms
-    DisplayTransformer_Gamma<float> displayGamma(invGamma);
-    Display_sRGB_Ref<float>::type displaySRGB0;
-    Display_sRGB_Fast1<float>::type displaySRGB1;
-    Display_sRGB_Fast2<float>::type displaySRGB2;
+    typedef typename LuminanceScaler::value_t value_t;
+    DisplayTransformer_Gamma<value_t> displayGamma(invGamma);
+    Display_sRGB_Ref<value_t>::type   displaySRGB0;
+    Display_sRGB_Fast1<value_t>::type displaySRGB1;
+    Display_sRGB_Fast2<value_t>::type displaySRGB2;
 
     switch(dMethod) {
     case EDISPLAY_GAMMA:
@@ -683,7 +707,7 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
         ToneMapAux(scaler, displaySRGB2, begin, end, dest);
         break;
     default:
-        // ERROR!!
+        // FIXME Signal error on invalid display method ERROR!!
         break;
     }
 }
@@ -730,7 +754,7 @@ void pcg::ToneMapperSoA::ToneMap(
         ToneMapAuxDelegate(sExposure, dMethod, m_invGamma, begin, end, out);
         break;
     default:
-        // ERROR!!
+        // FIXME Signal invalid tonemapping technique
         break;
     }
 }
