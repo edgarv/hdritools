@@ -71,7 +71,7 @@ ZipfileInputFilter::zipfile_t* ZipfileInputFilter::nextZipFile() {
             ++filename;
             return zip;
         }
-        catch (exception &e) {
+        catch (std::exception &e) {
             cerr << "Ooops! " << e.what() << endl;
         }
     }

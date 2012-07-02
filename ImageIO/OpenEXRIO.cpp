@@ -86,7 +86,7 @@ namespace pcg {
 
         std::istream &	_is;
 
-        inline bool checkError (istream &is)
+        inline bool checkError (std::istream &is)
         {
             if (!is)
             {
@@ -228,7 +228,7 @@ void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename) 
     }
 }
 
-void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  istream &is) {
+void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  std::istream &is) {
 
     try {
         IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);

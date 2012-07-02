@@ -32,6 +32,10 @@
 #include <algorithm>
 
 
+using std::cout;
+using std::endl;
+
+
 
 class ToneMapperSoATest : public ::testing::Test
 {

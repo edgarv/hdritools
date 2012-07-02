@@ -19,13 +19,13 @@
 // This uses code from the Intel vector classes included with MS Visual Studio
 // in the header fvec.h
 
-#include "StdAfx.h"
-#include "ImageIO.h"
-
+#pragma once
 #if !defined (PCG_RGBA32F_H)
 #define PCG_RGBA32F_H
 
-using namespace std;
+#include "StdAfx.h"
+#include "ImageIO.h"
+
 
 namespace pcg {
 

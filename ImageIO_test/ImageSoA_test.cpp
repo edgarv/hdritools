@@ -33,6 +33,10 @@ typedef _W64 unsigned int uintptr_t;
 #endif
 
 
+using std::cout;
+using std::endl;
+
+
 
 class ImageSoATest : public ::testing::Test
 {

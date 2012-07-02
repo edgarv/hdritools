@@ -24,6 +24,8 @@
 #include "Image.h"
 #include "Rgba32F.h"
 
+#include <istream>
+
 namespace pcg {
 
     // The base class has only static method
@@ -62,7 +64,7 @@ namespace pcg {
             LoadHelper(img, filename);
         }
 
-        static void Load(Image<Rgba32F, TopDown> &img, istream &is) {
+        static void Load(Image<Rgba32F, TopDown> &img, std::istream &is) {
             LoadHelper(img, is);
         }
 
@@ -101,7 +103,7 @@ namespace pcg {
 
     private:
         static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, const char *filename);
-        static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, istream &is);
+        static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, std::istream &is);
 
         // Declare the super utility function for saving
         template<ScanLineMode S>

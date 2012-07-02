@@ -27,6 +27,9 @@
 #include "Rgba32F.h"
 #include "Exception.h"
 
+#include <istream>
+#include <ostream>
+
 namespace pcg {
 
     PCG_DEFINE_EXC(PfmIOException, IOException)
@@ -48,9 +51,9 @@ namespace pcg {
             Header();
             Header(const Image<Rgba32F, TopDown> &img);
             Header(const Image<Rgba32F, BottomUp> &img);
-            Header(istream &is);
+            Header(std::istream &is);
 
-            void write(ostream &os);
+            void write(std::ostream &os);
         };
 
         static ByteOrder getNativeOrder();
@@ -58,11 +61,11 @@ namespace pcg {
     public:
         static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, const char *filename);
         static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, const char *filename);
-        static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, istream &is);
-        static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, istream &is);
+        static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, std::istream &is);
+        static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, std::istream &is);
 
-        static IMAGEIO_API void Save(const Image<Rgba32F, TopDown>  &img, ostream &os);
-        static IMAGEIO_API void Save(const Image<Rgba32F, BottomUp> &img, ostream &os);
+        static IMAGEIO_API void Save(const Image<Rgba32F, TopDown>  &img, std::ostream &os);
+        static IMAGEIO_API void Save(const Image<Rgba32F, BottomUp> &img, std::ostream &os);
         static void IMAGEIO_API Save(const Image<Rgba32F, TopDown>  &img, const char *filename);
         static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename);
     };

@@ -50,7 +50,7 @@ isColor(true), width(img.Width()), height(img.Height()), order(PfmIO::getNativeO
 {
 }
 
-PfmIO::Header::Header(istream &is)
+PfmIO::Header::Header(std::istream &is)
 {
     {
         // Look for the magic number, consuming also the \n
@@ -106,7 +106,7 @@ void PfmIO::Header::write(std::ostream &os)
 {
     os << (isColor ? "PF" : "Pf") << '\n' << 
            width << ' ' << height << '\n' << 
-           std::setiosflags(ios::fixed) << std::setprecision(6) <<
+           std::setiosflags(std::ios::fixed) << std::setprecision(6) <<
           (float)(order == PfmIO::LittleEndian ? -1.0f : 1.0f) << '\n';
 }
 
@@ -115,7 +115,7 @@ void PfmIO::Header::write(std::ostream &os)
 namespace {
 
 template <ScanLineMode S>
-void PfmIO_Save_data(const Image<Rgba32F, S>  &img, ostream &os)
+void PfmIO_Save_data(const Image<Rgba32F, S>  &img, std::ostream &os)
 {
     // Allocate one full scanline
     const size_t scanline_len = img.Width() * 3 * sizeof(float);
@@ -158,7 +158,7 @@ inline void swapByteOrder(unsigned int *ptr, int count)
 // Load function just for the data, assumes the istream is right
 // at the beginning of the pixels and the image has been allocated
 template <ScanLineMode S>
-void Pfm_Load_data(Image<Rgba32F, S> &img, istream &is, 
+void Pfm_Load_data(Image<Rgba32F, S> &img, std::istream &is, 
                    bool swapBytes, bool isColor)
 {
     const int numChannels = isColor ? 3 : 1;
@@ -200,7 +200,7 @@ void Pfm_Load_data(Image<Rgba32F, S> &img, istream &is,
 template <ScanLineMode S>
 void PfmIO_Save_helper(const Image<Rgba32F, S> &img, const char *filename)
 {
-    ofstream pfmFile(filename, ios_base::binary);
+    std::ofstream pfmFile(filename, std::ios_base::binary);
     if (! pfmFile.fail() ) {
         PfmIO::Save(img, pfmFile);
     }
@@ -213,7 +213,7 @@ void PfmIO_Save_helper(const Image<Rgba32F, S> &img, const char *filename)
 template <ScanLineMode S>
 void PfmIO_Load_helper(Image<Rgba32F, S> &img, const char *filename) 
 {
-    ifstream pfmFile(filename, ios_base::binary);
+    std::ifstream pfmFile(filename, std::ios_base::binary);
     if (! pfmFile.fail() ) {
         PfmIO::Load(img, pfmFile);
     }
@@ -227,21 +227,21 @@ void PfmIO_Load_helper(Image<Rgba32F, S> &img, const char *filename)
 
 
 
-void PfmIO::Save(const Image<Rgba32F, TopDown>  &img, ostream &os)
+void PfmIO::Save(const Image<Rgba32F, TopDown>  &img, std::ostream &os)
 {
     Header hdr(img);
     hdr.write(os);
     PfmIO_Save_data(img, os);
 }
 
-void PfmIO::Save(const Image<Rgba32F, BottomUp>  &img, ostream &os)
+void PfmIO::Save(const Image<Rgba32F, BottomUp>  &img, std::ostream &os)
 {
     Header hdr(img);
     hdr.write(os);
     PfmIO_Save_data(img, os);
 }
 
-void PfmIO::Load(Image<Rgba32F, TopDown> &img, istream &is)
+void PfmIO::Load(Image<Rgba32F, TopDown> &img, std::istream &is)
 {
     // Read the header
     Header hdr(is);
@@ -253,7 +253,7 @@ void PfmIO::Load(Image<Rgba32F, TopDown> &img, istream &is)
     Pfm_Load_data(img, is, hdr.order != getNativeOrder(), hdr.isColor);
 }
 
-void PfmIO::Load(Image<Rgba32F, BottomUp> &img, istream &is)
+void PfmIO::Load(Image<Rgba32F, BottomUp> &img, std::istream &is)
 {
     // Read the header
     Header hdr(is);
