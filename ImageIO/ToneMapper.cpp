@@ -36,7 +36,7 @@
 
 
 // FIXME Make this a setup flag
-#define USE_SSE_POW 0
+#define USE_SSE_POW 1
 
 #if USE_SSE_POW
 namespace ssemath {
@@ -163,7 +163,8 @@ protected:
 
         // Exponentiate by 1/gamma (this is slow!!!)
 #if USE_SSE_POW
-        values = ssemath::exp_ps(ssemath::log_ps(values) * Rgba32F(invGamma));
+        values = ssemath::exp_ps(static_cast<Rgba32F>(ssemath::log_ps(values))
+            * Rgba32F(invGamma));
 #else
         values.set(pow(values.r(), invGamma), pow(values.g(), invGamma), 
                    pow(values.b(), invGamma), pow(values.a(), invGamma));
@@ -187,7 +188,8 @@ protected:
 
         // Second case:
 #if USE_SSE_POW
-        Rgba32F above(ssemath::exp_ps(ssemath::log_ps(values) * Rgba32F(1.0f/2.4f)));
+        Rgba32F above(ssemath::exp_ps(static_cast<Rgba32F>(ssemath::log_ps(values))
+            * Rgba32F(1.0f/2.4f)));
 #else
         Rgba32F above(pow(values.r(), 1.0f/2.4f), pow(values.g(), 1.0f/2.4f),
             pow(values.b(), 1.0f/2.4f), pow(values.a(), 1.0f/2.4f));
