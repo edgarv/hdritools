@@ -503,21 +503,11 @@ struct Quantizer16bit
 
 
 
-// Packed BGRA8 pixels
-union PixelBGRA8 {
-    uint32_t argb;
-    struct {
-        uint8_t b;
-	    uint8_t g;
-	    uint8_t r;
-	    uint8_t a;
-    };
-};
 
 
 struct PixelAssembler_BGRA8
 {
-    typedef PixelBGRA8 pixel_t;
+    typedef pcg::PixelBGRA8 pixel_t;
     typedef Quantizer8bit<float, uint8_t> quantizer_t;
     typedef quantizer_t::value_t value_t;
 
@@ -587,7 +577,7 @@ class ProcessorTBB
 {
 public:
     ProcessorTBB(const pcg::Rgba32F* src, pcg::Bgra8 *dest, const Kernel &k) :
-    m_src(src), m_dest(reinterpret_cast<PixelBGRA8*>(dest)), m_kernel(k)
+    m_src(src), m_dest(reinterpret_cast<pcg::PixelBGRA8*>(dest)), m_kernel(k)
     {}
 
     void operator() (tbb::blocked_range<int>& range) const
@@ -600,7 +590,7 @@ public:
 
 private:
     const pcg::Rgba32F* const m_src;
-    PixelBGRA8* const m_dest;
+    pcg::PixelBGRA8* const m_dest;
     const Kernel& m_kernel;
 };
 
