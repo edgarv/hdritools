@@ -142,7 +142,7 @@ inline bool isInvalidLuminance(float x) {
     return (isgreaterf(x, 0.0f) == 0) || (isnormalf(x) == 0);
 #else
 # if !defined(_MSC_VER)
-    return (isgreater(x, 0.0f) == 0) || (isnormal(x) == 0);
+    return (std::isgreater(x, 0.0f) == 0) || (std::isnormal(x) == 0);
 # else
     return floatToBits(x)>=0x7f800000u || x < float_limits::min();
 # endif
