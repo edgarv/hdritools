@@ -37,6 +37,23 @@ using std::endl;
 
 
 
+namespace
+{
+
+bool PixelsClose(const pcg::Bgra8& p0, const pcg::Bgra8& p1)
+{
+    bool areClose = true;
+    areClose &= std::abs(static_cast<int>(p0.r) - static_cast<int>(p1.r)) <= 1;
+    areClose &= std::abs(static_cast<int>(p0.g) - static_cast<int>(p1.g)) <= 1;
+    areClose &= std::abs(static_cast<int>(p0.b) - static_cast<int>(p1.b)) <= 1;
+    areClose &= std::abs(static_cast<int>(p0.a) - static_cast<int>(p1.a)) <= 1;
+    return areClose;
+}
+
+}
+
+
+
 class ToneMapperSoATest : public ::testing::Test
 {
 protected:
@@ -385,7 +402,7 @@ TEST_F(ToneMapperSoATest, Reinhard02Benchmark1)
 
 TEST_F(ToneMapperSoATest, Process1)
 {
-    pcg::Image<pcg::Rgba32F> img(3, 3);
+    pcg::Image<pcg::Rgba32F> img(1920, 1080);
     pcg::Image<pcg::Bgra8> outImg(img.Width(), img.Height());
     pcg::Image<pcg::Bgra8> outImgOld(img.Width(), img.Height());
     pcg::Image<pcg::Bgra8> outImgRef(img.Width(), img.Height());
@@ -450,3 +467,104 @@ TEST_F(ToneMapperSoATest, Process1)
     cout << "Time Old: " << tOld.nanoTime()*factor << " ms" << endl;
     cout << "Time Ref: " << tRef.nanoTime()*factor << " ms" << endl;
 }
+
+
+
+
+class ToneMapperSoATestSRGB :
+    public ::testing::TestWithParam<pcg::ToneMapperSoA::SRGBMethod>
+{
+protected:
+    virtual void SetUp()
+    {
+        // Python generated
+        // ['{0:#010x}'.format(random.randint(0,0x7fffffff)) for i in range(16)]
+        static const unsigned int seed[] = {    0x7b0a1e82, 0x7d06e63f,
+            0x67e630c6, 0x1279bd37, 0x44cbc899, 0x2f8891a0, 0x13437642,
+            0x368c48bf, 0x2ddaa174, 0x53418a52, 0x48712a46, 0x717b41f4,
+            0x5c691e40, 0x73ba62e3, 0x0c422cfe, 0x4871a0dd
+        };
+        m_rnd.setSeed(seed);
+    }
+
+    virtual void TearDown()
+    {
+    }
+
+    template <pcg::ScanLineMode S>
+    void fillRnd (pcg::Image<pcg::Rgba32F, S> &img)
+    {
+        for (int i = 0; i < img.Size(); ++i) {
+            const float s = static_cast<float>(512 + 32 * m_rnd.nextGaussian());
+            const float r = s * m_rnd.nextFloat();
+            const float g = s * m_rnd.nextFloat();
+            const float b = s * m_rnd.nextFloat();
+            img[i].set (r, g, b);
+        }
+    }
+
+    void fillRnd(pcg::RGBImageSoA &img)
+    {
+        float *rVals = img.GetDataPointer<pcg::RGBImageSoA::R>();
+        float *gVals = img.GetDataPointer<pcg::RGBImageSoA::G>();
+        float *bVals = img.GetDataPointer<pcg::RGBImageSoA::B>();
+        
+        for (int i = 0; i < img.Size(); ++i) {
+            const float s = static_cast<float>(512 + 32 * m_rnd.nextGaussian());
+            const float r = s * m_rnd.nextFloat();
+            const float g = s * m_rnd.nextFloat();
+            const float b = s * m_rnd.nextFloat();
+
+            rVals[i] = r;
+            gVals[i] = g;
+            bVals[i] = b;
+        }
+    }
+
+    RandomMT m_rnd;
+};
+
+
+
+TEST_P(ToneMapperSoATestSRGB, Validate)
+{
+    // FIXME: This should test for AoS and SoA images, for all 4 display methods
+    // (gamma, srgb 1 - 3)
+    pcg::Image<pcg::Rgba32F> img(64, 128);
+    pcg::Image<pcg::Bgra8> outImg(img.Width(), img.Height());
+    pcg::Image<pcg::Bgra8> outImgRef(img.Width(), img.Height());
+    const int size = img.Size();
+
+    pcg::ToneMapperSoA tm;
+    tm.SetSRGBMethod(GetParam());
+    tm.SetSRGB(true);
+
+    ReferenceToneMapper tmRef;
+    tmRef.SetSRGB(true);
+
+    const static int N = 100;
+    for (int counter = 0; counter != N; ++counter) {
+        fillRnd(img);
+        pcg::Reinhard02::Params params = pcg::Reinhard02::EstimateParams(img);    
+        tm.SetParams(params);
+        tmRef.SetParams(params);
+        
+
+        tm.ToneMap(outImg, img, pcg::REINHARD02);
+        tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
+
+        for (int i = 0; i != size; ++i) {
+            const pcg::Rgba32F& pixel  = img[i];
+            const pcg::Bgra8& actual   = outImg[i];
+            const pcg::Bgra8& expected = outImgRef[i];
+
+            ASSERT_PRED2(PixelsClose, expected, actual) <<
+                "At pixel [" << i << "], original value: " << pixel;
+        }
+    }
+}
+
+INSTANTIATE_TEST_CASE_P(SRGB, ToneMapperSoATestSRGB, ::testing::Values(
+    pcg::ToneMapperSoA::SRGB_REF,
+    pcg::ToneMapperSoA::SRGB_FAST1,
+    pcg::ToneMapperSoA::SRGB_FAST2));
