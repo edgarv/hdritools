@@ -29,12 +29,6 @@
 
 #include <emmintrin.h>
 
-#if defined(_MSC_VER)
-typedef __int32 int32_t;
-#else
-#include <stdint.h>
-#endif
-
 
 // Intel AM constants
 #define _PS_CONST(Name, Val) \

@@ -14,6 +14,7 @@
 ============================================================================*/
 
 #include "LoadHDR.h"
+#include "StdAfx.h"
 #include "Exception.h"
 #include "OpenEXRIO.h"
 #include "RgbeIO.h"
@@ -22,17 +23,6 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#include <stdint.h>
-#endif
-
-namespace
-{
-#if defined(_MSC_VER) && _MSC_VER < 1600
-typedef __int32 int32_t;
-#endif
-}
 
 
 using namespace pcg;

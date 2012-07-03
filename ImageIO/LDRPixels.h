@@ -20,6 +20,8 @@
 #if !defined(PCG_LDRPIXELS_H)
 #define PCG_LDRPIXELS_H
 
+#include "StdAfx.h"
+
 #include <ostream>
 
 
@@ -30,7 +32,7 @@ namespace pcg {
 	// thus in the Intel guy, the layout appears kind of inverted!
 	struct Bgra8 {
 
-		typedef unsigned char pixel_t;
+		typedef uint8_t pixel_t;
 
 		pixel_t b;
 		pixel_t g;
@@ -60,7 +62,7 @@ namespace pcg {
 	// This is the classic pixel format used by OpenGL
 	struct Rgba8 {
 
-		typedef unsigned char pixel_t;
+		typedef uint8_t pixel_t;
 
 		pixel_t r;
 		pixel_t g;
@@ -91,7 +93,7 @@ namespace pcg {
 	// Pixels for saving in 16-bit LDR formats such as PNG (without alpha)
 	struct Rgba16 {
 
-		typedef unsigned short pixel_t;
+		typedef uint16_t pixel_t;
 		
 		pixel_t r;
 		pixel_t g;

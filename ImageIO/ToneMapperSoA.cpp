@@ -20,6 +20,7 @@
 #endif
 
 #include "ToneMapperSoA.h"
+#include "StdAfx.h"
 #include "ToneMapper.h"
 #include "ImageSoA.h"
 
@@ -28,20 +29,11 @@
 
 #include <algorithm>
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#include <stdint.h>
-#endif
-
 #include <cassert>
 
 
 namespace
 {
-#if defined(_MSC_VER) && _MSC_VER < 1600
-    typedef unsigned __int8 ubyte_t;
-#else
-    typedef uint8_t ubyte_t;
-#endif
 
 namespace ops
 {
@@ -515,10 +507,10 @@ struct Quantizer16bit
 union PixelBGRA8 {
     uint32_t argb;
     struct {
-        ubyte_t b;
-	    ubyte_t g;
-	    ubyte_t r;
-	    ubyte_t a;
+        uint8_t b;
+	    uint8_t g;
+	    uint8_t r;
+	    uint8_t a;
     };
 };
 
@@ -526,7 +518,7 @@ union PixelBGRA8 {
 struct PixelAssembler_BGRA8
 {
     typedef PixelBGRA8 pixel_t;
-    typedef Quantizer8bit<float, ubyte_t> quantizer_t;
+    typedef Quantizer8bit<float, uint8_t> quantizer_t;
     typedef quantizer_t::value_t value_t;
 
     void operator() (
