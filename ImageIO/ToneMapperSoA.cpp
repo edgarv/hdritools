@@ -62,7 +62,7 @@ inline IntT round(const T& x)
     const static T OFFSET = T(0.5f);
     return static_cast<IntT> (x < 0 ? x - OFFSET : x + OFFSET);
 #else
-    return static_cast<IntT> (round(x));
+    return static_cast<IntT> (roundf(x));
 #endif
 }
 
@@ -461,17 +461,17 @@ private:
 // Workaround to template aliases (introduced in C++11)
 template <typename T>
 struct Display_sRGB_Ref {
-    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Ref> type;
+    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Ref> display_t;
 };
 
 template <typename T>
 struct Display_sRGB_Fast1 {
-    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Remez77> type;
+    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Remez77> display_t;
 };
 
 template <typename T>
 struct Display_sRGB_Fast2 {
-    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Remez44> type;
+    typedef DisplayTransformer_sRGB<T, SRGB_NonLinear_Remez44> display_t;
 };
 
 
@@ -642,7 +642,7 @@ void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
     const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
 {
     // Fixed pixel assembler!! (that can be fixed at compile time)
-    typedef pixel_assembler_traits<typename LuminanceScaler::value_t,
+    typedef typename pixel_assembler_traits<typename LuminanceScaler::value_t,
         pcg::Bgra8>::assembler_t assembler_t;
     assembler_t assembler;
     typedef ToneMappingKernel<LuminanceScaler, DisplayTransform,
@@ -671,9 +671,9 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
     // Setup the display transforms
     typedef typename LuminanceScaler::value_t value_t;
     DisplayTransformer_Gamma<value_t> displayGamma(invGamma);
-    Display_sRGB_Ref<value_t>::type   displaySRGB0;
-    Display_sRGB_Fast1<value_t>::type displaySRGB1;
-    Display_sRGB_Fast2<value_t>::type displaySRGB2;
+    typename Display_sRGB_Ref<value_t>::display_t   displaySRGB0;
+    typename Display_sRGB_Fast1<value_t>::display_t displaySRGB1;
+    typename Display_sRGB_Fast2<value_t>::display_t displaySRGB2;
 
     switch(dMethod) {
     case EDISPLAY_GAMMA:
