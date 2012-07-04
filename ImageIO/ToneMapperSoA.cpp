@@ -28,6 +28,7 @@
 #include <tbb/parallel_for.h>
 
 #include <algorithm>
+#include <iterator>
 
 #include <cassert>
 
@@ -572,36 +573,40 @@ struct ToneMappingKernel
 
 
 // Move the processing here, to avoid having way too many parameters
-template <class Kernel>
+template <typename SourceIter, typename DestIter, class Kernel>
 class ProcessorTBB
 {
 public:
-    ProcessorTBB(const pcg::Rgba32F* src, pcg::Bgra8 *dest, const Kernel &k) :
-    m_src(src), m_dest(reinterpret_cast<pcg::PixelBGRA8*>(dest)), m_kernel(k)
+    ProcessorTBB(SourceIter src, DestIter dest, const Kernel &k) :
+    m_src(src), m_dest(dest), m_kernel(k)
     {}
 
-    void operator() (tbb::blocked_range<int>& range) const
+    void operator() (tbb::blocked_range<SourceIter>& range) const
     {
-        for (int i = range.begin(); i != range.end(); ++i) {
-            const pcg::Rgba32F& pixel = m_src[i];
-            m_kernel(pixel.r(), pixel.g(), pixel.b(), m_dest + i);
+        DestIter dest = m_dest + (range.begin() - m_src);
+        typename std::iterator_traits<DestIter>::value_type tmp;
+        for (SourceIter it = range.begin(); it != range.end(); ++it, ++dest) {
+            typename std::iterator_traits<SourceIter>::value_type pixel = *it;
+            m_kernel(pixel.r(), pixel.g(), pixel.b(), &tmp);
+            *dest = tmp;
         }
     }
 
 private:
-    const pcg::Rgba32F* const m_src;
-    pcg::PixelBGRA8* const m_dest;
+    SourceIter m_src;
+    DestIter   m_dest;
     const Kernel& m_kernel;
 };
 
 
-template <class Kernel>
-void processPixels(const Kernel& kernel,
-    const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
+
+template <class Kernel, typename SourceIter, typename DestIter>
+void processPixels(const Kernel& kernel, 
+    SourceIter begin, SourceIter end, DestIter dest)
 {
-    ProcessorTBB<Kernel> pTBB(begin, dest, kernel);
-    int size = static_cast<int>(end - begin);
-    tbb::blocked_range<int> range(0, size);
+    ProcessorTBB<SourceIter, DestIter, Kernel> pTBB(begin, dest, kernel);
+    tbb::blocked_range<SourceIter> range(begin, end);
+    
 #if 1
     tbb::parallel_for(range, pTBB);
 #else
@@ -637,11 +642,10 @@ struct pixel_assembler_traits<float, pcg::Bgra8>
 
 
 
-template <class LuminanceScaler, class DisplayTransform>
+template <class LuminanceScaler, class DisplayTransform, typename SourceIter, typename DestIter>
 void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
-    const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
+    SourceIter begin, SourceIter end, DestIter dest)
 {
-    // Fixed pixel assembler!! (that can be fixed at compile time)
     typedef typename pixel_assembler_traits<typename LuminanceScaler::value_t,
         pcg::Bgra8>::assembler_t assembler_t;
     assembler_t assembler;
@@ -663,10 +667,9 @@ enum DisplayMethod
 
 
 
-template <class LuminanceScaler>
+template <class LuminanceScaler, typename SourceIter, typename DestIter>
 void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
-    float invGamma,
-    const pcg::Rgba32F* begin, const pcg::Rgba32F* end, pcg::Bgra8 *dest)
+    float invGamma, SourceIter begin, SourceIter end, DestIter dest)
 {
     // Setup the display transforms
     typedef typename LuminanceScaler::value_t value_t;
@@ -716,7 +719,7 @@ void pcg::ToneMapperSoA::ToneMap(
 
     const pcg::Rgba32F* begin = src.GetDataPointer();
     const pcg::Rgba32F* end   = begin + src.Size();
-    pcg::Bgra8* out = dest.GetDataPointer();
+    PixelBGRA8* out = reinterpret_cast<PixelBGRA8*>(dest.GetDataPointer());
 
     DisplayMethod dMethod;
     if (this->isSRGB()) {
