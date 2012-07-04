@@ -436,15 +436,23 @@ TEST_F(ToneMapperSoATest, Process1)
     Timer tOld;
     Timer tRef;
     const int N = 10;
+    
+    tm.ToneMap(outImg, img, pcg::REINHARD02);
     for (int i = 0; i != N; ++i) {
         tSoA.start();
         tm.ToneMap(outImg, img, pcg::REINHARD02);
         tSoA.stop();
+    }
 
+    tmOld.ToneMap(outImgOld, img, true, pcg::REINHARD02);
+    for (int i = 0; i != N; ++i) {
         tOld.start();
         tmOld.ToneMap(outImgOld, img, true, pcg::REINHARD02);
         tOld.stop();
+    }
 
+    tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
+    for (int i = 0; i != N; ++i) {
         tRef.start();
         tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
         tRef.stop();
