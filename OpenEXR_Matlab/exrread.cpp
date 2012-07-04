@@ -137,8 +137,8 @@ mxArray * readPixels(const char * filename)
 
     // Allocate the requied space
     const Box2i & dw = file.header().dataWindow();
-    const int width  = dw.max.x - dw.min.x + 1;
-    const int height = dw.max.y - dw.min.y + 1;
+    const mwSize width  = dw.max.x - dw.min.x + 1;
+    const mwSize height = dw.max.y - dw.min.y + 1;
     const mwSize dims[] = {height, width, 3};
     mxArray * data = mxCreateNumericArray(3, &dims[0], mxSINGLE_CLASS, mxREAL);
     float * buffer = static_cast<float*> (mxGetData(data));
