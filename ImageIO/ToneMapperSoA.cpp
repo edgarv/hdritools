@@ -23,6 +23,7 @@
 #include "StdAfx.h"
 #include "ToneMapper.h"
 #include "ImageSoA.h"
+#include "Vec4f.h"
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
@@ -203,6 +204,100 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
 
 
 
+
+// Constants for SSE Code. Not the prettiest approach, however the static
+// local variables generate inefficient code with non-scalar types as
+// it add guards to know when to execute those methods. Compile-time
+// constants for integral types are much simpler than this.
+namespace constants
+{
+
+// Helper function to set either a scalar or a float from a Vec4fUnion
+template <typename T>
+inline T getValue(const pcg::Vec4fUnion& value);
+
+template <>
+inline float getValue(const pcg::Vec4fUnion& value) {
+    return value.f[0];
+}
+
+template <>
+inline pcg::Vec4f getValue(const pcg::Vec4fUnion& value) {
+    return pcg::Vec4f(value);
+}
+
+
+
+// Writing manually 4 times the same constant is error prone
+#define PCG_TMOSOA_VEC4F(x) {x, x, x, x}
+
+static const pcg::Vec4fUnion ZERO = {PCG_TMOSOA_VEC4F( 0.0f )};
+static const pcg::Vec4fUnion ONE  = {PCG_TMOSOA_VEC4F( 1.0f )};
+    
+static const pcg::Vec4fUnion Q_8bit  = {PCG_TMOSOA_VEC4F(   255.0f )};
+static const pcg::Vec4fUnion Q_16bit = {PCG_TMOSOA_VEC4F( 65535.0f )};
+
+// Luminance conversion
+static const pcg::Vec4fUnion LVec[3] = {
+    {PCG_TMOSOA_VEC4F( 0.212639005871510f )},
+    {PCG_TMOSOA_VEC4F( 0.715168678767756f )},
+    {PCG_TMOSOA_VEC4F( 0.072192315360734f )}
+};
+
+// Rational approximation for sRGB P/Q order 4/4
+static const pcg::Vec4fUnion Remez44_P[5] = {
+    {PCG_TMOSOA_VEC4F(    -0.01997304708470295f )},
+    {PCG_TMOSOA_VEC4F(    24.95173169159651f )},
+    {PCG_TMOSOA_VEC4F(  3279.752175439042f )},
+    {PCG_TMOSOA_VEC4F( 39156.546674561556f )},
+    {PCG_TMOSOA_VEC4F( 42959.451119871745f )}
+};
+static const pcg::Vec4fUnion Remez44_Q[5] = {
+    {PCG_TMOSOA_VEC4F(     1.f )},
+    {PCG_TMOSOA_VEC4F(   361.5384894448744f )},
+    {PCG_TMOSOA_VEC4F( 13090.206953080155f  )},
+    {PCG_TMOSOA_VEC4F( 55800.948825871434f  )},
+    {PCG_TMOSOA_VEC4F( 16180.833742684188f  )}
+};
+
+// Rational approximation for sRGB P/Q order 7/7
+static const pcg::Vec4fUnion Remez77_P[8] = {
+    {PCG_TMOSOA_VEC4F(-0.031852703288410084f )},
+    {PCG_TMOSOA_VEC4F( 1.8553896638433446e1f )},
+    {PCG_TMOSOA_VEC4F( 2.20060672110147e4f   )},
+    {PCG_TMOSOA_VEC4F( 2.635850360294788e6f  )},
+    {PCG_TMOSOA_VEC4F( 7.352843882592331e7f  )},
+    {PCG_TMOSOA_VEC4F( 5.330866283442694e8f  )},
+    {PCG_TMOSOA_VEC4F( 9.261676939514283e8f  )},
+    {PCG_TMOSOA_VEC4F( 2.632919307024597e8f  )}
+};
+static const pcg::Vec4fUnion Remez77_Q[8] = {
+    {PCG_TMOSOA_VEC4F( 1.f )},
+    {PCG_TMOSOA_VEC4F( 1.2803496360781705e3f )},
+    {PCG_TMOSOA_VEC4F( 2.740075886695005e5f  )},
+    {PCG_TMOSOA_VEC4F( 1.4492562384924464e7f )},
+    {PCG_TMOSOA_VEC4F( 2.1029015319992256e8f )},
+    {PCG_TMOSOA_VEC4F( 8.142158667694515e8f  )},
+    {PCG_TMOSOA_VEC4F( 6.956059106558038e8f  )},
+    {PCG_TMOSOA_VEC4F( 6.3853076877794705e7f )}
+};
+
+static const pcg::Vec4fUnion SRGB_Cutoff    = {PCG_TMOSOA_VEC4F( 0.003041229589676f )};
+static const pcg::Vec4fUnion SRGB_FactorHi  = {PCG_TMOSOA_VEC4F( 1.055f )};
+static const pcg::Vec4fUnion SRGB_Exponent  = {PCG_TMOSOA_VEC4F( 0.4166666667f )};
+static const pcg::Vec4fUnion SRGB_Offset    = {PCG_TMOSOA_VEC4F( 0.055f )};
+static const pcg::Vec4fUnion SRGB_FactorLow = {PCG_TMOSOA_VEC4F( 12.92f )};
+
+
+// Remove the temporary macro
+#undef PCG_TMOSOA_VEC4F
+
+
+} // namespace constants
+
+
+
+
 // Simple scaler which only multiplies all pixels by a constant
 template <typename T>
 struct LuminanceScaler_Exposure
@@ -271,13 +366,6 @@ struct LuminanceScaler_Reinhard02
         const T& rLinear, const T& gLinear, const T& bLinear,
         T& rOut, T& gOut, T& bOut) const
     {
-        static const T LVec[] = {
-            T(0.212639005871510f),
-            T(0.715168678767756f),
-            T(0.072192315360734f)
-        };
-        static const T ONE = T(1.0f);
-
         // Get the luminance
         const T Y = LVec[0]*rLinear + LVec[1]*gLinear + LVec[2]*bLinear;
 
@@ -294,6 +382,17 @@ struct LuminanceScaler_Reinhard02
 private:
     T m_P;
     T m_Q;
+
+    static const T ONE;
+    static const T LVec[3];
+};
+template <typename T>
+const T LuminanceScaler_Reinhard02<T>::ONE = constants::getValue<T>(constants::ONE);
+template <typename T>
+const T LuminanceScaler_Reinhard02<T>::LVec[3] = {
+    constants::getValue<T>(constants::LVec[0]),
+    constants::getValue<T>(constants::LVec[1]),
+    constants::getValue<T>(constants::LVec[2])
 };
 
 
@@ -303,12 +402,16 @@ struct Clamper01
 {
     inline T operator() (const T& x) const
     {
-        const static T ONE  = T(1.0f);
-        const static T ZERO = T(0.0f);
         return ops::clamp(x, ZERO, ONE);
     }
-};
 
+    static const T ONE;
+    static const T ZERO;
+};
+template <typename T>
+const T Clamper01<T>::ONE  = constants::getValue<T>(constants::ONE);
+template <typename T>
+const T Clamper01<T>::ZERO = constants::getValue<T>(constants::ZERO);
 
 
 // Raises each pixel (already in [0,1]) to 1/gamma. A typical value for gamma
@@ -360,13 +463,23 @@ struct SRGB_NonLinear_Ref
 {
     inline T operator() (const T& x) const
     {
-        const static T FACTOR   = T(1.055f);
-        const static T EXPONENT = T(1.0f/2.4f);
-        const static T OFFSET   = T(0.055f);
         T r = FACTOR * ops::pow(x, EXPONENT) - OFFSET;
         return r;
     }
+
+    static const T FACTOR;
+    static const T EXPONENT;
+    static const T OFFSET;
 };
+template <typename T>
+const T SRGB_NonLinear_Ref<T>::FACTOR =
+    constants::getValue<T>(constants::SRGB_FactorHi);
+template <typename T>
+const T SRGB_NonLinear_Ref<T>::EXPONENT =
+    constants::getValue<T>(constants::SRGB_Exponent);
+template <typename T>
+const T SRGB_NonLinear_Ref<T>::OFFSET =
+    constants::getValue<T>(constants::SRGB_Offset);
 
 
 
@@ -375,28 +488,32 @@ template <typename T>
 struct SRGB_NonLinear_Remez44
 {
     inline T operator() (const T& x) const
-    {
-        static const T P[] = {
-            T(-0.01997304708470295f),
-            T(24.95173169159651f),
-            T(3279.752175439042f),
-            T(39156.546674561556f),
-            T(42959.451119871745f)
-        };
-
-        static const T Q[] = {
-            T(1.f),
-            T(361.5384894448744f),
-            T(13090.206953080155f),
-            T(55800.948825871434f),
-            T(16180.833742684188f)
-        };
-    
+    {    
         const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] + P[4]*x))));
         const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] + Q[4]*x))));
         const T result = num * ops::rcp(den);
         return result;
     }
+
+private:
+    static const T P[5];
+    static const T Q[5];
+};
+template <typename T>
+const T SRGB_NonLinear_Remez44<T>::P[5] = {
+     constants::getValue<T>(constants::Remez44_P[0]),
+     constants::getValue<T>(constants::Remez44_P[1]),
+     constants::getValue<T>(constants::Remez44_P[2]),
+     constants::getValue<T>(constants::Remez44_P[3]),
+     constants::getValue<T>(constants::Remez44_P[4])
+};
+template <typename T>
+const T SRGB_NonLinear_Remez44<T>::Q[5] = {
+     constants::getValue<T>(constants::Remez44_Q[0]),
+     constants::getValue<T>(constants::Remez44_Q[1]),
+     constants::getValue<T>(constants::Remez44_Q[2]),
+     constants::getValue<T>(constants::Remez44_Q[3]),
+     constants::getValue<T>(constants::Remez44_Q[4])
 };
 
 
@@ -407,28 +524,6 @@ struct SRGB_NonLinear_Remez77
 {
     inline T operator() (const T& x) const
     {
-        static const T P[] = {
-            T(-0.031852703288410084f),
-            T(18.553896638433446f),
-            T(22006.0672110147f),
-            T(2.635850360294788e6f),
-            T(7.352843882592331e7f),
-            T(5.330866283442694e8f),
-            T(9.261676939514283e8f),
-            T(2.632919307024597e8f)
-        };
-
-        static const T Q[] = {
-            T(1.f),
-            T(1280.3496360781705f),
-            T(274007.5886695005f),
-            T(1.4492562384924464e7f),
-            T(2.1029015319992256e8f),
-            T(8.142158667694515e8f),
-            T(6.956059106558038e8f),
-            T(6.3853076877794705e7f)
-        };
-
         const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] +
                                   x*(P[4] + x*(P[5] + x*(P[6] + P[7]*x)))))));
         const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] +
@@ -436,6 +531,32 @@ struct SRGB_NonLinear_Remez77
         const T result = num * ops::rcp(den);
         return result;
     }
+
+private:
+    static const T P[8];
+    static const T Q[8];
+};
+template <typename T>
+const T SRGB_NonLinear_Remez77<T>::P[8] = {
+     constants::getValue<T>(constants::Remez77_P[0]),
+     constants::getValue<T>(constants::Remez77_P[1]),
+     constants::getValue<T>(constants::Remez77_P[2]),
+     constants::getValue<T>(constants::Remez77_P[3]),
+     constants::getValue<T>(constants::Remez77_P[4]),
+     constants::getValue<T>(constants::Remez77_P[5]),
+     constants::getValue<T>(constants::Remez77_P[6]),
+     constants::getValue<T>(constants::Remez77_P[7])
+};
+template <typename T>
+const T SRGB_NonLinear_Remez77<T>::Q[8] = {
+     constants::getValue<T>(constants::Remez77_Q[0]),
+     constants::getValue<T>(constants::Remez77_Q[1]),
+     constants::getValue<T>(constants::Remez77_Q[2]),
+     constants::getValue<T>(constants::Remez77_Q[3]),
+     constants::getValue<T>(constants::Remez77_Q[4]),
+     constants::getValue<T>(constants::Remez77_Q[5]),
+     constants::getValue<T>(constants::Remez77_Q[6]),
+     constants::getValue<T>(constants::Remez77_Q[7])
 };
 
 
@@ -446,8 +567,6 @@ struct DisplayTransformer_sRGB
 {
     inline T operator() (const T& pLinear) const
     {
-        const static T CUTOFF_sRGB = T(0.003041229589676f);
-        const static T FACTOR      = T(12.92f);
         T p = m_nonlinear(pLinear);
 
         // Here comes the blend
@@ -457,7 +576,17 @@ struct DisplayTransformer_sRGB
 
 private:
     SRGB_NonLinear<T> m_nonlinear;
+    static const T CUTOFF_sRGB;
+    static const T FACTOR;
 };
+template <typename T, template<typename> class SRGB_NonLinear>
+const T DisplayTransformer_sRGB<T, SRGB_NonLinear>::CUTOFF_sRGB =
+    constants::getValue<T>(constants::SRGB_Cutoff);
+template <typename T, template<typename> class SRGB_NonLinear>
+const T DisplayTransformer_sRGB<T, SRGB_NonLinear>::FACTOR =
+    constants::getValue<T>(constants::SRGB_FactorLow);
+
+
 
 // Workaround to template aliases (introduced in C++11)
 template <typename T>
@@ -483,10 +612,14 @@ struct Quantizer8bit
 
     value_t operator() (const T& x) const
     {
-        const static T FACTOR = T(255.0f);
         return ops::round<QT>(FACTOR * x);
     }
+
+private:
+    static const T FACTOR;
 };
+template <typename T, typename QT>
+const T Quantizer8bit<T,QT>::FACTOR = constants::getValue<T>(constants::Q_8bit);
 
 
 template <typename T, typename QT>
@@ -496,10 +629,14 @@ struct Quantizer16bit
 
     value_t operator() (const T& x) const
     {
-        const static T FACTOR = T(65535.0f);
         return ops::round<QT>(FACTOR * x);
     }
+
+private:
+    static const T FACTOR;
 };
+template <typename T, typename QT>
+const T Quantizer16bit<T,QT>::FACTOR=constants::getValue<T>(constants::Q_16bit);
 
 
 
