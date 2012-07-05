@@ -59,6 +59,8 @@ set(SRCS
   Exception.h
   PfmIO.h PfmIO.cpp
   LoadHDR.h LoadHDR.cpp
+  Vec4f.h
+  Vec4i.h
   
   # Also include the version header, defined in the root directory
   "${HDRITOOLS_VERSION_FILENAME}"
