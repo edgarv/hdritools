@@ -41,6 +41,7 @@ set(SRCS
   ImageSoA.h ImageSoA.cpp
   ImageComparator.h ImageComparator.cpp
   ImageIO.h ImageIO.cpp
+  ImageIterators.h
   LDRPixels.h
   OpenEXRIO.h OpenEXRIO.cpp
   Rgb32F.h
@@ -72,6 +73,7 @@ set(SRCS_PUBLIC
   ImageSoA.h
   ImageComparator.h
   ImageIO.h
+  ImageIterators.h
   LDRPixels.h
   OpenEXRIO.h
   Rgb32F.h
