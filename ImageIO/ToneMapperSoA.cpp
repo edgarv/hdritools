@@ -446,18 +446,6 @@ private:
 
 
 
-// Supporting modules for the linear bits of sRGB
-enum EsRGB_MODE
-{
-    // Reference implementation
-    SRGB_REFERENCE,
-    // Fast approximation, reasonably accurate
-    SRGB_FAST1,
-    // Yet faster approximation, but not very accurate
-    SRGB_FAST2
-};
-
-
 template <typename T>
 struct SRGB_NonLinear_Ref
 {
@@ -859,13 +847,13 @@ void pcg::ToneMapperSoA::ToneMap(
     DisplayMethod dMethod;
     if (this->isSRGB()) {
         switch (m_sRGBMethod) {
-        case ToneMapperSoA::SRGB_REF:
+        case SRGB_REF:
             dMethod = EDISPLAY_SRGB_REF;
             break;
-        case ToneMapperSoA::SRGB_FAST1:
+        case SRGB_FAST1:
             dMethod = EDISPLAY_SRGB_FAST1;
             break;
-        case ToneMapperSoA::SRGB_FAST2:
+        case SRGB_FAST2:
             dMethod = EDISPLAY_SRGB_FAST2;
             break;
         default:
