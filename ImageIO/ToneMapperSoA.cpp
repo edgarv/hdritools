@@ -132,7 +132,7 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
  *   L::L( const L& )    Copy constructor
  *   L::~L()             Destructor
  *   void L::opeator() ( const T& r, const T& g const T& b,
-                        T* rOut, T* gOut, T* bOut ) const
+                        T& rOut, T& gOut, T& bOut ) const
  *                       Scales the input HDR pixel elements and writes the
  *                       scaled values.
  *
@@ -196,7 +196,7 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
  *      const P::value_t& r,
  *      const P::value_t& g,
  *      const P::value_t& b,
- *      P:pixel_t *outPixel ) const
+ *      P:pixel_t& outPixel ) const
  *                       Takes the quantized pixels and saves the packed
  *                       LDR pixel into outPixel.
  */
@@ -211,11 +211,11 @@ struct LuminanceScaler_Exposure
 
     inline void operator() (
         const T& rLinear, const T& gLinear, const T& bLinear,
-        T* rOut, T* gOut, T* bOut) const
+        T& rOut, T& gOut, T& bOut) const
     {
-        *rOut = m_multiplier * rLinear;
-        *gOut = m_multiplier * gLinear;
-        *bOut = m_multiplier * bLinear;
+        rOut = m_multiplier * rLinear;
+        gOut = m_multiplier * gLinear;
+        bOut = m_multiplier * bLinear;
     }
 
     // Scales each pixel by multiplier
@@ -269,7 +269,7 @@ struct LuminanceScaler_Reinhard02
 
     inline void operator() (
         const T& rLinear, const T& gLinear, const T& bLinear,
-        T* rOut, T* gOut, T* bOut) const
+        T& rOut, T& gOut, T& bOut) const
     {
         static const T LVec[] = {
             T(0.212639005871510f),
@@ -286,9 +286,9 @@ struct LuminanceScaler_Reinhard02
         const T k = (m_P * (ONE + m_Q*Lp)) * ops::rcp(ONE + Lp);
 
         // And apply
-        *rOut = k * rLinear;
-        *gOut = k * gLinear;
-        *bOut = k * bLinear;
+        rOut = k * rLinear;
+        gOut = k * gLinear;
+        bOut = k * bLinear;
     }
 
 private:
@@ -514,9 +514,9 @@ struct PixelAssembler_BGRA8
 
     void operator() (
         const value_t& r, const value_t& g, const value_t& b,
-        pixel_t *outPixel) const
+        pixel_t& outPixel) const
     {
-        outPixel->argb = (0xff000000) | (r << 16) | (g << 8) | (b);
+        outPixel.argb = (0xff000000) | (r << 16) | (g << 8) | (b);
     }
 };
 
@@ -536,13 +536,13 @@ struct ToneMappingKernel
 
     void operator() (
         const value_t& rLinear, const value_t& gLinear, const value_t& bLinear,
-            typename PixelAssembler::pixel_t *pixelOut) const
+            typename PixelAssembler::pixel_t& pixelOut) const
     {
         value_t rScaled, gScaled, bScaled;
 
         // Scale the luminance according to the current settings
         luminanceScaler(rLinear, gLinear, bLinear,
-            &rScaled, &gScaled, &bScaled);
+            rScaled, gScaled, bScaled);
 
         // Clamp to [0,1]
         const value_t rClamped = clamper(rScaled);
@@ -584,11 +584,9 @@ public:
     void operator() (tbb::blocked_range<SourceIter>& range) const
     {
         DestIter dest = m_dest + (range.begin() - m_src);
-        typename std::iterator_traits<DestIter>::value_type tmp;
         for (SourceIter it = range.begin(); it != range.end(); ++it, ++dest) {
             typename std::iterator_traits<SourceIter>::value_type pixel = *it;
-            m_kernel(pixel.r(), pixel.g(), pixel.b(), &tmp);
-            *dest = tmp;
+            m_kernel(pixel.r(), pixel.g(), pixel.b(), *dest);
         }
     }
 
