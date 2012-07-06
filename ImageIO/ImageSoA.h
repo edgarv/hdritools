@@ -302,9 +302,9 @@ public:
     typedef Channel_3 B;
     typedef Channel_4 A;
 
-    RGBAImageSoA() : ImageSoA4() {}
+    RGBAImageSoA() : ImageSoA4<float,float,float,float>() {}
 
-    RGBAImageSoA(int w, int h) : ImageSoA4(w, h) {}
+    RGBAImageSoA(int w, int h) : ImageSoA4<float,float,float,float>(w, h) {}
 
     template <typename PixelRGB>
     RGBAImageSoA(const Image<PixelRGB, pcg::TopDown> &img) :
@@ -324,6 +324,16 @@ public:
             b[i] = p.b();
             a[i] = p.a();
         }
+    }
+
+    // Utility which generates a RGBA32F pixel on the fly
+    Rgba32F operator[] (int idx) const
+    {
+        const float& r = ElementAt<R>(idx);
+        const float& g = ElementAt<G>(idx);
+        const float& b = ElementAt<B>(idx);
+        const float& a = ElementAt<A>(idx);
+        return Rgba32F(r, g, b, a);
     }
 
 protected:
