@@ -16,21 +16,12 @@
 #include "dSFMT/RandomMT.h"
 #include "Timer.h"
 
+#include <StdAfx.h>
 #include <ImageSoA.h>
 #include <Image.h>
 #include <Rgba32F.h>
 
 #include <gtest/gtest.h>
-
-#if defined(_MSC_VER) && _MSC_VER < 1600
-# ifdef _WIN64
-typedef unsigned __int64 uintptr_t;
-# else /* _WIN64 */
-typedef _W64 unsigned int uintptr_t;
-# endif /* _WIN64 */
-#else
-# include <stdint.h>
-#endif
 
 
 using std::cout;
@@ -78,7 +69,7 @@ protected:
         return ptr1 > ptr2 ? (ptr1-ptr2) : (ptr2-ptr1);
     }
 
-    typedef pcg::ImageBaseSoA<float, float, float> Image;
+    typedef pcg::ImageSoA3<float, float, float> Image;
     typedef Image::Channel_1 R;
     typedef Image::Channel_2 G;
     typedef Image::Channel_3 B;
@@ -244,7 +235,46 @@ TEST_F(ImageSoATest, ElementAccess)
 
 
 
-TEST_F(ImageSoATest, CopyConstruct)
+
+class RGBAImageSoATest : public ::testing::Test
+{
+protected:
+    virtual void SetUp()
+    {
+        // Python generated: 
+        // ['{0:#010x}'.format(random.randint(0,0x7fffffff)) for i in range(16)]
+        static const unsigned int seed[] = {    0x7f0f9787, 0x2cf5c400,
+            0x658397b3, 0x6fee0ac8, 0x2dc07329, 0x1834cf38, 0x1b86ef3e,
+            0x51db4b87, 0x26cefeb2, 0x3adf50b0, 0x76821abd, 0x70b07cbd,
+            0x3f545ee6, 0x60bf66aa, 0x2936500f, 0x5af3c7e1
+        };
+        m_rnd.setSeed(seed);
+    }
+
+    virtual void TearDown()
+    {
+
+    }
+
+    template <pcg::ScanLineMode S>
+    void fillRnd (pcg::Image<pcg::Rgba32F, S> &img) {
+        for (int i = 0; i < img.Size(); ++i) {
+            const float s = 1000.0f * m_rnd.nextFloat();
+            const float r = s * m_rnd.nextFloat();
+            const float g = s * m_rnd.nextFloat();
+            const float b = s * m_rnd.nextFloat();
+            const float a = m_rnd.nextFloat();
+            img[i].set (r, g, b, a);
+        }
+    }
+
+    typedef pcg::RGBAImageSoA Image;
+    RandomMT m_rnd;
+};
+
+
+
+TEST_F(RGBAImageSoATest, CopyConstruct)
 {
     const int N = 100;
     Timer t1;
@@ -257,21 +287,22 @@ TEST_F(ImageSoATest, CopyConstruct)
         fillRnd(imgOrig);
 
         t1.start();
-        pcg::RGBImageSoA img(imgOrig);
+        Image img(imgOrig);
         t1.stop();
 
         for (int j = 0; j != height; ++j) {
-            const float *r = img.GetScanlinePointer<R> (j, pcg::TopDown);
-            const float *g = img.GetScanlinePointer<G> (j, pcg::TopDown);
-            const float *b = img.GetScanlinePointer<B> (j, pcg::TopDown);
+            const float *r = img.GetScanlinePointer<Image::R> (j, pcg::TopDown);
+            const float *g = img.GetScanlinePointer<Image::G> (j, pcg::TopDown);
+            const float *b = img.GetScanlinePointer<Image::B> (j, pcg::TopDown);
+            const float *a = img.GetScanlinePointer<Image::A> (j, pcg::TopDown);
             const pcg::Rgba32F *p = imgOrig.GetScanlinePointer(j, pcg::TopDown);
 
             for (int i = 0; i != width; ++i) {
-                pcg::Rgba32F pixel(p[i]);
-                pixel.applyAlpha();
+                const pcg::Rgba32F& pixel = p[i];
                 ASSERT_EQ(pixel.r(), r[i]);
                 ASSERT_EQ(pixel.g(), g[i]);
                 ASSERT_EQ(pixel.b(), b[i]);
+                ASSERT_EQ(pixel.a(), a[i]);
             }
         }
     }

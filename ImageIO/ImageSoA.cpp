@@ -30,10 +30,10 @@ struct CopyFunctor
     struct Args
     {
         const pcg::Image<pcg::Rgba32F, pcg::TopDown> &src;
-        pcg::RGBImageSoA &dest;
+        pcg::RGBAImageSoA &dest;
 
         Args(const pcg::Image<pcg::Rgba32F, pcg::TopDown> &source,
-            pcg::RGBImageSoA &target) : src(source), dest(target)
+            pcg::RGBAImageSoA &target) : src(source), dest(target)
         {}
     };
 
@@ -43,17 +43,17 @@ struct CopyFunctor
 
 
     inline void
-    copy1(float& r, float& g, float& b, const pcg::Rgba32F& src) const
+    copy1(float& r, float& g, float& b, float& a, const pcg::Rgba32F& src) const
     {
-        pcg::Rgba32F pixel(src);
-        pixel.applyAlpha();
-        r = pixel.r();
-        g = pixel.g();
-        b = pixel.b();
+        r = src.r();
+        g = src.g();
+        b = src.b();
+        a = src.a();
     }
 
     inline void
-    copy4(float* r, float* g, float *b, const pcg::Rgba32F* src, int off) const
+    copy4(float* r, float* g, float *b, float* a, const pcg::Rgba32F* src,
+          int off) const
     {
         __m128 p0 = src[off];
         __m128 p1 = src[off + 1];
@@ -61,10 +61,11 @@ struct CopyFunctor
         __m128 p3 = src[off + 3];
         PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
 
-        // Multiply by alpha
-        _mm_stream_ps(r + off, _mm_mul_ps(p3, p0));
-        _mm_stream_ps(g + off, _mm_mul_ps(p2, p0));
-        _mm_stream_ps(b + off, _mm_mul_ps(p1, p0));
+        // Stream the results
+        _mm_stream_ps(r + off, p3);
+        _mm_stream_ps(g + off, p2);
+        _mm_stream_ps(b + off, p1);
+        _mm_stream_ps(a + off, p0);
     }
 
     void operator() (Range& range) const
@@ -80,26 +81,27 @@ struct CopyFunctor
         assert((beginSSE-range.begin())+(endSSE-beginSSE)+(range.end()-endSSE)\
             ==range.size());
 
-        float * r = m_args.dest.GetDataPointer<pcg::RGBImageSoA::R>();
-        float * g = m_args.dest.GetDataPointer<pcg::RGBImageSoA::G>();
-        float * b = m_args.dest.GetDataPointer<pcg::RGBImageSoA::B>();
+        float * r = m_args.dest.GetDataPointer<pcg::RGBAImageSoA::R>();
+        float * g = m_args.dest.GetDataPointer<pcg::RGBAImageSoA::G>();
+        float * b = m_args.dest.GetDataPointer<pcg::RGBAImageSoA::B>();
+        float * a = m_args.dest.GetDataPointer<pcg::RGBAImageSoA::A>();
         const pcg::Rgba32F* src = m_args.src.GetDataPointer();
 
         // Copy individual items until the first multiple of 4, so that they
         // are aligned to 16 bytes (1 to 3 elements)
         for (int i = range.begin(); i < beginSSE; ++i) {
-            copy1(r[i], g[i], b[i], src[i]);
+            copy1(r[i], g[i], b[i], a[i], src[i]);
         }
 
         // Copy all the blocks of 4 pixels. This is the heaviest loop
         for (int offset = beginSSE; offset < endSSE; offset += 4)
         {
-            copy4(r, g, b, src, offset);
+            copy4(r, g, b, a, src, offset);
         }
 
         // Copy any remaining elements (1 to 3)
         for (int i = endSSE; i < range.end(); ++i) {
-            copy1(r[i], g[i], b[i], src[i]);
+            copy1(r[i], g[i], b[i], a[i], src[i]);
         }
     }
 
@@ -112,7 +114,7 @@ private:
 
 
 void
-pcg::RGBImageSoA::copyImage(const pcg::Image<pcg::Rgba32F, pcg::TopDown> &img)
+pcg::RGBAImageSoA::copyImage(const pcg::Image<pcg::Rgba32F, pcg::TopDown> &img)
 {
     CopyFunctor::Range range(0, img.Size(), 4);
     CopyFunctor functor(CopyFunctor::Args(img, *this));

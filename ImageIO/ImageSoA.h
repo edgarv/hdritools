@@ -22,6 +22,7 @@
 #include "Exception.h"
 #include "Rgba32F.h"
 
+#include <vector>
 #include <algorithm>
 #include <cassert>
 
@@ -43,82 +44,59 @@ struct ChannelSpecTag
 
 
 /**
- * Base for a multi-channel image as Struct-of-Arrays (SoA) which is better
+ * 3-channel image as Struct-of-Arrays (SoA) which is better
  * for SIMD CPU processing.
  */
-template <typename T1, typename T2, typename T3>
-class ImageBaseSoA
+class ImageSoABase
 {
-public:
-
-#if defined(_MSC_VER) && _MSC_VER < 1600
-    typedef __int8 byte_t;
-#else
-    typedef int8_t byte_t;
-#endif
-
-    // Padding per channel in bytes. For now this is hard-coded to 64 bytes
-    // so that 16-single precision number may be read without issues
-    static const int PADDING = 64;
-
-    // Typedef for each channel
-    typedef ChannelSpecTag<T1, 0> Channel_1;
-    typedef ChannelSpecTag<T2, 1> Channel_2;
-    typedef ChannelSpecTag<T3, 2> Channel_3;
-
-    static const int NUM_CHANNELS = 3;
-
-
-    // Default constructor: creates an empty image. To do anything
-    // useful afterwards you need to use the Alloc(int,int) method.
-    ImageBaseSoA() : m_width(0), m_height(0), m_data(0)
+protected:
+    // Default constructor, clears the member variables
+    ImageSoABase() : m_width(0), m_height(0), m_data(0)
     {
-        std::fill(m_offsets, m_offsets + NUM_CHANNELS, -1);
     }
 
-    // Creates a new image allocating the required space
-    ImageBaseSoA(int w, int h) : m_width(0), m_height(0), m_data(0)
-    {
-        assert(w > 0 && h > 0);
-        std::fill(m_offsets, m_offsets + NUM_CHANNELS, -1);
-        Alloc(w, h);
-    }
-
-    // Destructor, it reclaims the space previously allocated
-    ~ImageBaseSoA() {
-        Clear();
-    }
 
     // Allocates new space for the image data, deleting the previous one
-    void Alloc(int w, int h) {
+    template <size_t N>
+    void Alloc(int w, int h, const size_t (&sizes)[N]) {
         assert(w > 0 && h > 0);
         assert(((long long)w)*h <= 0x7fffffff);
         Clear();
         m_width  = w;
         m_height = h;
         
-        // Allocate each channel, padding to 64 bytes and with 16-byte alignment
+        // Allocate each channel, padding to 64 bytes and with 64-byte alignment
         const size_t numel = static_cast<size_t>(w) * static_cast<size_t>(h);
 
-        // This is coupled with the number of channels
-        const static size_t sizes[] = {
-            sizeof(T1), sizeof(T2), sizeof(T3)
-        };
-
         size_t offset = 0;
+        assert(m_offsets.size() == N);
         m_offsets[0] = offset;
-        for (int i = 0; i < NUM_CHANNELS; ++i) {
+        for (size_t i = 0; i != N; ++i) {
             m_offsets[i] = offset;
             offset += ((numel * sizes[i]) + 63) & ~0x3F;
-            assert(offset % 16 == 0);
+            assert(offset % 64 == 0);
         }
 
         // At this point offset contains the total requested memory
         const size_t totalBytes = offset;
-        m_data = alloc_align<byte_t>(64, totalBytes);
+        m_data = alloc_align<int8_t>(64, totalBytes);
         if (m_data == NULL) {
             throw RuntimeException("Couldn't allocate memory for the image.");
         }
+    }
+
+public:
+
+    // Padding per channel in bytes. For now this is hard-coded to 64 bytes
+    // so that 16-single precision number may be read without issues
+    static const int PADDING = 64;
+
+    // Alignment in bytes
+    static const int ALIGNMENT = 64;
+
+    // Destructor, it reclaims the space previously allocated
+    virtual ~ImageSoABase() {
+        Clear();
     }
 
     // Deallocates the memory and resets the image dimensions to 0
@@ -126,7 +104,7 @@ public:
         if (m_data != 0) {
             free_align(m_data);
             m_data = 0;
-            std::fill(m_offsets, m_offsets + NUM_CHANNELS, -1);
+            std::fill(m_offsets.begin(), m_offsets.end(), -1);
         }
 
         m_width = m_height = 0;
@@ -224,33 +202,118 @@ protected:
     int m_height;
 
     // Data for all each channels
-    byte_t * m_data;
+    int8_t* m_data;
 
     // Offsets for each channel
-    size_t m_offsets[NUM_CHANNELS];
+    std::vector<size_t> m_offsets;
 };
 
 
 
-// Helper typedef for an SoA image with only RGB channels, for bulk operations
-class RGBImageSoA : public ImageBaseSoA<float, float, float>
+template <typename T1, typename T2, typename T3>
+class ImageSoA3 : public ImageSoABase
+{
+public:
+
+    // Typedef for each channel
+    typedef ChannelSpecTag<T1, 0> Channel_1;
+    typedef ChannelSpecTag<T2, 1> Channel_2;
+    typedef ChannelSpecTag<T3, 2> Channel_3;
+
+    static const int NUM_CHANNELS = 3;
+
+
+    // Default constructor: creates an empty image. To do anything
+    // useful afterwards you need to use the Alloc(int,int) method.
+    ImageSoA3()
+    {
+        m_offsets.resize(NUM_CHANNELS);
+        std::fill(m_offsets.begin(), m_offsets.end(), -1);
+    }
+
+    // Creates a new image allocating the required space
+    ImageSoA3(int w, int h)
+    {
+        assert(w > 0 && h > 0);
+        m_offsets.resize(NUM_CHANNELS);
+        std::fill(m_offsets.begin(), m_offsets.end(), -1);
+        Alloc(w, h);
+    }
+
+    // Allocates new space for the image data, deleting the previous one
+    inline void Alloc(int w, int h) {
+        const static size_t sizes[] = {
+            sizeof(T1), sizeof(T2), sizeof(T3)
+        };
+        ImageSoABase::Alloc(w, h, sizes);
+    }
+};
+
+
+
+template <typename T1, typename T2, typename T3, typename T4>
+class ImageSoA4 : public ImageSoABase
+{
+public:
+
+    // Typedef for each channel
+    typedef ChannelSpecTag<T1, 0> Channel_1;
+    typedef ChannelSpecTag<T2, 1> Channel_2;
+    typedef ChannelSpecTag<T3, 2> Channel_3;
+    typedef ChannelSpecTag<T4, 3> Channel_4;
+
+    static const int NUM_CHANNELS = 4;
+
+
+    // Default constructor: creates an empty image. To do anything
+    // useful afterwards you need to use the Alloc(int,int) method.
+    ImageSoA4()
+    {
+        m_offsets.resize(NUM_CHANNELS);
+        std::fill(m_offsets.begin(), m_offsets.end(), -1);
+    }
+
+    // Creates a new image allocating the required space
+    ImageSoA4(int w, int h)
+    {
+        assert(w > 0 && h > 0);
+        m_offsets.resize(NUM_CHANNELS);
+        std::fill(m_offsets.begin(), m_offsets.end(), -1);
+        Alloc(w, h);
+    }
+
+    // Allocates new space for the image data, deleting the previous one
+    inline void Alloc(int w, int h) {
+        const static size_t sizes[] = {
+            sizeof(T1), sizeof(T2), sizeof(T3), sizeof(T4)
+        };
+        ImageSoABase::Alloc(w, h, sizes);
+    }
+};
+
+
+
+// Helper typedef for an SoA image with RGBA channels, for bulk operations
+class RGBAImageSoA : public ImageSoA4<float, float, float, float>
 {
 public:
     typedef Channel_1 R;
     typedef Channel_2 G;
     typedef Channel_3 B;
+    typedef Channel_4 A;
 
-    RGBImageSoA() : ImageBaseSoA() {}
+    RGBAImageSoA() : ImageSoA4() {}
 
-    RGBImageSoA(int w, int h) : ImageBaseSoA(w, h) {}
+    RGBAImageSoA(int w, int h) : ImageSoA4(w, h) {}
 
     template <typename PixelRGB>
-    RGBImageSoA(const Image<PixelRGB, pcg::TopDown> &img) :
-    ImageBaseSoA(img.Width(), img.Height())
+    RGBAImageSoA(const Image<PixelRGB, pcg::TopDown> &img) :
+    ImageSoA4(img.Width(), img.Height())
     {
         float * r = GetDataPointer<R>();
         float * g = GetDataPointer<G>();
         float * b = GetDataPointer<B>();
+        float * a = GetDataPointer<A>();
 
         const PixelRGB * pixels = img.GetDataPointer();
 
@@ -259,6 +322,7 @@ public:
             r[i] = p.r();
             g[i] = p.g();
             b[i] = p.b();
+            a[i] = p.a();
         }
     }
 
@@ -268,8 +332,8 @@ protected:
 
 // Constructor specialization
 template <>
-inline RGBImageSoA::RGBImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
-ImageBaseSoA(img.Width(), img.Height())
+inline RGBAImageSoA::RGBAImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
+ImageSoA4(img.Width(), img.Height())
 {
     copyImage(img);
 }

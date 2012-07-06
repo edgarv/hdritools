@@ -85,21 +85,24 @@ protected:
         }
     }
 
-    void fillRnd(pcg::RGBImageSoA &img)
+    void fillRnd(pcg::RGBAImageSoA &img)
     {
-        float *rVals = img.GetDataPointer<pcg::RGBImageSoA::R>();
-        float *gVals = img.GetDataPointer<pcg::RGBImageSoA::G>();
-        float *bVals = img.GetDataPointer<pcg::RGBImageSoA::B>();
+        float *rVals = img.GetDataPointer<pcg::RGBAImageSoA::R>();
+        float *gVals = img.GetDataPointer<pcg::RGBAImageSoA::G>();
+        float *bVals = img.GetDataPointer<pcg::RGBAImageSoA::B>();
+        float *aVals = img.GetDataPointer<pcg::RGBAImageSoA::A>();
         
         for (int i = 0; i < img.Size(); ++i) {
             const float s = static_cast<float>(512 + 32 * m_rnd.nextGaussian());
             const float r = s * m_rnd.nextFloat();
             const float g = s * m_rnd.nextFloat();
             const float b = s * m_rnd.nextFloat();
+            const float a = m_rnd.nextFloat();
 
             rVals[i] = r;
             gVals[i] = g;
             bVals[i] = b;
+            aVals[i] = a;
         }
     }
 
@@ -511,21 +514,24 @@ protected:
         }
     }
 
-    void fillRnd(pcg::RGBImageSoA &img)
+    void fillRnd(pcg::RGBAImageSoA &img)
     {
-        float *rVals = img.GetDataPointer<pcg::RGBImageSoA::R>();
-        float *gVals = img.GetDataPointer<pcg::RGBImageSoA::G>();
-        float *bVals = img.GetDataPointer<pcg::RGBImageSoA::B>();
+        float *rVals = img.GetDataPointer<pcg::RGBAImageSoA::R>();
+        float *gVals = img.GetDataPointer<pcg::RGBAImageSoA::G>();
+        float *bVals = img.GetDataPointer<pcg::RGBAImageSoA::B>();
+        float *aVals = img.GetDataPointer<pcg::RGBAImageSoA::A>();
         
         for (int i = 0; i < img.Size(); ++i) {
             const float s = static_cast<float>(512 + 32 * m_rnd.nextGaussian());
             const float r = s * m_rnd.nextFloat();
             const float g = s * m_rnd.nextFloat();
             const float b = s * m_rnd.nextFloat();
+            const float a = m_rnd.nextFloat();
 
             rVals[i] = r;
             gVals[i] = g;
             bVals[i] = b;
+            aVals[i] = a;
         }
     }
 
