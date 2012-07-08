@@ -991,3 +991,38 @@ void pcg::ToneMapperSoA::ToneMap(
         break;
     }
 }
+
+
+
+void pcg::ToneMapperSoA::ToneMap(
+    pcg::Image<pcg::Bgra8, pcg::TopDown>& dest,
+    const pcg::RGBAImageSoA& src,
+    pcg::TmoTechnique technique) const
+{
+    assert(src.Width()  == dest.Width());
+    assert(src.Height() == dest.Height());
+
+    const DisplayMethod dMethod(getDisplayMethod(*this));
+
+    typedef RGBA32FVec4ImageSoAIterator IteratorSoA;
+    IteratorSoA begin   = IteratorSoA::begin(src);
+    IteratorSoA end     = IteratorSoA::end(src);
+    PixelBGRA8Vec4* out = PixelBGRA8Vec4::begin(dest);
+
+    LuminanceScaler_Reinhard02<Vec4f> sReinhard02;
+    LuminanceScaler_Exposure<Vec4f> sExposure;
+
+    switch(technique) {
+    case pcg::REINHARD02:
+        sReinhard02.SetParams(this->ParamsReinhard02());
+        ToneMapAuxDelegate(sReinhard02, dMethod, m_invGamma, begin, end, out);
+        break;
+    case pcg::EXPOSURE:
+        sExposure.setExposureFactor(this->m_exposureFactor);
+        ToneMapAuxDelegate(sExposure, dMethod, m_invGamma, begin, end, out);
+        break;
+    default:
+        throw IllegalArgumentException("Invalid tone mapping technique");
+        break;
+    }
+}

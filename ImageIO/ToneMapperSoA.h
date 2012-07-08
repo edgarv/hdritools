@@ -17,8 +17,10 @@
 #if !defined(PCG_TONEMAPPERSOA_H)
 #define PCG_TONEMAPPERSOA_H
 
+#include "Image.h"
 #include "ImageSoA.h"
 #include "Reinhard02.h"
+#include "Rgba32F.h"
 #include "LDRPixels.h"
 #include "ToneMapper.h"
 
@@ -118,6 +120,10 @@ public:
 
     void ToneMap(Image<Bgra8, TopDown>& dest,
         const Image<Rgba32F, TopDown>& src,
+        TmoTechnique technique = EXPOSURE) const;
+
+    void ToneMap(Image<Bgra8, TopDown>& dest,
+        const RGBAImageSoA& src,
         TmoTechnique technique = EXPOSURE) const;
 
 

@@ -406,10 +406,14 @@ TEST_F(ToneMapperSoATest, Reinhard02Benchmark1)
 TEST_F(ToneMapperSoATest, Process1)
 {
     pcg::Image<pcg::Rgba32F> img(1920, 1080);
+    fillRnd(img);
+    pcg::RGBAImageSoA imgSoA(img);
+    
     pcg::Image<pcg::Bgra8> outImg(img.Width(), img.Height());
+    pcg::Image<pcg::Bgra8> outImgSoA(img.Width(), img.Height());
     pcg::Image<pcg::Bgra8> outImgOld(img.Width(), img.Height());
     pcg::Image<pcg::Bgra8> outImgRef(img.Width(), img.Height());
-    fillRnd(img);
+    
     pcg::Reinhard02::Params params = pcg::Reinhard02::EstimateParams(img);
     const int size = img.Size();
     
@@ -432,7 +436,8 @@ TEST_F(ToneMapperSoATest, Process1)
     tmRef.SetParams(params);
     tmRef.SetSRGB(true);
 
-    Timer tSoA;
+    Timer tNew;
+    Timer tNewSoA;
     Timer tOld;
     Timer tRef;
     const int N = 100;
@@ -440,9 +445,16 @@ TEST_F(ToneMapperSoATest, Process1)
     
     tm.ToneMap(outImg, img, pcg::REINHARD02);
     for (int i = 0; i != N; ++i) {
-        tSoA.start();
+        tNew.start();
         tm.ToneMap(outImg, img, pcg::REINHARD02);
-        tSoA.stop();
+        tNew.stop();
+    }
+
+    tm.ToneMap(outImgSoA, imgSoA, pcg::REINHARD02);
+    for (int i = 0; i != N; ++i) {
+        tNewSoA.start();
+        tm.ToneMap(outImgSoA, imgSoA, pcg::REINHARD02);
+        tNewSoA.stop();
     }
 
     tmOld.ToneMap(outImgOld, img, true, pcg::REINHARD02);
@@ -473,9 +485,10 @@ TEST_F(ToneMapperSoATest, Process1)
         }
     }
 
-    cout << "Time SoA: " << tSoA.nanoTime()*factor << " ms" << endl;
-    cout << "Time Old: " << tOld.nanoTime()*factor << " ms" << endl;
-    cout << "Time Ref: " << tRef.nanoTime()*factorRef << " ms" << endl;
+    cout << "Time New:     " << tNew.nanoTime()*factor    << " ms" << endl;
+    cout << "Time New/SoA: " << tNewSoA.nanoTime()*factor << " ms" << endl;
+    cout << "Time Old:     " << tOld.nanoTime()*factor    << " ms" << endl;
+    cout << "Time Ref:     " << tRef.nanoTime()*factorRef << " ms" << endl;
 }
 
 
@@ -567,6 +580,46 @@ TEST_P(ToneMapperSoATestSRGB, Validate)
 
         for (int i = 0; i != size; ++i) {
             const pcg::Rgba32F& pixel  = img[i];
+            const pcg::Bgra8& actual   = outImg[i];
+            const pcg::Bgra8& expected = outImgRef[i];
+
+            ASSERT_PRED2(PixelsClose, expected, actual) <<
+                "At pixel [" << i << "], original value: " << pixel;
+        }
+    }
+}
+
+TEST_P(ToneMapperSoATestSRGB, ValidateSoA)
+{
+    // FIXME: This should test all 4 display methods (gamma, srgb 1 - 3)
+    pcg::Image<pcg::Rgba32F> img(64, 128);
+    pcg::Image<pcg::Bgra8> outImg(img.Width(), img.Height());
+    pcg::Image<pcg::Bgra8> outImgRef(img.Width(), img.Height());
+    const int size = img.Size();
+
+    pcg::ToneMapperSoA tm;
+    tm.SetSRGBMethod(GetParam());
+    tm.SetSRGB(true);
+
+    ReferenceToneMapper tmRef;
+    tmRef.SetSRGB(true);
+
+    const static int N = 100;
+    for (int counter = 0; counter != N; ++counter) {
+        fillRnd(img);
+        pcg::Reinhard02::Params params = pcg::Reinhard02::EstimateParams(img);
+        tm.SetParams(params);
+        tmRef.SetParams(params);
+
+        // FIXME This is horribly inefficient!!!
+        pcg::RGBAImageSoA imgSoA(img);
+        
+
+        tm.ToneMap(outImg, imgSoA, pcg::REINHARD02);
+        tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
+
+        for (int i = 0; i != size; ++i) {
+            const pcg::Rgba32F pixel   = imgSoA[i];
             const pcg::Bgra8& actual   = outImg[i];
             const pcg::Bgra8& expected = outImgRef[i];
 
