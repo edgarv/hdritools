@@ -31,7 +31,7 @@ class IMAGEIO_API ToneMapperSoA
 public:
 
     // Method to evaluate sRGB
-    enum SRGBMethod
+    enum ESRGBMethod
     {
         // Reference, most accurate and slowest
         SRGB_REF,
@@ -80,7 +80,7 @@ public:
     }
 
     // Selects the sRGB method to use. This does not enable sRGB automatically.
-    inline void SetSRGBMethod(SRGBMethod sRGBMethod) {
+    inline void SetSRGBMethod(ESRGBMethod sRGBMethod) {
         m_sRGBMethod = sRGBMethod;
     }
 
@@ -109,6 +109,11 @@ public:
         return m_useSRGB;
     }
 
+    // Current sRGB method
+    inline ESRGBMethod SRGBMethod() const {
+        return m_sRGBMethod;
+    }
+
 
 
     void ToneMap(Image<Bgra8, TopDown>& dest,
@@ -134,7 +139,7 @@ private:
     bool m_useSRGB;
 
     // Method used for sRGB
-    SRGBMethod m_sRGBMethod;
+    ESRGBMethod m_sRGBMethod;
 
     // Parameters for the global Reinhard02 TMO
     Reinhard02::Params m_paramsTMO;

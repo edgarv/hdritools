@@ -482,7 +482,7 @@ TEST_F(ToneMapperSoATest, Process1)
 
 
 class ToneMapperSoATestSRGB :
-    public ::testing::TestWithParam<pcg::ToneMapperSoA::SRGBMethod>
+    public ::testing::TestWithParam<pcg::ToneMapperSoA::ESRGBMethod>
 {
 protected:
     virtual void SetUp()

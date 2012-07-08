@@ -890,6 +890,25 @@ enum DisplayMethod
     EDISPLAY_SRGB_FAST2
 };
 
+inline DisplayMethod getDisplayMethod(const pcg::ToneMapperSoA& tm)
+{
+    if (tm.isSRGB()) {
+        switch (tm.SRGBMethod()) {
+        case pcg::ToneMapperSoA::SRGB_REF:
+            return EDISPLAY_SRGB_REF;
+        case pcg::ToneMapperSoA::SRGB_FAST1:
+            return EDISPLAY_SRGB_FAST1;
+        case pcg::ToneMapperSoA::SRGB_FAST2:
+            return EDISPLAY_SRGB_FAST2;
+        default:
+            throw pcg::RuntimeException("Unexpected sRGB method");
+        }
+    }
+    else {
+        return EDISPLAY_GAMMA;
+    }
+}
+
 
 
 template <class LuminanceScaler, typename SourceIter, typename DestIter>
@@ -942,25 +961,7 @@ void pcg::ToneMapperSoA::ToneMap(
     assert(src.Width()  == dest.Width());
     assert(src.Height() == dest.Height());
 
-    DisplayMethod dMethod;
-    if (this->isSRGB()) {
-        switch (m_sRGBMethod) {
-        case SRGB_REF:
-            dMethod = EDISPLAY_SRGB_REF;
-            break;
-        case SRGB_FAST1:
-            dMethod = EDISPLAY_SRGB_FAST1;
-            break;
-        case SRGB_FAST2:
-            dMethod = EDISPLAY_SRGB_FAST2;
-            break;
-        default:
-            throw RuntimeException("Unexpected sRGB method");
-        }
-    }
-    else {
-        dMethod = EDISPLAY_GAMMA;
-    }
+    const DisplayMethod dMethod(getDisplayMethod(*this));
 
 #if !USE_VECTOR4_ITERATOR
     const pcg::Rgba32F* begin = src.GetDataPointer();
