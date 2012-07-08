@@ -732,7 +732,8 @@ struct PixelAssembler_BGRA8Vec4
         pcg::Vec4i rShift = _mm_slli_epi32(r, 16);
         pcg::Vec4i gShift = _mm_slli_epi32(g, 8);
 
-        outPixel.xmm = ALPHA_MASK | rShift | gShift | b;
+        const pcg::Vec4i pixel = ALPHA_MASK | rShift | gShift | b;
+        _mm_stream_si128(&outPixel.xmm, pixel);
     }
 
 private:
