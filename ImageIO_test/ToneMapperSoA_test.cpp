@@ -338,7 +338,7 @@ TEST_F(ToneMapperSoATest, Reinhard02Benchmark1)
 {
     using std::cout;
     using std::endl;
-    const int N = 10000;
+    const int N = 100;
     Timer tMts, tImageIO;
 
     // Tiny image which easily fits in the L2 cache
@@ -423,22 +423,20 @@ TEST_F(ToneMapperSoATest, Process1)
     pcg::ToneMapperSoA tm;
     tm.SetParams(params);
     tm.SetSRGB(true);
-    
 
     pcg::ToneMapper tmOld(0.0f, 4096); // QtImage settings
     tmOld.SetParams(params);
     tmOld.SetSRGB(true);
-    
 
     ReferenceToneMapper tmRef;
     tmRef.SetParams(params);
     tmRef.SetSRGB(true);
-    
 
     Timer tSoA;
     Timer tOld;
     Timer tRef;
-    const int N = 10;
+    const int N = 100;
+    const int NRef = 10;
     
     tm.ToneMap(outImg, img, pcg::REINHARD02);
     for (int i = 0; i != N; ++i) {
@@ -455,7 +453,7 @@ TEST_F(ToneMapperSoATest, Process1)
     }
 
     tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
-    for (int i = 0; i != N; ++i) {
+    for (int i = 0; i != NRef; ++i) {
         tRef.start();
         tmRef.ToneMap(outImgRef, img, pcg::REINHARD02);
         tRef.stop();
@@ -463,6 +461,7 @@ TEST_F(ToneMapperSoATest, Process1)
 
     // Conversion factor to get the average time in ms
     const double factor = 1e-6 / N;
+    const double factorRef = 1e-6 / NRef;
 
     // Only print if the size is small enough
     if (size <= 10) {
@@ -476,7 +475,7 @@ TEST_F(ToneMapperSoATest, Process1)
 
     cout << "Time SoA: " << tSoA.nanoTime()*factor << " ms" << endl;
     cout << "Time Old: " << tOld.nanoTime()*factor << " ms" << endl;
-    cout << "Time Ref: " << tRef.nanoTime()*factor << " ms" << endl;
+    cout << "Time Ref: " << tRef.nanoTime()*factorRef << " ms" << endl;
 }
 
 
@@ -542,8 +541,7 @@ protected:
 
 TEST_P(ToneMapperSoATestSRGB, Validate)
 {
-    // FIXME: This should test for AoS and SoA images, for all 4 display methods
-    // (gamma, srgb 1 - 3)
+    // FIXME: This should test all 4 display methods (gamma, srgb 1 - 3)
     pcg::Image<pcg::Rgba32F> img(64, 128);
     pcg::Image<pcg::Bgra8> outImg(img.Width(), img.Height());
     pcg::Image<pcg::Bgra8> outImgRef(img.Width(), img.Height());
