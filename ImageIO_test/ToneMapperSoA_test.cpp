@@ -81,7 +81,8 @@ protected:
             const float r = s * m_rnd.nextFloat();
             const float g = s * m_rnd.nextFloat();
             const float b = s * m_rnd.nextFloat();
-            img[i].set (r, g, b);
+            const float a = m_rnd.nextFloat();
+            img[i].set (r, g, b, a);
         }
     }
 
@@ -149,7 +150,7 @@ struct Reinhard02_Method
     {
         float r,g,b;
         mitsuba(pix.r(), pix.g(), pix.b(), &r, &g, &b);
-        pcg::Rgba32F result(r, g, b);
+        pcg::Rgba32F result(r, g, b, pix.a());
         return result;
     }
 
@@ -180,7 +181,7 @@ struct Reinhard02_Method
     {
         float r,g,b;
         imageio(pix.r(), pix.g(), pix.b(), &r, &g, &b);
-        pcg::Rgba32F result(r, g, b);
+        pcg::Rgba32F result(r, g, b, pix.a());
         return result;
     }
 
@@ -224,10 +225,11 @@ public:
 
         for (int i = 0; i != size; ++i) {
             const pcg::Rgba32F pix = technique == pcg::EXPOSURE ?
-                m_exposureFactor * src[i] : m_reinhard02.mitsuba(src[i]);
+                m_exposureFactor * src[i] : m_reinhard02.imageio(src[i]);
             float r = std::min(1.0f, std::max(0.0f, pix.r()));
             float g = std::min(1.0f, std::max(0.0f, pix.g()));
             float b = std::min(1.0f, std::max(0.0f, pix.b()));
+            float a = std::min(1.0f, std::max(0.0f, pix.a()));
 
             // Display correction
             if (m_useSRGB) {
@@ -243,7 +245,8 @@ public:
             dest[i].set(
                 static_cast<pixel_t>(255*r + 0.5f),
                 static_cast<pixel_t>(255*g + 0.5f),
-                static_cast<pixel_t>(255*b + 0.5f));
+                static_cast<pixel_t>(255*b + 0.5f),
+                static_cast<pixel_t>(255*a + 0.5f));
         }
     }
 
@@ -522,7 +525,8 @@ protected:
             const float r = s * m_rnd.nextFloat();
             const float g = s * m_rnd.nextFloat();
             const float b = s * m_rnd.nextFloat();
-            img[i].set (r, g, b);
+            const float a = m_rnd.nextFloat();
+            img[i].set (r, g, b, a);
         }
     }
 

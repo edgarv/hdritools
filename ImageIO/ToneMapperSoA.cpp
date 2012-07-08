@@ -260,6 +260,7 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
  *      const P::value_t& r,
  *      const P::value_t& g,
  *      const P::value_t& b,
+ *      const P::value_t& a,
  *      P:pixel_t& outPixel ) const
  *                       Takes the quantized pixels and saves the packed
  *                       LDR pixel into outPixel.
@@ -667,7 +668,7 @@ struct Quantizer8bit
 {
     typedef QT value_t;
 
-    value_t operator() (const T& x) const
+    inline value_t operator() (const T& x) const
     {
         return ops::round<QT>(FACTOR * x);
     }
@@ -684,7 +685,7 @@ struct Quantizer16bit
 {
     typedef QT value_t;
 
-    value_t operator() (const T& x) const
+    inline value_t operator() (const T& x) const
     {
         return ops::round<QT>(FACTOR * x);
     }
@@ -706,11 +707,11 @@ struct PixelAssembler_BGRA8
     typedef Quantizer8bit<float, uint8_t> quantizer_t;
     typedef quantizer_t::value_t value_t;
 
-    void operator() (
-        const value_t& r, const value_t& g, const value_t& b,
+    inline void operator() (
+        const value_t& r, const value_t& g, const value_t& b, const value_t& a,
         pixel_t& outPixel) const
     {
-        outPixel.argb = (0xff000000) | (r << 16) | (g << 8) | (b);
+        outPixel.argb = (a << 24) | (r << 16) | (g << 8) | (b);
     }
 };
 
@@ -724,24 +725,19 @@ struct PixelAssembler_BGRA8Vec4
     typedef Quantizer8bit<pcg::Vec4f, pcg::Vec4i> quantizer_t;
     typedef quantizer_t::value_t value_t;
 
-    void operator() (
-        const value_t& r, const value_t& g, const value_t& b,
+    inline void operator() (
+        const value_t& r, const value_t& g, const value_t& b, const value_t& a,
         pixel_t& outPixel) const
     {
         // For some stupid reason the operator<< overload doesn't seem to work
+        pcg::Vec4i aShift = _mm_slli_epi32(a, 24);
         pcg::Vec4i rShift = _mm_slli_epi32(r, 16);
         pcg::Vec4i gShift = _mm_slli_epi32(g, 8);
 
-        const pcg::Vec4i pixel = ALPHA_MASK | rShift | gShift | b;
+        const pcg::Vec4i pixel = aShift | rShift | gShift | b;
         _mm_stream_si128(&outPixel.xmm, pixel);
     }
-
-private:
-    // Constant with alpha 1, represented as 0xff in the highest 8 bits
-    static const pcg::Vec4i ALPHA_MASK;
 };
-const pcg::Vec4i PixelAssembler_BGRA8Vec4::ALPHA_MASK =
-    pcg::Vec4i::constant<0xff000000>();
 
 
 
@@ -757,9 +753,9 @@ struct ToneMappingKernel
     pixelAssembler(assembler)
     {}
 
-    void operator() (
+    inline void operator() (
         const value_t& rLinear, const value_t& gLinear, const value_t& bLinear,
-            typename PixelAssembler::pixel_t& pixelOut) const
+        const value_t& alpha, typename PixelAssembler::pixel_t& pixelOut) const
     {
         value_t rScaled, gScaled, bScaled;
 
@@ -771,6 +767,7 @@ struct ToneMappingKernel
         const value_t rClamped = clamper(rScaled);
         const value_t gClamped = clamper(gScaled);
         const value_t bClamped = clamper(bScaled);
+        const value_t aClamped = clamper(alpha);
 
         // Nonlinear display transform
         const value_t rDisplay = displayTransformer(rClamped);
@@ -781,8 +778,9 @@ struct ToneMappingKernel
         const typename PixelAssembler::value_t rQ = quantizer(rDisplay);
         const typename PixelAssembler::value_t gQ = quantizer(gDisplay);
         const typename PixelAssembler::value_t bQ = quantizer(bDisplay);
+        const typename PixelAssembler::value_t aQ = quantizer(aClamped);
 
-        pixelAssembler(rQ, gQ, bQ, pixelOut);
+        pixelAssembler(rQ, gQ, bQ, aQ, pixelOut);
     }
 
     // Functors which implement the actual functionality
@@ -809,7 +807,7 @@ public:
         DestIter dest = m_dest + (range.begin() - m_src);
         for (SourceIter it = range.begin(); it != range.end(); ++it, ++dest) {
             typename std::iterator_traits<SourceIter>::value_type pixel = *it;
-            m_kernel(pixel.r(), pixel.g(), pixel.b(), *dest);
+            m_kernel(pixel.r(), pixel.g(), pixel.b(), pixel.a(), *dest);
         }
     }
 
