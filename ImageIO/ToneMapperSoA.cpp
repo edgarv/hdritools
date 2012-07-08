@@ -23,7 +23,26 @@
 #include "StdAfx.h"
 #include "ToneMapper.h"
 #include "ImageSoA.h"
+#include "ImageIterators.h"
 #include "Vec4f.h"
+#include "Vec4i.h"
+
+
+// FIXME Make this a setup flag
+#if !defined(USE_SSE_POW)
+#define USE_SSE_POW 1
+#endif
+
+#define USE_VECTOR4_ITERATOR 1
+
+
+#if USE_SSE_POW
+namespace ssemath
+{
+#include "sse_mathfun.h"
+}
+#endif
+
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
@@ -47,12 +66,33 @@ inline T rcp(const T& x)
     return 1.0f / x;
 }
 
+// Use the SSE approximation and a Newton-Rhapson step:
+// [2 * rcpps(x) - (x * rcpps(x) * rcpps(x))]
+template <>
+inline pcg::Vec4f rcp(const pcg::Vec4f& x)
+{
+    return rcp_nr(x);
+}
+
 
 
 template <typename T>
 inline T pow(const T& x, const T& y)
 {
     return ::pow(x, y);
+}
+
+template <>
+inline pcg::Vec4f pow(const pcg::Vec4f& x, const pcg::Vec4f& y)
+{
+#if USE_SSE_POW
+    const pcg::Vec4f result =
+        ssemath::exp_ps(static_cast<pcg::Vec4f>(ssemath::log_ps(x)) * y);
+#else
+    const pcg::Vec4f result(::pow(x[3], y[3]), ::pow(x[2], y[2]),
+        ::pow(x[1], y[1]), ::pow(x[0], y[0]));
+#endif
+    return result;
 }
 
 
@@ -68,6 +108,13 @@ inline IntT round(const T& x)
 #endif
 }
 
+// Note that this does not take into account overflow!
+template <>
+inline pcg::Vec4i round(const pcg::Vec4f& x)
+{
+    return _mm_cvtps_epi32(x);
+}
+
 
 
 // Select
@@ -78,6 +125,13 @@ inline T select_gt(const T& a, const T& b, const T& c, const T& d)
     return (a > b) ? c : d;
 }
 
+template <>
+inline pcg::Vec4f select_gt(const pcg::Vec4f& a, const pcg::Vec4f& b,
+    const pcg::Vec4f& c, const pcg::Vec4f& d)
+{
+    return select(a > b, c, d);
+}
+
 
 
 template <typename T>
@@ -85,12 +139,21 @@ inline T min(const T& a, const T& b) {
     return std::min(a, b);
 }
 
+template <>
+inline pcg::Vec4f min(const pcg::Vec4f& a, const pcg::Vec4f& b) {
+    return simd_min(a, b);
+}
 
 
 
 template <typename T>
 inline T max(const T& a, const T& b) {
     return std::max(a, b);
+}
+
+template <>
+inline pcg::Vec4f max(const pcg::Vec4f& a, const pcg::Vec4f& b) {
+    return simd_max(a, b);
 }
 
 
@@ -449,6 +512,8 @@ private:
 template <typename T>
 struct SRGB_NonLinear_Ref
 {
+    SRGB_NonLinear_Ref() {}
+
     inline T operator() (const T& x) const
     {
         T r = FACTOR * ops::pow(x, EXPONENT) - OFFSET;
@@ -475,6 +540,8 @@ const T SRGB_NonLinear_Ref<T>::OFFSET =
 template <typename T>
 struct SRGB_NonLinear_Remez44
 {
+    SRGB_NonLinear_Remez44() {}
+
     inline T operator() (const T& x) const
     {    
         const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] + P[4]*x))));
@@ -510,6 +577,8 @@ const T SRGB_NonLinear_Remez44<T>::Q[5] = {
 template <typename T>
 struct SRGB_NonLinear_Remez77
 {
+    SRGB_NonLinear_Remez77() {}
+
     inline T operator() (const T& x) const
     {
         const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] +
@@ -648,6 +717,34 @@ struct PixelAssembler_BGRA8
 
 
 
+
+struct PixelAssembler_BGRA8Vec4
+{
+    typedef pcg::PixelBGRA8Vec4 pixel_t;
+    typedef Quantizer8bit<pcg::Vec4f, pcg::Vec4i> quantizer_t;
+    typedef quantizer_t::value_t value_t;
+
+    void operator() (
+        const value_t& r, const value_t& g, const value_t& b,
+        pixel_t& outPixel) const
+    {
+        // For some stupid reason the operator<< overload doesn't seem to work
+        pcg::Vec4i rShift = _mm_slli_epi32(r, 16);
+        pcg::Vec4i gShift = _mm_slli_epi32(g, 8);
+
+        outPixel.xmm = ALPHA_MASK | rShift | gShift | b;
+    }
+
+private:
+    // Constant with alpha 1, represented as 0xff in the highest 8 bits
+    static const pcg::Vec4i ALPHA_MASK;
+};
+const pcg::Vec4i PixelAssembler_BGRA8Vec4::ALPHA_MASK =
+    pcg::Vec4i::constant<0xff000000>();
+
+
+
+
 template<class LuminanceScaler, class DisplayTransformer, class PixelAssembler>
 struct ToneMappingKernel
 {
@@ -762,6 +859,11 @@ struct pixel_assembler_traits<float, pcg::Bgra8>
     typedef PixelAssembler_BGRA8 assembler_t;
 };
 
+template <>
+struct pixel_assembler_traits<pcg::Vec4f, pcg::Bgra8>
+{
+    typedef PixelAssembler_BGRA8Vec4 assembler_t;
+};
 
 
 
@@ -796,10 +898,10 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
 {
     // Setup the display transforms
     typedef typename LuminanceScaler::value_t value_t;
-    DisplayTransformer_Gamma<value_t> displayGamma(invGamma);
-    typename Display_sRGB_Ref<value_t>::display_t   displaySRGB0;
-    typename Display_sRGB_Fast1<value_t>::display_t displaySRGB1;
-    typename Display_sRGB_Fast2<value_t>::display_t displaySRGB2;
+    const DisplayTransformer_Gamma<value_t> displayGamma(invGamma);
+    const typename Display_sRGB_Ref<value_t>::display_t   displaySRGB0;
+    const typename Display_sRGB_Fast1<value_t>::display_t displaySRGB1;
+    const typename Display_sRGB_Fast2<value_t>::display_t displaySRGB2;
 
     switch(dMethod) {
     case EDISPLAY_GAMMA:
@@ -840,10 +942,6 @@ void pcg::ToneMapperSoA::ToneMap(
     assert(src.Width()  == dest.Width());
     assert(src.Height() == dest.Height());
 
-    const pcg::Rgba32F* begin = src.GetDataPointer();
-    const pcg::Rgba32F* end   = begin + src.Size();
-    PixelBGRA8* out = reinterpret_cast<PixelBGRA8*>(dest.GetDataPointer());
-
     DisplayMethod dMethod;
     if (this->isSRGB()) {
         switch (m_sRGBMethod) {
@@ -864,8 +962,19 @@ void pcg::ToneMapperSoA::ToneMap(
         dMethod = EDISPLAY_GAMMA;
     }
 
-    LuminanceScaler_Reinhard02<float> sReinhard02;
-    LuminanceScaler_Exposure<float> sExposure;
+#if !USE_VECTOR4_ITERATOR
+    const pcg::Rgba32F* begin = src.GetDataPointer();
+    const pcg::Rgba32F* end   = begin + src.Size();
+    PixelBGRA8* out = reinterpret_cast<PixelBGRA8*>(dest.GetDataPointer());
+    typedef float ScalerValueType;
+#else
+    RGBA32FVec4ImageIterator begin = RGBA32FVec4ImageIterator::begin(src);
+    RGBA32FVec4ImageIterator end   = RGBA32FVec4ImageIterator::end(src);
+    PixelBGRA8Vec4* out            = PixelBGRA8Vec4::begin(dest);
+    typedef Vec4f ScalerValueType;
+#endif
+    LuminanceScaler_Reinhard02<ScalerValueType> sReinhard02;
+    LuminanceScaler_Exposure<ScalerValueType>   sExposure;
 
     switch(technique) {
     case pcg::REINHARD02:
