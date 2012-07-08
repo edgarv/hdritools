@@ -20,11 +20,13 @@
 #include "ImageIO.h"
 #include "StdAfx.h"
 #include "Image.h"
+#include "ImageSoA.h"
 #include "Rgba32F.h"
 #include "LDRPixels.h"
 
 #include <iterator>
 
+#include <cstddef>
 #include <cassert>
 
 namespace pcg
@@ -66,6 +68,107 @@ struct RGBA32FVec4
 
     inline const __m128& a() const {
         return data[0];
+    }
+};
+
+
+
+// Helper struct which represent 4 RGBA values, in SoA fashion which are backed
+// by other data
+struct RGBA32FVec4Ref
+{
+private:
+    __m128& m_r;
+    __m128& m_g;
+    __m128& m_b;
+    __m128& m_a;
+
+public:
+    RGBA32FVec4Ref(__m128& rRef, __m128& gRef, __m128& bRef, __m128& aRef) :
+    m_r(rRef), m_g(gRef), m_b(bRef), m_a(aRef)
+    {}
+
+    operator RGBA32FVec4() const {
+        RGBA32FVec4 v;
+        v.r() = r();
+        v.g() = g();
+        v.b() = b();
+        v.a() = a();
+        return v;
+    }
+
+    inline __m128& r() {
+        return m_r;
+    }
+
+    inline const __m128& r() const {
+        return m_r;
+    }
+
+    inline __m128& g() {
+        return m_g;
+    }
+
+    inline const __m128& g() const {
+        return m_g;
+    }
+
+    inline __m128& b() {
+        return m_b;
+    }
+
+    inline const __m128& b() const {
+        return m_b;
+    }
+
+    inline __m128& a() {
+        return m_a;
+    }
+
+    inline const __m128& a() const {
+        return m_a;
+    }
+};
+
+// Helper struct which represent 4 RGBA values, in SoA fashion which are backed
+// by other data. This version only allows reads
+struct RGBA32FVec4ConstRef
+{
+private:
+    const __m128& m_r;
+    const __m128& m_g;
+    const __m128& m_b;
+    const __m128& m_a;
+
+public:
+    RGBA32FVec4ConstRef(const __m128& rRef, const __m128& gRef,
+        const __m128& bRef, const __m128& aRef) :
+    m_r(rRef), m_g(gRef), m_b(bRef), m_a(aRef)
+    {}
+
+    operator RGBA32FVec4() const {
+        RGBA32FVec4 v;
+        v.r() = r();
+        v.g() = g();
+        v.b() = b();
+        v.a() = a();
+        return v;
+    }
+
+    inline const __m128& r() const {
+        return m_r;
+    }
+
+    inline const __m128& g() const {
+        return m_g;
+    }
+
+    inline const __m128& b() const {
+        return m_b;
+    }
+
+    inline const __m128& a() const {
+        return m_a;
     }
 };
 
@@ -279,6 +382,199 @@ struct PixelBGRA8Vec4
         ptr += offset;
         return reinterpret_cast<PixelBGRA8Vec4*>(ptr);
     }
+};
+
+
+
+// RGBA SoA Pixel Iterator concept for SoA images. It iterates
+// the image in groups of 4 pixels, returning a fresh RGBA32FVec4 with the
+// next 4 R,G,B,A values in SoA form. Thus this is only a "read-only" iterator.
+// The current implementation only iterates in the original scanlie order of
+// an image.
+class RGBA32FVec4ImageSoAIterator :
+public std::iterator<std::random_access_iterator_tag, RGBA32FVec4ConstRef>
+{
+public:
+
+    // Default constructor, which creates an invalid iterator
+    RGBA32FVec4ImageSoAIterator() :
+    m_r(NULL), m_g(NULL), m_b(NULL), m_a(NULL), m_offset(0)
+    {}
+
+    // Copy constructor
+    RGBA32FVec4ImageSoAIterator(const RGBA32FVec4ImageSoAIterator& other) :
+    m_r(other.m_r), m_g(other.m_g), m_b(other.m_b), m_a(other.m_a),
+    m_offset(other.m_offset)
+    {}
+
+    // Equality/inequality comparisons using only the offsets
+
+    inline bool operator== (const RGBA32FVec4ImageSoAIterator& other) const {
+        assert(haveSameBase(other));
+        return m_offset == other.m_offset;
+    }
+    inline bool operator!= (const RGBA32FVec4ImageSoAIterator& other) const {
+        assert(haveSameBase(other));
+        return m_offset != other.m_offset;
+    }
+
+    // Inequality comparisons between iterators
+
+    inline bool operator< (const RGBA32FVec4ImageSoAIterator& other) const {
+        assert(haveSameBase(other));
+        return m_offset < other.m_offset;
+    }
+    inline bool operator> (const RGBA32FVec4ImageSoAIterator& other) const {
+        assert(haveSameBase(other));
+        return m_offset > other.m_offset;
+    }
+    inline bool operator<= (const RGBA32FVec4ImageSoAIterator& other) const {
+        assert(haveSameBase(other));
+        return m_offset <= other.m_offset;
+    }
+    inline bool operator>= (const RGBA32FVec4ImageSoAIterator& other) const {
+        assert(haveSameBase(other));
+        return m_offset >= other.m_offset;
+    }
+
+    // Increments
+
+    inline RGBA32FVec4ImageSoAIterator& operator++() {
+        ++m_offset;
+        return *this;
+    }
+    inline RGBA32FVec4ImageSoAIterator& operator++(int) {
+        ++m_offset;
+        return *this;
+    }
+
+    // Decrements
+
+    inline RGBA32FVec4ImageSoAIterator& operator--() {
+        --m_offset;
+        return *this;
+    }
+
+    inline RGBA32FVec4ImageSoAIterator& operator--(int) {
+        --m_offset;
+        return *this;
+    }
+
+    // Binary arithmetic operators
+
+    inline friend RGBA32FVec4ImageSoAIterator operator + (
+        const RGBA32FVec4ImageSoAIterator& a, difference_type offset)
+    {
+        RGBA32FVec4ImageSoAIterator it(a);
+        it.m_offset += offset;
+        return it;
+    }
+
+    inline friend RGBA32FVec4ImageSoAIterator operator + (
+        difference_type offset, const RGBA32FVec4ImageSoAIterator& a)
+    {
+        RGBA32FVec4ImageSoAIterator it(a);
+        it.m_offset += offset;
+        return it;
+    }
+
+    inline friend RGBA32FVec4ImageSoAIterator operator - (
+        const RGBA32FVec4ImageSoAIterator& a, difference_type offset)
+    {
+        RGBA32FVec4ImageSoAIterator it(a);
+        it.m_offset -= offset;
+        return it;
+    }
+
+    inline friend difference_type operator- (
+        const RGBA32FVec4ImageSoAIterator& a,
+        const RGBA32FVec4ImageSoAIterator& b)
+    {
+        assert(a.haveSameBase(b));
+        RGBA32FVec4ImageIterator::difference_type d = a.m_offset - b.m_offset;
+        return d;
+    }
+
+    // Compound assignment
+
+    inline RGBA32FVec4ImageSoAIterator& operator+=(difference_type offset) {
+        m_offset += offset;
+        return *this;
+    }
+
+    inline RGBA32FVec4ImageSoAIterator& operator-=(difference_type offset) {
+        m_offset -= offset;
+        return *this;
+    }
+
+    // Offset dereference
+
+    // Be aware that this returns a special temporary element!
+    inline RGBA32FVec4Ref operator[] (size_t idx)
+    {
+        const size_t offset = m_offset + idx;
+        RGBA32FVec4Ref p(*(m_r + offset), *(m_g + offset),
+                         *(m_b + offset), *(m_a + offset));
+        return p;
+    }
+
+    // Be aware that this returns a special const temporary element!
+    inline RGBA32FVec4ConstRef operator[] (size_t idx) const
+    {
+        const size_t offset = m_offset + idx;
+        RGBA32FVec4ConstRef p(*(m_r + offset), *(m_g + offset),
+                              *(m_b + offset), *(m_a + offset));
+        return p;
+    }
+
+    // Notice that this supports only read-only access
+    inline RGBA32FVec4ConstRef operator*() const
+    {
+        RGBA32FVec4ConstRef p(*(m_r + m_offset), *(m_g + m_offset),
+                              *(m_b + m_offset), *(m_a + m_offset));
+        return p;
+    }
+
+
+    // Create an iterator at the beginning of the image, moving in the same
+    // direction as the established scanline order
+    static RGBA32FVec4ImageSoAIterator begin(const RGBAImageSoA &src)
+    {
+        RGBA32FVec4ImageSoAIterator it;
+        it.m_r=reinterpret_cast<__m128*>(src.GetDataPointer<RGBAImageSoA::R>());
+        it.m_g=reinterpret_cast<__m128*>(src.GetDataPointer<RGBAImageSoA::G>());
+        it.m_b=reinterpret_cast<__m128*>(src.GetDataPointer<RGBAImageSoA::B>());
+        it.m_a=reinterpret_cast<__m128*>(src.GetDataPointer<RGBAImageSoA::A>());
+        it.m_offset = 0;
+        return it;
+    }
+
+    // Create an iterator at the end of the image. Note that for this to work
+    // the image must have a multiple of 4 number of pixels or have allocated
+    // additional elements to avoid segfaults.
+    static RGBA32FVec4ImageSoAIterator end(const RGBAImageSoA &src)
+    {
+        RGBA32FVec4ImageSoAIterator it = begin(src);
+        it.m_offset = (src.Size() + 3) >> 2;
+        return it;
+    }
+
+private:
+#ifndef NDEBUG
+    inline bool haveSameBase(const RGBA32FVec4ImageSoAIterator& other) const {
+        return m_r == other.m_r && m_g == other.m_g &&
+               m_b == other.m_b && m_a == other.m_a;
+    }
+#endif
+
+    // Pointers to the *base* data
+    __m128* m_r;
+    __m128* m_g;
+    __m128* m_b;
+    __m128* m_a;
+    
+    // Offset
+    ptrdiff_t m_offset;
 };
 
 }
