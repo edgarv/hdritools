@@ -337,7 +337,7 @@ TEST_F(ToneMapperSoATest, Reinhard02Scaling)
 
 
 
-TEST_F(ToneMapperSoATest, Reinhard02Benchmark1)
+TEST_F(ToneMapperSoATest, BenchmarkReinhard02Core)
 {
     using std::cout;
     using std::endl;
@@ -406,9 +406,9 @@ TEST_F(ToneMapperSoATest, Reinhard02Benchmark1)
 
 
 
-TEST_F(ToneMapperSoATest, Process1)
+TEST_F(ToneMapperSoATest, Benchmark4K)
 {
-    pcg::Image<pcg::Rgba32F> img(1920, 1080);
+    pcg::Image<pcg::Rgba32F> img(4096, 2160);
     fillRnd(img);
     pcg::RGBAImageSoA imgSoA(img);
     
@@ -443,8 +443,8 @@ TEST_F(ToneMapperSoATest, Process1)
     Timer tNewSoA;
     Timer tOld;
     Timer tRef;
-    const int N = 100;
-    const int NRef = 10;
+    const int N = 32;
+    const int NRef = 4;
     
     tm.ToneMap(outImg, img, pcg::REINHARD02);
     for (int i = 0; i != N; ++i) {
