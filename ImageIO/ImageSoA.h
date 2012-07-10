@@ -308,7 +308,7 @@ public:
 
     template <typename PixelRGB>
     RGBAImageSoA(const Image<PixelRGB, pcg::TopDown> &img) :
-    ImageSoA4(img.Width(), img.Height())
+    ImageSoA4<float,float,float,float>(img.Width(), img.Height())
     {
         float * r = GetDataPointer<R>();
         float * g = GetDataPointer<G>();
@@ -343,7 +343,7 @@ protected:
 // Constructor specialization
 template <>
 inline RGBAImageSoA::RGBAImageSoA(const Image<Rgba32F, pcg::TopDown> &img) :
-ImageSoA4(img.Width(), img.Height())
+ImageSoA4<float,float,float,float>(img.Width(), img.Height())
 {
     copyImage(img);
 }

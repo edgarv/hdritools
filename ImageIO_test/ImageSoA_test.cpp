@@ -132,13 +132,13 @@ TEST_F(ImageSoATest, BasicAccess)
         ASSERT_TRUE(gPtr != bPtr);
 
         // Alignment
-        ASSERT_EQ(0, reinterpret_cast<uintptr_t>(rPtr) % 16);
-        ASSERT_EQ(0, reinterpret_cast<uintptr_t>(gPtr) % 16);
-        ASSERT_EQ(0, reinterpret_cast<uintptr_t>(bPtr) % 16);
+        ASSERT_EQ(0U, reinterpret_cast<uintptr_t>(rPtr) % 16);
+        ASSERT_EQ(0U, reinterpret_cast<uintptr_t>(gPtr) % 16);
+        ASSERT_EQ(0U, reinterpret_cast<uintptr_t>(bPtr) % 16);
 
         // Padding is a multiple of 64
-        ASSERT_EQ(0, ptrDiff(rPtr, gPtr) % 64);
-        ASSERT_EQ(0, ptrDiff(gPtr, bPtr) % 64);
+        ASSERT_EQ(0U, ptrDiff(rPtr, gPtr) % 64);
+        ASSERT_EQ(0U, ptrDiff(gPtr, bPtr) % 64);
 
         // Fill each item with a deterministic number
         for (int i = 0; i != img.Size(); ++i) {

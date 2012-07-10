@@ -39,7 +39,7 @@ public:
     operator __m128() const {
         return xmm;
     }
-};
+} ALIGN16_END;
 
 
 
@@ -131,7 +131,7 @@ public:
         return f[i];
     }
 
-    // Element access (slow!) [const version]
+    // Element access (slow!)
     float& operator[] (size_t i) {
         assert(0 <= i && i < 4);
         return f[i];

@@ -35,6 +35,12 @@
 
 #define USE_VECTOR4_ITERATOR 1
 
+#if defined(__clang__)
+# define MAY_BE_UNUSED __attribute ((unused))
+#else
+# define MAY_BE_UNUSED
+#endif
+
 
 #if USE_SSE_POW
 namespace ssemath
@@ -281,7 +287,7 @@ template <typename T>
 inline T getValue(const pcg::Vec4fUnion& value);
 
 template <>
-inline float getValue(const pcg::Vec4fUnion& value) {
+inline float MAY_BE_UNUSED getValue(const pcg::Vec4fUnion& value) {
     return value.f[0];
 }
 
@@ -623,6 +629,8 @@ const T SRGB_NonLinear_Remez77<T>::Q[8] = {
 template <typename T, template<typename> class SRGB_NonLinear>
 struct DisplayTransformer_sRGB
 {
+    DisplayTransformer_sRGB() {}
+
     inline T operator() (const T& pLinear) const
     {
         T p = m_nonlinear(pLinear);
