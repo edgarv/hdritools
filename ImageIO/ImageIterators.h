@@ -597,12 +597,67 @@ private:
 // an image.
 typedef RGBA32FVecImageSoAIterator<4> RGBA32FVec4ImageSoAIterator;
 
+
+
+#if PCG_USE_AVX
+
+// Helper struct which represent 8 RGBA values
+typedef RGBAVecRef<__m256> RGBA32FVec8Ref;
+
+// Helper struct to represent 8 const RGBA values
+typedef RGBAVecConstRef<__m256> RGBA32FVec8ConstRef;
+
+// Helper struct which represent 8 packed RGBA values, in AoS fashion
+struct PixelBGRA8Vec8
+{
+    union {
+        __m256i ymm;
+        __m128i xmm[2];
+        PixelBGRA8 pixels[8];
+    };
+
+    // Create an iterator at the beginning of the image, moving in the same
+    // direction as the established scanline order
+    template <ScanLineMode S>
+    static PixelBGRA8Vec8* begin(Image<Bgra8, S> &img)
+    {
+        Bgra8* ptr = img.GetDataPointer();
+        assert(reinterpret_cast<intptr_t>(ptr) % 32 == 0);
+        return reinterpret_cast<PixelBGRA8Vec8*>(ptr);
+    }
+
+    // Create an iterator at the end of the image, moving in the same
+    // direction as the established scanline order. Note that for this to work
+    // the image must have a multiple of 8 number of pixels or have allocated
+    // additional elements to avoid segfaults (alll with the proper alignment).
+    template <ScanLineMode S>
+    inline PixelBGRA8Vec8* end(Image<Bgra8, S> &img)
+    {
+        Bgra8* ptr = img.GetDataPointer();
+        assert(reinterpret_cast<intptr_t>(ptr) % 32 == 0);
+        size_t offset = (img.Size() + 7) & ~0x7;
+        assert (offset % 8 == 0);
+        ptr += offset;
+        return reinterpret_cast<PixelBGRA8Vec8*>(ptr);
+    }
+};
+
+template <>
+struct RGBA32FVec_traits<8>
+{
+    typedef RGBA32FVec8Ref VecRef;
+    typedef RGBA32FVec8ConstRef VecConstRef;
+    typedef __m256* pointer_type;
+};
+
 // RGBA SoA Pixel Iterator concept for SoA images. It iterates
 // the image in groups of 8 pixels, returning a fresh RGBA32FVec8 with the
 // next 8 R,G,B,A values in SoA form. Thus this is only a "read-only" iterator.
 // The current implementation only iterates in the original scanlie order of
 // an image.
 typedef RGBA32FVecImageSoAIterator<8> RGBA32FVec8ImageSoAIterator;
+
+#endif // PCG_USE_AVX
 
 }
 

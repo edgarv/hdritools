@@ -67,6 +67,11 @@ set(SRCS
   "${HDRITOOLS_VERSION_FILENAME}"
   )
   
+# USE_AVX option is defined in the top level CMakeLists.txt
+if (USE_AVX)
+  list (APPEND SRCS Vec8f.h Vec8i.h)
+endif()
+  
 # Subset of the sources which are the public headers
 set(SRCS_PUBLIC
   Image.h

@@ -100,15 +100,33 @@ option(BUILD_QT4IMAGE
 option(BUILD_UTILS
   "Builds small, limited function utilities." OFF)
 
+
+# Check for the AVX intrinsics header
+include(CheckIncludeFile)
+include(CMakeDependentOption)
+CHECK_INCLUDE_FILE("immintrin.h" HAVE_IMMINTRIN_H)
+CMAKE_DEPENDENT_OPTION(USE_AVX "Compile using AVX instructions." OFF
+  HAVE_IMMINTRIN_H OFF)
+if (USE_AVX)
+  add_definitions("-DPCG_USE_AVX")
+endif()
   
 # Extra compiler flags for enabling SSE & SSE2. These will always be enabled.
-if(MSVC AND NOT CMAKE_CL_64)
-  set(SSE2_COMPILER_FLAGS "/arch:SSE2")
-elseif(CMAKE_COMPILER_IS_GNUCXX)
-  set(SSE2_COMPILER_FLAGS "-msse -msse2 -msse3 -mfpmath=sse")
+if(MSVC)
+  if (USE_AVX)
+    set(SIMD_COMPILER_FLAGS "/arch:AVX")
+  elseif(NOT CMAKE_CL_64)
+    set(SIMD_COMPILER_FLAGS "/arch:SSE2")
+  endif()
+elseif(NOT MSVC OR NOT WIN32)
+  if (USE_AVX)
+    set(SIMD_COMPILER_FLAGS "-mavx -mfpmath=sse")
+  else()
+    set(SIMD_COMPILER_FLAGS "-msse3 -mfpmath=sse")
+  endif()
 endif()
-set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SSE2_COMPILER_FLAGS}" )
-set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE2_COMPILER_FLAGS}" )
+set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SIMD_COMPILER_FLAGS}" )
+set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_COMPILER_FLAGS}" )
 
 # For GCC 4.1+ we always want to use the source fortify options
 if(CMAKE_COMPILER_IS_GNUCXX)

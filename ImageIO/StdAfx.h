@@ -23,6 +23,10 @@
 #include <xmmintrin.h> /* Streaming SIMD Extensions Intrinsics include file */
 #include <emmintrin.h> /* SSE2 Include file */
 
+#if PCG_USE_AVX
+# include <immintrin.h> /* AVX */
+#endif
+
 /* 16 byte alignment for SSE */
 #if defined(_MSC_VER) || defined(__ICC)
 # define ALIGN16_BEG _MM_ALIGN16
@@ -30,6 +34,15 @@
 #else
 # define ALIGN16_BEG
 # define ALIGN16_END __attribute__((aligned(16)))
+#endif
+
+/* 32 byte alignment for AVX */
+#if defined(_MSC_VER) || defined(__ICC)
+# define ALIGN32_BEG __declspec(align(32))
+# define ALIGN32_END 
+#else
+# define ALIGN32_BEG
+# define ALIGN32_END __attribute__((aligned(32)))
 #endif
 
 /* Forcing inlining */

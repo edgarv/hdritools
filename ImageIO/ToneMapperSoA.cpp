@@ -27,6 +27,11 @@
 #include "Vec4f.h"
 #include "Vec4i.h"
 
+#if PCG_USE_AVX
+# include "Vec8f.h"
+# include "Vec8i.h"
+#endif
+
 
 // FIXME Make this a setup flag
 #if !defined(USE_SSE_POW)
@@ -169,6 +174,67 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
     return ops::max(ops::min(x, maxValue), minValue);
 }
 
+
+
+#if PCG_USE_AVX
+
+template <>
+inline pcg::Vec8f rcp(const pcg::Vec8f& x)
+{
+    return rcp_nr(x);
+}
+
+template <>
+inline pcg::Vec8f pow(const pcg::Vec8f& x, const pcg::Vec8f& y)
+{
+#if USE_SSE_POW
+    // The current implementation doesn't support AVX natively
+    const pcg::Vec4f x0 = _mm256_castps256_ps128(x);
+    const pcg::Vec4f y0 = _mm256_castps256_ps128(y);
+    const pcg::Vec4f x1 = _mm256_extractf128_ps(x, 1);
+    const pcg::Vec4f y1 = _mm256_extractf128_ps(y, 1);
+    
+    const pcg::Vec4f r0 = ssemath::exp_ps(ssemath::log_ps(x0) * y0);
+    const pcg::Vec4f r1 = ssemath::exp_ps(ssemath::log_ps(x1) * y1);
+
+    __m256 result = _mm256_insertf128_ps(_mm256_castps128_ps256(r0), r1, 1);
+    return result;
+#else
+    const pcg::Vec8f result(
+        ::pow(x[7], y[7]), ::pow(x[6], y[6]),
+        ::pow(x[5], y[5]), ::pow(x[4], y[4]),
+        ::pow(x[3], y[3]), ::pow(x[2], y[2]),
+        ::pow(x[1], y[1]), ::pow(x[0], y[0]));
+#endif
+    return result;
+}
+
+template <>
+inline pcg::Vec8i round(const pcg::Vec8f& x)
+{
+    return _mm256_cvtps_epi32(x);
+}
+
+template <>
+inline pcg::Vec8f select_gt(const pcg::Vec8f& a, const pcg::Vec8f& b,
+    const pcg::Vec8f& c, const pcg::Vec8f& d)
+{
+    return select(a > b, c, d);
+}
+
+template <>
+inline pcg::Vec8f min(const pcg::Vec8f& a, const pcg::Vec8f& b) {
+    return simd_min(a, b);
+}
+
+
+template <>
+inline pcg::Vec8f max(const pcg::Vec8f& a, const pcg::Vec8f& b) {
+    return simd_max(a, b);
+}
+
+#endif // PCG_USE_AVX
+
 } // namespace ops
 
 
@@ -297,70 +363,100 @@ inline pcg::Vec4f getValue(const pcg::Vec4fUnion& value) {
 }
 
 
+#if PCG_USE_AVX
 
-// Writing manually 4 times the same constant is error prone
-#define PCG_TMOSOA_VEC4F(x) {x, x, x, x}
+// Helper function to set either a scalar or a float from a Vec8fUnion
+template <typename T>
+inline T getValue(const pcg::Vec8fUnion& value);
 
-static const pcg::Vec4fUnion ZERO = {PCG_TMOSOA_VEC4F( 0.0f )};
-static const pcg::Vec4fUnion ONE  = {PCG_TMOSOA_VEC4F( 1.0f )};
+template <>
+inline float getValue(const pcg::Vec8fUnion& value) {
+    return value.f[0];
+}
+
+template <>
+inline pcg::Vec4f getValue(const pcg::Vec8fUnion& value) {
+    return pcg::Vec4f(value.xmm[0]);
+}
+
+template <>
+inline pcg::Vec8f getValue(const pcg::Vec8fUnion& value) {
+    return pcg::Vec8f(value.ymm);
+}
+
+#endif // PCG_USE_AVX
+
+
+
+// Writing manually the same constant many times is error prone
+#if PCG_USE_AVX
+#define PCG_TMOSOA_VECF(x) {x, x, x, x, x, x, x, x}
+typedef pcg::Vec8fUnion VecfUnion;
+#else
+#define PCG_TMOSOA_VECF(x) {x, x, x, x}
+typedef pcg::Vec4fUnion VecfUnion;
+#endif
+
+static const VecfUnion ZERO = {PCG_TMOSOA_VECF( 0.0f )};
+static const VecfUnion ONE  = {PCG_TMOSOA_VECF( 1.0f )};
     
-static const pcg::Vec4fUnion Q_8bit  = {PCG_TMOSOA_VEC4F(   255.0f )};
-static const pcg::Vec4fUnion Q_16bit = {PCG_TMOSOA_VEC4F( 65535.0f )};
+static const VecfUnion Q_8bit  = {PCG_TMOSOA_VECF(   255.0f )};
+static const VecfUnion Q_16bit = {PCG_TMOSOA_VECF( 65535.0f )};
 
 // Luminance conversion
-static const pcg::Vec4fUnion LVec[3] = {
-    {PCG_TMOSOA_VEC4F( 0.212639005871510f )},
-    {PCG_TMOSOA_VEC4F( 0.715168678767756f )},
-    {PCG_TMOSOA_VEC4F( 0.072192315360734f )}
+static const VecfUnion LVec[3] = {
+    {PCG_TMOSOA_VECF( 0.212639005871510f )},
+    {PCG_TMOSOA_VECF( 0.715168678767756f )},
+    {PCG_TMOSOA_VECF( 0.072192315360734f )}
 };
 
 // Rational approximation for sRGB P/Q order 4/4
-static const pcg::Vec4fUnion Remez44_P[5] = {
-    {PCG_TMOSOA_VEC4F(    -0.01997304708470295f )},
-    {PCG_TMOSOA_VEC4F(    24.95173169159651f )},
-    {PCG_TMOSOA_VEC4F(  3279.752175439042f )},
-    {PCG_TMOSOA_VEC4F( 39156.546674561556f )},
-    {PCG_TMOSOA_VEC4F( 42959.451119871745f )}
+static const VecfUnion Remez44_P[5] = {
+    {PCG_TMOSOA_VECF(    -0.01997304708470295f )},
+    {PCG_TMOSOA_VECF(    24.95173169159651f )},
+    {PCG_TMOSOA_VECF(  3279.752175439042f )},
+    {PCG_TMOSOA_VECF( 39156.546674561556f )},
+    {PCG_TMOSOA_VECF( 42959.451119871745f )}
 };
-static const pcg::Vec4fUnion Remez44_Q[5] = {
-    {PCG_TMOSOA_VEC4F(     1.f )},
-    {PCG_TMOSOA_VEC4F(   361.5384894448744f )},
-    {PCG_TMOSOA_VEC4F( 13090.206953080155f  )},
-    {PCG_TMOSOA_VEC4F( 55800.948825871434f  )},
-    {PCG_TMOSOA_VEC4F( 16180.833742684188f  )}
+static const VecfUnion Remez44_Q[5] = {
+    {PCG_TMOSOA_VECF(     1.f )},
+    {PCG_TMOSOA_VECF(   361.5384894448744f )},
+    {PCG_TMOSOA_VECF( 13090.206953080155f  )},
+    {PCG_TMOSOA_VECF( 55800.948825871434f  )},
+    {PCG_TMOSOA_VECF( 16180.833742684188f  )}
 };
 
 // Rational approximation for sRGB P/Q order 7/7
-static const pcg::Vec4fUnion Remez77_P[8] = {
-    {PCG_TMOSOA_VEC4F(-0.031852703288410084f )},
-    {PCG_TMOSOA_VEC4F( 1.8553896638433446e1f )},
-    {PCG_TMOSOA_VEC4F( 2.20060672110147e4f   )},
-    {PCG_TMOSOA_VEC4F( 2.635850360294788e6f  )},
-    {PCG_TMOSOA_VEC4F( 7.352843882592331e7f  )},
-    {PCG_TMOSOA_VEC4F( 5.330866283442694e8f  )},
-    {PCG_TMOSOA_VEC4F( 9.261676939514283e8f  )},
-    {PCG_TMOSOA_VEC4F( 2.632919307024597e8f  )}
+static const VecfUnion Remez77_P[8] = {
+    {PCG_TMOSOA_VECF(-0.031852703288410084f )},
+    {PCG_TMOSOA_VECF( 1.8553896638433446e1f )},
+    {PCG_TMOSOA_VECF( 2.20060672110147e4f   )},
+    {PCG_TMOSOA_VECF( 2.635850360294788e6f  )},
+    {PCG_TMOSOA_VECF( 7.352843882592331e7f  )},
+    {PCG_TMOSOA_VECF( 5.330866283442694e8f  )},
+    {PCG_TMOSOA_VECF( 9.261676939514283e8f  )},
+    {PCG_TMOSOA_VECF( 2.632919307024597e8f  )}
 };
-static const pcg::Vec4fUnion Remez77_Q[8] = {
-    {PCG_TMOSOA_VEC4F( 1.f )},
-    {PCG_TMOSOA_VEC4F( 1.2803496360781705e3f )},
-    {PCG_TMOSOA_VEC4F( 2.740075886695005e5f  )},
-    {PCG_TMOSOA_VEC4F( 1.4492562384924464e7f )},
-    {PCG_TMOSOA_VEC4F( 2.1029015319992256e8f )},
-    {PCG_TMOSOA_VEC4F( 8.142158667694515e8f  )},
-    {PCG_TMOSOA_VEC4F( 6.956059106558038e8f  )},
-    {PCG_TMOSOA_VEC4F( 6.3853076877794705e7f )}
+static const VecfUnion Remez77_Q[8] = {
+    {PCG_TMOSOA_VECF( 1.f )},
+    {PCG_TMOSOA_VECF( 1.2803496360781705e3f )},
+    {PCG_TMOSOA_VECF( 2.740075886695005e5f  )},
+    {PCG_TMOSOA_VECF( 1.4492562384924464e7f )},
+    {PCG_TMOSOA_VECF( 2.1029015319992256e8f )},
+    {PCG_TMOSOA_VECF( 8.142158667694515e8f  )},
+    {PCG_TMOSOA_VECF( 6.956059106558038e8f  )},
+    {PCG_TMOSOA_VECF( 6.3853076877794705e7f )}
 };
 
-static const pcg::Vec4fUnion SRGB_Cutoff    = {PCG_TMOSOA_VEC4F( 0.003041229589676f )};
-static const pcg::Vec4fUnion SRGB_FactorHi  = {PCG_TMOSOA_VEC4F( 1.055f )};
-static const pcg::Vec4fUnion SRGB_Exponent  = {PCG_TMOSOA_VEC4F( 0.4166666667f )};
-static const pcg::Vec4fUnion SRGB_Offset    = {PCG_TMOSOA_VEC4F( 0.055f )};
-static const pcg::Vec4fUnion SRGB_FactorLow = {PCG_TMOSOA_VEC4F( 12.92f )};
+static const VecfUnion SRGB_Cutoff    = {PCG_TMOSOA_VECF( 0.003041229589676f )};
+static const VecfUnion SRGB_FactorHi  = {PCG_TMOSOA_VECF( 1.055f )};
+static const VecfUnion SRGB_Exponent  = {PCG_TMOSOA_VECF( 0.4166666667f )};
+static const VecfUnion SRGB_Offset    = {PCG_TMOSOA_VECF( 0.055f )};
+static const VecfUnion SRGB_FactorLow = {PCG_TMOSOA_VECF( 12.92f )};
 
 
 // Remove the temporary macro
-#undef PCG_TMOSOA_VEC4F
+#undef PCG_TMOSOA_VECF
 
 
 } // namespace constants
@@ -749,6 +845,54 @@ struct PixelAssembler_BGRA8Vec4
 
 
 
+#if PCG_USE_AVX
+
+struct PixelAssembler_BGRA8Vec8
+{
+    typedef pcg::PixelBGRA8Vec8 pixel_t;
+    typedef Quantizer8bit<pcg::Vec8f, pcg::Vec8i> quantizer_t;
+    typedef quantizer_t::value_t value_t;
+
+    template <int offset>
+    static inline pcg::Vec4i buildExtract(const value_t& r, const value_t& g,
+        const value_t& b, const value_t& a)
+    {
+        assert(offset == 0 || offset == 1);
+
+        pcg::Vec4i a0 = _mm256_extractf128_si256(a, offset);
+        pcg::Vec4i r0 = _mm256_extractf128_si256(r, offset);
+        pcg::Vec4i g0 = _mm256_extractf128_si256(g, offset);
+        pcg::Vec4i b0 = _mm256_extractf128_si256(b, offset);
+
+        pcg::Vec4i a0Shift = _mm_slli_epi32(a0, 24);
+        pcg::Vec4i r0Shift = _mm_slli_epi32(r0, 16);
+        pcg::Vec4i g0Shift = _mm_slli_epi32(g0, 8);
+
+        const pcg::Vec4i pixel = a0Shift | r0Shift | g0Shift | b0;
+        return pixel;
+    }
+
+    inline void operator() (
+        const value_t& r, const value_t& g, const value_t& b, const value_t& a,
+        pixel_t& outPixel) const
+    {
+        // Adequate support for integer operation arrives with AVX2, in the
+        // meantime extract 2 128-bit values
+        const pcg::Vec4i pix0 = buildExtract<0>(r, g, b, a);
+        const pcg::Vec4i pix1 = buildExtract<1>(r, g, b, a);
+
+        // Casting sets the lower bits, then insert the higher ones
+        const __m256i pixel =
+            _mm256_insertf128_si256(_mm256_castsi128_si256(pix0), pix1, 1);
+
+        _mm256_stream_si256(&outPixel.ymm, pixel);
+    }
+};
+
+#endif // PCG_USE_AVX
+
+
+
 
 template<class LuminanceScaler, class DisplayTransformer, class PixelAssembler>
 struct ToneMappingKernel
@@ -871,6 +1015,14 @@ struct pixel_assembler_traits<pcg::Vec4f, pcg::Bgra8>
 {
     typedef PixelAssembler_BGRA8Vec4 assembler_t;
 };
+
+#if PCG_USE_AVX
+template <>
+struct pixel_assembler_traits<pcg::Vec8f, pcg::Bgra8>
+{
+    typedef PixelAssembler_BGRA8Vec8 assembler_t;
+};
+#endif
 
 
 
@@ -1010,14 +1162,23 @@ void pcg::ToneMapperSoA::ToneMap(
     assert(src.Height() == dest.Height());
 
     const DisplayMethod dMethod(getDisplayMethod(*this));
-
+    
+#if PCG_USE_AVX
+    typedef RGBA32FVec8ImageSoAIterator IteratorSoA;
+    typedef PixelBGRA8Vec8 PixelVec;
+    typedef Vec8f ScalerValueType;
+#else
     typedef RGBA32FVec4ImageSoAIterator IteratorSoA;
-    IteratorSoA begin   = IteratorSoA::begin(src);
-    IteratorSoA end     = IteratorSoA::end(src);
-    PixelBGRA8Vec4* out = PixelBGRA8Vec4::begin(dest);
+    typedef PixelBGRA8Vec4 PixelVec;
+    typedef Vec4f ScalerValueType;
+#endif
 
-    LuminanceScaler_Reinhard02<Vec4f> sReinhard02;
-    LuminanceScaler_Exposure<Vec4f> sExposure;
+    IteratorSoA begin = IteratorSoA::begin(src);
+    IteratorSoA end   = IteratorSoA::end(src);
+    PixelVec* out     = PixelVec::begin(dest);
+
+    LuminanceScaler_Reinhard02<ScalerValueType> sReinhard02;
+    LuminanceScaler_Exposure<ScalerValueType> sExposure;
 
     switch(technique) {
     case pcg::REINHARD02:
