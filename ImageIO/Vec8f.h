@@ -131,13 +131,13 @@ public:
 
     // Element access (slow!) [const version]
     const float& operator[] (size_t i) const {
-        assert(0 <= i && i < 8);
+        assert(i < 8);
         return f[i];
     }
 
     // Element access (slow!)
     float& operator[] (size_t i) {
-        assert(0 <= i && i < 8);
+        assert(i < 8);
         return f[i];
     }
 

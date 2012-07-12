@@ -79,13 +79,13 @@ public:
 
     // Element access (slow!) [const version]
     const int32_t& operator[] (size_t i) const {
-        assert(0 <= i && i < 4);
+        assert(i < 4);
         return i32[i];
     }
 
     // Element access (slow!) [const version]
     int32_t& operator[] (size_t i) {
-        assert(0 <= i && i < 4);
+        assert(i < 4);
         return i32[i];
     }
 
