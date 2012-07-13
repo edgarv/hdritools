@@ -88,6 +88,11 @@ public:
         return *this;
     }
 
+    // Zero vector. Useful during code generation
+    inline static Vec4f zero() {
+        return _mm_setzero_ps();
+    }
+
     // Cast operations
     operator __m128() const {
         return xmm;

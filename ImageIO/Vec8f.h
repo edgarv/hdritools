@@ -91,6 +91,11 @@ public:
         return *this;
     }
 
+    // Zero vector. Useful during code generation
+    inline static Vec8f zero() {
+        return _mm256_setzero_ps();
+    }
+
     // Cast operations
     operator __m256() const {
         return ymm;

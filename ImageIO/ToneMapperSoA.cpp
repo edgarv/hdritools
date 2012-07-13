@@ -176,6 +176,18 @@ inline T clamp(const T& x, const T& minValue, const T& maxValue) {
 
 
 
+template <typename T>
+inline T zero() {
+    return T(0.0f);
+}
+
+template <>
+inline pcg::Vec4f zero() {
+    return pcg::Vec4f::zero();
+}
+
+
+
 #if PCG_USE_AVX
 
 template <>
@@ -231,6 +243,11 @@ inline pcg::Vec8f min(const pcg::Vec8f& a, const pcg::Vec8f& b) {
 template <>
 inline pcg::Vec8f max(const pcg::Vec8f& a, const pcg::Vec8f& b) {
     return simd_max(a, b);
+}
+
+template <>
+inline pcg::Vec8f zero() {
+    return _mm256_setzero_ps();
 }
 
 #endif // PCG_USE_AVX
@@ -350,16 +367,16 @@ namespace constants
 
 // Helper function to set either a scalar or a float from a Vec4fUnion
 template <typename T>
-inline T getValue(const pcg::Vec4fUnion& value);
+inline const T& getValue(const pcg::Vec4fUnion& value);
 
 template <>
-inline float MAY_BE_UNUSED getValue(const pcg::Vec4fUnion& value) {
+inline const float& MAY_BE_UNUSED getValue(const pcg::Vec4fUnion& value) {
     return value.f[0];
 }
 
 template <>
-inline pcg::Vec4f getValue(const pcg::Vec4fUnion& value) {
-    return pcg::Vec4f(value);
+inline const pcg::Vec4f& getValue(const pcg::Vec4fUnion& value) {
+    return *reinterpret_cast<const pcg::Vec4f*>(&value.xmm);
 }
 
 
@@ -367,21 +384,21 @@ inline pcg::Vec4f getValue(const pcg::Vec4fUnion& value) {
 
 // Helper function to set either a scalar or a float from a Vec8fUnion
 template <typename T>
-inline T getValue(const pcg::Vec8fUnion& value);
+inline const T& getValue(const pcg::Vec8fUnion& value);
 
 template <>
-inline float getValue(const pcg::Vec8fUnion& value) {
+inline const float& getValue(const pcg::Vec8fUnion& value) {
     return value.f[0];
 }
 
 template <>
-inline pcg::Vec4f getValue(const pcg::Vec8fUnion& value) {
-    return pcg::Vec4f(value.xmm[0]);
+inline const pcg::Vec4f& getValue(const pcg::Vec8fUnion& value) {
+    return *reinterpret_cast<const pcg::Vec4f*>(&value.xmm[0]);
 }
 
 template <>
-inline pcg::Vec8f getValue(const pcg::Vec8fUnion& value) {
-    return pcg::Vec8f(value.ymm);
+inline const pcg::Vec8f& getValue(const pcg::Vec8fUnion& value) {
+    return *reinterpret_cast<const pcg::Vec8f*>(&value.ymm);
 }
 
 #endif // PCG_USE_AVX
@@ -472,7 +489,7 @@ struct LuminanceScaler_Exposure
 
     inline void operator() (
         const T& rLinear, const T& gLinear, const T& bLinear,
-        T& rOut, T& gOut, T& bOut) const
+        T& rOut, T& gOut, T& bOut) const throw()
     {
         rOut = m_multiplier * rLinear;
         gOut = m_multiplier * gLinear;
@@ -530,10 +547,15 @@ struct LuminanceScaler_Reinhard02
 
     inline void operator() (
         const T& rLinear, const T& gLinear, const T& bLinear,
-        T& rOut, T& gOut, T& bOut) const
+        T& rOut, T& gOut, T& bOut) const throw()
     {
+        const T& ONE(constants::getValue<T>(constants::ONE));
+        const T& LVec0(constants::getValue<T>(constants::LVec[0]));
+        const T& LVec1(constants::getValue<T>(constants::LVec[1]));
+        const T& LVec2(constants::getValue<T>(constants::LVec[2]));
+
         // Get the luminance
-        const T Y = LVec[0]*rLinear + LVec[1]*gLinear + LVec[2]*bLinear;
+        const T Y = LVec0*rLinear + LVec1*gLinear + LVec2*bLinear;
 
         // Compute the scale
         const T Lp = m_P * Y;
@@ -548,17 +570,6 @@ struct LuminanceScaler_Reinhard02
 private:
     T m_P;
     T m_Q;
-
-    static const T ONE;
-    static const T LVec[3];
-};
-template <typename T>
-const T LuminanceScaler_Reinhard02<T>::ONE = constants::getValue<T>(constants::ONE);
-template <typename T>
-const T LuminanceScaler_Reinhard02<T>::LVec[3] = {
-    constants::getValue<T>(constants::LVec[0]),
-    constants::getValue<T>(constants::LVec[1]),
-    constants::getValue<T>(constants::LVec[2])
 };
 
 
@@ -566,18 +577,12 @@ const T LuminanceScaler_Reinhard02<T>::LVec[3] = {
 template <typename T>
 struct Clamper01
 {
-    inline T operator() (const T& x) const
+    inline T operator() (const T& x) const throw()
     {
-        return ops::clamp(x, ZERO, ONE);
+        const T& ONE(constants::getValue<T>(constants::ONE));
+        return ops::clamp(x, ops::zero<T>(), ONE);
     }
-
-    static const T ONE;
-    static const T ZERO;
 };
-template <typename T>
-const T Clamper01<T>::ONE  = constants::getValue<T>(constants::ONE);
-template <typename T>
-const T Clamper01<T>::ZERO = constants::getValue<T>(constants::ZERO);
 
 
 // Raises each pixel (already in [0,1]) to 1/gamma. A typical value for gamma
@@ -600,7 +605,7 @@ struct DisplayTransformer_Gamma
         m_invGamma = T(invGamma);
     }
 
-    inline T operator() (const T& x) const
+    inline T operator() (const T& x) const throw()
     {
         return ops::pow(x, m_invGamma);
     }
@@ -617,25 +622,16 @@ struct SRGB_NonLinear_Ref
 {
     SRGB_NonLinear_Ref() {}
 
-    inline T operator() (const T& x) const
+    inline T operator() (const T& x) const throw()
     {
+        const T& FACTOR(constants::getValue<T>(constants::SRGB_FactorHi));
+        const T& EXPONENT(constants::getValue<T>(constants::SRGB_Exponent));
+        const T& OFFSET(constants::getValue<T>(constants::SRGB_Offset));
+
         T r = FACTOR * ops::pow(x, EXPONENT) - OFFSET;
         return r;
     }
-
-    static const T FACTOR;
-    static const T EXPONENT;
-    static const T OFFSET;
 };
-template <typename T>
-const T SRGB_NonLinear_Ref<T>::FACTOR =
-    constants::getValue<T>(constants::SRGB_FactorHi);
-template <typename T>
-const T SRGB_NonLinear_Ref<T>::EXPONENT =
-    constants::getValue<T>(constants::SRGB_Exponent);
-template <typename T>
-const T SRGB_NonLinear_Ref<T>::OFFSET =
-    constants::getValue<T>(constants::SRGB_Offset);
 
 
 
@@ -645,33 +641,25 @@ struct SRGB_NonLinear_Remez44
 {
     SRGB_NonLinear_Remez44() {}
 
-    inline T operator() (const T& x) const
+    inline T operator() (const T& x) const throw()
     {    
-        const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] + P[4]*x))));
-        const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] + Q[4]*x))));
+        const T& P0(constants::getValue<T>(constants::Remez44_P[0]));
+        const T& P1(constants::getValue<T>(constants::Remez44_P[1]));
+        const T& P2(constants::getValue<T>(constants::Remez44_P[2]));
+        const T& P3(constants::getValue<T>(constants::Remez44_P[3]));
+        const T& P4(constants::getValue<T>(constants::Remez44_P[4]));
+
+        const T& Q0(constants::getValue<T>(constants::Remez44_Q[0]));
+        const T& Q1(constants::getValue<T>(constants::Remez44_Q[1]));
+        const T& Q2(constants::getValue<T>(constants::Remez44_Q[2]));
+        const T& Q3(constants::getValue<T>(constants::Remez44_Q[3]));
+        const T& Q4(constants::getValue<T>(constants::Remez44_Q[4]));
+
+        const T num = (P0 + x*(P1 + x*(P2 + x*(P3 + P4*x))));
+        const T den = (Q0 + x*(Q1 + x*(Q2 + x*(Q3 + Q4*x))));
         const T result = num * ops::rcp(den);
         return result;
     }
-
-private:
-    static const T P[5];
-    static const T Q[5];
-};
-template <typename T>
-const T SRGB_NonLinear_Remez44<T>::P[5] = {
-     constants::getValue<T>(constants::Remez44_P[0]),
-     constants::getValue<T>(constants::Remez44_P[1]),
-     constants::getValue<T>(constants::Remez44_P[2]),
-     constants::getValue<T>(constants::Remez44_P[3]),
-     constants::getValue<T>(constants::Remez44_P[4])
-};
-template <typename T>
-const T SRGB_NonLinear_Remez44<T>::Q[5] = {
-     constants::getValue<T>(constants::Remez44_Q[0]),
-     constants::getValue<T>(constants::Remez44_Q[1]),
-     constants::getValue<T>(constants::Remez44_Q[2]),
-     constants::getValue<T>(constants::Remez44_Q[3]),
-     constants::getValue<T>(constants::Remez44_Q[4])
 };
 
 
@@ -682,41 +670,33 @@ struct SRGB_NonLinear_Remez77
 {
     SRGB_NonLinear_Remez77() {}
 
-    inline T operator() (const T& x) const
+    inline T operator() (const T& x) const throw()
     {
-        const T num = (P[0] + x*(P[1] + x*(P[2] + x*(P[3] +
-                                  x*(P[4] + x*(P[5] + x*(P[6] + P[7]*x)))))));
-        const T den = (Q[0] + x*(Q[1] + x*(Q[2] + x*(Q[3] +
-                                  x*(Q[4] + x*(Q[5] + x*(Q[6] + Q[7]*x)))))));
+        const T& P0(constants::getValue<T>(constants::Remez77_P[0]));
+        const T& P1(constants::getValue<T>(constants::Remez77_P[1]));
+        const T& P2(constants::getValue<T>(constants::Remez77_P[2]));
+        const T& P3(constants::getValue<T>(constants::Remez77_P[3]));
+        const T& P4(constants::getValue<T>(constants::Remez77_P[4]));
+        const T& P5(constants::getValue<T>(constants::Remez77_P[5]));
+        const T& P6(constants::getValue<T>(constants::Remez77_P[6]));
+        const T& P7(constants::getValue<T>(constants::Remez77_P[7]));
+
+        const T& Q0(constants::getValue<T>(constants::Remez77_Q[0]));
+        const T& Q1(constants::getValue<T>(constants::Remez77_Q[1]));
+        const T& Q2(constants::getValue<T>(constants::Remez77_Q[2]));
+        const T& Q3(constants::getValue<T>(constants::Remez77_Q[3]));
+        const T& Q4(constants::getValue<T>(constants::Remez77_Q[4]));
+        const T& Q5(constants::getValue<T>(constants::Remez77_Q[5]));
+        const T& Q6(constants::getValue<T>(constants::Remez77_Q[6]));
+        const T& Q7(constants::getValue<T>(constants::Remez77_Q[7]));
+
+        const T num = (P0 + x*(P1 + x*(P2 + x*(P3 +
+                            x*(P4 + x*(P5 + x*(P6 + P7*x)))))));
+        const T den = (Q0 + x*(Q1 + x*(Q2 + x*(Q3 +
+                            x*(Q4 + x*(Q5 + x*(Q6 + Q7*x)))))));
         const T result = num * ops::rcp(den);
         return result;
     }
-
-private:
-    static const T P[8];
-    static const T Q[8];
-};
-template <typename T>
-const T SRGB_NonLinear_Remez77<T>::P[8] = {
-     constants::getValue<T>(constants::Remez77_P[0]),
-     constants::getValue<T>(constants::Remez77_P[1]),
-     constants::getValue<T>(constants::Remez77_P[2]),
-     constants::getValue<T>(constants::Remez77_P[3]),
-     constants::getValue<T>(constants::Remez77_P[4]),
-     constants::getValue<T>(constants::Remez77_P[5]),
-     constants::getValue<T>(constants::Remez77_P[6]),
-     constants::getValue<T>(constants::Remez77_P[7])
-};
-template <typename T>
-const T SRGB_NonLinear_Remez77<T>::Q[8] = {
-     constants::getValue<T>(constants::Remez77_Q[0]),
-     constants::getValue<T>(constants::Remez77_Q[1]),
-     constants::getValue<T>(constants::Remez77_Q[2]),
-     constants::getValue<T>(constants::Remez77_Q[3]),
-     constants::getValue<T>(constants::Remez77_Q[4]),
-     constants::getValue<T>(constants::Remez77_Q[5]),
-     constants::getValue<T>(constants::Remez77_Q[6]),
-     constants::getValue<T>(constants::Remez77_Q[7])
 };
 
 
@@ -727,26 +707,19 @@ struct DisplayTransformer_sRGB
 {
     DisplayTransformer_sRGB() {}
 
-    inline T operator() (const T& pLinear) const
+    inline T operator() (const T& pLinear) const throw()
     {
-        T p = m_nonlinear(pLinear);
+        const T& CUTOFF_sRGB(constants::getValue<T>(constants::SRGB_Cutoff));
+        const T& FACTOR(constants::getValue<T>(constants::SRGB_FactorLow));
 
-        // Here comes the blend
+        T p = m_nonlinear(pLinear);
         T result = ops::select_gt(pLinear, CUTOFF_sRGB, p, FACTOR * pLinear);
         return result;
     }
 
 private:
     SRGB_NonLinear<T> m_nonlinear;
-    static const T CUTOFF_sRGB;
-    static const T FACTOR;
 };
-template <typename T, template<typename> class SRGB_NonLinear>
-const T DisplayTransformer_sRGB<T, SRGB_NonLinear>::CUTOFF_sRGB =
-    constants::getValue<T>(constants::SRGB_Cutoff);
-template <typename T, template<typename> class SRGB_NonLinear>
-const T DisplayTransformer_sRGB<T, SRGB_NonLinear>::FACTOR =
-    constants::getValue<T>(constants::SRGB_FactorLow);
 
 
 
@@ -772,16 +745,12 @@ struct Quantizer8bit
 {
     typedef QT value_t;
 
-    inline value_t operator() (const T& x) const
+    inline value_t operator() (const T& x) const throw()
     {
+        const T& FACTOR(constants::getValue<T>(constants::Q_8bit));
         return ops::round<QT>(FACTOR * x);
     }
-
-private:
-    static const T FACTOR;
 };
-template <typename T, typename QT>
-const T Quantizer8bit<T,QT>::FACTOR = constants::getValue<T>(constants::Q_8bit);
 
 
 template <typename T, typename QT>
@@ -789,16 +758,12 @@ struct Quantizer16bit
 {
     typedef QT value_t;
 
-    inline value_t operator() (const T& x) const
+    inline value_t operator() (const T& x) const throw()
     {
+        const T& FACTOR(constants::getValue<T>(constants::Q_16bit));
         return ops::round<QT>(FACTOR * x);
     }
-
-private:
-    static const T FACTOR;
 };
-template <typename T, typename QT>
-const T Quantizer16bit<T,QT>::FACTOR=constants::getValue<T>(constants::Q_16bit);
 
 
 
@@ -813,7 +778,7 @@ struct PixelAssembler_BGRA8
 
     inline void operator() (
         const value_t& r, const value_t& g, const value_t& b, const value_t& a,
-        pixel_t& outPixel) const
+        pixel_t& outPixel) const throw()
     {
         outPixel.argb = (a << 24) | (r << 16) | (g << 8) | (b);
     }
@@ -831,7 +796,7 @@ struct PixelAssembler_BGRA8Vec4
 
     inline void operator() (
         const value_t& r, const value_t& g, const value_t& b, const value_t& a,
-        pixel_t& outPixel) const
+        pixel_t& outPixel) const throw()
     {
         // For some stupid reason the operator<< overload doesn't seem to work
         pcg::Vec4i aShift = _mm_slli_epi32(a, 24);
@@ -855,7 +820,7 @@ struct PixelAssembler_BGRA8Vec8
 
     template <int offset>
     static inline pcg::Vec4i buildExtract(const value_t& r, const value_t& g,
-        const value_t& b, const value_t& a)
+        const value_t& b, const value_t& a) throw()
     {
         assert(offset == 0 || offset == 1);
 
@@ -874,7 +839,7 @@ struct PixelAssembler_BGRA8Vec8
 
     inline void operator() (
         const value_t& r, const value_t& g, const value_t& b, const value_t& a,
-        pixel_t& outPixel) const
+        pixel_t& outPixel) const throw()
     {
         // Adequate support for integer operation arrives with AVX2, in the
         // meantime extract 2 128-bit values
@@ -905,9 +870,10 @@ struct ToneMappingKernel
     pixelAssembler(assembler)
     {}
 
-    inline void operator() (
+    void operator() (
         const value_t& rLinear, const value_t& gLinear, const value_t& bLinear,
         const value_t& alpha, typename PixelAssembler::pixel_t& pixelOut) const
+        throw()
     {
         value_t rScaled, gScaled, bScaled;
 
