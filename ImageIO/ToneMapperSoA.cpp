@@ -857,9 +857,18 @@ struct PixelAssembler_BGRA8Vec8
 #endif // PCG_USE_AVX
 
 
+template <class LuminanceScaler>
+struct BlockSizeTraits
+{
+    // Assuming that LuminanceScaler::value_t is a vector of k-single precision
+    // values, target the block size so that the temporary storage uses 16KiB
+    static const size_t BLOCK_SIZE =
+        4096 / sizeof(typename LuminanceScaler::value_t);
+};
 
 
-template<class LuminanceScaler, class DisplayTransformer, class PixelAssembler>
+template<class LuminanceScaler, class DisplayTransformer, class PixelAssembler,
+         size_t BlockSize = BlockSizeTraits<LuminanceScaler>::BLOCK_SIZE>
 struct ToneMappingKernel
 {
     typedef typename LuminanceScaler::value_t value_t;
@@ -870,36 +879,51 @@ struct ToneMappingKernel
     pixelAssembler(assembler)
     {}
 
-    void operator() (
-        const value_t& rLinear, const value_t& gLinear, const value_t& bLinear,
-        const value_t& alpha, typename PixelAssembler::pixel_t& pixelOut) const
-        throw()
+    // Operate on a range, going block by block
+    template <typename SourceIter>
+    void operator() (SourceIter begin, SourceIter end,
+        typename PixelAssembler::pixel_t* pixelOut) const throw()
     {
-        value_t rScaled, gScaled, bScaled;
+        // Temporary storage
+        value_t rTemp[BlockSize];
+        value_t gTemp[BlockSize];
+        value_t bTemp[BlockSize];
+        value_t aTemp[BlockSize];
 
-        // Scale the luminance according to the current settings
-        luminanceScaler(rLinear, gLinear, bLinear,
-            rScaled, gScaled, bScaled);
+        for (SourceIter it = begin; it != end;) {
+            const size_t numIter = std::min(static_cast<size_t>(end - it),
+                                            BlockSize);
 
-        // Clamp to [0,1]
-        const value_t rClamped = clamper(rScaled);
-        const value_t gClamped = clamper(gScaled);
-        const value_t bClamped = clamper(bScaled);
-        const value_t aClamped = clamper(alpha);
+            // Scale the luminance according to the current settings and clamp
+            for (size_t i = 0; i != numIter; ++i, ++it) {
+                typename std::iterator_traits<SourceIter>::value_type pixel=*it;
+                luminanceScaler(pixel.r(), pixel.g(), pixel.b(),
+                    rTemp[i], gTemp[i], bTemp[i]);
+                rTemp[i] = clamper(rTemp[i]);
+                gTemp[i] = clamper(gTemp[i]);
+                bTemp[i] = clamper(bTemp[i]);
+                aTemp[i] = clamper(pixel.a());
+            }
 
-        // Nonlinear display transform
-        const value_t rDisplay = displayTransformer(rClamped);
-        const value_t gDisplay = displayTransformer(gClamped);
-        const value_t bDisplay = displayTransformer(bClamped);
+            // Nonlinear display transform
+            for (size_t i = 0; i != numIter; ++i) {
+                rTemp[i] = displayTransformer(rTemp[i]);
+                gTemp[i] = displayTransformer(gTemp[i]);
+                bTemp[i] = displayTransformer(bTemp[i]);
+            }
 
-        // Quantize the values
-        const typename PixelAssembler::value_t rQ = quantizer(rDisplay);
-        const typename PixelAssembler::value_t gQ = quantizer(gDisplay);
-        const typename PixelAssembler::value_t bQ = quantizer(bDisplay);
-        const typename PixelAssembler::value_t aQ = quantizer(aClamped);
+            // Quantize the values and build the pixel
+            for (size_t i = 0; i != numIter; ++i, ++pixelOut) {
+                typename PixelAssembler::value_t rQ = quantizer(rTemp[i]);
+                typename PixelAssembler::value_t gQ = quantizer(gTemp[i]);
+                typename PixelAssembler::value_t bQ = quantizer(bTemp[i]);
+                typename PixelAssembler::value_t aQ = quantizer(aTemp[i]);
 
-        pixelAssembler(rQ, gQ, bQ, aQ, pixelOut);
+                pixelAssembler(rQ, gQ, bQ, aQ, *pixelOut);
+            }
+        }
     }
+
 
     // Functors which implement the actual functionality
     const LuminanceScaler& luminanceScaler;
@@ -920,13 +944,10 @@ public:
     m_src(src), m_dest(dest), m_kernel(k)
     {}
 
-    void operator() (tbb::blocked_range<SourceIter>& range) const
+    inline void operator() (tbb::blocked_range<SourceIter>& range) const
     {
         DestIter dest = m_dest + (range.begin() - m_src);
-        for (SourceIter it = range.begin(); it != range.end(); ++it, ++dest) {
-            typename std::iterator_traits<SourceIter>::value_type pixel = *it;
-            m_kernel(pixel.r(), pixel.g(), pixel.b(), pixel.a(), *dest);
-        }
+        m_kernel(range.begin(), range.end(), dest);
     }
 
 private:
