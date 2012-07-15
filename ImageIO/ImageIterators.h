@@ -73,88 +73,99 @@ struct RGBA32FVec4
 
 
 
-// Template to represent SoA-styled RGBA values, backed by external data
-template <class VectorType>
-struct RGBAVecRef
+// Template which represent vectors of RGBA values, in SoA fashion,
+// which are backed by external data + offset.
+template <class VectorType, class VectorPtrType = VectorType*>
+class RGBAVecRef
 {
 private:
-    VectorType& m_r;
-    VectorType& m_g;
-    VectorType& m_b;
-    VectorType& m_a;
+    // Reference to pointers
+    VectorPtrType& m_r;
+    VectorPtrType& m_g;
+    VectorPtrType& m_b;
+    VectorPtrType& m_a;
+    
+    ptrdiff_t &m_offset;
+
 
 public:
-    RGBAVecRef(VectorType& rRef, VectorType& gRef,
-               VectorType& bRef, VectorType& aRef) :
-    m_r(rRef), m_g(gRef), m_b(bRef), m_a(aRef)
+    RGBAVecRef(VectorPtrType& rPtrRef, VectorPtrType& gPtrRef,
+               VectorPtrType& bPtrRef, VectorPtrType& aPtrRef,
+               ptrdiff_t &offsetRef) :
+    m_r(rPtrRef), m_g(gPtrRef), m_b(bPtrRef), m_a(aPtrRef), m_offset(offsetRef)
     {}
 
     inline VectorType& r() {
-        return m_r;
+        return *(m_r + m_offset);
     }
 
     inline const VectorType& r() const {
-        return m_r;
+        return *(m_r + m_offset);
     }
 
     inline VectorType& g() {
-        return m_g;
+        return *(m_g + m_offset);
     }
 
     inline const VectorType& g() const {
-        return m_g;
+        return *(m_g + m_offset);
     }
 
     inline VectorType& b() {
-        return m_b;
+        return *(m_b + m_offset);
     }
 
     inline const VectorType& b() const {
-        return m_b;
+        return *(m_b + m_offset);
     }
 
     inline VectorType& a() {
-        return m_a;
+        return *(m_a + m_offset);
     }
 
     inline const VectorType& a() const {
-        return m_a;
+        return *(m_a + m_offset);
     }
 };
 
 
 
 // Template which represent vectors of RGBA values, in SoA fashion,
-// which are backed by other data. This version only allows reads.
-template <class VectorType>
+// which are backed by external data + offset. This version only allows reads.
+template <class VectorType, class VectorPtrType = VectorType*>
 class RGBAVecConstRef
 {
 private:
-    const VectorType& m_r;
-    const VectorType& m_g;
-    const VectorType& m_b;
-    const VectorType& m_a;
+    // Reference to pointers
+    const VectorPtrType& m_r;
+    const VectorPtrType& m_g;
+    const VectorPtrType& m_b;
+    const VectorPtrType& m_a;
+    
+    const ptrdiff_t &m_offset;
+
 
 public:
-    RGBAVecConstRef(const VectorType& rRef, const VectorType& gRef,
-                    const VectorType& bRef, const VectorType& aRef) :
-    m_r(rRef), m_g(gRef), m_b(bRef), m_a(aRef)
+    RGBAVecConstRef(const VectorPtrType& rPtrRef, const VectorPtrType& gPtrRef,
+                    const VectorPtrType& bPtrRef, const VectorPtrType& aPtrRef,
+                    const ptrdiff_t &offsetRef) :
+    m_r(rPtrRef), m_g(gPtrRef), m_b(bPtrRef), m_a(aPtrRef), m_offset(offsetRef)
     {}
 
     inline const VectorType& r() const {
-        return m_r;
+        return *(m_r + m_offset);
     }
 
     inline const VectorType& g() const {
-        return m_g;
+        return *(m_g + m_offset);
     }
 
     inline const VectorType& b() const {
-        return m_b;
+        return *(m_b + m_offset);
     }
 
     inline const VectorType& a() const {
-        return m_a;
+        return *(m_a + m_offset);
     }
 };
 
@@ -387,6 +398,7 @@ struct RGBA32FVec_traits<4>
 {
     typedef RGBA32FVec4Ref VecRef;
     typedef RGBA32FVec4ConstRef VecConstRef;
+    typedef __m128  value_type;
     typedef __m128* pointer_type;
 };
 
@@ -399,21 +411,34 @@ struct RGBA32FVec_traits<4>
 // an image.
 template <int N>
 class RGBA32FVecImageSoAIterator :
-public std::iterator<std::random_access_iterator_tag,
-                    typename RGBA32FVec_traits<N>::VecConstRef>
+public std::iterator<std::bidirectional_iterator_tag,
+                     typename RGBA32FVec_traits<N>::VecRef>
 {
 public:
 
     // Default constructor, which creates an invalid iterator
     RGBA32FVecImageSoAIterator() :
-    m_r(NULL), m_g(NULL), m_b(NULL), m_a(NULL), m_offset(0)
+    m_r(NULL), m_g(NULL), m_b(NULL), m_a(NULL), m_offset(0),
+    m_pixRef(m_r, m_g, m_b, m_a, m_offset)
     {}
 
     // Copy constructor
     RGBA32FVecImageSoAIterator(const RGBA32FVecImageSoAIterator& other) :
     m_r(other.m_r), m_g(other.m_g), m_b(other.m_b), m_a(other.m_a),
-    m_offset(other.m_offset)
+    m_offset(other.m_offset),
+    m_pixRef(m_r, m_g, m_b, m_a, m_offset)
     {}
+
+    // Assignment
+    RGBA32FVecImageSoAIterator& operator=(const RGBA32FVecImageSoAIterator& rhs)
+    {
+        m_r = rhs.m_r;
+        m_g = rhs.m_g;
+        m_b = rhs.m_b;
+        m_a = rhs.m_a;
+        m_offset = rhs.m_offset;
+        return *this;
+    }
 
     // Equality/inequality comparisons using only the offsets
 
@@ -523,26 +548,26 @@ public:
         return *this;
     }
 
-    // Offset dereference
+    // Element access to the current pixel
 
-    inline typename RGBA32FVec_traits<N>::VecConstRef
-        operator[] (size_t idx) const
+    inline typename RGBA32FVec_traits<N>::VecRef & operator*()
     {
-        typedef typename RGBA32FVec_traits<N>::VecConstRef V;
-        const size_t offset = m_offset + idx;
-        V p(*(m_r + offset), *(m_g + offset),
-            *(m_b + offset), *(m_a + offset));
-        return p;
+        return m_pixRef;
     }
 
-    // Notice that this supports only read-only access
-    inline typename RGBA32FVec_traits<N>::VecConstRef
-        operator*() const
+    inline const typename RGBA32FVec_traits<N>::VecRef & operator*() const
     {
-        typedef typename RGBA32FVec_traits<N>::VecConstRef V;
-        V p(*(m_r + m_offset), *(m_g + m_offset),
-            *(m_b + m_offset), *(m_a + m_offset));
-        return p;
+        return m_pixRef;
+    }
+
+    inline typename RGBA32FVec_traits<N>::VecRef * operator->()
+    {
+        return &m_pixRef;
+    }
+
+    inline const typename RGBA32FVec_traits<N>::VecRef * operator->() const
+    {
+        return &m_pixRef;
     }
 
 
@@ -586,6 +611,9 @@ private:
     
     // Offset
     ptrdiff_t m_offset;
+
+    // Helper reference to pixels
+    RGBAVecRef<typename RGBA32FVec_traits<N>::value_type> m_pixRef;
 };
 
 
@@ -647,6 +675,7 @@ struct RGBA32FVec_traits<8>
 {
     typedef RGBA32FVec8Ref VecRef;
     typedef RGBA32FVec8ConstRef VecConstRef;
+    typedef __m256  value_type;
     typedef __m256* pointer_type;
 };
 
