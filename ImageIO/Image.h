@@ -17,6 +17,7 @@
  * A templated image, it's heavily based in Fabio's far codebase
  */
 
+#pragma once
 #if !defined( PCG_IMAGE_H )
 #define PCG_IMAGE_H
 

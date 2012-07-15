@@ -13,6 +13,7 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#pragma once
 #if !defined PCG_REINHARD02_H
 #define PCG_REINHARD02_H
 
