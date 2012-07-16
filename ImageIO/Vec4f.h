@@ -77,6 +77,9 @@ public:
     // Initialize with the same value in all components
     explicit Vec4f(float val) : xmm(_mm_set_ps1(val)) {}
 
+    // Initialize from a mask
+    explicit Vec4f(const Vec4bf& val) : xmm(static_cast<__m128>(val)) {}
+
     // Initialize with explicit values. The indices reflect the memory layout
     Vec4f(float f3, float f2, float f1, float f0) :
     xmm(_mm_set_ps(f3, f2, f1, f0))
@@ -108,6 +111,19 @@ public:
     friend Vec4f operator^ (const Vec4f& a, const Vec4f& b) {
         return _mm_xor_ps(a, b);
     }
+    // Logical operators [Members]
+    Vec4f& operator&= (const Vec4f& a) {
+        xmm = _mm_and_ps(xmm, a.xmm);
+        return *this;
+    }
+    Vec4f& operator|= (const Vec4f& a) {
+        xmm = _mm_or_ps(xmm, a.xmm);
+        return *this;
+    }
+    Vec4f& operator^= (const Vec4f& a) {
+        xmm = _mm_xor_ps(xmm, a.xmm);
+        return *this;
+    }
 
     // Arithmetic operations [binary]
     friend Vec4f operator+ (const Vec4f& a, const Vec4f& b) {
@@ -121,6 +137,23 @@ public:
     }
     friend Vec4f operator/ (const Vec4f& a, const Vec4f& b) {
         return _mm_div_ps(a, b);
+    }
+    // Arithmetic operations [members]
+    Vec4f& operator+= (const Vec4f& a) {
+        xmm = _mm_add_ps(xmm, a.xmm);
+        return *this;
+    }
+    Vec4f& operator-= (const Vec4f& a) {
+        xmm = _mm_sub_ps(xmm, a.xmm);
+        return *this;
+    }
+    Vec4f& operator*= (const Vec4f& a) {
+        xmm = _mm_mul_ps(xmm, a.xmm);
+        return *this;
+    }
+    Vec4f& operator/= (const Vec4f& a) {
+        xmm = _mm_div_ps(xmm, a.xmm);
+        return *this;
     }
 
     // Newton-Rhapson Reciprocal:
@@ -148,6 +181,21 @@ public:
     }
     friend Vec4f simd_max(const Vec4f& a, const Vec4f& b) {
         return _mm_max_ps(a, b);
+    }
+
+    // Moves either of the values of "low" into the low 64-bits
+    // of the results, and either of the values of "high" into
+    // the high 64-bits of the results. Each index in the
+    // template is a index in the range [0,3] to choose a value
+    template <int idx3, int idx2, int idx1, int idx0>
+    friend Vec4f simd_shuffle(const Vec4f& low, const Vec4f& hi) {
+        return _mm_shuffle_ps(low, hi, _MM_SHUFFLE(idx3,idx2,idx1,idx0));
+    }
+
+    // Shuffles the elements of the given vector using the indices [0,3]
+    template <int idx3, int idx2, int idx1, int idx0>
+    friend Vec4f simd_shuffle(const Vec4f& a) {
+        return _mm_shuffle_ps(a, a, _MM_SHUFFLE(idx3,idx2,idx1,idx0));
     }
 
     // Comparisons, return a mask
