@@ -24,6 +24,7 @@
 
 #include <limits>
 
+#include "Timer.h"
 #include "dSFMT/RandomMT.h"
 #include "tableau_f32.h"
 
@@ -317,27 +318,37 @@ TEST_F(Reinhard02ParamsTest, HistogramKey)
 TEST_F(Reinhard02ParamsTest, Benchmark)
 {
     {
+        Timer timer;
         FloatImage img;
         pcg::Tableau::fill (img);
         for (int i = 0; i < NUM_RUNS; ++i) {
+            timer.start();
             Reinhard02::Params p = Reinhard02::EstimateParams(img);
+            timer.stop();
 
             // Values calculated in matlab
             ASSERT_NEAR (p.key,      0.1977469f, 5e-6);
             ASSERT_NEAR (p.l_white, 53.3945084f, 5e-6);
             ASSERT_NEAR (p.l_w,      0.2085711f, 5e-6);
         }
+        std::cout << "Reinhard02Params [Tableau] " << timer.milliTime()/NUM_RUNS
+                  << " ms" << std::endl;
     }
 
     {
+        Timer timer;
         FloatImage img(IMG_W*4, IMG_H*4);
         fillImage(img);
         for (int i = 0; i < NUM_RUNS; ++i) {
+            timer.start();
             Reinhard02::Params p = Reinhard02::EstimateParams(img);
+            timer.stop();
 
             ASSERT_LT (p.l_w, p.l_white);
             ASSERT_GT (p.key, 0.0f);
             ASSERT_LT (p.key, 1.0f);
         }
+        std::cout << "Reinhard02Params [Large]   " << timer.milliTime()/NUM_RUNS
+                  << " ms" << std::endl;
     }
 }
