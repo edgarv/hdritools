@@ -163,7 +163,9 @@ public:
     friend inline Vec4i select(const Vec4bi& mask,
         const Vec4i& a, const Vec4i& b)
     {
-        return _mm_or_si128(_mm_and_si128(mask, a), _mm_andnot_si128(mask, b));
+        // Alternative method by Jim Conyngham/Wikipedia MD5 page, via
+        // http://markplusplus.wordpress.com/2007/03/14/fast-sse-select-operation/ [July 2012]
+        return _mm_xor_si128(b, _mm_and_si128(mask, _mm_xor_si128(a, b)));
     }
 
 

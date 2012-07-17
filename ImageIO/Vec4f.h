@@ -249,7 +249,14 @@ public:
     friend inline Vec4f select(const Vec4bf& mask,
         const Vec4f& a, const Vec4f& b)
     {
-        return _mm_or_ps(_mm_and_ps(mask, a), _mm_andnot_ps(mask, b));
+#if PCG_USE_AVX
+        // AVX implies SSE 4.1 support
+        return _mm_blendv_ps(b, a, mask);
+#else
+        // Alternative method by Jim Conyngham/Wikipedia MD5 page, via
+        // http://markplusplus.wordpress.com/2007/03/14/fast-sse-select-operation/ [July 2012]
+        return _mm_xor_ps(b, _mm_and_ps(mask, _mm_xor_ps(a, b)));
+#endif
     }
 
 
