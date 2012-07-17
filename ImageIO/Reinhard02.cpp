@@ -402,20 +402,22 @@ float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
     // Will process first elements in SSE fashion, 4 at a time
     const ptrdiff_t count_sse = (Lw_end - Lw) & ~0x3;
     // Prepare Kahan summation with 4 elements
-    Rgba32F vec_sum = _mm_setzero_ps();
-    Rgba32F vec_c   = _mm_setzero_ps();
+    Vec4f vec_sum = Vec4f::zero();
+    Vec4f vec_c   = Vec4f::zero();
 
-    for (ptrdiff_t off = 0; off < count_sse; off += 4)
+    const Vec4f* const PCG_RESTRICT LwVec4=reinterpret_cast<const Vec4f*>(Lw);
+    const ptrdiff_t countVec4 = count_sse >> 2;
+    for (ptrdiff_t off = 0; off != countVec4; ++off)
     {
-        const __m128 vec_lum = _mm_load_ps(Lw+off);
+        const Vec4f& vec_lum = LwVec4[off];
 #if USE_AM_LOG
-        const Rgba32F vec_log_lum = am::log_eps (vec_lum);
+        const Vec4f vec_log_lum = am::log_eps (vec_lum);
 #else
-        const Rgba32F vec_log_lum = ssemath::log_ps (vec_lum);  
+        const Vec4f vec_log_lum = ssemath::log_ps (vec_lum);  
 #endif
         // Update the sum with error compensation
-        const Rgba32F y = vec_log_lum - vec_c;
-        const Rgba32F t = vec_sum + y;
+        const Vec4f y = vec_log_lum - vec_c;
+        const Vec4f t = vec_sum + y;
         vec_c   = (t - vec_sum) - y;
         vec_sum = t;
     }
@@ -456,8 +458,8 @@ struct AccumulateHistogramFunctor
         const float Lmax_log;
         const float inv_res;
 
-        const Rgba32F vec_res_factor;
-        const Rgba32F vec_Lmin_log;
+        const Vec4f vec_res_factor;
+        const Vec4f vec_Lmin_log;
 
         // Initializes the parameters with the appropriate values. It receives
         // the maximum and minimum [lineal] luminance
@@ -564,7 +566,7 @@ private:
     {
         assert(begin <= end);
         for (const float * lum = Lw+begin; lum != Lw+end; ++lum) {
-            const double log_lum = log (static_cast<double> (*lum));
+            const float log_lum = logf(*lum);
             L_sum += log_lum;
 
             int bin_idx = static_cast<int> (params.res_factor * 
@@ -580,26 +582,28 @@ private:
         assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
 
         // Prepare Kahan summation with 4 elements
-        Rgba32F vec_sum = _mm_setzero_ps();
-        Rgba32F vec_c   = _mm_setzero_ps();
+        Vec4f vec_sum = Vec4f::zero();
+        Vec4f vec_c   = Vec4f::zero();
 
-        for (size_t off = begin; off != end; off += 4)
+        const Vec4f* const LwVec4 = reinterpret_cast<const Vec4f*>(Lw+begin);
+        const size_t countVec4 = (end - begin) >> 2;
+        for (size_t off = 0; off != countVec4; ++off)
         {
-            const __m128 vec_lum = _mm_load_ps(Lw+off);
+            const Vec4f& vec_lum = LwVec4[off];
 #if USE_AM_LOG
-            const Rgba32F vec_log_lum = am::log_eps (vec_lum);
+            const Vec4f vec_log_lum = am::log_eps (vec_lum);
 #else
-            const Rgba32F vec_log_lum = ssemath::log_ps (vec_lum);
+            const Vec4f vec_log_lum = ssemath::log_ps (vec_lum);
 #endif
 
             // Update the sum with error compensation
-            const Rgba32F y = vec_log_lum - vec_c;
-            const Rgba32F t = vec_sum + y;
+            const Vec4f y = vec_log_lum - vec_c;
+            const Vec4f t = vec_sum + y;
             vec_c   = (t - vec_sum) - y;
             vec_sum = t;
 
             // Update the histogram
-            __m128 idx_temp = params.vec_res_factor * 
+            const Vec4f idx_temp = params.vec_res_factor * 
                 (vec_log_lum - params.vec_Lmin_log);
             const __m128i bin_idx = _mm_cvttps_epi32 (idx_temp);
             const int index0 = _mm_extract_epi16(bin_idx, 0*2);
