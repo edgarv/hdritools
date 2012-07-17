@@ -28,16 +28,6 @@
 #else
 # if !defined(_MSC_VER)
 #  include <cmath>
-# else
-namespace 
-{
-inline float fminf(float x, float y) {
-    return x < y ? x : y;
-}
-inline float fmaxf(float x, float y) {
-    return x > y ? x : y;
-}
-}
 # endif
 #endif
 
@@ -92,6 +82,15 @@ namespace {
 // Add some required C99 functions
 inline float exp2f(float x) {
     return powf(2.0f, x);
+}
+
+inline float fminf(const float& x, const float& y) {
+    __m128 tmp = _mm_min_ss(_mm_load_ss(&x), _mm_load_ss(&y));
+    return _mm_cvtss_f32(tmp);
+}
+inline float fmaxf(const float& x, const float& y) {
+    __m128 tmp = _mm_max_ss(_mm_load_ss(&x), _mm_load_ss(&y));
+    return _mm_cvtss_f32(tmp);
 }
 
 } // namespace
@@ -179,23 +178,27 @@ inline const Vec4f& getTailMask<3>() {
 
 // Minimum between the given value and all the elements of the vector
 inline float horizontal_min(const float& x, const Vec4f& vec) {
-    float result;
     Vec4f tmpMin = simd_min(vec, simd_shuffle<1,0,3,2>(vec));
     tmpMin = simd_min(tmpMin, simd_shuffle<2,3,0,1>(tmpMin));
     tmpMin = _mm_min_ss(_mm_load_ss(&x), tmpMin);
-    _mm_store_ss(&result, tmpMin);
-    return result;
+    return _mm_cvtss_f32(tmpMin);
 }
 
 
 // Maximum between the given value and all the elements of the vector
 inline float horizontal_max(const float& x, const Vec4f& vec) {
-    float result;
     Vec4f tmpMax = simd_max(vec, simd_shuffle<1,0,3,2>(vec));
     tmpMax = simd_max(tmpMax, simd_shuffle<2,3,0,1>(tmpMax));
     tmpMax = _mm_max_ss(_mm_load_ss(&x), tmpMax);
-    _mm_store_ss(&result, tmpMax);
-    return result;
+    return _mm_cvtss_f32(tmpMax);
+}
+
+
+// Sum of each element in the vector using SSE3
+inline float horizontal_sum(const __m128& vec) {
+    __m128 sum_tmp = _mm_hadd_ps(vec, vec);
+    sum_tmp = _mm_hadd_ps(sum_tmp, sum_tmp);
+    return _mm_cvtss_f32(sum_tmp);
 }
 
 
@@ -418,12 +421,8 @@ float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
     }
 
     // Accumulate the sum and then add the rest of the values (0 up to 3)
-    float L_sum;
-    {
-        __m128 sum_tmp = _mm_hadd_ps(vec_sum, vec_sum);
-        sum_tmp = _mm_hadd_ps(sum_tmp, sum_tmp);
-        _mm_store_ss(&L_sum, sum_tmp);
-    }
+    float L_sum = horizontal_sum(vec_sum);
+
     if (count_sse != (Lw_end - Lw)) {
         float c = 0.0f;
         for (const float * lum = Lw+count_sse; lum != Lw_end; ++lum) {
@@ -613,17 +612,14 @@ private:
             assert (index2 >= 0 && index2 < (int)histogram.size());
             assert (index3 >= 0 && index3 < (int)histogram.size());
 
-            histogram[index0]++;
-            histogram[index1]++;
-            histogram[index2]++;
-            histogram[index3]++;
+            ++histogram[index0];
+            ++histogram[index1];
+            ++histogram[index2];
+            ++histogram[index3];
         }
 
         // Accumulate the horizontal result
-        float L_sum_tmp;
-        __m128 sum_tmp = _mm_hadd_ps(vec_sum, vec_sum);
-        sum_tmp = _mm_hadd_ps(sum_tmp, sum_tmp);
-        _mm_store_ss(&L_sum_tmp, sum_tmp);
+        const float L_sum_tmp = horizontal_sum(vec_sum);
         L_sum += L_sum_tmp;
     }
 };
