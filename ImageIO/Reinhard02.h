@@ -64,6 +64,21 @@ public:
 
 
 protected:
+
+    struct LuminanceResult
+    {
+        size_t zero_count;
+        float Lmin;
+        float Lmax;
+    };
+
+    static IMAGEIO_API LuminanceResult ComputeLuminance
+        (afloat_t * PCG_RESTRICT Lw,
+        const Rgba32F* const pixels, size_t count);
+
+    static IMAGEIO_API Params EstimateParams (afloat_t * const PCG_RESTRICT Lw,
+        size_t count, const LuminanceResult& lumResult);
+
     static IMAGEIO_API Params
         EstimateParams (const Rgba32F * pixels, size_t count);
 };

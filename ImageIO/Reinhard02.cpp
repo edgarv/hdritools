@@ -42,6 +42,9 @@ inline float fmaxf(float x, float y) {
 #endif
 
 #include "Reinhard02.h"
+#include "ImageIterators.h"
+#include "Vec4f.h"
+#include "Vec4i.h"
 
 #include <limits>
 #include <vector>
@@ -55,8 +58,8 @@ inline float fmaxf(float x, float y) {
 // Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
 #define USE_PACKED_LUT 0
 
-// Flag to use Intel's fast log routine. Very fast but has a terrible accuracy
-// but makes the whole process run about 4x faster (in MSVC++ 2008)
+// Flag to use Intel's fast log routine. Very fast but has a terrible accuracy,
+// yet makes the whole process run about 4x faster (in MSVC++ 2008)
 #define USE_AM_LOG 0
 
 #if USE_AM_LOG
@@ -113,6 +116,28 @@ namespace
 typedef std::numeric_limits<float> float_limits;
 
 
+
+// Constants used by different functors, so that for templated classes they
+// are not instantiated multiple times
+namespace constants
+{
+const Vec4f LUM_R(0.27f);
+const Vec4f LUM_G(0.67f);
+const Vec4f LUM_B(0.06f);
+const Vec4f LUM_MINVAL(float_limits::min());
+const Vec4i INT_ONE(1);
+const Vec4i MASK_NAN(_mm_set1_epi32 (0x7f800000));
+const Vec4f LUM_TAIL_MASKS[3] = {
+    Vec4f(_mm_castsi128_ps(Vec4i::constant<0, 0, 0,-1>())),
+    Vec4f(_mm_castsi128_ps(Vec4i::constant<0, 0,-1,-1>())),
+    Vec4f(_mm_castsi128_ps(Vec4i::constant<0,-1,-1,-1>()))
+};
+
+
+} // namespace constants
+
+
+
 // Super basic auto_ptr kind of thing for aligned float memory
 class auto_afloat_ptr : public std::auto_ptr<float>
 {
@@ -127,228 +152,210 @@ public:
 };
 
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
-inline unsigned int floatToBits(float x) {
-    union { float f; unsigned int bits; } data;
-    data.f = x;
-    return data.bits;
+
+// Helper to get the appropriate tail mask for the templated luminance functors
+template <int tailElements>
+inline const Vec4f& getTailMask();
+
+template <>
+inline const Vec4f& getTailMask<0>() {
+    assert("This should never be used" == 0);
+    return constants::LUM_TAIL_MASKS[0];
 }
-#endif
-
-
-inline bool isInvalidLuminance(float x) {
-    // True for negatives, denormalized values, NaNs and infinity
-#if defined(__INTEL_COMPILER)
-    return (isgreaterf(x, 0.0f) == 0) || (isnormalf(x) == 0);
-#else
-# if !defined(_MSC_VER)
-    return (std::isgreater(x, 0.0f) == 0) || (std::isnormal(x) == 0);
-# else
-    return floatToBits(x)>=0x7f800000u || x < float_limits::min();
-# endif
-#endif
+template <>
+inline const Vec4f& getTailMask<1>() {
+    return constants::LUM_TAIL_MASKS[0];
 }
-
-
-// Helper function to calculate a dot product
-inline float dot_float(const Rgba32F &a, const Rgba32F &b)
-{
-    float res;
-    Rgba32F dot_tmp = a * b;
-    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-    dot_tmp = _mm_hadd_ps(dot_tmp, dot_tmp);
-    _mm_store_ss(&res, dot_tmp);
-    return res;
+template <>
+inline const Vec4f& getTailMask<2>() {
+    return constants::LUM_TAIL_MASKS[1];
+}
+template <>
+inline const Vec4f& getTailMask<3>() {
+    return constants::LUM_TAIL_MASKS[2];
 }
 
 
 
-// TBB functor object to fill the array of luminances. It converts the invalid
-// values to zero and returns the maximum, minimum and number of invalid values
+// Minimum between the given value and all the elements of the vector
+inline float horizontal_min(const float& x, const Vec4f& vec) {
+    float result;
+    Vec4f tmpMin = simd_min(vec, simd_shuffle<1,0,3,2>(vec));
+    tmpMin = simd_min(tmpMin, simd_shuffle<2,3,0,1>(tmpMin));
+    tmpMin = _mm_min_ss(_mm_load_ss(&x), tmpMin);
+    _mm_store_ss(&result, tmpMin);
+    return result;
+}
+
+
+// Maximum between the given value and all the elements of the vector
+inline float horizontal_max(const float& x, const Vec4f& vec) {
+    float result;
+    Vec4f tmpMax = simd_max(vec, simd_shuffle<1,0,3,2>(vec));
+    tmpMax = simd_max(tmpMax, simd_shuffle<2,3,0,1>(tmpMax));
+    tmpMax = _mm_max_ss(_mm_load_ss(&x), tmpMax);
+    _mm_store_ss(&result, tmpMax);
+    return result;
+}
+
+
+
+// Little helper to extract RGB elements from and iterator
+template <typename RGBIterator>
+inline void extractRGB(RGBIterator it, Vec4f &outR, Vec4f &outG, Vec4f &outB) {
+    outR = it->r();
+    outG = it->g();
+    outB = it->b();
+}
+
+
+template<>
+inline void extractRGB<RGBA32FVec4ImageIterator>(RGBA32FVec4ImageIterator it,
+    Vec4f &outR, Vec4f &outG, Vec4f &outB) {
+    RGBA32FVec4 data = *it;
+    outR = data.r();
+    outG = data.g();
+    outB = data.b();
+}
+
+
+// TBB functor object to fill the array of luminances for image iterators.
+// It converts the invalid values to zero and returns the maximum,
+// minimum and number of invalid values. The template parameter indicates
+// the number of tail elements per vector block: a non-zero value indicates that
+// only that many elements in the last vector block are valid.
+template <class SourceIterator = RGBA32FVec4ImageSoAIterator, int NTail = 0>
 struct LuminanceFunctor
 {
-    // Original data
-    const Rgba32F * PCG_RESTRICT const pixels;
-    afloat_t * PCG_RESTRICT Lw;
+    // Remember where the data starts
+    SourceIterator pixelsBegin;
+    SourceIterator pixelsEnd;
+
+    // Target luminance array, with extra elements allocated
+    Vec4f* const PCG_RESTRICT Lw;
 
     // Data to be reduced
     size_t zero_count;
     float Lmin;
     float Lmax;
 
-    // Helper constants
-    static const float LUM_R;
-    static const float LUM_G;
-    static const float LUM_B;
-    static const Rgba32F vec_LUM;
-    static const Rgba32F vec_LUM_R;
-    static const Rgba32F vec_LUM_G;
-    static const Rgba32F vec_LUM_B;
-    static const Rgba32F vec_MINVAL;
-    static const Rgba32F ZERO;
-    static const __m128i MASK_NAN;
-    static const __m128  MASK_ABS;
-
-    // LUT for counting the number of zero-ed elements given the 4x32bit masks
-    // where a 0x0 means the element was converted to zero.
-    // The highest 4bits contain the count for 0xFF, the lowest for 0x0
-#if USE_PACKED_LUT
-    static const uint64_t packed_lut = 0x112122312232334ULL;
-#else
-    static const int LUT[];
-#endif
-
     // Constructor for the initial phase
-    LuminanceFunctor (const Rgba32F * const pixels_, afloat_t * Lw_) :
-    pixels(pixels_), Lw(Lw_), zero_count(0), 
+    LuminanceFunctor (SourceIterator begin, SourceIterator end, Vec4f* Lw_) :
+    pixelsBegin(begin), pixelsEnd(end), Lw(Lw_), zero_count(0), 
     Lmin(float_limits::infinity()), Lmax(-float_limits::infinity()) {}
 
     // Constructor for each split
-    LuminanceFunctor (LuminanceFunctor & l, tbb::split) :
-    pixels(l.pixels), Lw(l.Lw), zero_count(0), 
+    LuminanceFunctor (LuminanceFunctor& l, tbb::split) :
+    pixelsBegin(l.pixelsBegin), pixelsEnd(l.pixelsEnd), Lw(l.Lw), zero_count(0), 
     Lmin(float_limits::infinity()), Lmax(-float_limits::infinity()) {}
 
     // TBB method: joins this functor with the given one
-    void join (LuminanceFunctor & rhs)
+    void join (LuminanceFunctor& rhs)
     {
         zero_count += rhs.zero_count;
         Lmin = fminf (Lmin, rhs.Lmin);
         Lmax = fmaxf (Lmax, rhs.Lmax);
     }
 
-    // Method invoked by TBB: accumulates the data for the subrange
-    void operator() (const tbb::blocked_range<size_t> & r)
+    // Method invoked by TBB
+    void operator() (const tbb::blocked_range<SourceIterator> &range)
     {
-        // Process the first, non-aligned elements (if any)
-        const size_t begin_sse = (r.begin() + 3) & ~static_cast<size_t>(0x3);
-        if (begin_sse >= r.end()) {
-            computeScalar(r.begin(), r.end());
-            return;
-        } else if (begin_sse != r.begin()) {
-            assert (r.begin() < begin_sse);
-            computeScalar(r.begin(), begin_sse);
+        if (NTail == 0 || range.end() != pixelsEnd) {
+            process<0>(range.begin(), range.end());
         }
+        else {
+            // The very last element is the problematic one
+            SourceIterator bulkEnd = range.end() - 1;
+            process<0>(range.begin(), bulkEnd);
 
-        // Do the 4x, SSE part
-        const size_t end_sse = r.end() & ~static_cast<size_t>(0x3);
-        if (end_sse != begin_sse) {
-            assert (begin_sse < end_sse);
-            computeSSE(begin_sse, end_sse);
-        }
-
-        // Process the rest, also in a scalar way
-        if (end_sse != r.end()) {
-            assert (end_sse < r.end());
-            computeScalar(end_sse, r.end());
+            // This will process a single element
+            process<NTail>(bulkEnd, range.end());
         }
     }
 
 private:
-    inline void computeScalar(size_t begin, size_t end) {
-        for (size_t i = begin; i < end; ++i) {
-            Lw[i] = dot_float(pixels[i], vec_LUM);
-            // Flush all negatives, denorms, NaNs and infinity values to 0.0
-            if (!isInvalidLuminance(Lw[i])) {
-                Lmin = fminf (Lw[i], Lmin);
-                Lmax = fmaxf (Lw[i], Lmax);
-            } else {
-                Lw[i] = 0.0f;
-                ++zero_count;
-            }
-        }
+
+    // Create a mask to zero out invalid pixels
+    //   0x7f800000u > floatToBits(x) && x >= float_limits::min(), ossia
+    //   isnormal(x) && x >= float_limits::min()
+    inline Vec4f getValidLuminanceMask(const Vec4f& Lw) {
+        const Vec4f& MINVAL(constants::LUM_MINVAL);
+        const Vec4i& MASK_NAN(constants::MASK_NAN);
+        
+        const Vec4f isNotTiny(Lw >= MINVAL);
+        const Vec4i LwBits = _mm_castps_si128(Lw);
+        const Vec4bi isNotNaN = MASK_NAN > LwBits;
+        const Vec4f isValidMask = isNotTiny & Vec4f(_mm_castsi128_ps(isNotNaN));
+        return isValidMask;
     }
 
-    inline void computeSSE(size_t begin, size_t end) {
-        // Raw luminance SSE loop, doing groups of 4 pixels at a time
-        assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
-        assert ((end - begin) % 4 == 0);
+    // Accumulates the results, using the given number of tail elements
+    template <int tailElements>
+    inline void process (SourceIterator begin, SourceIterator end)
+    {
+        // Offset for the output
+        Vec4f* dest = Lw + (begin - pixelsBegin);
 
-        for (size_t off = begin; off < end; off += 4)
-        {
-            // Load the next 4 pixels and transpose them
-            Rgba32F p0 = pixels[off];
-            Rgba32F p1 = pixels[off+1];
-            Rgba32F p2 = pixels[off+2];
-            Rgba32F p3 = pixels[off+3];
-            PCG_MM_TRANSPOSE4_PS (p0, p1, p2, p3);
+        // Initialize the working values
+        Vec4f vec_min(Lmin);
+        Vec4f vec_max(Lmax);
+        Vec4i vec_zero_count(0);
 
-            // Now do the scaling (recall the Rgba32F offsets: a=0, r=3)
-            const Rgba32F vec_Lw = 
-                (vec_LUM_R*p3) + (vec_LUM_G*p2) + (vec_LUM_B*p1);
+        // References to the global constants
+        const Vec4f& LUM_R(constants::LUM_R);
+        const Vec4f& LUM_G(constants::LUM_G);
+        const Vec4f& LUM_B(constants::LUM_B);
+        const Vec4i& INT_ONE(constants::INT_ONE);
 
-            // Store. Note that it contains NaN and Inf!
-            _mm_store_ps(Lw + off, vec_Lw);
+        for (SourceIterator it = begin; it != end; ++it, ++dest) {
+            
+            // Raw luminance, with NaN and Inf
+            Vec4f pixelR, pixelG, pixelB;
+            extractRGB(it, pixelR, pixelG, pixelB);
+            const Vec4f Lw = LUM_R*pixelR + LUM_G*pixelG + LUM_B*pixelB;
+
+            // Write the valid luminance values
+            Vec4f isValidMask = getValidLuminanceMask(Lw);
+            Vec4f validLw = Lw & isValidMask;
+
+            if (tailElements != 0) {
+                const Vec4f& tailMask(getTailMask<tailElements>());
+                validLw     &= tailMask;
+                isValidMask &= tailMask;
+            }
+            *dest = validLw;
+
+            // Update the min/max
+            const Vec4bf isValid(static_cast<__m128>(isValidMask));
+            vec_min = select(isValid, simd_min(vec_min, validLw), vec_min);
+            vec_max = select(isValid, simd_max(vec_max, validLw), vec_max);
+
+            // Update the zero count
+            vec_zero_count = vec_zero_count +
+                andnot(_mm_castps_si128(isValid), INT_ONE);
         }
 
-        ////////////////////////////////////////////////////////////////////////
-        // Validation and min/max update, doing groups of 4 pixels at a time
-        ////////////////////////////////////////////////////////////////////////
+        // Accumulate the totals for min, max and zero_count
+        Lmin = horizontal_min(Lmin, vec_min);
+        Lmax = horizontal_max(Lmax, vec_max);
 
-        union { __m128 v; float f[4]; } vec_min;
-        union { __m128 v; float f[4]; } vec_max;
-        vec_min.v = _mm_set_ps1 (Lmin);
-        vec_max.v = _mm_set_ps1 (Lmax);
-
-        for (size_t off = begin; off < end; off += 4)
-        {
-            const __m128 vec_Lw = _mm_load_ps(Lw + off);
-
-            // Create a mask to zero out invalid pixels
-            // !(vec_Lw < vec_MINVAL) ? 0xffffffff : 0x0
-            __m128 mask_min = _mm_cmpnlt_ps (vec_Lw, vec_MINVAL);
-
-            // (0x7f800000 > vec_Lw) ? 0xffff : 0, then expand to 32 bits
-            __m128 mask_nan = _mm_cmpneq_ps(ZERO, 
-                _mm_castsi128_ps(_mm_cmpgt_epi32(MASK_NAN,
-                _mm_castps_si128(_mm_and_ps(vec_Lw, MASK_ABS)))));
-
-            // Combine the masks
-            __m128 mask = _mm_and_ps(mask_min, mask_nan);
-
-            // Apply the mask and store the result
-            const __m128 result = _mm_and_ps (vec_Lw, mask);
-            _mm_store_ps (Lw + off, result);
-
-            // Add the number of zeros
-            const int lut_index =  _mm_movemask_ps (mask);
-    #if USE_PACKED_LUT
-            zero_count += (packed_lut >> (lut_index*4)) & 0xF;
-    #else
-            zero_count += LUT[lut_index];
-    #endif
-
-            // Update the valid elements for the minimum and maximum vectors.
-            // SSE4.1 has a nice "blendps" instruction which I can't use here.
-            __m128 result_min=_mm_or_ps(result, _mm_andnot_ps(mask, vec_min.v));
-            vec_min.v = _mm_min_ps (vec_min.v, result_min);
-            __m128 result_max=_mm_or_ps(result, _mm_andnot_ps(mask, vec_max.v));
-            vec_max.v = _mm_max_ps (vec_max.v, result_max);
+        // Avoid the horizontal integer sum if all the values are zero
+        int countMask = _mm_movemask_epi8(vec_zero_count == Vec4i::zero());
+        if (countMask != 0xFFFF) {
+            Vec4iUnion countUnion = {vec_zero_count};
+            _mm_store_si128(&countUnion.xmm, vec_zero_count);
+            for (int i = 0; i < 4; ++i) {
+                zero_count += countUnion.i32[i];
+            }
         }
 
-        // Accumulate the result for min & max
-        for (int i = 0; i < 4; ++i) {
-            Lmin = fminf (Lmin, vec_min.f[i]);
-            Lmax = fmaxf (Lmax, vec_max.f[i]);
+        // Adjust in case of extra tail elements which were marked as invalid
+        if (tailElements != 0) {
+            assert(zero_count >= (4 - tailElements));
+            zero_count -= 4 - tailElements;
         }
     }
 };
-
-const float LuminanceFunctor::LUM_R = 0.27f;
-const float LuminanceFunctor::LUM_G = 0.67f;
-const float LuminanceFunctor::LUM_B = 0.06f;
-const Rgba32F LuminanceFunctor::vec_LUM(LUM_R, LUM_G, LUM_B, 0.0f);
-const Rgba32F LuminanceFunctor::vec_LUM_R(LUM_R);
-const Rgba32F LuminanceFunctor::vec_LUM_G(LUM_G);
-const Rgba32F LuminanceFunctor::vec_LUM_B(LUM_B);
-const Rgba32F LuminanceFunctor::vec_MINVAL(float_limits::min());
-const Rgba32F LuminanceFunctor::ZERO(0.0f);
-const __m128i LuminanceFunctor::MASK_NAN(_mm_set1_epi32 (0x7f800000));
-const __m128  LuminanceFunctor::MASK_ABS(_mm_castsi128_ps (
-                                         _mm_set1_epi32 (0x7FFFFFFF)));
-#if !USE_PACKED_LUT
-const int LuminanceFunctor::LUT[] = 
-    { 4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0 };
-#endif
 
 
 
@@ -781,27 +788,67 @@ float sumBeyondThreshold(const float * Lw, const float * Lw_end,
 
 
 
-Reinhard02::Params
-Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
+// Stores the luminance in the destination Lw array, zeroing invalid values.
+// Returns the count of zero values and the non-zero minimum and maximum 
+// luminance (in the same units as the original image)
+Reinhard02::LuminanceResult
+Reinhard02::ComputeLuminance(afloat_t * PCG_RESTRICT Lw,
+    const Rgba32F* const pixels, size_t count)
 {
-    // Allocate the array with the luminances
-    afloat_t * PCG_RESTRICT Lw = alloc_align<float> (16, count);  
-    if (Lw == NULL) {
-        throw RuntimeException("Couldn't allocate the memory for the "
-            "luminance buffer");
-    }
-    // Use an special auto pointer to get rid of the aligned buffer
-    auto_afloat_ptr Lw_autoptr (Lw);
+    assert(Lw != NULL);
+    assert(pixels != NULL);
+    assert(reinterpret_cast<uintptr_t>(Lw) % 16 == 0);
+    assert(reinterpret_cast<uintptr_t>(pixels) % 16 == 0);
 
-    // Compute the luminance
-    size_t zero_count;
-    float Lmin, Lmax;
-    LuminanceFunctor lumFunctor(pixels, Lw);
-    tbb::parallel_reduce(tbb::blocked_range<size_t>(0, count, 4), lumFunctor);
-    assert (lumFunctor.zero_count <= count);
-    zero_count = lumFunctor.zero_count;
-    Lmin       = lumFunctor.Lmin;
-    Lmax       = lumFunctor.Lmax;
+    RGBA32FVec4ImageIterator begin(pixels);
+    RGBA32FVec4ImageIterator end(pixels + ((count + 3) & ~0x3));
+    tbb::blocked_range<RGBA32FVec4ImageIterator> range(begin, end, 4);
+
+    typedef RGBA32FVec4ImageIterator SourceIter;
+    Vec4f * LwVec4 = reinterpret_cast<Vec4f*>(Lw);
+    LuminanceResult result;
+
+    const size_t tailElements = count % 4;
+    if (tailElements == 0) {
+        LuminanceFunctor<SourceIter, 0> lumFunctor(begin, end, LwVec4);
+        tbb::parallel_reduce(range, lumFunctor);
+        result.zero_count = lumFunctor.zero_count;
+        result.Lmin       = lumFunctor.Lmin;
+        result.Lmax       = lumFunctor.Lmax;
+    }
+    else if (tailElements == 1) {
+        LuminanceFunctor<SourceIter, 1> lumFunctor(begin, end, LwVec4);
+        tbb::parallel_reduce(range, lumFunctor);
+        result.zero_count = lumFunctor.zero_count;
+        result.Lmin       = lumFunctor.Lmin;
+        result.Lmax       = lumFunctor.Lmax;
+    }
+    else if (tailElements == 2) {
+        LuminanceFunctor<SourceIter, 2> lumFunctor(begin, end, LwVec4);
+        tbb::parallel_reduce(range, lumFunctor);
+        result.zero_count = lumFunctor.zero_count;
+        result.Lmin       = lumFunctor.Lmin;
+        result.Lmax       = lumFunctor.Lmax;
+    }
+    else if (tailElements == 3) {
+        LuminanceFunctor<SourceIter, 3> lumFunctor(begin, end, LwVec4);
+        tbb::parallel_reduce(range, lumFunctor);
+        result.zero_count = lumFunctor.zero_count;
+        result.Lmin       = lumFunctor.Lmin;
+        result.Lmax       = lumFunctor.Lmax;
+    }
+    return result;
+}
+
+
+Reinhard02::Params
+Reinhard02::EstimateParams (afloat_t * const PCG_RESTRICT Lw, size_t count,
+    const LuminanceResult& lumResult)
+{
+    assert (lumResult.zero_count <= count);
+    const size_t& zero_count = lumResult.zero_count;
+    const float& Lmin        = lumResult.Lmin;
+    const float& Lmax        = lumResult.Lmax;
 
     // Abort if all the values are zero
     if (zero_count == count) {
@@ -866,4 +913,25 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     assert (l_white >= l_w);
    
     return Params(key, l_white, l_w, Lmin, Lmax);
+}
+
+
+Reinhard02::Params
+Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
+{
+    // Allocate the array with the luminances with AVX[2]-friendly alignment
+    afloat_t * PCG_RESTRICT Lw = alloc_align<float> (32, (count+7) & ~0x7);  
+    if (Lw == NULL) {
+        throw RuntimeException("Couldn't allocate the memory for the "
+            "luminance buffer");
+    }
+    // Use a special auto pointer to get rid of the aligned buffer
+    auto_afloat_ptr Lw_autoptr (Lw);
+
+    // Compute the luminance
+    LuminanceResult lumResult = ComputeLuminance(Lw, pixels, count);
+
+    // Estimate the values
+    Params params = EstimateParams(Lw, count, lumResult);
+    return params;
 }
