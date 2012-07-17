@@ -54,6 +54,17 @@ union ALIGN16_BEG Vec4fUnion
 
 
 
+// Forward declarations, required by Clang and ICL 12.1
+struct Vec4f;
+
+template <int idx3, int idx2, int idx1, int idx0>
+Vec4f simd_shuffle(const Vec4f& low, const Vec4f& hi);
+
+template <int idx3, int idx2, int idx1, int idx0>
+Vec4f simd_shuffle(const Vec4f& a);
+
+
+
 // Abstraction of a vector of 4 single precision floating point numbers,
 // using SSE instrinsics
 struct ALIGN16_BEG Vec4f
