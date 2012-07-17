@@ -21,6 +21,7 @@
 
 #include <Reinhard02.h>
 #include <Image.h>
+#include <ImageSoA.h>
 
 #include <limits>
 
@@ -61,6 +62,20 @@ protected:
 		}
 	}
 
+    // Check that the SoA version gets the same results
+    inline void checkSoA(const pcg::Image<pcg::Rgba32F>& img,
+        const pcg::Reinhard02::Params& refParams) const
+    {
+        pcg::RGBAImageSoA imgSoA(img);
+        pcg::Reinhard02::Params pSoA = pcg::Reinhard02::EstimateParams(imgSoA);
+        ASSERT_FLOAT_EQ (refParams.key,     pSoA.key);
+        ASSERT_FLOAT_EQ (refParams.l_w,     pSoA.l_w);
+        ASSERT_FLOAT_EQ (refParams.l_white, pSoA.l_white);
+        ASSERT_FLOAT_EQ (refParams.l_min,   pSoA.l_min);
+        ASSERT_FLOAT_EQ (refParams.l_max,   pSoA.l_max);
+    }
+
+
     static const int IMG_W = 640;
     static const int IMG_H = 480;
 
@@ -84,6 +99,7 @@ public:
 
 
 typedef pcg::Image<pcg::Rgba32F> FloatImage;
+typedef pcg::RGBAImageSoA FloatImageSoA;
 typedef std::numeric_limits<float> float_limits;
 
 using pcg::Reinhard02;
@@ -99,6 +115,8 @@ TEST_F(Reinhard02ParamsTest, Tableau)
     ASSERT_NEAR (p.key,      0.1977469f, 5e-6);
     ASSERT_NEAR (p.l_white, 53.3945084f, 5e-6);
     ASSERT_NEAR (p.l_w,      0.2085711f, 5e-6);
+
+    checkSoA(img, p);
 }
 
 
@@ -113,6 +131,8 @@ TEST_F(Reinhard02ParamsTest, Basic)
         ASSERT_LT (p.l_w, p.l_white);
         ASSERT_GT (p.key, 0.0f);
         ASSERT_LT (p.key, 1.0f);
+
+        checkSoA(img, p);
     }
 }
 
@@ -128,6 +148,8 @@ TEST_F(Reinhard02ParamsTest, TinyImg)
         ASSERT_LT (p.l_w, p.l_white);
         ASSERT_GT (p.key, 0.0f);
         ASSERT_LT (p.key, 1.0f);
+
+        checkSoA(img, p);
     }
 }
 
@@ -156,6 +178,8 @@ TEST_F(Reinhard02ParamsTest, AllInvalid)
         ASSERT_EQ (0.0f, p.key);
         ASSERT_EQ (0.0f, p.l_w);
         ASSERT_EQ (0.0f, p.l_white);
+
+        checkSoA(img, p);
     }
 }
 
@@ -186,6 +210,8 @@ TEST_F(Reinhard02ParamsTest, SomeInvalid)
         ASSERT_LT (p.l_w, p.l_white);
         ASSERT_GT (p.key, 0.1f);
         ASSERT_LT (p.key, 0.4f);
+
+        checkSoA(img, p);
     }
 }
 
@@ -221,6 +247,8 @@ TEST_F(Reinhard02ParamsTest, OneValid)
         ASSERT_FLOAT_EQ (0.18f, p.key);
         ASSERT_FLOAT_EQ (1.0f, p.l_w);
         ASSERT_FLOAT_EQ (1.5f, p.l_white);
+
+        checkSoA(img, p);
     }
 }
 
@@ -272,6 +300,8 @@ TEST_F(Reinhard02ParamsTest, TwoValid)
             ASSERT_FLOAT_EQ (val, p.l_w);
             ASSERT_FLOAT_EQ (1.5f * val, p.l_white);
         }
+
+        checkSoA(img, p);
     }
 }
 
@@ -290,6 +320,8 @@ TEST_F(Reinhard02ParamsTest, AllSame)
         ASSERT_NEAR (0.18f, p.key, 1e-4f);
         ASSERT_NEAR (val, p.l_w, 1e-1f);
         ASSERT_NEAR (1.5f*val, p.l_white, 1e-1f);
+
+        checkSoA(img, p);
     }
 }
 
@@ -310,6 +342,8 @@ TEST_F(Reinhard02ParamsTest, HistogramKey)
         ASSERT_LT (p.l_w, p.l_white);
         ASSERT_LT (0.1f, p.key);
         ASSERT_LT (p.key, 0.35f);
+
+        checkSoA(img, p);
     }
 }
 
@@ -331,8 +365,23 @@ TEST_F(Reinhard02ParamsTest, Benchmark)
             ASSERT_NEAR (p.l_white, 53.3945084f, 5e-6);
             ASSERT_NEAR (p.l_w,      0.2085711f, 5e-6);
         }
-        std::cout << "Reinhard02Params [Tableau] " << timer.milliTime()/NUM_RUNS
-                  << " ms" << std::endl;
+        std::cout << "Reinhard02Params [Tableau]     "
+                  << timer.milliTime()/NUM_RUNS << " ms" << std::endl;
+
+        timer.reset();
+        FloatImageSoA imgSoA(img);
+        for (int i = 0; i < NUM_RUNS; ++i) {
+            timer.start();
+            Reinhard02::Params p = Reinhard02::EstimateParams(imgSoA);
+            timer.stop();
+
+            // Values calculated in matlab
+            ASSERT_NEAR (p.key,      0.1977469f, 5e-6);
+            ASSERT_NEAR (p.l_white, 53.3945084f, 5e-6);
+            ASSERT_NEAR (p.l_w,      0.2085711f, 5e-6);
+        }
+        std::cout << "Reinhard02Params [Tableau/SoA] "
+                  << timer.milliTime()/NUM_RUNS << " ms" << std::endl;
     }
 
     {
@@ -348,7 +397,21 @@ TEST_F(Reinhard02ParamsTest, Benchmark)
             ASSERT_GT (p.key, 0.0f);
             ASSERT_LT (p.key, 1.0f);
         }
-        std::cout << "Reinhard02Params [Large]   " << timer.milliTime()/NUM_RUNS
-                  << " ms" << std::endl;
+        std::cout << "Reinhard02Params [Large]       "
+                  << timer.milliTime()/NUM_RUNS << " ms" << std::endl;
+
+        timer.reset();
+        FloatImageSoA imgSoA(img);
+        for (int i = 0; i < NUM_RUNS; ++i) {
+            timer.start();
+            Reinhard02::Params p = Reinhard02::EstimateParams(imgSoA);
+            timer.stop();
+
+            ASSERT_LT (p.l_w, p.l_white);
+            ASSERT_GT (p.key, 0.0f);
+            ASSERT_LT (p.key, 1.0f);
+        }
+        std::cout << "Reinhard02Params [Large/SoA]   "
+                  << timer.milliTime()/NUM_RUNS << " ms" << std::endl;
     }
 }

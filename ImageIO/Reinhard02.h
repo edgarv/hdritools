@@ -19,6 +19,7 @@
 
 #include "ImageIO.h"
 #include "Image.h"
+#include "ImageSoA.h"
 #include "Rgba32F.h"
 
 namespace pcg
@@ -62,8 +63,10 @@ public:
         return EstimateParams (img.GetDataPointer(), img.Size());
     }
 
+    static IMAGEIO_API Params EstimateParams (const RGBAImageSoA& img);
 
-protected:
+
+private:
 
     struct LuminanceResult
     {
@@ -71,10 +74,6 @@ protected:
         float Lmin;
         float Lmax;
     };
-
-    static IMAGEIO_API LuminanceResult ComputeLuminance
-        (afloat_t * PCG_RESTRICT Lw,
-        const Rgba32F* const pixels, size_t count);
 
     static IMAGEIO_API Params EstimateParams (afloat_t * const PCG_RESTRICT Lw,
         size_t count, const LuminanceResult& lumResult);

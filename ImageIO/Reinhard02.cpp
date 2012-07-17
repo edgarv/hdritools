@@ -784,61 +784,65 @@ float sumBeyondThreshold(const float * Lw, const float * Lw_end,
 }
 
 
-} // namespace
 
-
-
+// Helper to call the appropriate instantiation of the luminance helper:
 // Stores the luminance in the destination Lw array, zeroing invalid values.
 // Returns the count of zero values and the non-zero minimum and maximum 
 // luminance (in the same units as the original image)
-Reinhard02::LuminanceResult
-Reinhard02::ComputeLuminance(afloat_t * PCG_RESTRICT Lw,
-    const Rgba32F* const pixels, size_t count)
+template <typename SourceIterator>
+void LuminanceHelper(SourceIterator begin, SourceIterator end,
+    afloat_t * PCG_RESTRICT Lw, size_t tailElements,
+    size_t* outZeroCount, float* outLmin, float* outLmax)
 {
     assert(Lw != NULL);
-    assert(pixels != NULL);
     assert(reinterpret_cast<uintptr_t>(Lw) % 16 == 0);
-    assert(reinterpret_cast<uintptr_t>(pixels) % 16 == 0);
+    assert(tailElements < 4);
 
-    RGBA32FVec4ImageIterator begin(pixels);
-    RGBA32FVec4ImageIterator end(pixels + ((count + 3) & ~0x3));
-    tbb::blocked_range<RGBA32FVec4ImageIterator> range(begin, end, 4);
+    Vec4f * const PCG_RESTRICT LwVec4 = reinterpret_cast<Vec4f*>(Lw);
+    tbb::blocked_range<SourceIterator> range(begin, end, 16);
 
-    typedef RGBA32FVec4ImageIterator SourceIter;
-    Vec4f * LwVec4 = reinterpret_cast<Vec4f*>(Lw);
-    LuminanceResult result;
-
-    const size_t tailElements = count % 4;
-    if (tailElements == 0) {
-        LuminanceFunctor<SourceIter, 0> lumFunctor(begin, end, LwVec4);
-        tbb::parallel_reduce(range, lumFunctor);
-        result.zero_count = lumFunctor.zero_count;
-        result.Lmin       = lumFunctor.Lmin;
-        result.Lmax       = lumFunctor.Lmax;
+    switch (tailElements) {
+    case 0:
+        {
+            LuminanceFunctor<SourceIterator, 0> lumFunctor0(begin, end, LwVec4);
+            tbb::parallel_reduce(range, lumFunctor0);
+            *outZeroCount = lumFunctor0.zero_count;
+            *outLmin      = lumFunctor0.Lmin;
+            *outLmax      = lumFunctor0.Lmax;
+        }
+        break;
+    case 1:
+        {
+            LuminanceFunctor<SourceIterator, 1> lumFunctor1(begin, end, LwVec4);
+            tbb::parallel_reduce(range, lumFunctor1);
+            *outZeroCount = lumFunctor1.zero_count;
+            *outLmin      = lumFunctor1.Lmin;
+            *outLmax      = lumFunctor1.Lmax;
+        }
+        break;
+    case 2:
+        {
+            LuminanceFunctor<SourceIterator, 2> lumFunctor2(begin, end, LwVec4);
+            tbb::parallel_reduce(range, lumFunctor2);
+            *outZeroCount = lumFunctor2.zero_count;
+            *outLmin      = lumFunctor2.Lmin;
+            *outLmax      = lumFunctor2.Lmax;
+        }
+        break;
+    case 3:
+        {
+            LuminanceFunctor<SourceIterator, 3> lumFunctor3(begin, end, LwVec4);
+            tbb::parallel_reduce(range, lumFunctor3);
+            *outZeroCount = lumFunctor3.zero_count;
+            *outLmin      = lumFunctor3.Lmin;
+            *outLmax      = lumFunctor3.Lmax;
+        }
+        break;
     }
-    else if (tailElements == 1) {
-        LuminanceFunctor<SourceIter, 1> lumFunctor(begin, end, LwVec4);
-        tbb::parallel_reduce(range, lumFunctor);
-        result.zero_count = lumFunctor.zero_count;
-        result.Lmin       = lumFunctor.Lmin;
-        result.Lmax       = lumFunctor.Lmax;
-    }
-    else if (tailElements == 2) {
-        LuminanceFunctor<SourceIter, 2> lumFunctor(begin, end, LwVec4);
-        tbb::parallel_reduce(range, lumFunctor);
-        result.zero_count = lumFunctor.zero_count;
-        result.Lmin       = lumFunctor.Lmin;
-        result.Lmax       = lumFunctor.Lmax;
-    }
-    else if (tailElements == 3) {
-        LuminanceFunctor<SourceIter, 3> lumFunctor(begin, end, LwVec4);
-        tbb::parallel_reduce(range, lumFunctor);
-        result.zero_count = lumFunctor.zero_count;
-        result.Lmin       = lumFunctor.Lmin;
-        result.Lmax       = lumFunctor.Lmax;
-    }
-    return result;
 }
+
+} // namespace
+
 
 
 Reinhard02::Params
@@ -919,6 +923,9 @@ Reinhard02::EstimateParams (afloat_t * const PCG_RESTRICT Lw, size_t count,
 Reinhard02::Params
 Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
 {
+    assert(pixels != NULL);   
+    assert(reinterpret_cast<uintptr_t>(pixels) % 16 == 0);
+
     // Allocate the array with the luminances with AVX[2]-friendly alignment
     afloat_t * PCG_RESTRICT Lw = alloc_align<float> (32, (count+7) & ~0x7);  
     if (Lw == NULL) {
@@ -929,7 +936,39 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
     auto_afloat_ptr Lw_autoptr (Lw);
 
     // Compute the luminance
-    LuminanceResult lumResult = ComputeLuminance(Lw, pixels, count);
+    RGBA32FVec4ImageIterator begin(pixels);
+    RGBA32FVec4ImageIterator end(pixels + ((count + 3) & ~0x3));
+    const size_t numTail = count % 4;
+    LuminanceResult lumResult;
+    LuminanceHelper(begin, end, Lw, numTail,
+        &lumResult.zero_count, &lumResult.Lmin, &lumResult.Lmax);
+
+    // Estimate the values
+    Params params = EstimateParams(Lw, count, lumResult);
+    return params;
+}
+
+
+Reinhard02::Params
+Reinhard02::EstimateParams (const RGBAImageSoA& img)
+{
+    // Allocate the array with the luminances with AVX[2]-friendly alignment
+    const size_t count = static_cast<size_t>(img.Size());
+    afloat_t * PCG_RESTRICT Lw = alloc_align<float> (32, (count+7) & ~0x7);  
+    if (Lw == NULL) {
+        throw RuntimeException("Couldn't allocate the memory for the "
+            "luminance buffer");
+    }
+    // Use a special auto pointer to get rid of the aligned buffer
+    auto_afloat_ptr Lw_autoptr (Lw);
+
+    // Compute the luminance
+    RGBA32FVec4ImageSoAIterator begin = RGBA32FVec4ImageSoAIterator::begin(img);
+    RGBA32FVec4ImageSoAIterator end   = RGBA32FVec4ImageSoAIterator::end(img);
+    const size_t numTail = count % 4;
+    LuminanceResult lumResult;
+    LuminanceHelper(begin, end, Lw, numTail,
+        &lumResult.zero_count, &lumResult.Lmin, &lumResult.Lmax);
 
     // Estimate the values
     Params params = EstimateParams(Lw, count, lumResult);
