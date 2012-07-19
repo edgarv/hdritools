@@ -517,8 +517,11 @@ struct AccumulateHistogramFunctor
         threadhist_t tls_histogram;
     };
 
-    // Keep the pointer to the luminance vector
-    const afloat_t * const Lw;
+    // Remember where the data ends
+    const Vec4f* const LwVecEnd;
+
+    // Number of tail elements at the last vector element
+    const size_t numTail;
 
     // Reference to the parameters
     Params & params;
@@ -532,12 +535,13 @@ struct AccumulateHistogramFunctor
 
 
     // Constructor for the initial phase
-    AccumulateHistogramFunctor (const afloat_t * const Lw_, Params & params_) :
-    Lw(Lw_), params(params_), L_sum(0) {}
+    AccumulateHistogramFunctor (const Vec4f* LwEnd, Params & params_, size_t n):
+    LwVecEnd(LwEnd), numTail(n), params(params_), L_sum(0) {}
 
     // Constructor for each split
     AccumulateHistogramFunctor (AccumulateHistogramFunctor & ach, tbb::split) :
-    Lw(ach.Lw), params(ach.params), L_sum(0) {}
+    LwVecEnd(ach.LwVecEnd), numTail(ach.numTail), params(ach.params), L_sum(0)
+    {}
 
     // TBB method: joins this functor with the given one
     void join (AccumulateHistogramFunctor & rhs) {
@@ -545,31 +549,30 @@ struct AccumulateHistogramFunctor
     }
 
     // Method invoked by TBB: accumulates the data for the subrange
-    void operator() (const tbb::blocked_range<size_t> & r)
+    void operator() (const tbb::blocked_range<const Vec4f*>& range)
     {
-        hist_t & histogram = params.localHistogram();
-
-        // Process the first, non-aligned elements (if any)
-        const size_t begin_sse = (r.begin() + 3) & ~static_cast<size_t>(0x3);
-        if (begin_sse >= r.end()) {
-            accumulateScalar(r.begin(), r.end(), histogram);
-            return;
-        } else if (begin_sse != r.begin()) {
-            assert (r.begin() < begin_sse);
-            accumulateScalar(r.begin(), begin_sse, histogram);
+        if (numTail == 0 || range.end() != LwVecEnd) {
+            process<0>(range.begin(), range.end());
         }
+        else {
+            // The very last element is the problematic one
+            const Vec4f* bulkEnd = range.end() - 1;
+            process<0>(range.begin(), bulkEnd);
 
-        // Do the 4x, SSE part
-        const size_t end_sse = r.end() & ~static_cast<size_t>(0x3);
-        if (end_sse != begin_sse) {
-            assert (begin_sse < end_sse);
-            accumulateSSE(begin_sse, end_sse, histogram);
-        }
-
-        // Process the rest, also in a scalar way
-        if (end_sse != r.end()) {
-            assert (end_sse < r.end());
-            accumulateScalar(end_sse, r.end(), histogram);
+            // This will process a single element
+            switch (numTail) {
+            case 1:
+                process<1>(bulkEnd, range.end());
+                break;
+            case 2:
+                process<2>(bulkEnd, range.end());
+                break;
+            case 3:
+                process<3>(bulkEnd, range.end());
+                break;
+            default:
+                assert(0);
+            }
         }
     }
 
@@ -582,39 +585,29 @@ struct AccumulateHistogramFunctor
 
 
 private:
-    inline void accumulateScalar (size_t begin, size_t end, hist_t & histogram)
-    {
-        assert(begin <= end);
-        for (const float * lum = Lw+begin; lum != Lw+end; ++lum) {
-            const float log_lum = logf(*lum);
-            L_sum += log_lum;
 
-            int bin_idx = static_cast<int> (params.res_factor * 
-                (log_lum - params.Lmin_log));
-            assert (bin_idx >= 0 && bin_idx < (int)histogram.size());
-            histogram[bin_idx]++;
-        }
-    }
-
-    inline void accumulateSSE (size_t begin, size_t end, hist_t & histogram)
+    template <int tailElements>
+    inline void process(const Vec4f* const PCG_RESTRICT begin,
+        const Vec4f* const PCG_RESTRICT end)
     {
-        assert(begin <= end);
-        assert (reinterpret_cast<size_t>(Lw + begin) % 16 == 0);
+        hist_t & histogram = params.localHistogram();
 
         // Prepare Kahan summation with 4 elements
         Vec4f vec_sum = Vec4f::zero();
         Vec4f vec_c   = Vec4f::zero();
 
-        const Vec4f* const LwVec4 = reinterpret_cast<const Vec4f*>(Lw+begin);
-        const size_t countVec4 = (end - begin) >> 2;
-        for (size_t off = 0; off != countVec4; ++off)
-        {
-            const Vec4f& vec_lum = LwVec4[off];
+        for (const Vec4f* it = begin; it != end; ++it) {
+            const Vec4f& vec_lum = *it;
 #if USE_AM_LOG
-            const Vec4f vec_log_lum = am::log_eps (vec_lum);
+            Vec4f vec_log_lum = am::log_eps (vec_lum);
 #else
-            const Vec4f vec_log_lum = ssemath::log_ps (vec_lum);
+            Vec4f vec_log_lum = ssemath::log_ps (vec_lum);
 #endif
+            // Kill the invalid values if required
+            if (tailElements != 0) {
+                const Vec4f& tailMask(getTailMask<tailElements>());
+                vec_log_lum &= tailMask;
+            }
 
             // Update the sum with error compensation
             const Vec4f y = vec_log_lum - vec_c;
@@ -631,15 +624,21 @@ private:
             const int index2 = _mm_extract_epi16(bin_idx, 2*2);
             const int index3 = _mm_extract_epi16(bin_idx, 3*2);
 
-            assert (index0 >= 0 && index0 < (int)histogram.size());
-            assert (index1 >= 0 && index1 < (int)histogram.size());
-            assert (index2 >= 0 && index2 < (int)histogram.size());
-            assert (index3 >= 0 && index3 < (int)histogram.size());
-
-            ++histogram[index0];
-            ++histogram[index1];
-            ++histogram[index2];
-            ++histogram[index3];
+            // Fall-through is intended
+            switch (tailElements) {
+            case 0:
+                assert (index3 >= 0 && index3 < (int)histogram.size());
+                ++histogram[index3];
+            case 3:
+                assert (index2 >= 0 && index2 < (int)histogram.size());
+                ++histogram[index2];
+            case 2:
+                assert (index1 >= 0 && index1 < (int)histogram.size());
+                ++histogram[index1];
+            case 1:
+                assert (index0 >= 0 && index0 < (int)histogram.size());
+                ++histogram[index0];
+            }
         }
 
         // Accumulate the horizontal result
@@ -695,9 +694,15 @@ AccumulateHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
 {
     AccumulateHistogramFunctor::Params params = 
         AccumulateHistogramFunctor::Params::init (Lmin, Lmax);
-    AccumulateHistogramFunctor acc (Lw, params);
 
-    tbb::parallel_reduce (tbb::blocked_range<size_t>(0, Lw_end-Lw, 4), acc);
+    const size_t numElements = Lw_end - Lw;
+    const Vec4f* LwVecBegin = reinterpret_cast<const Vec4f*>(Lw);
+    const Vec4f* LwVecEnd   =
+        reinterpret_cast<const Vec4f*>(Lw + ((numElements + 3) & ~0x3));
+    AccumulateHistogramFunctor acc (LwVecEnd, params, numElements % 4);
+    
+    tbb::blocked_range<const Vec4f*> range(LwVecBegin, LwVecEnd, 4);
+    tbb::parallel_reduce (range, acc);
 
     AccumulateHistogramFunctor::hist_t & histogram = params.flatHistogram();
     const float & Lmin_log = params.Lmin_log;
