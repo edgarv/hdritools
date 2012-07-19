@@ -415,51 +415,122 @@ size_t compactZeros (afloat_t * Lw, const size_t count)
 
 
 
-// This method only accumulates the logarithm of the luminance
-float accumulateNoHistogram(const float * PCG_RESTRICT Lw,
-                            const float * PCG_RESTRICT Lw_end)
+class AccumulateNoHistogramFunctor
 {
-    // Will process first elements in SSE fashion, 4 at a time
-    const ptrdiff_t count_sse = (Lw_end - Lw) & ~0x3;
-    // Prepare Kahan summation with 4 elements
-    Vec4f vec_sum = Vec4f::zero();
-    Vec4f vec_c   = Vec4f::zero();
-
-    const Vec4f* const PCG_RESTRICT LwVec4=reinterpret_cast<const Vec4f*>(Lw);
-    const ptrdiff_t countVec4 = count_sse >> 2;
-    for (ptrdiff_t off = 0; off != countVec4; ++off)
-    {
-        const Vec4f& vec_lum = LwVec4[off];
-#if USE_AM_LOG
-        const Vec4f vec_log_lum = am::log_eps (vec_lum);
-#else
-        const Vec4f vec_log_lum = ssemath::log_ps (vec_lum);  
-#endif
-        // Update the sum with error compensation
-        const Vec4f y = vec_log_lum - vec_c;
-        const Vec4f t = vec_sum + y;
-        vec_c   = (t - vec_sum) - y;
-        vec_sum = t;
+public:
+    // Current total
+    inline double Lsum() const {
+        return m_Lsum;
     }
 
-    // Accumulate the sum and then add the rest of the values (0 up to 3)
-    float L_sum = horizontal_sum(vec_sum);
+    // Constructor for the initial phase
+    AccumulateNoHistogramFunctor (const Vec4f* LwEnd, size_t numTail):
+    m_LwVecEnd(LwEnd), m_numTail(numTail), m_Lsum(0) {}
 
-    if (count_sse != (Lw_end - Lw)) {
-        float c = 0.0f;
-        for (const float * lum = Lw+count_sse; lum != Lw_end; ++lum) {
-            const float log_lum = logf(*lum);
+    // Constructor for each split
+    AccumulateNoHistogramFunctor (AccumulateNoHistogramFunctor& ach,tbb::split):
+    m_LwVecEnd(ach.m_LwVecEnd), m_numTail(ach.m_numTail), m_Lsum(0)
+    {}
 
-            // Update the sum with error compensation
-            const float y = log_lum - c;
-            const float t = L_sum + y;
-            c     = (t - L_sum) - y;
-            L_sum = t;
+    // TBB method: joins this functor with the given one
+    inline void join (AccumulateNoHistogramFunctor & rhs) {
+        m_Lsum += rhs.m_Lsum;
+    }
+
+    // Method invoked by TBB: accumulates the data for the subrange
+    void operator() (const tbb::blocked_range<const Vec4f*>& range)
+    {
+        if (m_numTail == 0 || range.end() != m_LwVecEnd) {
+            process<0>(range.begin(), range.end());
+        }
+        else {
+            // The very last element is the problematic one
+            const Vec4f* bulkEnd = range.end() - 1;
+            process<0>(range.begin(), bulkEnd);
+
+            // This will process a single element
+            switch (m_numTail) {
+            case 1:
+                process<1>(bulkEnd, range.end());
+                break;
+            case 2:
+                process<2>(bulkEnd, range.end());
+                break;
+            case 3:
+                process<3>(bulkEnd, range.end());
+                break;
+            default:
+                assert(0);
+            }
         }
     }
 
-    return L_sum;
+
+    // Helper function which handles everything
+    static float accumulate (const float * PCG_RESTRICT Lw,
+                             const float * PCG_RESTRICT Lw_end);
+
+private:
+
+    template <int tailElements>
+    inline void process(const Vec4f* const PCG_RESTRICT begin,
+        const Vec4f* const PCG_RESTRICT end)
+    {
+        // Prepare Kahan summation with 4 elements
+        Vec4f vec_sum = Vec4f::zero();
+        Vec4f vec_c   = Vec4f::zero();
+
+        for (const Vec4f* it = begin; it != end; ++it) {
+            const Vec4f& vec_lum = *it;
+#if USE_AM_LOG
+            Vec4f vec_log_lum = am::log_eps (vec_lum);
+#else
+            Vec4f vec_log_lum = ssemath::log_ps (vec_lum);
+#endif
+            // Kill the invalid values if required
+            if (tailElements != 0) {
+                const Vec4f& tailMask(getTailMask<tailElements>());
+                vec_log_lum &= tailMask;
+            }
+
+            // Update the sum with error compensation
+            const Vec4f y = vec_log_lum - vec_c;
+            const Vec4f t = vec_sum + y;
+            vec_c   = (t - vec_sum) - y;
+            vec_sum = t;
+        }
+
+        // Accumulate the horizontal result
+        const float L_sum_tmp = horizontal_sum(vec_sum);
+        m_Lsum += L_sum_tmp;
+    }
+
+
+    // Remember where the data ends
+    const Vec4f* const m_LwVecEnd;
+
+    // Number of tail elements at the last vector element    
+    const size_t m_numTail;
+
+    double m_Lsum;
+};
+
+
+float 
+AccumulateNoHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
+                                          const float * PCG_RESTRICT Lw_end)
+{
+    const size_t numElements = Lw_end - Lw;
+    const Vec4f* LwVecBegin = reinterpret_cast<const Vec4f*>(Lw);
+    const Vec4f* LwVecEnd   =
+        reinterpret_cast<const Vec4f*>(Lw + ((numElements + 3) & ~0x3));
+    AccumulateNoHistogramFunctor acc (LwVecEnd, numElements % 4);
+    
+    tbb::blocked_range<const Vec4f*> range(LwVecBegin, LwVecEnd, 4);
+    tbb::parallel_reduce (range, acc);
+    return static_cast<float>(acc.Lsum());
 }
+
 
 
 // Accumulate the logarithm of the given array of luminances. It builds an
@@ -527,11 +598,7 @@ struct AccumulateHistogramFunctor
     Params & params;
 
     // Variable which is part of the reduce operation
-#if USE_AM_LOG
-    float L_sum;
-#else
     double L_sum;
-#endif
 
 
     // Constructor for the initial phase
@@ -731,11 +798,7 @@ AccumulateHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
         }
     }
 
-#if USE_AM_LOG
-    return acc.L_sum;
-#else
     return static_cast<float> (acc.L_sum);
-#endif
 }
 
 
@@ -872,7 +935,7 @@ Reinhard02::EstimateParams (afloat_t * const PCG_RESTRICT Lw, size_t count,
     float L_sum = (Lmax_log - Lmin_log) > 5e-8 ?
         AccumulateHistogramFunctor::accumulate(Lw_nonzero, Lw_end,
             Lmin, Lmax, L1, L99)
-      : accumulateNoHistogram(Lw_nonzero, Lw_end);
+      : AccumulateNoHistogramFunctor::accumulate(Lw_nonzero, Lw_end);
 
     // Remove the value from the logaritmic total L_sum 
     // if log(luminance) > L99_real ---> luminance > exp(L99_real)
