@@ -227,7 +227,7 @@ inline void extractRGB<RGBA32FVec4ImageIterator>(RGBA32FVec4ImageIterator it,
 // minimum and number of invalid values. The template parameter indicates
 // the number of tail elements per vector block: a non-zero value indicates that
 // only that many elements in the last vector block are valid.
-template <class SourceIterator = RGBA32FVec4ImageSoAIterator, int NTail = 0>
+template <class SourceIterator = RGBA32FVec4ImageSoAIterator>
 struct LuminanceFunctor
 {
     // Remember where the data starts
@@ -237,19 +237,27 @@ struct LuminanceFunctor
     // Target luminance array, with extra elements allocated
     Vec4f* const PCG_RESTRICT Lw;
 
+    // Number of tail elements (in the last vector component)
+    const size_t numTail;
+
     // Data to be reduced
     size_t zero_count;
     float Lmin;
     float Lmax;
 
     // Constructor for the initial phase
-    LuminanceFunctor (SourceIterator begin, SourceIterator end, Vec4f* Lw_) :
-    pixelsBegin(begin), pixelsEnd(end), Lw(Lw_), zero_count(0), 
-    Lmin(float_limits::infinity()), Lmax(-float_limits::infinity()) {}
+    LuminanceFunctor (SourceIterator begin, SourceIterator end, Vec4f* Lw_,
+        size_t nTail) :
+    pixelsBegin(begin), pixelsEnd(end), Lw(Lw_), numTail(nTail), zero_count(0), 
+    Lmin(float_limits::infinity()), Lmax(-float_limits::infinity())
+    {
+        assert(numTail < 4);
+    }
 
     // Constructor for each split
     LuminanceFunctor (LuminanceFunctor& l, tbb::split) :
-    pixelsBegin(l.pixelsBegin), pixelsEnd(l.pixelsEnd), Lw(l.Lw), zero_count(0), 
+    pixelsBegin(l.pixelsBegin), pixelsEnd(l.pixelsEnd), Lw(l.Lw),
+    numTail(l.numTail), zero_count(0), 
     Lmin(float_limits::infinity()), Lmax(-float_limits::infinity()) {}
 
     // TBB method: joins this functor with the given one
@@ -263,7 +271,7 @@ struct LuminanceFunctor
     // Method invoked by TBB
     void operator() (const tbb::blocked_range<SourceIterator> &range)
     {
-        if (NTail == 0 || range.end() != pixelsEnd) {
+        if (numTail == 0 || range.end() != pixelsEnd) {
             process<0>(range.begin(), range.end());
         }
         else {
@@ -272,7 +280,19 @@ struct LuminanceFunctor
             process<0>(range.begin(), bulkEnd);
 
             // This will process a single element
-            process<NTail>(bulkEnd, range.end());
+            switch (numTail) {
+            case 1:
+                process<1>(bulkEnd, range.end());
+                break;
+            case 2:
+                process<2>(bulkEnd, range.end());
+                break;
+            case 3:
+                process<3>(bulkEnd, range.end());
+                break;
+            default:
+                assert(0);
+            }
         }
     }
 
@@ -801,44 +821,11 @@ void LuminanceHelper(SourceIterator begin, SourceIterator end,
     Vec4f * const PCG_RESTRICT LwVec4 = reinterpret_cast<Vec4f*>(Lw);
     tbb::blocked_range<SourceIterator> range(begin, end, 16);
 
-    switch (tailElements) {
-    case 0:
-        {
-            LuminanceFunctor<SourceIterator, 0> lumFunctor0(begin, end, LwVec4);
-            tbb::parallel_reduce(range, lumFunctor0);
-            *outZeroCount = lumFunctor0.zero_count;
-            *outLmin      = lumFunctor0.Lmin;
-            *outLmax      = lumFunctor0.Lmax;
-        }
-        break;
-    case 1:
-        {
-            LuminanceFunctor<SourceIterator, 1> lumFunctor1(begin, end, LwVec4);
-            tbb::parallel_reduce(range, lumFunctor1);
-            *outZeroCount = lumFunctor1.zero_count;
-            *outLmin      = lumFunctor1.Lmin;
-            *outLmax      = lumFunctor1.Lmax;
-        }
-        break;
-    case 2:
-        {
-            LuminanceFunctor<SourceIterator, 2> lumFunctor2(begin, end, LwVec4);
-            tbb::parallel_reduce(range, lumFunctor2);
-            *outZeroCount = lumFunctor2.zero_count;
-            *outLmin      = lumFunctor2.Lmin;
-            *outLmax      = lumFunctor2.Lmax;
-        }
-        break;
-    case 3:
-        {
-            LuminanceFunctor<SourceIterator, 3> lumFunctor3(begin, end, LwVec4);
-            tbb::parallel_reduce(range, lumFunctor3);
-            *outZeroCount = lumFunctor3.zero_count;
-            *outLmin      = lumFunctor3.Lmin;
-            *outLmax      = lumFunctor3.Lmax;
-        }
-        break;
-    }
+    LuminanceFunctor<SourceIterator> lumFunctor(begin,end,LwVec4, tailElements);
+    tbb::parallel_reduce(range, lumFunctor);
+    *outZeroCount = lumFunctor.zero_count;
+    *outLmin      = lumFunctor.Lmin;
+    *outLmax      = lumFunctor.Lmax;
 }
 
 } // namespace
