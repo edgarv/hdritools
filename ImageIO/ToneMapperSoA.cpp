@@ -590,19 +590,9 @@ struct Clamper01
 template <typename T>
 struct DisplayTransformer_Gamma
 {
-    DisplayTransformer_Gamma() :
-    m_invGamma(1.0f/2.2f)
-    {}
-
     DisplayTransformer_Gamma(float invGamma) : m_invGamma(invGamma)
     {
         assert(invGamma > 0);
-    }
-
-    inline void setInvGamma(float invGamma)
-    {
-        assert(invGamma > 0);
-        m_invGamma = T(invGamma);
     }
 
     inline T operator() (const T& x) const throw()
@@ -610,9 +600,8 @@ struct DisplayTransformer_Gamma
         return ops::pow(x, m_invGamma);
     }
 
-
 private:
-    T m_invGamma;
+    const T m_invGamma;
 };
 
 
@@ -769,7 +758,7 @@ struct Quantizer16bit
 
 
 
-
+#if !USE_VECTOR4_ITERATOR
 struct PixelAssembler_BGRA8
 {
     typedef pcg::PixelBGRA8 pixel_t;
@@ -783,6 +772,7 @@ struct PixelAssembler_BGRA8
         outPixel.argb = (a << 24) | (r << 16) | (g << 8) | (b);
     }
 };
+#endif
 
 
 
@@ -991,11 +981,13 @@ setupKernel(const LuminanceScaler& luminanceScaler,
 template <typename LuminanceScalerValueType, typename DestinationType>
 struct pixel_assembler_traits;
 
+#if !USE_VECTOR4_ITERATOR
 template <>
 struct pixel_assembler_traits<float, pcg::Bgra8>
 {
     typedef PixelAssembler_BGRA8 assembler_t;
 };
+#endif
 
 template <>
 struct pixel_assembler_traits<pcg::Vec4f, pcg::Bgra8>
