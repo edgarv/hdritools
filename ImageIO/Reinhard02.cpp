@@ -572,16 +572,21 @@ struct AccumulateHistogramFunctor
                      histogram[i] += curr[i];
                  }
             }
+
+            // Collapse the last helper bucket
+            histogram[histogram.size() - 2] += histogram[histogram.size() - 1];
+            histogram.resize(histogram.size() - 1);
             return histogram;
         }
 
     private:
+        // Add an extra bucket to account for roundoff error with large values
         Params(hist_t::size_type count, float res_factor_,
             float Lmin_log_, float Lmax_log_, float inv_res_):
         res_factor(res_factor_), Lmin_log(Lmin_log_), Lmax_log(Lmax_log_),
         inv_res(inv_res_),
         vec_res_factor(res_factor_), vec_Lmin_log(Lmin_log_),
-        histogram(count, 0), tls_histogram(histogram)
+        histogram(count+1, 0), tls_histogram(histogram)
         {}
 
         hist_t histogram;
@@ -720,32 +725,22 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
 {
     assert (Lmax > Lmin);
 
-    Rgba32F rangeHelper(Lmin, Lmax, 1.0);
+    Vec4f rangeHelper(1.0f, 1.0f, Lmax, Lmin);
 #if USE_AM_LOG
     rangeHelper = am::log_eps (rangeHelper);
 #else
     rangeHelper = ssemath::log_ps (rangeHelper);
 #endif
-    const float Lmin_log = fminf(rangeHelper.r(), logf(Lmin));
-    const float Lmax_log = fmaxf(rangeHelper.g(), logf(Lmax));
+    const float Lmin_log = rangeHelper[0];
+    const float Lmax_log = rangeHelper[1];
 
     const int resolution = 100;
     const int dynrange = static_cast<int> (ceil(1e-5 + Lmax_log - Lmin_log));
     const int num_bins = std::min(resolution * dynrange, 0x7FFF);
 
-    // This makes sure that epsilon is large enough so that it is not necessary
-    // to guard for the corner case where Lmax_log will be mapped to N
-    // There must be an analytical way of doing this, but this is decent enough
     const float range = Lmax_log - Lmin_log;
-    const float fnum_bins = static_cast<float>(num_bins);
-    float epsilon = 1.9073486328125e-6f;
-    float res_factor = num_bins / (epsilon + range);
-    while (static_cast<int>(static_cast<float>(res_factor*range)) >= num_bins){
-        epsilon *= 2.0f;
-        res_factor = fnum_bins / (epsilon + range);
-    }
-    
-    const float inv_res = (epsilon + range) / num_bins;
+    const float res_factor = num_bins / range;
+    const float inv_res = range / num_bins;
 
     // Construct and return the object
     Params p (num_bins, res_factor, Lmin_log, Lmax_log, inv_res);
