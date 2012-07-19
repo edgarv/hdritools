@@ -111,6 +111,19 @@ public:
     friend Vec8f operator^ (const Vec8f& a, const Vec8f& b) {
         return _mm256_xor_ps(a, b);
     }
+    // Logical operators [Members]
+    Vec8f& operator&= (const Vec8f& a) {
+        ymm = _mm256_and_ps(ymm, a.ymm);
+        return *this;
+    }
+    Vec8f& operator|= (const Vec8f& a) {
+        ymm = _mm256_or_ps(ymm, a.ymm);
+        return *this;
+    }
+    Vec8f& operator^= (const Vec8f& a) {
+        ymm = _mm256_xor_ps(ymm, a.ymm);
+        return *this;
+    }
 
     // Arithmetic operations [binary]
     friend Vec8f operator+ (const Vec8f& a, const Vec8f& b) {
@@ -125,6 +138,23 @@ public:
     friend Vec8f operator/ (const Vec8f& a, const Vec8f& b) {
         return _mm256_div_ps(a, b);
     }
+    // Arithmetic operations [members]
+    Vec8f& operator+= (const Vec8f& a) {
+        ymm = _mm256_add_ps(ymm, a.ymm);
+        return *this;
+    }
+    Vec8f& operator-= (const Vec8f& a) {
+        ymm = _mm256_sub_ps(ymm, a.ymm);
+        return *this;
+    }
+    Vec8f& operator*= (const Vec8f& a) {
+        ymm = _mm256_mul_ps(ymm, a.ymm);
+        return *this;
+    }
+    Vec8f& operator/= (const Vec8f& a) {
+        ymm = _mm256_div_ps(ymm, a.ymm);
+        return *this;
+    }
 
     // Newton-Rhapson Reciprocal:
     // [2 * rcp(x) - (x * rcp(x) * rcp(x))]
@@ -132,6 +162,11 @@ public:
         Vec8f x0 = _mm256_rcp_ps(v);
         return _mm256_sub_ps(_mm256_add_ps(x0,x0),
                              _mm256_mul_ps(_mm256_mul_ps(x0,v), x0));
+    }
+
+    // SIMD Reciprocal approximation
+    friend inline Vec8f simd_rcp(const Vec8f& v) {
+        return _mm256_rcp_ps(v);
     }
 
     // Element access (slow!) [const version]

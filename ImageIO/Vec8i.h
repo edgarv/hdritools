@@ -80,7 +80,7 @@ public:
         static const union {
             int32_t i32[8];
             __m256i ymm;
-        } u = {{i7, i6, i5, i4, i3, i2, i1, i0}};
+        } u = {{i0, i1, i2, i3, i4, i5, i6, i7}};
         return u.ymm;
     }
 
@@ -88,7 +88,7 @@ public:
     static const __m256i& constant() {
         static const union {
             int32_t i32[8];
-            __m128i ymm;
+            __m256i ymm;
         } u = {{value, value, value, value, value, value, value, value}};
         return u.ymm;
     }
