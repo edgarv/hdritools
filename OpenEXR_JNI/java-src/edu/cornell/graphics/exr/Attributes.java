@@ -24,8 +24,8 @@ import java.util.TimeZone;
 /**
  * Small class which holds a handful of standard EXR
  * attributes from <code>ImfStandardAttributes.h</code>
- * An attribute not present in the EXR file will be null
- * or NaN for floating point types.
+ * An attribute not present in the EXR file will be <code>null</code>
+ * or <code>NaN</code> for floating point types.
  *
  * @author edgar
  */
@@ -160,7 +160,7 @@ public class Attributes {
         return owner;
     }
 
-    /** Sets the owner, or <code>null</code>. */
+    /** Sets the owner. */
     public final void setOwner(String owner) {
         this.owner = owner;
     }
@@ -170,7 +170,7 @@ public class Attributes {
         return comments;
     }
 
-    /** Sets the comments, or <code>null</code>. */
+    /** Sets the comments. */
     public final void setComments(String comments) {
         this.comments = comments;
     }
@@ -179,7 +179,7 @@ public class Attributes {
      * Returns the creation date (in UTC time) or <code>null</code>
      * if the attribute is not present.
      *
-     * @return the UTC creation date of <code>null</code>.
+     * @return the UTC creation date of the file or <code>null</code>.
      */
     public Date getDate() {
 

@@ -149,7 +149,8 @@ public class EXRSimpleImage implements Serializable {
 
     /**
      * Creates a new instance of the image by reading the OpenEXR file at
-     * <code>filename</code>, which is read as a simple RGB/RGBA file.
+     * the location referenced by <code>file</code>,
+     * which is read as a simple RGB/RGBA file.
      * 
      * @param file the path of the image to be read.
      * @param channels the desired channel configuration for the file.
@@ -176,7 +177,8 @@ public class EXRSimpleImage implements Serializable {
     }
     
     /**
-     * Sugar constructor.
+     * Creates a new instance of the image by reading the OpenEXR file at
+     * <code>filename</code>, which is read as a simple RGB/RGBA file.
      * 
      * @param filename path to file to read from.
      * @param channels the desired channel configuration for the file.
@@ -190,15 +192,17 @@ public class EXRSimpleImage implements Serializable {
     
     /**
      * <p>Sets the buffer containing the pixels of the image. The buffer
-     * contains <code>width*height</code> interleaved pixels stored in scanline order, where
-     * (0,0) is the top-left corner and (width-1,height-1) is the bottom-right
+     * contains <code>width*height</code> interleaved pixels stored in
+     * scanline order, where {@literal (0,0)} is the top-left corner and
+     * {@literal (width-1,height-1)} is the bottom-right
      * corner. Therefore the size of the buffer must be at least
-     * <code>width*height*(number of channels)</code>.</p>
+     * {@literal width*height*(number of channels)}.</p>
      * 
      * <p>This method just does a shallow copy (ie only copies the reference)
      * to the input buffer for efficiency.</p>
      * 
-     * @param buffer a non null array holding the interleaved pixels of the image.
+     * @param buffer a non null array holding the interleaved
+     * pixels of the image.
      */
     public void setBuffer(float[] buffer) {
         if (buffer == null) {
@@ -240,8 +244,7 @@ public class EXRSimpleImage implements Serializable {
     }
     
     /**
-     * Sugar method, it is equivalent to 
-     * <code>getChannels.getNumChannels()</code>.
+     * Get the number of channels per pixel.
      * 
      * @return the number of data channels per pixel.
      * @see #getChannels()
@@ -252,7 +255,7 @@ public class EXRSimpleImage implements Serializable {
     
     /**
      * Returns a reference to the attributes of the image,
-     * or <code>null</code> if the image doesn't contain any.
+     * or <code>null</code> if the image does not contain any.
      * This reference may be used to edit the attributes of the image.
      * 
      * @return the attributes or <code>null</code>.
@@ -290,11 +293,12 @@ public class EXRSimpleImage implements Serializable {
     
     /**
      * Returns the index in the data buffer where the first element
-     * of the pixel at (x,y) is found. This method performs bounds checking.
+     * of the pixel at {@literal (x,y)} is found. This method performs
+     * bounds checking.
      * 
-     * @param x width coordinate in the range  [0,width-1];
-     * @param y height coordinate in the range [0,height-1];
-     * @return the index in the buffer of the (x,y) pixel.
+     * @param x width coordinate in the range  {@literal [0,width-1]};
+     * @param y height coordinate in the range {@literal [0,height-1]};
+     * @return the index in the buffer of the {@literal (x,y)} pixel.
      */
     public int getIndex(int x, int y) {
         if (x < 0 || x >= width) {
@@ -310,9 +314,9 @@ public class EXRSimpleImage implements Serializable {
      * The same as {@link #getIndex(int, int)} but without 
      * bounds checking, use at your own risk.
      * 
-     * @param x width coordinate in the range  [0,width-1];
-     * @param y height coordinate in the range [0,height-1];
-     * @return the index in the buffer of the (x,y) pixel.
+     * @param x width coordinate in the range  {@literal [0,width-1]};
+     * @param y height coordinate in the range {@literal [0,height-1]};
+     * @return the index in the buffer of the {@literal (x,y)} pixel.
      */
     public int getIndexFast(int x, int y) {
         return numChannels*(y*width + x);
@@ -320,7 +324,7 @@ public class EXRSimpleImage implements Serializable {
     
     /**
      * Returns a newly allocated array with the data of
-     * the pixel at (x,y). This is a convenience method
+     * the pixel at {@literal (x,y)}. This is a convenience method
      * with state checking, thus it is not very fast.
      * 
      * @param x x-coordinate of the pixel.
@@ -338,7 +342,7 @@ public class EXRSimpleImage implements Serializable {
     }
     
     /**
-     * Copies the (x,y) pixel elements starting at the location
+     * Copies the {@literal (x,y)} pixel elements starting at the location
      * <code>destPos</code> (0-based) in the <code>destBuffer</code>. So it
      * will use the destination buffer at the array indices
      * <code>[destPost, destPos+getNumChannels()-1]</code>.
@@ -375,14 +379,14 @@ public class EXRSimpleImage implements Serializable {
     }
     
     /**
-     * Retrieves a single element from the (x,y) pixel. The
+     * Retrieves a single element from the {@literal (x,y)} pixel. The
      * element index <code>channelIndex</code> is in the range
      * <code>[0, getNumChannels()-1]</code>
      * 
      * @param x x-coordinate of the pixel.
      * @param y y-coordinate of the pixel.
      * @param channelIndex index of the pixel element to return.
-     * @return the chanellIndex-th element of pixel (x,y).
+     * @return the chanellIndex-th element of pixel {@literal (x,y)}.
      */
     public float getPixelElement(int x, int y, int channelIndex) {
         if (buffer == null) {
@@ -397,8 +401,8 @@ public class EXRSimpleImage implements Serializable {
     }
     
     /**
-     * Sets the value of the (x,y) pixel's channels. The <i>n</i>-th value
-     * in <code>elements</code> sets the <i>n</i>-th value of the pixel.
+     * Sets the value of the {@literal (x,y)} pixel's channels. The <i>n</i>-th
+     * value in <code>elements</code> sets the <i>n</i>-th value of the pixel.
      * All the pixel elements must be set, but if there are more elements
      * than pixel channels, the extra data is simply ignored. Hence
      * the length of <code>elements</code> must be at least
@@ -454,7 +458,7 @@ public class EXRSimpleImage implements Serializable {
      * @param compression the type of compression used when creating the file.
      * @throws EXRIOException if an error occur during writing.
      */
-    public void write(File file, Compression compression) throws EXRIOException {
+    public void write(File file, Compression compression) throws EXRIOException{
         String filename = file.getAbsolutePath();
             
         if (filename == null || filename.length() == 0) {
@@ -498,10 +502,11 @@ public class EXRSimpleImage implements Serializable {
     
     /*
      * Calls the native method for saving the file.
-     * Assumes that neither name nor pixels is null, width > 0, height > 0, and that pixels
-     * has already been initialized as a direct buffer of size (width * height * 3 * 4) for
-     * holding the float RGB pixels. It also assumes that compression is one of the native
-     * flags specified in the compression enumeration
+     * Assumes that neither name nor pixels is null, <code>width &gt; 0</code>,
+     * <code>height &gt; 0</code>, and that pixels has already been initialized
+     * as a direct buffer of size <code>(width * height * 3 * 4)</code> for
+     * holding the float RGB pixels. It also assumes that compression is one of
+     * the native flags specified in the compression enumeration.
      */
     private static native void write(String name, float[] pixelBuffer, 
             int width, int height, 
@@ -509,10 +514,10 @@ public class EXRSimpleImage implements Serializable {
             throws EXRIOException;
     
     /*
-     * Initializes a freshly created instance of OpenEXRTo (transfer object) with the
-     * contents from the file, setting its dataBuffer with floatRGB pixels
-     * as well as setting the appropriate width and height values. It case
-     * of error it will throw an exception.
+     * Initializes a freshly created instance of OpenEXRTo (transfer object)
+     * with the contents from the file, setting its dataBuffer with floatRGB
+     * pixels as well as setting the appropriate width and height values.
+     * In case of error it will throw an exception.
      * It also receives the number of channels that will be saved into
      * the transfer object: 3 for RGB or 4 for full RGBA.
      */

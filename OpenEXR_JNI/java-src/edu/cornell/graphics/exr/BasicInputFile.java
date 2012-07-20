@@ -27,8 +27,8 @@ import java.util.Set;
 /**
  * More general interface to read OpenEXR files. The main purpose of this
  * class is to read files which may contain an arbitrary number of channels.
- * This class is not as general as the OpenEXR classes. Its main limitations
- * are:
+ * This class is not as general as the OpenEXR classes in the reference
+ * implementation from ILM. Its main limitations are:
  * <ul>
  * <li>Only channels with <code>(1,1)</code> sampling are supported.</li>
  * <li>It can only read images from files.</li>
@@ -39,12 +39,12 @@ import java.util.Set;
  *      <li>Integer</li>
  *      <li>Float</li>
  *      <li>Double</li>
- *      <li>{@linkplain Compression</li>
+ *      <li>{@linkplain Compression}</li>
  *  </ul>
  * </li>
  * <li>The class is not thread-safe</li>
  * <li>The EXR data window is ignored, the class only stores width and height.</li>
- * <li>The class does not support multiple images. All channes have the
+ * <li>The class does not support multiple images. All channels have the
  * same resolution.</li>
  * </ul>
  * 

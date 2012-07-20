@@ -17,7 +17,7 @@ package edu.cornell.graphics.exr;
 
 /**
  * Enumeration which represents the different compression methods
- * available for saving files of OpenEXR 1.6
+ * available for saving files in OpenEXR 1.6
  * 
  * @author edgar
  */
