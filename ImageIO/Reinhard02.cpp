@@ -624,12 +624,12 @@ struct AccumulateHistogramFunctor
     void operator() (const tbb::blocked_range<const Vec4f*>& range)
     {
         if (numTail == 0 || range.end() != LwVecEnd) {
-            process<0>(range.begin(), range.end());
+            process<4>(range.begin(), range.end());
         }
         else {
             // The very last element is the problematic one
             const Vec4f* bulkEnd = range.end() - 1;
-            process<0>(range.begin(), bulkEnd);
+            process<4>(range.begin(), bulkEnd);
 
             // This will process a single element
             switch (numTail) {
@@ -658,7 +658,7 @@ struct AccumulateHistogramFunctor
 
 private:
 
-    template <int tailElements>
+    template <int validPerVector>
     inline void process(const Vec4f* const PCG_RESTRICT begin,
         const Vec4f* const PCG_RESTRICT end)
     {
@@ -668,48 +668,49 @@ private:
         Vec4f vec_sum = Vec4f::zero();
         Vec4f vec_c   = Vec4f::zero();
 
-        for (const Vec4f* it = begin; it != end; ++it) {
-            const Vec4f& vec_lum = *it;
+        // Temporary storage for the indices
+        const size_t BLOCK_SIZE = 1024;
+        union {
+            __m128i indices_vec[BLOCK_SIZE];
+            int32_t indices_i32[4*BLOCK_SIZE];
+        };
+
+        for (const Vec4f* it = begin; it != end;) {
+            const size_t numIter = std::min(static_cast<size_t>(end - it),
+                                            BLOCK_SIZE);
+            for (size_t i = 0; i != numIter; ++i, ++it) {
+                const Vec4f& vec_lum = *it;
 #if USE_AM_LOG
-            Vec4f vec_log_lum = am::log_eps (vec_lum);
+                Vec4f vec_log_lum = am::log_eps(vec_lum);
 #else
-            Vec4f vec_log_lum = ssemath::log_ps (vec_lum);
+                Vec4f vec_log_lum = ssemath::log_ps(vec_lum);
 #endif
-            // Kill the invalid values if required
-            if (tailElements != 0) {
-                const Vec4f& tailMask(getTailMask<tailElements>());
-                vec_log_lum &= tailMask;
+                // Kill the invalid values if required
+                if (validPerVector != 4) {
+                    const Vec4f& tailMask(getTailMask<validPerVector % 4>());
+                    vec_log_lum &= tailMask;
+                }
+
+                // Update the sum with error compensation
+                const Vec4f y = vec_log_lum - vec_c;
+                const Vec4f t = vec_sum + y;
+                vec_c   = (t - vec_sum) - y;
+                vec_sum = t;
+
+                // Get the histogram bin indices
+                const Vec4f idx_temp = params.vec_res_factor * 
+                    (vec_log_lum - params.vec_Lmin_log);
+                indices_vec[i] = _mm_cvttps_epi32 (idx_temp);
             }
 
-            // Update the sum with error compensation
-            const Vec4f y = vec_log_lum - vec_c;
-            const Vec4f t = vec_sum + y;
-            vec_c   = (t - vec_sum) - y;
-            vec_sum = t;
-
             // Update the histogram
-            const Vec4f idx_temp = params.vec_res_factor * 
-                (vec_log_lum - params.vec_Lmin_log);
-            const __m128i bin_idx = _mm_cvttps_epi32 (idx_temp);
-            const int index0 = _mm_extract_epi16(bin_idx, 0*2);
-            const int index1 = _mm_extract_epi16(bin_idx, 1*2);
-            const int index2 = _mm_extract_epi16(bin_idx, 2*2);
-            const int index3 = _mm_extract_epi16(bin_idx, 3*2);
-
-            // Fall-through is intended
-            switch (tailElements) {
-            case 0:
-                assert (index3 >= 0 && index3 < (int)histogram.size());
-                ++histogram[index3];
-            case 3:
-                assert (index2 >= 0 && index2 < (int)histogram.size());
-                ++histogram[index2];
-            case 2:
-                assert (index1 >= 0 && index1 < (int)histogram.size());
-                ++histogram[index1];
-            case 1:
-                assert (index0 >= 0 && index0 < (int)histogram.size());
-                ++histogram[index0];
+            for (size_t i = 0; i != numIter; ++i) {
+                const int32_t* const indices_base = &indices_i32[4*i];
+                for (int k = 0; k != validPerVector; ++k) {
+                    const int32_t& index = indices_base[k];
+                    assert (index >= 0 && index < (int32_t)histogram.size());
+                    ++histogram[index];
+                }
             }
         }
 
