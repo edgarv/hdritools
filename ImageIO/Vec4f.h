@@ -174,6 +174,10 @@ public:
         return _mm_sub_ps(_mm_add_ps(x0,x0), _mm_mul_ps(_mm_mul_ps(x0,v), x0));
     }
 
+    friend inline Vec4f simd_rcp(const Vec4f& v) {
+        return _mm_rcp_ps(v);
+    }
+
     // Element access (slow!) [const version]
     const float& operator[] (size_t i) const {
         assert(i < 4);
