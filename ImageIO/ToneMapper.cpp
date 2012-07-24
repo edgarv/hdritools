@@ -159,12 +159,12 @@ protected:
         const Rgba32F &base4, const Rgba32F &delta, const Rgba32F &qFactor) const {
 
         // Update values
-        Rgba32F values = Rgba32F((float)(i))*base4 + delta;
+        Rgba32F values = Rgba32F(static_cast<float>(i))*base4 + delta;
 
         // Exponentiate by 1/gamma (this is slow!!!)
 #if USE_SSE_POW
-        values = ssemath::exp_ps(static_cast<Rgba32F>(ssemath::log_ps(values))
-            * Rgba32F(invGamma));
+        const Rgba32F vecInvGamma(invGamma);
+        values = ssemath::pow_ps(values, vecInvGamma);
 #else
         values.set(pow(values.r(), invGamma), pow(values.g(), invGamma), 
                    pow(values.b(), invGamma), pow(values.a(), invGamma));

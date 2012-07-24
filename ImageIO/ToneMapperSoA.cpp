@@ -97,8 +97,7 @@ template <>
 inline pcg::Vec4f pow(const pcg::Vec4f& x, const pcg::Vec4f& y)
 {
 #if USE_SSE_POW
-    const pcg::Vec4f result =
-        ssemath::exp_ps(static_cast<pcg::Vec4f>(ssemath::log_ps(x)) * y);
+    const pcg::Vec4f result = ssemath::pow_ps(x, y);
 #else
     const pcg::Vec4f result(::pow(x[3], y[3]), ::pow(x[2], y[2]),
         ::pow(x[1], y[1]), ::pow(x[0], y[0]));
@@ -200,16 +199,7 @@ template <>
 inline pcg::Vec8f pow(const pcg::Vec8f& x, const pcg::Vec8f& y)
 {
 #if USE_SSE_POW
-    // The current implementation doesn't support AVX natively
-    const pcg::Vec4f x0 = _mm256_castps256_ps128(x);
-    const pcg::Vec4f y0 = _mm256_castps256_ps128(y);
-    const pcg::Vec4f x1 = _mm256_extractf128_ps(x, 1);
-    const pcg::Vec4f y1 = _mm256_extractf128_ps(y, 1);
-    
-    const pcg::Vec4f r0 = ssemath::exp_ps(ssemath::log_ps(x0) * y0);
-    const pcg::Vec4f r1 = ssemath::exp_ps(ssemath::log_ps(x1) * y1);
-
-    __m256 result = _mm256_insertf128_ps(_mm256_castps128_ps256(r0), r1, 1);
+    const pcg::Vec8f result = ssemath::pow_avx(x, y);
     return result;
 #else
     const pcg::Vec8f result(
