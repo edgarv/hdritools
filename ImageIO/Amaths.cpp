@@ -412,6 +412,7 @@ inline v8f castAsFloat(const v8i& x) {
 // requires AVX2, but for now this provides completeness
 inline v8i srl(const __m256i& a, const int& count)
 {
+#if !PCG_USE_AVX2
     __m128i a0 = _mm256_castsi256_si128(a);
     __m128i a1 = _mm256_extractf128_si256(a, 1);
 
@@ -420,12 +421,16 @@ inline v8i srl(const __m256i& a, const int& count)
 
     __m256i r = _mm256_insertf128_si256(_mm256_castsi128_si256(a0), a1, 1);
     return r;
+#else
+    return _mm256_srli_epi32(a, count);
+#endif /* !PCG_USE_AVX2 */
 }
 
 // Shift left by "count" bits while shifting in zeros. Full efficiency
 // requires AVX2, but for now this provides completeness
 inline v8i sll(const v8i& a, const int& count)
 {
+#if !PCG_USE_AVX2
     __m128i a0 = _mm256_castsi256_si128(a);
     __m128i a1 = _mm256_extractf128_si256(a, 1);
 
@@ -434,6 +439,9 @@ inline v8i sll(const v8i& a, const int& count)
 
     __m256i r = _mm256_insertf128_si256(_mm256_castsi128_si256(a0), a1, 1);
     return r;
+#else
+    return _mm256_slli_epi32(a, count);
+#endif /* !PCG_USE_AVX2 */
 }
 
 } // namespace avx

@@ -59,6 +59,30 @@ public:
         return ymm;
     }
 
+#if PCG_USE_AVX2
+    // Logical operators [binary]
+    friend Vec8i operator& (const Vec8i& a, const Vec8i& b) {
+        return _mm256_and_si256(a, b);
+    }
+    friend Vec8i operator| (const Vec8i& a, const Vec8i& b) {
+        return _mm256_or_si256(a, b);
+    }
+    friend Vec8i operator^ (const Vec8i& a, const Vec8i& b) {
+        return _mm256_xor_si256(a, b);
+    }
+    friend Vec8i andnot(const Vec8i& a, const Vec8i& b) {
+        return _mm256_andnot_si256(a, b);
+    }
+
+    // Arithmetic operations [binary]
+    friend Vec8i operator+ (const Vec8i& a, const Vec8i& b) {
+        return _mm256_add_epi32(a, b);
+    }
+    friend Vec8i operator- (const Vec8i& a, const Vec8i& b) {
+        return _mm256_sub_epi32(a, b);
+    }
+#endif // PCG_USE_AVX2
+
     // Element access (slow!) [const version]
     const int32_t& operator[] (size_t i) const {
         assert(i < 8);

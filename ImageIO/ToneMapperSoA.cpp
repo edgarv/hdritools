@@ -798,6 +798,7 @@ struct PixelAssembler_BGRA8Vec8
     typedef Quantizer8bit<pcg::Vec8f, pcg::Vec8i> quantizer_t;
     typedef quantizer_t::value_t value_t;
 
+#if !PCG_USE_AVX2
     template <int offset>
     static inline pcg::Vec4i buildExtract(const value_t& r, const value_t& g,
         const value_t& b, const value_t& a) throw()
@@ -816,11 +817,13 @@ struct PixelAssembler_BGRA8Vec8
         const pcg::Vec4i pixel = a0Shift | r0Shift | g0Shift | b0;
         return pixel;
     }
+#endif /* !PCG_USE_AVX2 */
 
     inline void operator() (
         const value_t& r, const value_t& g, const value_t& b, const value_t& a,
         pixel_t& outPixel) const throw()
     {
+#if !PCG_USE_AVX2
         // Adequate support for integer operation arrives with AVX2, in the
         // meantime extract 2 128-bit values
         const pcg::Vec4i pix0 = buildExtract<0>(r, g, b, a);
@@ -829,6 +832,13 @@ struct PixelAssembler_BGRA8Vec8
         // Casting sets the lower bits, then insert the higher ones
         const __m256i pixel =
             _mm256_insertf128_si256(_mm256_castsi128_si256(pix0), pix1, 1);
+#else
+        pcg::Vec8i aShift = _mm256_slli_epi32(a, 24);
+        pcg::Vec8i rShift = _mm256_slli_epi32(r, 16);
+        pcg::Vec8i gShift = _mm256_slli_epi32(g, 8);
+
+        const pcg::Vec8i pixel = aShift | rShift | gShift | b;
+#endif /* !PCG_USE_AVX2 */
 
         _mm256_stream_si256(&outPixel.ymm, pixel);
     }

@@ -26,7 +26,7 @@
 */
 
 /*
-  2012 - Edgar Velazquez-Armendariz: Converted to AVX/AVX2 (the later untested).
+  2012 - Edgar Velazquez-Armendariz: Converted to AVX/AVX2.
   2008 - Edgar Velazquez-Armendariz: Converted to SSE2, removing MMX code.
   Retrieved from http://gruntthepeon.free.fr/ssemath/
 */
@@ -45,7 +45,11 @@
 
 #if USE_AVX
 # if !defined(USE_AVX2)
-#  define USE_AVX2 0 /* Available in Haswell microarchitecture (2013) */
+#  if PCG_USE_AVX2
+#   define USE_AVX2 1 /* Available in Haswell microarchitecture (2013) */
+#  else
+#   define USE_AVX2 0
+#  endif
 # endif
 #endif
 
@@ -513,7 +517,7 @@ inline v8sf exp_avx(v8sf x) {
 #else
   ymm0 = _mm256_cvttps_epi32(fx);
   ymm0 = _mm256_add_epi32(ymm0, *(v8si*)_pi32_0x7f);
-  ymm0 = _mm_slli_epi32(emm0, 23);
+  ymm0 = _mm256_slli_epi32(ymm0, 23);
   v8sf pow2n = _mm256_castsi256_ps(ymm0);
 #endif
   y = _mm256_mul_ps(y, pow2n);
