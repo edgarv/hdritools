@@ -24,14 +24,27 @@
 //  Author Alex Klimovitski, Intel GmbH
 /////////////////////////////////////////////////////////////////////////////
 
+#pragma once
 #if !defined(_AMATHS_H_)
 #define _AMATHS_H_
 
 #include <emmintrin.h>
 
+#if PCG_USE_AVX
+# include <immintrin.h>
+#endif
+
+
 namespace am
 {
     __m128 log_eps(__m128 x);
+    __m128 pow_eps(__m128 x, __m128 y);
+
+#if PCG_USE_AVX
+    __m256 log_avx(__m256 x);
+    __m256 pow_avx(__m256 x, __m256 y);
+#endif
+
 }
 
 #endif // _AMATHS_H_
