@@ -98,8 +98,8 @@ inline float fmaxf(const float& x, const float& y) {
 # endif
 #endif
 
-// SSE3 functions are only available as intrinsic in MSVC
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+// SSE3 functions are only available as intrinsic in older versions of MSVC
+#if defined(_MSC_VER) && _MSC_VER < 1500 && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic ( _mm_hadd_ps )
 #else
@@ -125,7 +125,7 @@ const Vec4f LUM_G(0.67f);
 const Vec4f LUM_B(0.06f);
 const Vec4f LUM_MINVAL(float_limits::min());
 const Vec4i INT_ONE(1);
-const Vec4i MASK_NAN(_mm_set1_epi32 (0x7f800000));
+const Vec4i MASK_NAN(Vec4i::constant<0x7f800000>());
 const Vec4f LUM_TAIL_MASKS[3] = {
     Vec4f(_mm_castsi128_ps(Vec4i::constant<0, 0, 0,-1>())),
     Vec4f(_mm_castsi128_ps(Vec4i::constant<0, 0,-1,-1>())),
