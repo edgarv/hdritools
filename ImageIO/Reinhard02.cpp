@@ -49,9 +49,6 @@
 #include <tbb/enumerable_thread_specific.h>
 
 
-// Flag to use a little LUT packed into a 64-bit integer for the SSE luminance
-#define USE_PACKED_LUT 0
-
 // Flag to use Intel's fast log routine. Very fast but has a terrible accuracy,
 // yet makes the whole process run about 4x faster (in MSVC++ 2008)
 #define USE_AM_LOG 0
@@ -65,21 +62,10 @@ namespace ssemath {
 #endif
 
 
-#if USE_PACKED_LUT
-#if __STDC_VERSION__>=199901 || defined(__GNUC__)
-#include <stdint.h>
-#elif defined (_MSC_VER)
-typedef signed __int64       int64_t;
-typedef unsigned __int64     uint64_t;
-#endif
-#endif // USE_PACKED_LUT
-
-
 
 #if !defined(_WIN32) || !defined(__INTEL_COMPILER)
 # include <cmath>
 # if defined (_MSC_VER)
-
 
 namespace {
 
@@ -189,7 +175,82 @@ public:
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Traits for source iterators
+template <class SourceIterator>
+struct iterator_traits;
 
+template <>
+struct iterator_traits<RGBA32FVec4ImageSoAIterator>
+{
+    typedef Vec4f  vf;
+    typedef Vec4bf vbf;
+    typedef Vec4i  vi;
+    typedef Vec4bi vbi;
+
+    enum Constants {
+        VEC_LEN = 4
+    };
+};
+
+template <>
+struct iterator_traits<RGBA32FVec4ImageIterator>
+{
+    typedef Vec4f  vf;
+    typedef Vec4bf vbf;
+    typedef Vec4i  vi;
+    typedef Vec4bi vbi;
+    
+    enum Constants {
+        VEC_LEN = 4
+    };
+};
+
+#if PCG_USE_AVX
+template <>
+struct iterator_traits<RGBA32FVec8ImageSoAIterator>
+{
+    typedef Vec8f  vf;
+    typedef Vec8bf vbf;
+    typedef Vec8i  vi;
+    
+    enum Constants {
+        VEC_LEN = 8
+    };
+};
+#endif
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Traits for vector types
+template <typename V>
+struct vector_traits;
+
+template <>
+struct vector_traits<Vec4f>
+{
+    enum Constants {
+        VEC_LEN    = 4,
+        BLOCK_SIZE = 1024
+    };
+};
+
+#if PCG_USE_AVX
+template <>
+struct vector_traits<Vec8f>
+{
+    enum Constants {
+        VEC_LEN    = 8,
+        BLOCK_SIZE = 512
+    };
+};
+#endif
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Traits for the masks for tail elements
 template <typename VecType>
 struct tail_mask_traits;
 
@@ -263,6 +324,23 @@ inline float horizontal_sum(const __m128& vec) {
 }
 
 
+// Convert a floating point vector to integers using truncate
+inline Vec4i truncate(const Vec4f& v) {
+    return _mm_cvttps_epi32(v);
+}
+
+
+// SIMD logarithm: this method might only work correctly for valid values
+inline Vec4f simd_log(const Vec4f& v) {
+#if USE_AM_LOG
+    return am::log_eps(v);
+#else
+    return ssemath::log_ps(v);
+#endif
+}
+
+
+
 #if PCG_USE_AVX
 
 inline float horizontal_min(const float& x, const Vec8f& vec) {
@@ -291,6 +369,17 @@ inline float horizontal_sum(const Vec8f& vec) {
     return _mm_cvtss_f32(_mm256_castps256_ps128(r));
 }
 
+inline Vec8i truncate(const Vec8f& v) {
+    return _mm256_cvttps_epi32(v);
+}
+
+inline Vec8f simd_log(const Vec8f& v) {
+#if USE_AM_LOG
+    return am::log_avx(v);
+#else
+    return ssemath::log_avx(v);
+#endif
+}
 
 #endif // PCG_USE_AVX
 
@@ -314,52 +403,6 @@ extractRGB<RGBA32FVec4ImageIterator, Vec4f>(RGBA32FVec4ImageIterator it,
     outG = data.g();
     outB = data.b();
 }
-
-
-
-// Traits for source iterators
-template <class SourceIterator>
-struct iterator_traits;
-
-template <>
-struct iterator_traits<RGBA32FVec4ImageSoAIterator>
-{
-    typedef Vec4f  vf;
-    typedef Vec4bf vbf;
-    typedef Vec4i  vi;
-    typedef Vec4bi vbi;
-
-    enum Constants {
-        VEC_LEN = 4
-    };
-};
-
-template <>
-struct iterator_traits<RGBA32FVec4ImageIterator>
-{
-    typedef Vec4f  vf;
-    typedef Vec4bf vbf;
-    typedef Vec4i  vi;
-    typedef Vec4bi vbi;
-    
-    enum Constants {
-        VEC_LEN = 4
-    };
-};
-
-#if PCG_USE_AVX
-template <>
-struct iterator_traits<RGBA32FVec8ImageSoAIterator>
-{
-    typedef Vec8f  vf;
-    typedef Vec8bf vbf;
-    typedef Vec8i  vi;
-    
-    enum Constants {
-        VEC_LEN = 8
-    };
-};
-#endif
 
 
 
@@ -522,6 +565,12 @@ struct TailProcess<8>
 #endif // PCG_USE_AVX
 
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Actual Functors
+///////////////////////////////////////////////////////////////////////////////
+
+
 // TBB functor object to fill the array of luminances for image iterators.
 // It converts the invalid values to zero and returns the maximum,
 // minimum and number of invalid values. The template parameter indicates
@@ -533,8 +582,6 @@ struct LuminanceFunctor
     typedef typename iterator_traits<SourceIterator>::vf  Vecf;
     typedef typename iterator_traits<SourceIterator>::vbf Vecbf;
     typedef typename iterator_traits<SourceIterator>::vi  Veci;
-
-    friend struct TailProcess<iterator_traits<SourceIterator>::VEC_LEN>;
 
     // Remember where the data starts
     SourceIterator pixelsBegin;
@@ -593,6 +640,7 @@ struct LuminanceFunctor
 
 
 private:
+    friend struct TailProcess<iterator_traits<SourceIterator>::VEC_LEN>;
 
     // Accumulates the results, using the given number of tail elements
     template <int tailElements>
@@ -688,13 +736,21 @@ size_t compactZeros (afloat_t * Lw, const size_t count)
 class AccumulateNoHistogramFunctor
 {
 public:
+#if !PCG_USE_AVX
+    typedef Vec4f Vecf;
+    typedef __m128i VecInt32;
+#else
+    typedef Vec8f Vecf;
+    typedef __m256i VecInt32;
+#endif
+
     // Current total
     inline double Lsum() const {
         return m_Lsum;
     }
 
     // Constructor for the initial phase
-    AccumulateNoHistogramFunctor (const Vec4f* LwEnd, size_t numTail):
+    AccumulateNoHistogramFunctor (const Vecf* LwEnd, size_t numTail):
     m_LwVecEnd(LwEnd), m_numTail(numTail), m_Lsum(0) {}
 
     // Constructor for each split
@@ -708,30 +764,19 @@ public:
     }
 
     // Method invoked by TBB: accumulates the data for the subrange
-    void operator() (const tbb::blocked_range<const Vec4f*>& range)
+    void operator() (const tbb::blocked_range<const Vecf*>& range)
     {
         if (m_numTail == 0 || range.end() != m_LwVecEnd) {
             process<0>(range.begin(), range.end());
         }
         else {
             // The very last element is the problematic one
-            const Vec4f* bulkEnd = range.end() - 1;
+            const Vecf* bulkEnd = range.end() - 1;
             process<0>(range.begin(), bulkEnd);
 
             // This will process a single element
-            switch (m_numTail) {
-            case 1:
-                process<1>(bulkEnd, range.end());
-                break;
-            case 2:
-                process<2>(bulkEnd, range.end());
-                break;
-            case 3:
-                process<3>(bulkEnd, range.end());
-                break;
-            default:
-                assert(0);
-            }
+            TailProcess<vector_traits<Vecf>::VEC_LEN>::process(*this,
+                bulkEnd, range.end(), m_numTail);
         }
     }
 
@@ -741,31 +786,29 @@ public:
                              const float * PCG_RESTRICT Lw_end);
 
 private:
+    friend struct TailProcess<vector_traits<Vecf>::VEC_LEN>;
 
     template <int tailElements>
-    inline void process(const Vec4f* const PCG_RESTRICT begin,
-        const Vec4f* const PCG_RESTRICT end)
+    inline void process(const Vecf* const PCG_RESTRICT begin,
+        const Vecf* const PCG_RESTRICT end)
     {
         // Prepare Kahan summation with 4 elements
-        Vec4f vec_sum = Vec4f::zero();
-        Vec4f vec_c   = Vec4f::zero();
+        Vecf vec_sum = Vecf::zero();
+        Vecf vec_c   = Vecf::zero();
 
-        for (const Vec4f* it = begin; it != end; ++it) {
-            const Vec4f& vec_lum = *it;
-#if USE_AM_LOG
-            Vec4f vec_log_lum = am::log_eps (vec_lum);
-#else
-            Vec4f vec_log_lum = ssemath::log_ps (vec_lum);
-#endif
+        for (const Vecf* it = begin; it != end; ++it) {
+            const Vecf& vec_lum = *it;
+            Vecf vec_log_lum = simd_log(vec_lum);
+
             // Kill the invalid values if required
             if (tailElements != 0) {
-                const Vec4f& tailMask(getTailMask<Vec4f, tailElements>());
+                const Vecf& tailMask(getTailMask<Vecf, tailElements>());
                 vec_log_lum &= tailMask;
             }
 
             // Update the sum with error compensation
-            const Vec4f y = vec_log_lum - vec_c;
-            const Vec4f t = vec_sum + y;
+            const Vecf y = vec_log_lum - vec_c;
+            const Vecf t = vec_sum + y;
             vec_c   = (t - vec_sum) - y;
             vec_sum = t;
         }
@@ -777,7 +820,7 @@ private:
 
 
     // Remember where the data ends
-    const Vec4f* const m_LwVecEnd;
+    const Vecf* const m_LwVecEnd;
 
     // Number of tail elements at the last vector element    
     const size_t m_numTail;
@@ -791,15 +834,19 @@ AccumulateNoHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
                                           const float * PCG_RESTRICT Lw_end)
 {
     const size_t numElements = Lw_end - Lw;
-    const Vec4f* LwVecBegin = reinterpret_cast<const Vec4f*>(Lw);
-    const Vec4f* LwVecEnd   =
-        reinterpret_cast<const Vec4f*>(Lw + ((numElements + 3) & ~0x3));
-    AccumulateNoHistogramFunctor acc (LwVecEnd, numElements % 4);
+    const size_t VEC_LEN   = vector_traits<Vecf>::VEC_LEN;
+    const Vecf* LwVecBegin = reinterpret_cast<const Vecf*>(Lw);
+    const Vecf* LwVecEnd   = reinterpret_cast<const Vecf*>(Lw +
+        ((numElements + (VEC_LEN-1)) & ~(VEC_LEN-1)));
+    AccumulateNoHistogramFunctor acc (LwVecEnd, numElements % VEC_LEN);
     
-    tbb::blocked_range<const Vec4f*> range(LwVecBegin, LwVecEnd, 4);
+    tbb::blocked_range<const Vecf*> range(LwVecBegin, LwVecEnd, 32/VEC_LEN);
     tbb::parallel_reduce (range, acc);
     return static_cast<float>(acc.Lsum());
 }
+
+
+
 
 
 
@@ -811,6 +858,14 @@ struct AccumulateHistogramFunctor
     typedef std::vector<int, tbb::cache_aligned_allocator<int> > hist_t;
     typedef tbb::enumerable_thread_specific<hist_t> threadhist_t;
 
+#if !PCG_USE_AVX
+    typedef Vec4f Vecf;
+    typedef __m128i VecInt32;
+#else
+    typedef Vec8f Vecf;
+    typedef __m256i VecInt32;
+#endif
+
     // Structure to hold all the common parameters
     struct Params
     {   
@@ -819,8 +874,8 @@ struct AccumulateHistogramFunctor
         const float Lmax_log;
         const float inv_res;
 
-        const Vec4f vec_res_factor;
-        const Vec4f vec_Lmin_log;
+        const Vecf vec_res_factor;
+        const Vecf vec_Lmin_log;
 
         // Initializes the parameters with the appropriate values. It receives
         // the maximum and minimum [lineal] luminance
@@ -864,7 +919,7 @@ struct AccumulateHistogramFunctor
     };
 
     // Remember where the data ends
-    const Vec4f* const LwVecEnd;
+    const Vecf* const LwVecEnd;
 
     // Number of tail elements at the last vector element
     const size_t numTail;
@@ -877,7 +932,7 @@ struct AccumulateHistogramFunctor
 
 
     // Constructor for the initial phase
-    AccumulateHistogramFunctor (const Vec4f* LwEnd, Params & params_, size_t n):
+    AccumulateHistogramFunctor (const Vecf* LwEnd, Params & params_, size_t n):
     LwVecEnd(LwEnd), numTail(n), params(params_), L_sum(0) {}
 
     // Constructor for each split
@@ -891,30 +946,19 @@ struct AccumulateHistogramFunctor
     }
 
     // Method invoked by TBB: accumulates the data for the subrange
-    void operator() (const tbb::blocked_range<const Vec4f*>& range)
+    void operator() (const tbb::blocked_range<const Vecf*>& range)
     {
         if (numTail == 0 || range.end() != LwVecEnd) {
-            process<4>(range.begin(), range.end());
+            process<vector_traits<Vecf>::VEC_LEN>(range.begin(), range.end());
         }
         else {
             // The very last element is the problematic one
-            const Vec4f* bulkEnd = range.end() - 1;
-            process<4>(range.begin(), bulkEnd);
+            const Vecf* bulkEnd = range.end() - 1;
+            process<vector_traits<Vecf>::VEC_LEN>(range.begin(), bulkEnd);
 
             // This will process a single element
-            switch (numTail) {
-            case 1:
-                process<1>(bulkEnd, range.end());
-                break;
-            case 2:
-                process<2>(bulkEnd, range.end());
-                break;
-            case 3:
-                process<3>(bulkEnd, range.end());
-                break;
-            default:
-                assert(0);
-            }
+            TailProcess<vector_traits<Vecf>::VEC_LEN>::process(*this,
+                bulkEnd, range.end(), numTail);
         }
     }
 
@@ -927,55 +971,55 @@ struct AccumulateHistogramFunctor
 
 
 private:
+    friend struct TailProcess<vector_traits<Vecf>::VEC_LEN>;
 
     template <int validPerVector>
-    inline void process(const Vec4f* const PCG_RESTRICT begin,
-        const Vec4f* const PCG_RESTRICT end)
+    inline void process(const Vecf* const PCG_RESTRICT begin,
+        const Vecf* const PCG_RESTRICT end)
     {
         hist_t & histogram = params.localHistogram();
 
         // Prepare Kahan summation with 4 elements
-        Vec4f vec_sum = Vec4f::zero();
-        Vec4f vec_c   = Vec4f::zero();
+        Vecf vec_sum = Vecf::zero();
+        Vecf vec_c   = Vecf::zero();
 
         // Temporary storage for the indices
-        const size_t BLOCK_SIZE = 1024;
+        const size_t BLOCK_SIZE = vector_traits<Vecf>::BLOCK_SIZE;
         union {
-            __m128i indices_vec[BLOCK_SIZE];
-            int32_t indices_i32[4*BLOCK_SIZE];
+            VecInt32 indices_vec[BLOCK_SIZE];
+            int32_t  indices_i32[4*BLOCK_SIZE];
         };
 
-        for (const Vec4f* it = begin; it != end;) {
+        for (const Vecf* it = begin; it != end;) {
             const size_t numIter = std::min(static_cast<size_t>(end - it),
                                             BLOCK_SIZE);
             for (size_t i = 0; i != numIter; ++i, ++it) {
-                const Vec4f& vec_lum = *it;
-#if USE_AM_LOG
-                Vec4f vec_log_lum = am::log_eps(vec_lum);
-#else
-                Vec4f vec_log_lum = ssemath::log_ps(vec_lum);
-#endif
+                const Vecf& vec_lum = *it;
+                Vecf vec_log_lum = simd_log(vec_lum);
+
                 // Kill the invalid values if required
-                if (validPerVector != 4) {
-                    const Vec4f& tailMask(getTailMask<Vec4f,validPerVector%4>());
+                if (validPerVector != vector_traits<Vecf>::VEC_LEN) {
+                    const Vecf& tailMask(getTailMask<Vecf,
+                        validPerVector % vector_traits<Vecf>::VEC_LEN>());
                     vec_log_lum &= tailMask;
                 }
 
                 // Update the sum with error compensation
-                const Vec4f y = vec_log_lum - vec_c;
-                const Vec4f t = vec_sum + y;
+                const Vecf y = vec_log_lum - vec_c;
+                const Vecf t = vec_sum + y;
                 vec_c   = (t - vec_sum) - y;
                 vec_sum = t;
 
                 // Get the histogram bin indices
-                const Vec4f idx_temp = params.vec_res_factor * 
+                const Vecf idx_temp = params.vec_res_factor * 
                     (vec_log_lum - params.vec_Lmin_log);
-                indices_vec[i] = _mm_cvttps_epi32 (idx_temp);
+                indices_vec[i] = truncate(idx_temp);
             }
 
             // Update the histogram
             for (size_t i = 0; i != numIter; ++i) {
-                const int32_t* const indices_base = &indices_i32[4*i];
+                const int32_t* const indices_base =
+                    &indices_i32[vector_traits<Vecf>::VEC_LEN * i];
                 for (int k = 0; k != validPerVector; ++k) {
                     const int32_t& index = indices_base[k];
                     assert (index >= 0 && index < (int32_t)histogram.size());
@@ -997,11 +1041,7 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
     assert (Lmax > Lmin);
 
     Vec4f rangeHelper(1.0f, 1.0f, Lmax, Lmin);
-#if USE_AM_LOG
-    rangeHelper = am::log_eps (rangeHelper);
-#else
-    rangeHelper = ssemath::log_ps (rangeHelper);
-#endif
+    rangeHelper = simd_log(rangeHelper);
     const float Lmin_log = rangeHelper[0];
     const float Lmax_log = rangeHelper[1];
 
@@ -1029,12 +1069,13 @@ AccumulateHistogramFunctor::accumulate (const float * PCG_RESTRICT Lw,
         AccumulateHistogramFunctor::Params::init (Lmin, Lmax);
 
     const size_t numElements = Lw_end - Lw;
-    const Vec4f* LwVecBegin = reinterpret_cast<const Vec4f*>(Lw);
-    const Vec4f* LwVecEnd   =
-        reinterpret_cast<const Vec4f*>(Lw + ((numElements + 3) & ~0x3));
-    AccumulateHistogramFunctor acc (LwVecEnd, params, numElements % 4);
+    const size_t VEC_LEN   = vector_traits<Vecf>::VEC_LEN;
+    const Vecf* LwVecBegin = reinterpret_cast<const Vecf*>(Lw);
+    const Vecf* LwVecEnd   = reinterpret_cast<const Vecf*>(Lw +
+        ((numElements + (VEC_LEN-1)) & ~(VEC_LEN-1)));
+    AccumulateHistogramFunctor acc (LwVecEnd, params, numElements % VEC_LEN);
     
-    tbb::blocked_range<const Vec4f*> range(LwVecBegin, LwVecEnd, 4);
+    tbb::blocked_range<const Vecf*> range(LwVecBegin, LwVecEnd, 32/VEC_LEN);
     tbb::parallel_reduce (range, acc);
 
     AccumulateHistogramFunctor::hist_t & histogram = params.flatHistogram();
@@ -1184,8 +1225,8 @@ Reinhard02::EstimateParams (afloat_t * const PCG_RESTRICT Lw, size_t count,
     }
     const size_t nonzero_off = zero_count==0 ? 0 : compactZeros(Lw, count);
 
-    // If necessary move some elements to keep the 16-bytes alignment
-    const size_t nonzero_delta = nonzero_off & 0x3;
+    // If necessary move some elements to keep the 32-bytes alignment
+    const size_t nonzero_delta = nonzero_off & 0x7;
     _mm_prefetch ((char*)(Lw + nonzero_off - nonzero_delta), _MM_HINT_T0);
     _mm_prefetch ((char*)(Lw + count - nonzero_delta), _MM_HINT_T0);
     afloat_t * Lw_nonzero = Lw + nonzero_off;
