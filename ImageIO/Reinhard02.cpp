@@ -35,6 +35,10 @@
 #include "ImageIterators.h"
 #include "Vec4f.h"
 #include "Vec4i.h"
+#if PCG_USE_AVX
+# include "Vec8f.h"
+# include "Vec8i.h"
+#endif
 
 #include <limits>
 #include <vector>
@@ -120,17 +124,50 @@ typedef std::numeric_limits<float> float_limits;
 // are not instantiated multiple times
 namespace constants
 {
-const Vec4f LUM_R(0.27f);
-const Vec4f LUM_G(0.67f);
-const Vec4f LUM_B(0.06f);
-const Vec4f LUM_MINVAL(float_limits::min());
-const Vec4i INT_ONE(1);
-const Vec4i MASK_NAN(Vec4i::constant<0x7f800000>());
-const Vec4f LUM_TAIL_MASKS[3] = {
+
+// Writing manually the same constant many times is error prone
+#if PCG_USE_AVX
+#define PCG_VEC_UNION(x) {x, x, x, x, x, x, x, x}
+typedef pcg::Vec8fUnion VecfUnion;
+typedef pcg::Vec8iUnion VeciUnion;
+#else
+#define PCG_VEC_UNION(x) {x, x, x, x}
+typedef pcg::Vec4fUnion VecfUnion;
+typedef pcg::Vec4iUnion VeciUnion;
+#endif
+
+// Helper function to set either a scalar or a float from a Vec4fUnion
+template <typename T, class VecUnionType>
+inline const T& get(const VecUnionType& value) {
+    return *reinterpret_cast<const T*>(&value);
+}
+
+
+static const VecfUnion LUM_R = {PCG_VEC_UNION( 0.27f )};
+static const VecfUnion LUM_G = {PCG_VEC_UNION( 0.67f )};
+static const VecfUnion LUM_B = {PCG_VEC_UNION( 0.06f )};
+static const VecfUnion LUM_MINVAL = {PCG_VEC_UNION( float_limits::min() )};
+static const VeciUnion INT_ONE = {PCG_VEC_UNION( 1 )};
+static const VeciUnion MASK_NAN = {PCG_VEC_UNION( 0x7f800000 )};
+
+const Vec4f LUM_TAIL_MASKS_V4[3] = {
     Vec4f(_mm_castsi128_ps(Vec4i::constant<0, 0, 0,-1>())),
     Vec4f(_mm_castsi128_ps(Vec4i::constant<0, 0,-1,-1>())),
     Vec4f(_mm_castsi128_ps(Vec4i::constant<0,-1,-1,-1>()))
 };
+
+#if PCG_USE_AVX
+static const VecfUnion LUM_MAXVAL = {PCG_VEC_UNION( float_limits::max() )};
+const Vec8f LUM_TAIL_MASKS_V8[7] = {
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0, 0, 0, 0, 0, 0, 0,-1>())),
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0, 0, 0, 0, 0, 0,-1,-1>())),
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0, 0, 0, 0, 0,-1,-1,-1>())),
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0, 0, 0, 0,-1,-1,-1,-1>())),
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0, 0, 0,-1,-1,-1,-1,-1>())),
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0, 0,-1,-1,-1,-1,-1,-1>())),
+    Vec8f(_mm256_castsi256_ps(Vec8i::constant<0,-1,-1,-1,-1,-1,-1,-1>()))
+};
+#endif
 
 
 } // namespace constants
@@ -152,27 +189,51 @@ public:
 
 
 
-// Helper to get the appropriate tail mask for the templated luminance functors
-template <int tailElements>
-inline const Vec4f& getTailMask();
+
+template <typename VecType>
+struct tail_mask_traits;
 
 template <>
-inline const Vec4f& getTailMask<0>() {
+struct tail_mask_traits<Vec4f>
+{
+    template <int tailElements>
+    static inline const Vec4f& getTailMask() {
+        return constants::LUM_TAIL_MASKS_V4[tailElements-1];
+    }
+};
+
+#if PCG_USE_AVX
+template <>
+struct tail_mask_traits<Vec8f>
+{
+    template <int tailElements>
+    static inline const Vec8f& getTailMask() {
+        return constants::LUM_TAIL_MASKS_V8[tailElements-1];
+    }
+};
+#endif
+
+
+// Helper to get the appropriate tail mask for the templated luminance functors
+template <typename VecType, int tailElements>
+inline const VecType& getTailMask() {
+    return tail_mask_traits<VecType>::template getTailMask<tailElements>();
+}
+
+template <>
+inline const Vec4f& getTailMask<Vec4f,0>() {
     assert("This should never be used" == 0);
-    return constants::LUM_TAIL_MASKS[0];
+    return constants::LUM_TAIL_MASKS_V4[0];
 }
+
+#if PCG_USE_AVX
 template <>
-inline const Vec4f& getTailMask<1>() {
-    return constants::LUM_TAIL_MASKS[0];
+inline const Vec8f& getTailMask<Vec8f,0>() {
+    assert("This should never be used" == 0);
+    return constants::LUM_TAIL_MASKS_V8[0];
 }
-template <>
-inline const Vec4f& getTailMask<2>() {
-    return constants::LUM_TAIL_MASKS[1];
-}
-template <>
-inline const Vec4f& getTailMask<3>() {
-    return constants::LUM_TAIL_MASKS[2];
-}
+#endif
+
 
 
 
@@ -202,10 +263,42 @@ inline float horizontal_sum(const __m128& vec) {
 }
 
 
+#if PCG_USE_AVX
 
-// Little helper to extract RGB elements from and iterator
-template <typename RGBIterator>
-inline void extractRGB(RGBIterator it, Vec4f &outR, Vec4f &outG, Vec4f &outB) {
+inline float horizontal_min(const float& x, const Vec8f& vec) {
+    Vec8f xIn = _mm256_castps128_ps256(_mm_load_ss(&x));
+    Vec8f tmpMin = simd_min(vec, simd_permute<2,3,0,1>(vec));
+    tmpMin = simd_min(tmpMin, simd_permute<1,0,3,2>(tmpMin));
+    tmpMin = simd_min(tmpMin, simd_permuteHiLo(tmpMin));
+    tmpMin = simd_min(tmpMin, xIn);
+    return _mm_cvtss_f32(_mm256_castps256_ps128(tmpMin));
+}
+
+inline float horizontal_max(const float& x, const Vec8f& vec) {
+    Vec8f xIn = _mm256_castps128_ps256(_mm_load_ss(&x));
+    Vec8f tmpMax = simd_max(vec, simd_permute<2,3,0,1>(vec));
+    tmpMax = simd_max(tmpMax, simd_permute<1,0,3,2>(tmpMax));
+    tmpMax = simd_max(tmpMax, simd_permuteHiLo(tmpMax));
+    tmpMax = simd_max(tmpMax, xIn);
+    return _mm_cvtss_f32(_mm256_castps256_ps128(tmpMax));
+}
+
+inline float horizontal_sum(const Vec8f& vec) {
+    Vec8f tmp  = _mm256_hadd_ps(vec, vec);
+    tmp        = _mm256_hadd_ps(tmp, tmp);
+    Vec8f pTmp = simd_permuteHiLo(tmp);
+    Vec8f r    = tmp + pTmp;
+    return _mm_cvtss_f32(_mm256_castps256_ps128(r));
+}
+
+
+#endif // PCG_USE_AVX
+
+
+
+// Little helper to extract RGB elements from an iterator
+template <class RGBIterator, typename VecT>
+inline void extractRGB(RGBIterator it, VecT &outR, VecT &outG, VecT &outB) {
     outR = it->r();
     outG = it->g();
     outB = it->b();
@@ -213,13 +306,220 @@ inline void extractRGB(RGBIterator it, Vec4f &outR, Vec4f &outG, Vec4f &outB) {
 
 
 template<>
-inline void extractRGB<RGBA32FVec4ImageIterator>(RGBA32FVec4ImageIterator it,
+inline void
+extractRGB<RGBA32FVec4ImageIterator, Vec4f>(RGBA32FVec4ImageIterator it,
     Vec4f &outR, Vec4f &outG, Vec4f &outB) {
     RGBA32FVec4 data = *it;
     outR = data.r();
     outG = data.g();
     outB = data.b();
 }
+
+
+
+// Traits for source iterators
+template <class SourceIterator>
+struct iterator_traits;
+
+template <>
+struct iterator_traits<RGBA32FVec4ImageSoAIterator>
+{
+    typedef Vec4f  vf;
+    typedef Vec4bf vbf;
+    typedef Vec4i  vi;
+    typedef Vec4bi vbi;
+
+    enum Constants {
+        VEC_LEN = 4
+    };
+};
+
+template <>
+struct iterator_traits<RGBA32FVec4ImageIterator>
+{
+    typedef Vec4f  vf;
+    typedef Vec4bf vbf;
+    typedef Vec4i  vi;
+    typedef Vec4bi vbi;
+    
+    enum Constants {
+        VEC_LEN = 4
+    };
+};
+
+#if PCG_USE_AVX
+template <>
+struct iterator_traits<RGBA32FVec8ImageSoAIterator>
+{
+    typedef Vec8f  vf;
+    typedef Vec8bf vbf;
+    typedef Vec8i  vi;
+    
+    enum Constants {
+        VEC_LEN = 8
+    };
+};
+#endif
+
+
+
+// Create a mask to zero out invalid pixels
+//   0x7f800000u > floatToBits(x) && x >= float_limits::min(), ossia
+//   isnormal(x)
+inline Vec4f getValidLuminanceMask(const Vec4f& Lw) {
+    const Vec4f& MINVAL(constants::get<Vec4f>(constants::LUM_MINVAL));
+    const Vec4i& MASK_NAN(constants::get<Vec4i>(constants::MASK_NAN));
+        
+    const Vec4f isNotTiny(Lw >= MINVAL);
+    const Vec4i LwBits = _mm_castps_si128(Lw);
+    const Vec4bi isNotNaN = MASK_NAN > LwBits;
+    const Vec4f isValidMask = isNotTiny & Vec4f(_mm_castsi128_ps(isNotNaN));
+    return isValidMask;
+}
+
+template <int tailElements>
+inline int32_t updateZeroCount(const Vec4i& vecZeroCount)
+{
+    // Compensate in case of extra tail elements which are marked as invalid
+    int32_t zeroCount = tailElements == 0 ? 0 : tailElements - 4;
+    
+    // Avoid the horizontal integer sum if all the values are zero
+    if (!vecZeroCount.isZero()) {
+        union { __m128i xmmi; int32_t i32[4]; } u = {vecZeroCount};
+        for (int i = 0; i < 4; ++i) {
+            zeroCount += u.i32[i];
+        }
+    }
+
+    assert(zeroCount >= 0);
+    return zeroCount;
+}
+
+// Compute [per component] a + (testMask & b)
+inline Vec4i addMasked(const Vec4bf& testMask, const Vec4i& a, const Vec4i& b) {
+    const Vec4i result = a + andnot(_mm_castps_si128(testMask), b);
+    return result;
+}
+
+#if PCG_USE_AVX
+
+inline Vec8f getValidLuminanceMask(const Vec8f& Lw) {
+    // We cannot use the bit tricks with AVX (it needs AVX2), but we can test
+    // for NaNs using the comparison intrinsics
+    const Vec8f& MINVAL(constants::get<Vec8f>(constants::LUM_MINVAL));
+    const Vec8f& MAXVAL(constants::get<Vec8f>(constants::LUM_MAXVAL));
+
+    const Vec8f isNotTiny(Lw >= MINVAL);
+    const Vec8f isFinite (Lw <= MAXVAL);
+    const Vec8f isNotNan (_mm256_cmp_ps(Lw, Lw, _CMP_ORD_Q));
+    const Vec8f isValidMask = isNotTiny & isFinite & isNotNan;
+    return isValidMask;
+}
+
+template <int tailElements>
+inline int32_t updateZeroCount(const Vec8i& vecZeroCount)
+{
+    // Compensate in case of extra tail elements which are marked as invalid
+    int32_t zeroCount = tailElements == 0 ? 0 : tailElements - 8;
+    
+    // Avoid the horizontal integer sum if all the values are zero
+    if (!vecZeroCount.isZero()) {
+        union { __m256i ymmi; int32_t i32[8]; } u = {vecZeroCount};
+        for (int i = 0; i < 8; ++i) {
+            zeroCount += u.i32[i];
+        }
+    }
+
+    assert(zeroCount >= 0);
+    return zeroCount;
+}
+
+inline Vec8i addMasked(const Vec8bf& testMask, const Vec8i& a, const Vec8i& b) {
+#if !PCG_USE_AVX2
+    // Add using SSE
+    Vec4i mask0 = _mm256_extractf128_si256(_mm256_castps_si256(testMask), 0);
+    Vec4i mask1 = _mm256_extractf128_si256(_mm256_castps_si256(testMask), 1);
+    Vec4i a0 = _mm256_extractf128_si256(a, 0);
+    Vec4i a1 = _mm256_extractf128_si256(a, 1);
+    Vec4i b0 = _mm256_extractf128_si256(b, 0);
+    Vec4i b1 = _mm256_extractf128_si256(b, 1);
+
+    const Vec4i r0 = a0 + andnot(mask0, b0);
+    const Vec4i r1 = a1 + andnot(mask1, b1);
+    Vec8i result = _mm256_insertf128_si256(_mm256_castsi128_si256(r0), r1, 1);
+#else
+    const Vec8i result = a + andnot(_mm256_castps_si256(testMask), b);
+#endif
+    return result;
+}
+
+#endif // PCG_USE_AVX
+
+
+
+// Helper functor to call a "process" function using only the needed cases
+template <int FullVectorSize>
+struct TailProcess;
+
+template <>
+struct TailProcess<4>
+{
+    template <typename PFunctor, class Iterator, typename T>
+    static inline void
+    process(PFunctor& f, Iterator begin, Iterator end, const T& numTail) {
+        switch (numTail) {
+        case 1:
+            f.process<1>(begin, end);
+            break;
+        case 2:
+            f.process<2>(begin, end);
+            break;
+        case 3:
+            f.process<3>(begin, end);
+            break;
+        default:
+            assert(0);
+        }
+    }
+};
+
+#if PCG_USE_AVX
+
+template <>
+struct TailProcess<8>
+{
+    template <typename PFunctor, class Iterator, typename T>
+    static inline void
+    process(PFunctor& f, Iterator begin, Iterator end, const T& numTail) {
+        switch (numTail) {
+        case 1:
+            f.process<1>(begin, end);
+            break;
+        case 2:
+            f.process<2>(begin, end);
+            break;
+        case 3:
+            f.process<3>(begin, end);
+            break;
+        case 4:
+            f.process<4>(begin, end);
+            break;
+        case 5:
+            f.process<5>(begin, end);
+            break;
+        case 6:
+            f.process<6>(begin, end);
+            break;
+        case 7:
+            f.process<7>(begin, end);
+            break;
+        default:
+            assert(0);
+        }
+    }
+};
+
+#endif // PCG_USE_AVX
 
 
 // TBB functor object to fill the array of luminances for image iterators.
@@ -230,12 +530,18 @@ inline void extractRGB<RGBA32FVec4ImageIterator>(RGBA32FVec4ImageIterator it,
 template <class SourceIterator = RGBA32FVec4ImageSoAIterator>
 struct LuminanceFunctor
 {
+    typedef typename iterator_traits<SourceIterator>::vf  Vecf;
+    typedef typename iterator_traits<SourceIterator>::vbf Vecbf;
+    typedef typename iterator_traits<SourceIterator>::vi  Veci;
+
+    friend struct TailProcess<iterator_traits<SourceIterator>::VEC_LEN>;
+
     // Remember where the data starts
     SourceIterator pixelsBegin;
     SourceIterator pixelsEnd;
 
     // Target luminance array, with extra elements allocated
-    Vec4f* const PCG_RESTRICT Lw;
+    Vecf* const PCG_RESTRICT Lw;
 
     // Number of tail elements (in the last vector component)
     const size_t numTail;
@@ -246,12 +552,12 @@ struct LuminanceFunctor
     float Lmax;
 
     // Constructor for the initial phase
-    LuminanceFunctor (SourceIterator begin, SourceIterator end, Vec4f* Lw_,
+    LuminanceFunctor (SourceIterator begin, SourceIterator end, Vecf* Lw_,
         size_t nTail) :
     pixelsBegin(begin), pixelsEnd(end), Lw(Lw_), numTail(nTail), zero_count(0), 
     Lmin(float_limits::infinity()), Lmax(-float_limits::infinity())
     {
-        assert(numTail < 4);
+        assert(numTail < iterator_traits<SourceIterator>::VEC_LEN);
     }
 
     // Constructor for each split
@@ -280,103 +586,67 @@ struct LuminanceFunctor
             process<0>(range.begin(), bulkEnd);
 
             // This will process a single element
-            switch (numTail) {
-            case 1:
-                process<1>(bulkEnd, range.end());
-                break;
-            case 2:
-                process<2>(bulkEnd, range.end());
-                break;
-            case 3:
-                process<3>(bulkEnd, range.end());
-                break;
-            default:
-                assert(0);
-            }
+            typedef TailProcess<iterator_traits<SourceIterator>::VEC_LEN> TP;
+            TP::process(*this, bulkEnd, range.end(), numTail);
         }
     }
 
-private:
 
-    // Create a mask to zero out invalid pixels
-    //   0x7f800000u > floatToBits(x) && x >= float_limits::min(), ossia
-    //   isnormal(x) && x >= float_limits::min()
-    inline Vec4f getValidLuminanceMask(const Vec4f& Lw) {
-        const Vec4f& MINVAL(constants::LUM_MINVAL);
-        const Vec4i& MASK_NAN(constants::MASK_NAN);
-        
-        const Vec4f isNotTiny(Lw >= MINVAL);
-        const Vec4i LwBits = _mm_castps_si128(Lw);
-        const Vec4bi isNotNaN = MASK_NAN > LwBits;
-        const Vec4f isValidMask = isNotTiny & Vec4f(_mm_castsi128_ps(isNotNaN));
-        return isValidMask;
-    }
+private:
 
     // Accumulates the results, using the given number of tail elements
     template <int tailElements>
-    inline void process (SourceIterator begin, SourceIterator end)
+    inline void process(SourceIterator begin, SourceIterator end)
     {
         // Offset for the output
-        Vec4f* dest = Lw + (begin - pixelsBegin);
+        Vecf* dest = Lw + (begin - pixelsBegin);
 
         // Initialize the working values
-        Vec4f vec_min(Lmin);
-        Vec4f vec_max(Lmax);
-        Vec4i vec_zero_count(0);
+        Vecf vec_min(Lmin);
+        Vecf vec_max(Lmax);
+        Veci vec_zero_count(0);
 
         // References to the global constants
-        const Vec4f& LUM_R(constants::LUM_R);
-        const Vec4f& LUM_G(constants::LUM_G);
-        const Vec4f& LUM_B(constants::LUM_B);
-        const Vec4i& INT_ONE(constants::INT_ONE);
+        const Vecf& LUM_R(constants::get<Vecf>(constants::LUM_R));
+        const Vecf& LUM_G(constants::get<Vecf>(constants::LUM_G));
+        const Vecf& LUM_B(constants::get<Vecf>(constants::LUM_B));
+        const Veci& INT_ONE(constants::get<Veci>(constants::INT_ONE));
 
         for (SourceIterator it = begin; it != end; ++it, ++dest) {
             
             // Raw luminance, with NaN and Inf
-            Vec4f pixelR, pixelG, pixelB;
+            Vecf pixelR, pixelG, pixelB;
             extractRGB(it, pixelR, pixelG, pixelB);
-            const Vec4f Lw = LUM_R*pixelR + LUM_G*pixelG + LUM_B*pixelB;
+            const Vecf Lw = LUM_R*pixelR + LUM_G*pixelG + LUM_B*pixelB;
 
             // Write the valid luminance values
-            Vec4f isValidMask = getValidLuminanceMask(Lw);
-            Vec4f validLw = Lw & isValidMask;
+            Vecf isValidMask = getValidLuminanceMask(Lw);
+            Vecf validLw = Lw & isValidMask;
 
             if (tailElements != 0) {
-                const Vec4f& tailMask(getTailMask<tailElements>());
+                const Vecf& tailMask(getTailMask<Vecf, tailElements>());
                 validLw     &= tailMask;
                 isValidMask &= tailMask;
             }
             *dest = validLw;
 
             // Update the min/max
-            const Vec4bf isValid(static_cast<__m128>(isValidMask));
+            const Vecbf isValid(isValidMask);
             vec_min = select(isValid, simd_min(vec_min, validLw), vec_min);
             vec_max = select(isValid, simd_max(vec_max, validLw), vec_max);
 
             // Update the zero count
-            vec_zero_count = vec_zero_count +
-                andnot(_mm_castps_si128(isValid), INT_ONE);
+            vec_zero_count = addMasked(isValid, vec_zero_count, INT_ONE);
         }
 
         // Accumulate the totals for min, max and zero_count
         Lmin = horizontal_min(Lmin, vec_min);
         Lmax = horizontal_max(Lmax, vec_max);
 
-        // Avoid the horizontal integer sum if all the values are zero
-        int countMask = _mm_movemask_epi8(vec_zero_count == Vec4i::zero());
-        if (countMask != 0xFFFF) {
-            Vec4iUnion countUnion = {vec_zero_count};
-            _mm_store_si128(&countUnion.xmm, vec_zero_count);
-            for (int i = 0; i < 4; ++i) {
-                zero_count += countUnion.i32[i];
-            }
-        }
-
-        // Adjust in case of extra tail elements which were marked as invalid
-        if (tailElements != 0) {
-            assert(zero_count >= (4 - tailElements));
-            zero_count -= 4 - tailElements;
-        }
+        const int32_t localZeros= updateZeroCount<tailElements>(vec_zero_count);
+        zero_count += localZeros;
+        assert(zero_count <= static_cast<size_t>((pixelsEnd - pixelsBegin) *
+            iterator_traits<SourceIterator>::VEC_LEN - tailElements));
     }
 };
 
@@ -489,7 +759,7 @@ private:
 #endif
             // Kill the invalid values if required
             if (tailElements != 0) {
-                const Vec4f& tailMask(getTailMask<tailElements>());
+                const Vec4f& tailMask(getTailMask<Vec4f, tailElements>());
                 vec_log_lum &= tailMask;
             }
 
@@ -687,7 +957,7 @@ private:
 #endif
                 // Kill the invalid values if required
                 if (validPerVector != 4) {
-                    const Vec4f& tailMask(getTailMask<validPerVector % 4>());
+                    const Vec4f& tailMask(getTailMask<Vec4f,validPerVector%4>());
                     vec_log_lum &= tailMask;
                 }
 
@@ -737,7 +1007,7 @@ AccumulateHistogramFunctor::Params::init(float Lmin, float Lmax)
 
     const int resolution = 100;
     const int dynrange = static_cast<int> (ceil(1e-5 + Lmax_log - Lmin_log));
-    const int num_bins = std::min(resolution * dynrange, 0x7FFF);
+    const int num_bins = std::min(resolution * dynrange, 2048);
 
     const float range = Lmax_log - Lmin_log;
     const float res_factor = num_bins / range;
@@ -878,14 +1148,17 @@ void LuminanceHelper(SourceIterator begin, SourceIterator end,
     afloat_t * PCG_RESTRICT Lw, size_t tailElements,
     size_t* outZeroCount, float* outLmin, float* outLmax)
 {
+    typedef typename iterator_traits<SourceIterator>::vf vf;
+    const size_t VEC_LEN = iterator_traits<SourceIterator>::VEC_LEN;
+
     assert(Lw != NULL);
-    assert(reinterpret_cast<uintptr_t>(Lw) % 16 == 0);
-    assert(tailElements < 4);
+    assert(reinterpret_cast<uintptr_t>(Lw) % (VEC_LEN * sizeof(float)) == 0);
+    assert(tailElements < VEC_LEN);
 
-    Vec4f * const PCG_RESTRICT LwVec4 = reinterpret_cast<Vec4f*>(Lw);
-    tbb::blocked_range<SourceIterator> range(begin, end, 16);
+    vf* const PCG_RESTRICT LwVec = reinterpret_cast<vf*>(Lw);
+    tbb::blocked_range<SourceIterator> range(begin, end, VEC_LEN);
 
-    LuminanceFunctor<SourceIterator> lumFunctor(begin,end,LwVec4, tailElements);
+    LuminanceFunctor<SourceIterator> lumFunctor(begin,end,LwVec, tailElements);
     tbb::parallel_reduce(range, lumFunctor);
     *outZeroCount = lumFunctor.zero_count;
     *outLmin      = lumFunctor.Lmin;
@@ -1014,9 +1287,14 @@ Reinhard02::EstimateParams (const RGBAImageSoA& img)
     auto_afloat_ptr Lw_autoptr (Lw);
 
     // Compute the luminance
-    RGBA32FVec4ImageSoAIterator begin = RGBA32FVec4ImageSoAIterator::begin(img);
-    RGBA32FVec4ImageSoAIterator end   = RGBA32FVec4ImageSoAIterator::end(img);
-    const size_t numTail = count % 4;
+#if !PCG_USE_AVX
+    typedef RGBA32FVec4ImageSoAIterator ImageIterator;
+#else
+    typedef RGBA32FVec8ImageSoAIterator ImageIterator;
+#endif
+    ImageIterator begin = ImageIterator::begin(img);
+    ImageIterator end   = ImageIterator::end(img);
+    const size_t numTail = count % iterator_traits<ImageIterator>::VEC_LEN;
     LuminanceResult lumResult;
     LuminanceHelper(begin, end, Lw, numTail,
         &lumResult.zero_count, &lumResult.Lmin, &lumResult.Lmax);

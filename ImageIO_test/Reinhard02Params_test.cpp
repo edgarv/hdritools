@@ -140,6 +140,17 @@ TEST_F(Reinhard02ParamsTest, Basic)
 
 TEST_F(Reinhard02ParamsTest, TinyImg)
 {
+    for (int i = 1; i <= 16; ++i) {
+        FloatImage img(i, 1);
+        fillImage(img, 2.0f);
+        Reinhard02::Params p = Reinhard02::EstimateParams(img);
+
+        ASSERT_LT (p.l_w, p.l_white);
+        ASSERT_GT (p.key, 0.0f);
+        ASSERT_LT (p.key, 1.0f);
+
+        checkSoA(img, p);
+    }
     for (int i = 0; i < NUM_RUNS; ++i) {
         FloatImage img(1+rnd.nextInt(8), 1+rnd.nextInt(4));
         fillImage(img, 2.0f);

@@ -24,12 +24,24 @@
 namespace pcg
 {
 
+// Forward declarations, required by Clang and ICL 12.1
+struct Vec4f;
+
+template <int idx3, int idx2, int idx1, int idx0>
+Vec4f simd_shuffle(const Vec4f& low, const Vec4f& hi);
+
+template <int idx3, int idx2, int idx1, int idx0>
+Vec4f simd_shuffle(const Vec4f& a);
+
+
+
 // Helper class intended to represent the mask produced by logical operations
 // applied to the floating point numbers.
 struct ALIGN16_BEG Vec4bf
 {
 private:
     __m128 xmm;
+    friend struct Vec4f;
 
 public:
     // Initialize from raw values
@@ -51,17 +63,6 @@ union ALIGN16_BEG Vec4fUnion
     float f[4];
     __m128 xmm;
 } ALIGN16_END;
-
-
-
-// Forward declarations, required by Clang and ICL 12.1
-struct Vec4f;
-
-template <int idx3, int idx2, int idx1, int idx0>
-Vec4f simd_shuffle(const Vec4f& low, const Vec4f& hi);
-
-template <int idx3, int idx2, int idx1, int idx0>
-Vec4f simd_shuffle(const Vec4f& a);
 
 
 
@@ -89,7 +90,7 @@ public:
     explicit Vec4f(float val) : xmm(_mm_set_ps1(val)) {}
 
     // Initialize from a mask
-    explicit Vec4f(const Vec4bf& val) : xmm(static_cast<__m128>(val)) {}
+    explicit Vec4f(const Vec4bf& val) : xmm(val.xmm) {}
 
     // Initialize with explicit values. The indices reflect the memory layout
     Vec4f(float f3, float f2, float f1, float f0) :
@@ -122,6 +123,10 @@ public:
     friend Vec4f operator^ (const Vec4f& a, const Vec4f& b) {
         return _mm_xor_ps(a, b);
     }
+    friend Vec4f andnot(const Vec4f& a, const Vec4f& b) {
+        return _mm_andnot_ps(a, b);
+    }
+
     // Logical operators [Members]
     Vec4f& operator&= (const Vec4f& a) {
         xmm = _mm_and_ps(xmm, a.xmm);

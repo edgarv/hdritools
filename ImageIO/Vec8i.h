@@ -24,6 +24,16 @@
 namespace pcg
 {
 
+// Helper union to provide compile time constants, by initializing the first
+// member of the union. Remember that values are loaded into the XMM registers
+// in reverse order: i7,i6,i5,i4,i3,i2,i1,i0
+union ALIGN32_BEG Vec8iUnion
+{
+    int32_t i32[8];
+    __m256i ymm;
+} ALIGN32_END;
+
+
 struct ALIGN32_BEG Vec8i
 {
 private:
@@ -54,6 +64,11 @@ public:
         return *this;
     }
 
+    // Zero vector. Useful during code generation
+    inline static Vec8i zero() {
+        return _mm256_setzero_si256();
+    }
+
     // Cast operations
     operator __m256i() const {
         return ymm;
@@ -82,6 +97,11 @@ public:
         return _mm256_sub_epi32(a, b);
     }
 #endif // PCG_USE_AVX2
+
+    // Test if all elements are zero
+    inline bool isZero() const {
+        return _mm256_testz_si256(ymm, ymm) != 0;
+    }
 
     // Element access (slow!) [const version]
     const int32_t& operator[] (size_t i) const {

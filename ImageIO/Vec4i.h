@@ -55,11 +55,11 @@ public:
 
 // Helper union to provide compile time constants, by initializing the first
 // member of the union. Remember that values are loaded into the XMM registers
-// in reverse order: f3,f2,f1,f0
+// in reverse order: i3,i2,i1,i0
 union ALIGN16_BEG Vec4iUnion
 {
-    __m128i xmm;
     int32_t i32[4];
+    __m128i xmm;
 } ALIGN16_END;
 
 
@@ -123,6 +123,15 @@ public:
     }
     friend Vec4i operator- (const Vec4i& a, const Vec4i& b) {
         return _mm_sub_epi32(a, b);
+    }
+
+    // Test if all elements are zero
+    inline bool isZero() const {
+#if !PCG_USE_AVX
+        return _mm_movemask_epi8(xmm == Vec4i::zero()) == 0xFFFF;
+#else
+        return _mm_testz_si128(xmm, xmm) != 0;
+#endif
     }
 
     // Element access (slow!) [const version]

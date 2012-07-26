@@ -24,12 +24,21 @@
 namespace pcg
 {
 
+// Forward declarations, required by Clang and ICL 12.1
+struct Vec8f;
+
+template <int idx3, int idx2, int idx1, int idx0>
+Vec8f simd_permute(const Vec8f& a);
+
+
+
 // Helper class intended to represent the mask produced by logical operations
 // applied to the floating point numbers.
 struct ALIGN32_BEG Vec8bf
 {
 private:
     __m256 ymm;
+    friend struct Vec8f;
 
 public:
     // Initialize from raw values
@@ -79,6 +88,9 @@ public:
     // Initialize with the same value in all components
     explicit Vec8f(float val) : ymm(_mm256_set1_ps(val)) {}
 
+    // Initialize from a mask
+    explicit Vec8f(const Vec8bf& val) : ymm(val.ymm) {}
+
     // Initialize with explicit values. The indices reflect the memory layout
     Vec8f(float f7, float f6, float f5, float f4,
           float f3, float f2, float f1, float f0) :
@@ -111,6 +123,10 @@ public:
     friend Vec8f operator^ (const Vec8f& a, const Vec8f& b) {
         return _mm256_xor_ps(a, b);
     }
+    friend Vec8f andnot(const Vec8f& a, const Vec8f& b) {
+        return _mm256_andnot_ps(a, b);
+    }
+
     // Logical operators [Members]
     Vec8f& operator&= (const Vec8f& a) {
         ymm = _mm256_and_ps(ymm, a.ymm);
@@ -187,6 +203,24 @@ public:
     }
     friend Vec8f simd_max(const Vec8f& a, const Vec8f& b) {
         return _mm256_max_ps(a, b);
+    }
+
+    // Permutes single precision values from the low and hi parts in "a"
+    // WITHOUT crossing the 128-bit boundary. The idx[.] parameters indicate
+    // which value of the high part of "a" will go in the high part of the
+    // result; the analogous happens with the lower part. Thus each
+    // have the range [0,3]: just like shuffling the upper and bottom parts
+    // at the same time.
+    template <int idx3, int idx2, int idx1, int idx0>
+    friend Vec8f simd_permute(const Vec8f& a) {
+        return _mm256_permute_ps(a, _MM_SHUFFLE(idx3,idx2,idx1,idx0));
+    }
+
+    // Permutes the top 4 values with the low 4 values preserving the order
+    // within each:
+    //   7,6,5,4,3,2,1,0 -> 3,2,1,0,7,6,5,4
+    friend Vec8f simd_permuteHiLo(const Vec8f& a) {
+        return _mm256_permute2f128_ps(a, a, 0x1);
     }
 
     // Comparisons, return a mask. Ordered/unordered, quiet or signaling refer
