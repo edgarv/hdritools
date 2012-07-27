@@ -60,6 +60,9 @@ public:
     template <ScanLineMode S>
     static Params EstimateParams (const Image<Rgba32F, S> &img)
     {
+        if (img.Size() == 0) {
+            throw IllegalArgumentException("Empty image");
+        }
         return EstimateParams (img.GetDataPointer(), img.Size());
     }
 

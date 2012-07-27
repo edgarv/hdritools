@@ -1317,6 +1317,10 @@ Reinhard02::EstimateParams (const Rgba32F * const pixels, size_t count)
 Reinhard02::Params
 Reinhard02::EstimateParams (const RGBAImageSoA& img)
 {
+    if (img.Size() == 0) {
+        throw IllegalArgumentException("Empty image");
+    }
+
     // Allocate the array with the luminances with AVX[2]-friendly alignment
     const size_t count = static_cast<size_t>(img.Size());
     afloat_t * PCG_RESTRICT Lw = alloc_align<float> (32, (count+7) & ~0x7);  
