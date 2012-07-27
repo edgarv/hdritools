@@ -293,8 +293,10 @@ void HDRImageDisplay::mouseMoveEvent(QMouseEvent * event)
 {
     // The position of the event is relative to the image: this means that we
     // don't have to worry about scrollbars!
-    mouseOverPixel(QPoint(qRound(event->pos().x()/scaleFactor), 
-        qRound(event->pos().y()/scaleFactor)));
+    qreal invScale = static_cast<qreal>(1) / scaleFactor;
+    int x = static_cast<int>(event->pos().x() * invScale);
+    int y = static_cast<int>(event->pos().y() * invScale);
+    mouseOverPixel(QPoint(x, y));
 }
 
 

@@ -52,13 +52,15 @@ void ImageIODataProvider::update()
     // Now we can safely set the size of this guy
     QSize size(hdr.Width(), hdr.Height());
     setSize(size);
-
+    
     // Get also the tone mapping settings
-    Reinhard02::Params params = Reinhard02::EstimateParams(hdr);
-    whitePoint = params.l_white;
-    key = params.key;
-    lw  = params.l_w;
-    setWhitePointRange(params.l_min, 1.125*qMax(params.l_max,params.l_white));
+    if (!size.isEmpty()) {
+        Reinhard02::Params params = Reinhard02::EstimateParams(hdr);
+        whitePoint = params.l_white;
+        key = params.key;
+        lw  = params.l_w;
+        setWhitePointRange(params.l_min, 1.125*qMax(params.l_max,params.l_white));
+    }
 }
 
 
