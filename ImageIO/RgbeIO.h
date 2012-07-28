@@ -23,6 +23,7 @@
 #include "Rgba32F.h"
 #include "Rgb32F.h"
 #include "Image.h"
+#include "ImageSoA.h"
 
 namespace pcg {
 
@@ -51,6 +52,10 @@ namespace pcg {
 		static IMAGEIO_API void Load(Image<Rgb32F,BottomUp> &img, istream &is);
 		static IMAGEIO_API void Load(Image<Rgb32F,TopDown>  &img, const char *filename);
 		static IMAGEIO_API void Load(Image<Rgb32F,BottomUp> &img, const char *filename);
+
+		// RGBA SoA Image
+		static IMAGEIO_API void Load(RGBAImageSoA& img, istream& is);
+		static IMAGEIO_API void Load(RGBAImageSoA& img, const char* filename);
 
 
 		// ### Save functions ###

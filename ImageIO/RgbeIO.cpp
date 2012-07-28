@@ -26,6 +26,7 @@
 
  (Place notice here if you modified the code.)
 
+ 2012.07.28 edgar   SIMD conversion for SoA images.
  2008.02.10 edgar   Adapted to C++ and decoupled file reading
             and pixel conversion operations.
  2002.10.29	westin	Allow additional header after FORMAT= line; such
@@ -42,6 +43,8 @@
 #include "RgbeIO.h"
 #include "RgbeIOPrivate.h"
 #include "Exception.h"
+#include "Vec4f.h"
+#include "Vec4i.h"
 
 #include <string.h>
 #include <fstream>
@@ -710,4 +713,97 @@ void RgbeIO::Save(Image<Rgb32F,TopDown>  &img, const char *filename) {
 }
 void RgbeIO::Save(Image<Rgb32F,BottomUp> &img, const char *filename) {
 	rgbeions::Save(img, filename);
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// SoA Image
+///////////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+
+inline void stream(Vec4f& target, const Vec4f& value) {
+    _mm_stream_ps(reinterpret_cast<float*>(&target), value);
+}
+
+inline Vec4i sll(const Vec4i& a, int count) {
+    return _mm_slli_epi32(a, count);
+}
+
+inline Vec4i srl(const Vec4i& a, int count) {
+    return _mm_srli_epi32(a, count);
+}
+
+inline Vec4f toFloat(const Vec4i& a) {
+    return _mm_cvtepi32_ps(a);
+}
+
+inline Vec4f castAsFloat(const Vec4i& a) {
+    return _mm_castsi128_ps(a);
+}
+
+
+
+void LoadImageSoA(const Image<Rgbe, TopDown>& imgRGBE, RGBAImageSoA& img)
+{
+    img.Alloc(imgRGBE.Width(), imgRGBE.Height());
+
+    // Convert them using the RTGI2 method, processing multiple pixels at a time
+    const Vec4i* PCG_RESTRICT vecRGBE =
+        reinterpret_cast<Vec4i*>(imgRGBE.GetDataPointer());
+    assert(reinterpret_cast<uintptr_t>(vecRGBE) % 16 == 0);
+
+    const Vec4i const_0xFF(Vec4i::constant<0xFF>());
+    const Vec4i const_9(Vec4i::constant<9>());
+    const Vec4f const_1p(1.0f);
+
+    typedef Vec4f* PCG_RESTRICT RVec4f;
+    RVec4f rPtr=reinterpret_cast<Vec4f*>(img.GetDataPointer<RGBAImageSoA::R>());
+    RVec4f gPtr=reinterpret_cast<Vec4f*>(img.GetDataPointer<RGBAImageSoA::G>());
+    RVec4f bPtr=reinterpret_cast<Vec4f*>(img.GetDataPointer<RGBAImageSoA::B>());
+    RVec4f aPtr=reinterpret_cast<Vec4f*>(img.GetDataPointer<RGBAImageSoA::A>());
+
+    const int vecCount = imgRGBE.Size() / 4;
+    for (int i = 0; i != vecCount; ++i) {
+        const Vec4i& rgbe = vecRGBE[i];
+        // Unpack the RGBE pixel
+        Vec4f r = toFloat(const_0xFF & rgbe);
+        Vec4f g = toFloat(const_0xFF & (srl(rgbe,  8)));
+        Vec4f b = toFloat(const_0xFF & (srl(rgbe, 16)));
+        Vec4i e = srl(rgbe, 24);
+
+        // Values in the range 1 to 9 would require "denormal" multipliers and
+        // are below minimum values for RGBE exponents so we truncate them to 0
+        const Vec4i exponentMask(e > const_9);
+        e =  sll((e - const_9), 23) & exponentMask;
+        const Vec4f scale = castAsFloat(e);
+
+        r *= scale;
+        g *= scale;
+        b *= scale;
+        stream(rPtr[i], r);
+        stream(gPtr[i], g);
+        stream(bPtr[i], b);
+        stream(aPtr[i], const_1p);
+    }
+}
+
+} // namespace
+
+
+
+void RgbeIO::Load(RGBAImageSoA& img, istream& is)
+{
+    Image<Rgbe, TopDown> imgRGBE;
+    Load(imgRGBE, is);
+    LoadImageSoA(imgRGBE, img);
+}
+
+void RgbeIO::Load(RGBAImageSoA& img, const char* filename)
+{
+    Image<Rgbe, TopDown> imgRGBE;
+    Load(imgRGBE, filename);
+    LoadImageSoA(imgRGBE, img);
 }

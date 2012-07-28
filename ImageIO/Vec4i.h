@@ -128,7 +128,7 @@ public:
     // Test if all elements are zero
     inline bool isZero() const {
 #if !PCG_USE_AVX
-        return _mm_movemask_epi8(xmm == Vec4i::zero()) == 0xFFFF;
+        return _mm_movemask_epi8(_mm_cmpeq_epi32(xmm, Vec4i::zero())) == 0xFFFF;
 #else
         return _mm_testz_si128(xmm, xmm) != 0;
 #endif
@@ -149,7 +149,7 @@ public:
     // Comparisons, return a mask
     #define PCG_VEC4I_COMP(op)                               \
     friend Vec4bi cmp##op (const Vec4i& a, const Vec4i& b) { \
-        return _mm_cmp##op##_epi32(a, b);                       \
+        return _mm_cmp##op##_epi32(a, b);                    \
     }
         PCG_VEC4I_COMP(eq)   // cmpeq(a,b)
         PCG_VEC4I_COMP(lt)   // cmplt(a,b)
