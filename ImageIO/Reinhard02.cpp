@@ -509,16 +509,16 @@ struct TailProcess<4>
 {
     template <typename PFunctor, class Iterator, typename T>
     static inline void
-    process(PFunctor& f, Iterator begin, Iterator end, const T& numTail) {
+    process(PFunctor* f, Iterator begin, Iterator end, const T& numTail) {
         switch (numTail) {
         case 1:
-            f.process<1>(begin, end);
+            f->template process<1>(begin, end);
             break;
         case 2:
-            f.process<2>(begin, end);
+            f->template process<2>(begin, end);
             break;
         case 3:
-            f.process<3>(begin, end);
+            f->template process<3>(begin, end);
             break;
         default:
             assert(0);
@@ -533,28 +533,28 @@ struct TailProcess<8>
 {
     template <typename PFunctor, class Iterator, typename T>
     static inline void
-    process(PFunctor& f, Iterator begin, Iterator end, const T& numTail) {
+    process(PFunctor* f, Iterator begin, Iterator end, const T& numTail) {
         switch (numTail) {
         case 1:
-            f.process<1>(begin, end);
+            f->template process<1>(begin, end);
             break;
         case 2:
-            f.process<2>(begin, end);
+            f->template process<2>(begin, end);
             break;
         case 3:
-            f.process<3>(begin, end);
+            f->template process<3>(begin, end);
             break;
         case 4:
-            f.process<4>(begin, end);
+            f->template process<4>(begin, end);
             break;
         case 5:
-            f.process<5>(begin, end);
+            f->template process<5>(begin, end);
             break;
         case 6:
-            f.process<6>(begin, end);
+            f->template process<6>(begin, end);
             break;
         case 7:
-            f.process<7>(begin, end);
+            f->template process<7>(begin, end);
             break;
         default:
             assert(0);
@@ -634,7 +634,7 @@ struct LuminanceFunctor
 
             // This will process a single element
             typedef TailProcess<iterator_traits<SourceIterator>::VEC_LEN> TP;
-            TP::process(*this, bulkEnd, range.end(), numTail);
+            TP::process(this, bulkEnd, range.end(), numTail);
         }
     }
 
@@ -775,7 +775,7 @@ public:
             process<0>(range.begin(), bulkEnd);
 
             // This will process a single element
-            TailProcess<vector_traits<Vecf>::VEC_LEN>::process(*this,
+            TailProcess<vector_traits<Vecf>::VEC_LEN>::process(this,
                 bulkEnd, range.end(), m_numTail);
         }
     }
@@ -957,7 +957,7 @@ struct AccumulateHistogramFunctor
             process<vector_traits<Vecf>::VEC_LEN>(range.begin(), bulkEnd);
 
             // This will process a single element
-            TailProcess<vector_traits<Vecf>::VEC_LEN>::process(*this,
+            TailProcess<vector_traits<Vecf>::VEC_LEN>::process(this,
                 bulkEnd, range.end(), numTail);
         }
     }
