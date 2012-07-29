@@ -579,7 +579,7 @@ namespace pcg {
 		// ####################################################################
 
 		template < class T, ScanLineMode S >
-		inline void Save(Image<T,S> &img, ostream &os) {
+		inline void Save(const Image<T,S> &img, ostream &os) {
 
 			/* Write the header for a raw image (without gamma correction) */
 			rgbe_header_info info;
@@ -601,7 +601,7 @@ namespace pcg {
 		}
 		
 		template < class T, ScanLineMode S >
-		inline void Save(Image<T,S> &img, const char *filename) {
+		inline void Save(const Image<T,S> &img, const char *filename) {
 
 			ofstream rgbeFile(filename, ios_base::binary);
 			if (! rgbeFile.fail() ) {
@@ -674,44 +674,44 @@ void RgbeIO::Load(Image<Rgb32F,BottomUp> &img, const char *filename) {
 // SAVE
 
 // Rgbe
-void RgbeIO::Save(Image<Rgbe,TopDown>  &img, ostream &os) {
+void RgbeIO::Save(const Image<Rgbe,TopDown>  &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgbe,BottomUp> &img, ostream &os) {
+void RgbeIO::Save(const Image<Rgbe,BottomUp> &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgbe,TopDown>  &img, const char *filename) {
+void RgbeIO::Save(const Image<Rgbe,TopDown>  &img, const char *filename) {
 	rgbeions::Save(img, filename);
 }
-void RgbeIO::Save(Image<Rgbe,BottomUp> &img, const char *filename) {
+void RgbeIO::Save(const Image<Rgbe,BottomUp> &img, const char *filename) {
 	rgbeions::Save(img, filename);
 }
 
 // Rgba32F
-void RgbeIO::Save(Image<Rgba32F,TopDown>  &img, ostream &os) {
+void RgbeIO::Save(const Image<Rgba32F,TopDown>  &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgba32F,BottomUp> &img, ostream &os) {
+void RgbeIO::Save(const Image<Rgba32F,BottomUp> &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgba32F,TopDown>  &img, const char *filename) {
+void RgbeIO::Save(const Image<Rgba32F,TopDown>  &img, const char *filename) {
 	rgbeions::Save(img, filename);
 }
-void RgbeIO::Save(Image<Rgba32F,BottomUp> &img, const char *filename) {
+void RgbeIO::Save(const Image<Rgba32F,BottomUp> &img, const char *filename) {
 	rgbeions::Save(img, filename);
 }
 
 // Rgb32F
-void RgbeIO::Save(Image<Rgb32F,TopDown>  &img, ostream &os) {
+void RgbeIO::Save(const Image<Rgb32F,TopDown>  &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgb32F,BottomUp> &img, ostream &os) {
+void RgbeIO::Save(const Image<Rgb32F,BottomUp> &img, ostream &os) {
 	rgbeions::Save(img, os);
 }
-void RgbeIO::Save(Image<Rgb32F,TopDown>  &img, const char *filename) {
+void RgbeIO::Save(const Image<Rgb32F,TopDown>  &img, const char *filename) {
 	rgbeions::Save(img, filename);
 }
-void RgbeIO::Save(Image<Rgb32F,BottomUp> &img, const char *filename) {
+void RgbeIO::Save(const Image<Rgb32F,BottomUp> &img, const char *filename) {
 	rgbeions::Save(img, filename);
 }
 
@@ -742,6 +742,14 @@ inline Vec4f toFloat(const Vec4i& a) {
 
 inline Vec4f castAsFloat(const Vec4i& a) {
     return _mm_castsi128_ps(a);
+}
+
+inline Vec4f castAsFloat(const Vec4bi& a) {
+    return _mm_castsi128_ps(a);
+}
+
+inline Vec4i castAsInt(const Vec4f& a) {
+    return _mm_castps_si128(a);
 }
 
 
@@ -790,6 +798,96 @@ void LoadImageSoA(const Image<Rgbe, TopDown>& imgRGBE, RGBAImageSoA& img)
     }
 }
 
+
+
+void SaveImageSoA(Image<Rgbe, TopDown>& dest, const RGBAImageSoA& src)
+{
+    dest.Alloc(src.Width(), src.Height());
+
+    // Convert them using the RTGI2 method, processing multiple pixels at a time
+    Vec4i* PCG_RESTRICT vecRGBE=reinterpret_cast<Vec4i*>(dest.GetDataPointer());
+    assert(reinterpret_cast<uintptr_t>(vecRGBE) % 16 == 0);
+
+    typedef const Vec4f* PCG_RESTRICT const RVec4f;
+    RVec4f rPtr=reinterpret_cast<Vec4f*>(src.GetDataPointer<RGBAImageSoA::R>());
+    RVec4f gPtr=reinterpret_cast<Vec4f*>(src.GetDataPointer<RGBAImageSoA::G>());
+    RVec4f bPtr=reinterpret_cast<Vec4f*>(src.GetDataPointer<RGBAImageSoA::B>());
+
+    const Vec4f min_val(1e-32f);
+    const Vec4i const_0xFF(Vec4i::constant<0xFF>());
+    const Vec4i const_0x1FF(Vec4i::constant<0x1FF>());
+    const Vec4i const_253(Vec4i::constant<253>());
+    const Vec4i const_1(Vec4i::constant<1>());
+
+    const int vecCount = src.Size() / 4;
+    for (int i = 0; i != vecCount; ++i) {
+        Vec4f red   = rPtr[i];
+        Vec4f green = gPtr[i];
+        Vec4f blue  = bPtr[i];
+
+        // Kill NaN pixels to avoid signaling errors
+        Vec4f maskValid((red == red) & (green == green) & (blue == blue));
+        red   &= maskValid;
+        green &= maskValid;
+        blue  &= maskValid;
+
+        // Negative values cannot be encoded, so we truncate them to zero
+        red   = simd_max(red,   Vec4f::zero());
+        green = simd_max(green, Vec4f::zero());
+        blue  = simd_max(blue,  Vec4f::zero());
+
+        // Find the largest value of the three color components
+        Vec4f maxValue = simd_max(blue, simd_max(red, green));
+
+        // Consider all values less than this to be zero. This constant comes
+        // from Ward's definition in "Real Pixels" (Graphics Gems II)
+        maskValid &= Vec4f(maxValue >= min_val);
+
+        // Extract the exponent from the IEEE single precision value
+        Vec4i biasedExponent = srl(castAsInt(maxValue), 23) & const_0xFF;
+        // Overflow
+        maskValid = andnot(castAsFloat(biasedExponent > const_253), maskValid);
+
+        // Construct an additive normalizer which is just 2^(exp+1).
+        // Adding this to each float will move the relevant mantissa bits to a
+        // known fixed location for easy extraction
+        Vec4f additiveNormalizer = castAsFloat(sll(biasedExponent+const_1, 23));
+        // Initially we keep an extra bit (9-bits) so that we can perform
+        // rounding to 8-bits in the next step
+        Vec4i rawR = srl(castAsInt(red  +additiveNormalizer), 14) & const_0x1FF;
+        Vec4i rawG = srl(castAsInt(green+additiveNormalizer), 14) & const_0x1FF;
+        Vec4i rawB = srl(castAsInt(blue +additiveNormalizer), 14) & const_0x1FF;
+        // rgbeBiasedExponent = (ieeeBiasedExponent-127) + 128 since IEEE single
+        // float and rgbe have different exponent bias values
+        Vec4i e = biasedExponent + const_1 + const_1;
+        // round to nearest representable 8 bit value
+        Vec4i r = srl(rawR + const_1, 1);
+        Vec4i g = srl(rawG + const_1, 1);
+        Vec4i b = srl(rawB + const_1, 1);
+
+        // Check to see if rounding causes an overflow condition and fix if
+        // necessary. Note that we actually avoid branches
+        Vec4bi maskOverflow = (r>const_0xFF) | (g>const_0xFF) | (b>const_0xFF);
+        e += Vec4i(maskOverflow) & const_1;
+        const Vec4i const_2 = const_1 + const_1;
+        Vec4i rOver = srl(rawR + const_2, 2);
+        Vec4i gOver = srl(rawG + const_2, 2);
+        Vec4i bOver = srl(rawB + const_2, 2);
+        r = select(maskOverflow, rOver, r);
+        g = select(maskOverflow, gOver, g);
+        b = select(maskOverflow, bOver, b);
+        // Overflow after rounding
+        Vec4i finalMask = andnot(Vec4i(e > const_0xFF), castAsInt(maskValid));
+
+        // Set to zero if the pixel is invalid, then build the final value
+        r &= finalMask;
+        g &= finalMask;
+        b &= finalMask;
+        e &= finalMask;
+        vecRGBE[i] = sll(e, 24) | sll(b, 16) | sll(g, 8) | r;
+    }
+}
+
 } // namespace
 
 
@@ -806,4 +904,18 @@ void RgbeIO::Load(RGBAImageSoA& img, const char* filename)
     Image<Rgbe, TopDown> imgRGBE;
     Load(imgRGBE, filename);
     LoadImageSoA(imgRGBE, img);
+}
+
+void RgbeIO::Save(const RGBAImageSoA& img, ostream& os)
+{
+    Image<Rgbe, TopDown> imgRGBE;
+    SaveImageSoA(imgRGBE, img);
+    Save(imgRGBE, os);
+}
+
+void RgbeIO::Save(const RGBAImageSoA& img, const char* filename)
+{
+    Image<Rgbe, TopDown> imgRGBE;
+    SaveImageSoA(imgRGBE, img);
+    Save(imgRGBE, filename);
 }

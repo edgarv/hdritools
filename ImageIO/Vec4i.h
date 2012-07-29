@@ -113,8 +113,22 @@ public:
     friend Vec4i operator^ (const Vec4i& a, const Vec4i& b) {
         return _mm_xor_si128(a, b);
     }
+    // ~a & b
     friend Vec4i andnot(const Vec4i& a, const Vec4i& b) {
         return _mm_andnot_si128(a, b);
+    }
+    // Logical operators [members]
+    Vec4i& operator&= (const Vec4i& a) {
+        xmm = _mm_and_si128(xmm, a.xmm);
+        return *this;
+    }
+    Vec4i& operator|= (const Vec4i& a) {
+        xmm = _mm_or_si128(xmm, a.xmm);
+        return *this;
+    }
+    Vec4i& operator^= (const Vec4i& a) {
+        xmm = _mm_xor_si128(xmm, a.xmm);
+        return *this;
     }
 
     // Arithmetic operations [binary]
@@ -123,6 +137,15 @@ public:
     }
     friend Vec4i operator- (const Vec4i& a, const Vec4i& b) {
         return _mm_sub_epi32(a, b);
+    }
+    // Arithmetic operations [members]
+    Vec4i& operator+= (const Vec4i& a) {
+        xmm = _mm_add_epi32(xmm, a.xmm);
+        return *this;
+    }
+    Vec4i& operator-= (const Vec4i& a) {
+        xmm = _mm_sub_epi32(xmm, a.xmm);
+        return *this;
     }
 
     // Test if all elements are zero

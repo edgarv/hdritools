@@ -51,6 +51,16 @@ public:
     operator __m128() const {
         return xmm;
     }
+
+    friend Vec4bf operator& (const Vec4bf& a, const Vec4bf& b) {
+        return _mm_and_ps(a, b);
+    }
+    friend Vec4bf operator| (const Vec4bf& a, const Vec4bf& b) {
+        return _mm_or_ps(a, b);
+    }
+    friend Vec4bf operator^ (const Vec4bf& a, const Vec4bf& b) {
+        return _mm_xor_ps(a, b);
+    }
 } ALIGN16_END;
 
 
@@ -123,6 +133,7 @@ public:
     friend Vec4f operator^ (const Vec4f& a, const Vec4f& b) {
         return _mm_xor_ps(a, b);
     }
+    // ~a & b
     friend Vec4f andnot(const Vec4f& a, const Vec4f& b) {
         return _mm_andnot_ps(a, b);
     }
