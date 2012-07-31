@@ -23,6 +23,7 @@
 #include "ImageIO.h"
 #include "Image.h"
 #include "Rgba32F.h"
+#include "ImageSoA.h"
 
 #include <istream>
 
@@ -86,6 +87,10 @@ namespace pcg {
             }
         }
 
+        static void IMAGEIO_API Load(RGBAImageSoA& img, std::istream& is);
+
+        static void IMAGEIO_API Load(RGBAImageSoA& img, const char* filename);
+
         // To save the images with a different scanline order we only set a flag!
         static void IMAGEIO_API Save(Image<Rgba32F, TopDown> &img, const char *filename,
             Compression compression = ZIP);
@@ -97,6 +102,14 @@ namespace pcg {
             RgbaChannels rgbaChannels, Compression compression = ZIP);
         static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename,
             RgbaChannels rgbaChannels, Compression compression = ZIP);
+
+        // Save SoA images
+        static void IMAGEIO_API Save(RGBAImageSoA& img, const char* filename,
+            RgbaChannels rgbaChannels, Compression compression = ZIP);
+        inline static void Save(RGBAImageSoA& img, const char* filename,
+            Compression comression = ZIP) {
+            Save(img, filename, WRITE_RGB, ZIP);
+        }
 
         // Lazily set the number of threads to use for OpenEXR IO
         static void IMAGEIO_API setNumThreads(int num);

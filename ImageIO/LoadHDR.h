@@ -24,6 +24,7 @@
 
 #include "ImageIO.h"
 #include "Image.h"
+#include "ImageSoA.h"
 #include "Rgba32F.h"
 
 #include <istream>
@@ -38,11 +39,17 @@ namespace pcg
     // support the seek operation. Notice that the stream will not be
     // closed after using this function.
 	IMAGEIO_API void LoadHDR(Image<Rgba32F,TopDown> &img, std::istream &is);
+    IMAGEIO_API void LoadHDR(RGBAImageSoA &img, std::istream &is);
 
     // Load the image from a file.
 	IMAGEIO_API void LoadHDR(Image<Rgba32F,TopDown> &img, const char *filename);
+    IMAGEIO_API void LoadHDR(RGBAImageSoA &img, const char *filename);
 
-    inline static void LoadHDR(Image<Rgba32F,TopDown> &img, const std::string& filename) {
+    inline static void LoadHDR(Image<Rgba32F,TopDown> &img,
+        const std::string& filename) {
+        LoadHDR(img, filename.c_str());
+    }
+    inline static void LoadHDR(RGBAImageSoA &img, const std::string& filename) {
         LoadHDR(img, filename.c_str());
     }
 

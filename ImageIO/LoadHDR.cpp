@@ -27,7 +27,12 @@
 
 using namespace pcg;
 
-void pcg::LoadHDR(Image<Rgba32F,TopDown>  &img, std::istream &is)
+
+namespace
+{
+
+template <class ImageCls>
+void LoadHDRImpl(ImageCls &img, std::istream &is)
 {
     // Try to read the first 4 bytes to get the magic numbers
     const std::istream::pos_type origPosition = is.tellg();
@@ -97,7 +102,8 @@ void pcg::LoadHDR(Image<Rgba32F,TopDown>  &img, std::istream &is)
 
 
 
-void pcg::LoadHDR(Image<Rgba32F,TopDown> &img, const char *filename)
+template <class ImageCls>
+void LoadHDRImpl(ImageCls &img, const char *filename)
 {
     if (filename == NULL) {
         throw IllegalArgumentException("The filename cannot be null.");
@@ -112,5 +118,22 @@ void pcg::LoadHDR(Image<Rgba32F,TopDown> &img, const char *filename)
         throw IOException(msg);
     }
 
-    LoadHDR(img, is);
+    LoadHDRImpl(img, is);
+}
+
+} // namespace
+
+
+
+void pcg::LoadHDR(Image<Rgba32F,TopDown>  &img, std::istream &is) {
+    LoadHDRImpl(img, is);
+}
+void pcg::LoadHDR(Image<Rgba32F,TopDown> &img, const char *filename) {
+    LoadHDRImpl(img, filename);
+}
+void pcg::LoadHDR(RGBAImageSoA &img, std::istream &is) {
+    LoadHDRImpl(img, is);
+}
+void pcg::LoadHDR(RGBAImageSoA &img, const char *filename) {
+    LoadHDRImpl(img, filename);
 }

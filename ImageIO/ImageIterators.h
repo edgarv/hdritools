@@ -394,6 +394,15 @@ template <int N>
 struct RGBA32FVec_traits;
 
 template <>
+struct RGBA32FVec_traits<1>
+{
+    typedef RGBAVecRef<float> VecRef;
+    typedef RGBAVecConstRef<float> VecConstRef;
+    typedef float  value_type;
+    typedef float* pointer_type;
+};
+
+template <>
 struct RGBA32FVec_traits<4>
 {
     typedef RGBA32FVec4Ref VecRef;
@@ -617,6 +626,9 @@ private:
 };
 
 
+
+// Scalar RGBA SoA Pixel Iterator concept for SoA images.
+typedef RGBA32FVecImageSoAIterator<1> RGBA32FScalarImageSoAIterator;
 
 // RGBA SoA Pixel Iterator concept for SoA images. It iterates
 // the image in groups of 4 pixels, returning a fresh RGBA32FVec4 with the

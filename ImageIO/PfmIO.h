@@ -24,6 +24,7 @@
 
 #include "ImageIO.h"
 #include "Image.h"
+#include "ImageSoA.h"
 #include "Rgba32F.h"
 #include "Exception.h"
 
@@ -51,6 +52,7 @@ namespace pcg {
             Header();
             Header(const Image<Rgba32F, TopDown> &img);
             Header(const Image<Rgba32F, BottomUp> &img);
+            Header(const RGBAImageSoA &img);
             Header(std::istream &is);
 
             void write(std::ostream &os);
@@ -61,13 +63,17 @@ namespace pcg {
     public:
         static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, const char *filename);
         static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, const char *filename);
+        static void IMAGEIO_API Load(RGBAImageSoA &img, const char *filename);
         static void IMAGEIO_API Load(Image<Rgba32F, TopDown>  &img, std::istream &is);
         static void IMAGEIO_API Load(Image<Rgba32F, BottomUp> &img, std::istream &is);
+        static void IMAGEIO_API Load(RGBAImageSoA &img, std::istream &is);
 
         static IMAGEIO_API void Save(const Image<Rgba32F, TopDown>  &img, std::ostream &os);
         static IMAGEIO_API void Save(const Image<Rgba32F, BottomUp> &img, std::ostream &os);
+        static IMAGEIO_API void Save(const RGBAImageSoA &img, std::ostream &os);
         static void IMAGEIO_API Save(const Image<Rgba32F, TopDown>  &img, const char *filename);
         static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename);
+        static IMAGEIO_API void Save(const RGBAImageSoA &img, const char *filename);
     };
 
 }

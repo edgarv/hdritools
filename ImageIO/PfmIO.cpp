@@ -41,12 +41,20 @@ isColor(true), width(0), height(0), order(PfmIO::getNativeOrder())
 }
 
 PfmIO::Header::Header(const Image<Rgba32F, TopDown> &img) :
-isColor(true), width(img.Width()), height(img.Height()), order(PfmIO::getNativeOrder())
+isColor(true), width(img.Width()), height(img.Height()),
+order(PfmIO::getNativeOrder())
 {
 }
 
 PfmIO::Header::Header(const Image<Rgba32F, BottomUp> &img) :
-isColor(true), width(img.Width()), height(img.Height()), order(PfmIO::getNativeOrder())
+isColor(true), width(img.Width()), height(img.Height()),
+order(PfmIO::getNativeOrder())
+{
+}
+
+PfmIO::Header::Header(const RGBAImageSoA &img) :
+isColor(true), width(img.Width()), height(img.Height()),
+order(PfmIO::getNativeOrder())
 {
 }
 
@@ -114,20 +122,87 @@ void PfmIO::Header::write(std::ostream &os)
 
 namespace {
 
+// Helper class to wrap operations for SoA Images: it is non-thread safe
+class SoAHelper
+{
+    float * PCG_RESTRICT m_r;
+    float * PCG_RESTRICT m_g;
+    float * PCG_RESTRICT m_b;
+    float * PCG_RESTRICT m_a;
+    mutable size_t offset;
+
+    SoAHelper() {}
+
+public:
+
+    // Initialize from a scanline
+    static SoAHelper fromScanline(const RGBAImageSoA& img, int scanline,
+        pcg::ScanLineMode mode)
+    {
+        SoAHelper h;
+        h.m_r = img.GetScanlinePointer<RGBAImageSoA::R>(scanline, mode);
+        h.m_g = img.GetScanlinePointer<RGBAImageSoA::G>(scanline, mode);
+        h.m_b = img.GetScanlinePointer<RGBAImageSoA::B>(scanline, mode);
+        h.m_a = img.GetScanlinePointer<RGBAImageSoA::A>(scanline, mode);
+        h.offset = 0;
+        return h;
+    };
+
+    SoAHelper& operator[] (size_t offset) {
+        this->offset = offset;
+        return *this;
+    }
+
+    const SoAHelper& operator[] (size_t offset) const {
+        this->offset = offset;
+        return *this;
+    }
+
+    void set(float red, float green, float blue, float alpha = 1.0) {
+        m_r[offset] = red;
+        m_g[offset] = green;
+        m_b[offset] = blue;
+        m_a[offset] = alpha;
+    }
+
+    inline float r() const {
+        return m_r[offset];
+    }
+    inline float g() const {
+        return m_g[offset];
+    }
+    inline float b() const {
+        return m_b[offset];
+    }
+};
+
 template <ScanLineMode S>
-void PfmIO_Save_data(const Image<Rgba32F, S>  &img, std::ostream &os)
+Rgba32F*
+getScanlineIterator(const Image<Rgba32F, S> &img, int scanline, ScanLineMode m){
+    return img.GetScanlinePointer(scanline, m);
+}
+
+SoAHelper
+getScanlineIterator(const RGBAImageSoA &img, int scanline, ScanLineMode m) {
+    return SoAHelper::fromScanline(img, scanline, m);
+}
+
+
+
+template <class ImageIter, class ImageType>
+void PfmIO_Save_data(const ImageType &img, std::ostream &os)
 {
     // Allocate one full scanline
     const size_t scanline_len = img.Width() * 3 * sizeof(float);
     float *buffer = new float[scanline_len];
 
     for (int i = 0; i < img.Height(); ++i) {
-        const Rgba32F *ptr = img.GetScanlinePointer(i, BottomUp);
+        ImageIter it = getScanlineIterator(img, i, BottomUp);
         for (int j = 0; j < img.Width(); ++j) {
             const int idx = j*3;
-            buffer[idx]   = ptr[j].r();
-            buffer[idx+1] = ptr[j].g();
-            buffer[idx+2] = ptr[j].b();
+            buffer[idx]   = it[j].r();
+            buffer[idx+1] = it[j].g();
+            buffer[idx+2] = it[j].b();
         }
         os.write((const char*)buffer, scanline_len);
         if (os.fail()) {
@@ -155,10 +230,13 @@ inline void swapByteOrder(unsigned int *ptr, int count)
     }
 }
 
+
+
+
 // Load function just for the data, assumes the istream is right
 // at the beginning of the pixels and the image has been allocated
-template <ScanLineMode S>
-void Pfm_Load_data(Image<Rgba32F, S> &img, std::istream &is, 
+template <class ImageIter, class ImageType>
+void Pfm_Load_data(ImageType &img, std::istream &is, 
                    bool swapBytes, bool isColor)
 {
     const int numChannels = isColor ? 3 : 1;
@@ -181,24 +259,26 @@ void Pfm_Load_data(Image<Rgba32F, S> &img, std::istream &is,
             swapByteOrder((unsigned int *)buffer, img.Width() * numChannels);
         }
 
-        Rgba32F *ptr = img.GetScanlinePointer(h, BottomUp);
+        ImageIter it = getScanlineIterator(img, h, BottomUp);
         if (isColor) {
             for (int i = 0; i < img.Width(); ++i) {
                 const int idx = i*3;
-                ptr[i].set(buffer[idx], buffer[idx+1], buffer[idx+2]);
+                it[i].set(buffer[idx], buffer[idx+1], buffer[idx+2]);
             }
         } else {
             for (int i = 0; i < img.Width(); ++i) {
-                const float v = buffer[i];
-                ptr[i].set(v,v,v);
+                const float &v = buffer[i];
+                it[i].set(v,v,v);
             }
         }
     }
     delete [] buffer;
 }
 
-template <ScanLineMode S>
-void PfmIO_Save_helper(const Image<Rgba32F, S> &img, const char *filename)
+
+
+template <class ImageCls>
+void PfmIO_Save_helper(const ImageCls &img, const char *filename)
 {
     std::ofstream pfmFile(filename, std::ios_base::binary);
     if (! pfmFile.fail() ) {
@@ -210,8 +290,8 @@ void PfmIO_Save_helper(const Image<Rgba32F, S> &img, const char *filename)
     }
 }
 
-template <ScanLineMode S>
-void PfmIO_Load_helper(Image<Rgba32F, S> &img, const char *filename) 
+template <class ImageCls>
+void PfmIO_Load_helper(ImageCls &img, const char *filename) 
 {
     std::ifstream pfmFile(filename, std::ios_base::binary);
     if (! pfmFile.fail() ) {
@@ -231,14 +311,21 @@ void PfmIO::Save(const Image<Rgba32F, TopDown>  &img, std::ostream &os)
 {
     Header hdr(img);
     hdr.write(os);
-    PfmIO_Save_data(img, os);
+    PfmIO_Save_data<const Rgba32F*>(img, os);
 }
 
 void PfmIO::Save(const Image<Rgba32F, BottomUp>  &img, std::ostream &os)
 {
     Header hdr(img);
     hdr.write(os);
-    PfmIO_Save_data(img, os);
+    PfmIO_Save_data<const Rgba32F*>(img, os);
+}
+
+void PfmIO::Save(const RGBAImageSoA  &img, std::ostream &os)
+{
+    Header hdr(img);
+    hdr.write(os);
+    PfmIO_Save_data<const SoAHelper>(img, os);
 }
 
 void PfmIO::Load(Image<Rgba32F, TopDown> &img, std::istream &is)
@@ -250,7 +337,7 @@ void PfmIO::Load(Image<Rgba32F, TopDown> &img, std::istream &is)
     img.Alloc(hdr.width, hdr.height);
 
     // Reads the pixels
-    Pfm_Load_data(img, is, hdr.order != getNativeOrder(), hdr.isColor);
+    Pfm_Load_data<Rgba32F*>(img, is, hdr.order!=getNativeOrder(), hdr.isColor);
 }
 
 void PfmIO::Load(Image<Rgba32F, BottomUp> &img, std::istream &is)
@@ -262,7 +349,19 @@ void PfmIO::Load(Image<Rgba32F, BottomUp> &img, std::istream &is)
     img.Alloc(hdr.width, hdr.height);
 
     // Reads the pixels
-    Pfm_Load_data(img, is, hdr.order != getNativeOrder(), hdr.isColor);
+    Pfm_Load_data<Rgba32F*>(img, is, hdr.order!=getNativeOrder(), hdr.isColor);
+}
+
+void PfmIO::Load(RGBAImageSoA &img, std::istream &is)
+{
+    // Read the header
+    Header hdr(is);
+
+    // Allocates the space
+    img.Alloc(hdr.width, hdr.height);
+
+    // Reads the pixels
+    Pfm_Load_data<SoAHelper>(img, is, hdr.order!=getNativeOrder(), hdr.isColor);
 }
 
 
@@ -273,11 +372,17 @@ void PfmIO::Save(const Image<Rgba32F, TopDown> &img, const char *filename) {
 void PfmIO::Save(const Image<Rgba32F, BottomUp> &img, const char *filename) {
     PfmIO_Save_helper(img, filename);
 }
+void PfmIO::Save(const RGBAImageSoA &img, const char *filename) {
+    PfmIO_Save_helper(img, filename);
+}
 
 
 void PfmIO::Load(Image<Rgba32F, TopDown>  &img, const char *filename) {
     PfmIO_Load_helper(img, filename);
 }
 void PfmIO::Load(Image<Rgba32F, BottomUp> &img, const char *filename) {
+    PfmIO_Load_helper(img, filename);
+}
+void PfmIO::Load(RGBAImageSoA &img, const char *filename) {
     PfmIO_Load_helper(img, filename);
 }
