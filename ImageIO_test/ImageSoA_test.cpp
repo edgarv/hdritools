@@ -309,3 +309,41 @@ TEST_F(RGBAImageSoATest, CopyConstruct)
 
     cout << "> Copy-constructor time: " << t1.milliTime()*1e-3 << " s" << endl;
 }
+
+
+
+TEST_F(RGBAImageSoATest, CopyConstructBottomUp)
+{
+    const int N = 100;
+    Timer t1;
+
+    for (int runIdx = 0; runIdx < N; ++runIdx) {
+        const int width  = 1 + m_rnd.nextInt(2048);
+        const int height = 1 + m_rnd.nextInt(2048);
+        pcg::Image<pcg::Rgba32F, pcg::BottomUp> imgOrig(width, height);
+
+        fillRnd(imgOrig);
+
+        t1.start();
+        Image img(imgOrig);
+        t1.stop();
+
+        for (int j = 0; j != height; ++j) {
+            const float *r = img.GetScanlinePointer<Image::R> (j,pcg::BottomUp);
+            const float *g = img.GetScanlinePointer<Image::G> (j,pcg::BottomUp);
+            const float *b = img.GetScanlinePointer<Image::B> (j,pcg::BottomUp);
+            const float *a = img.GetScanlinePointer<Image::A> (j,pcg::BottomUp);
+            const pcg::Rgba32F *p = imgOrig.GetScanlinePointer(j,pcg::BottomUp);
+
+            for (int i = 0; i != width; ++i) {
+                const pcg::Rgba32F& pixel = p[i];
+                ASSERT_EQ(pixel.r(), r[i]);
+                ASSERT_EQ(pixel.g(), g[i]);
+                ASSERT_EQ(pixel.b(), b[i]);
+                ASSERT_EQ(pixel.a(), a[i]);
+            }
+        }
+    }
+
+    cout << "> Copy-constructor time: " << t1.milliTime()*1e-3 << " s" << endl;
+}

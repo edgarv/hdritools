@@ -326,6 +326,28 @@ public:
         }
     }
 
+    template <typename PixelRGB>
+    RGBAImageSoA(const Image<PixelRGB, pcg::BottomUp> &img) :
+    ImageSoA4<float,float,float,float>(img.Width(), img.Height())
+    {
+        for (int h = 0; h < img.Height(); ++h) {
+            float * PCG_RESTRICT r = GetScanlinePointer<R>(h, BottomUp);
+            float * PCG_RESTRICT g = GetScanlinePointer<G>(h, BottomUp);
+            float * PCG_RESTRICT b = GetScanlinePointer<B>(h, BottomUp);
+            float * PCG_RESTRICT a = GetScanlinePointer<A>(h, BottomUp);
+            const PixelRGB * PCG_RESTRICT pixels =
+                img.GetScanlinePointer(h, BottomUp);
+
+            for (int w = 0; w < img.Width(); ++w) {
+                const PixelRGB &p = pixels[w];
+                r[w] = p.r();
+                g[w] = p.g();
+                b[w] = p.b();
+                a[w] = p.a();
+            }
+        }
+    }
+
     // Utility which generates a RGBA32F pixel on the fly
     Rgba32F operator[] (int idx) const
     {
