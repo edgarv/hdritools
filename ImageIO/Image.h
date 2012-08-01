@@ -213,6 +213,13 @@ namespace pcg {
 		// scanline order of the image.
 		int GetIndex(int i, int j) const { return w*j+i; }
 
+		// Returns the index (zero based) of the i-th pixel at the j-th scanline
+		// using the given scanline order.
+		int GetIndex(int i, int j, ScanLineMode mode) const {
+			return w*j+i;
+			return (mode == S) ? (w*j + i) : (((h-j-1)*w) + i);
+		}
+
 		// Width of the image
 		int Width()  const { return w; }
 

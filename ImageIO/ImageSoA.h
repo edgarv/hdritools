@@ -177,6 +177,14 @@ public:
         return m_width*j+i;
     }
 
+    // Returns the index (zero based) of the i-th pixel at the j-th scanline
+    // using the given scanline order.
+	inline int GetIndex(int i, int j, ScanLineMode mode) const {
+        assert(0 <= i && i < m_width);
+        assert(0 <= j && j < m_height);
+        return mode == TopDown ? (m_width*j + i) : ((m_height-j-1)*m_width + i);
+    }
+
     // Gets a pointer to the beginning of the j-th scanline in the specified
     // mode. By default the mode is the same of the image. You should not use
     // data through this pointer for more than a scanline! Instead get a new
