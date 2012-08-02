@@ -21,6 +21,7 @@
 
 #include "ImageIO.h"
 #include "Image.h"
+#include "ImageSoA.h"
 #include "Rgba32F.h"
 
 namespace pcg {
@@ -43,6 +44,9 @@ namespace pcg {
 
 		static IMAGEIO_API void Compare(Type type, Image<Rgba32F, BottomUp> &dest, 
 			const Image<Rgba32F, BottomUp> &src1, const Image<Rgba32F, BottomUp> &src2);
+
+		static IMAGEIO_API void Compare(Type type, RGBAImageSoA &dest,
+			const RGBAImageSoA &src1, const RGBAImageSoA &src2);
 		
 	private:
 		// Just for the sake of knowing what we have

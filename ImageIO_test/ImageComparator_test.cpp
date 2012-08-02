@@ -31,6 +31,35 @@ using pcg::ImageComparator;
 namespace
 {
 
+const char* str (const pcg::ScanLineMode order) {
+    switch (order) {
+    case pcg::TopDown:  return "TopDown";
+    case pcg::BottomUp: return "BottomUp";
+    default: return "unknown";
+    }
+}
+
+const char* str (const ImageComparator::Type type) {
+    switch (type) {
+    case ImageComparator::AbsoluteDifference:
+        return "AbsoluteDifference";
+    case ImageComparator::Addition:
+        return "Addition";
+    case ImageComparator::Division:
+        return "Division";
+    case ImageComparator::RelativeError:
+        return "RelativeError";
+    case ImageComparator::PositiveNegative:
+        return "PositiveNegative";
+    case ImageComparator::PositiveNegativeRelativeError:
+        return "PositiveNegativeRelativeError";
+
+    default: return "unknown";
+    }
+}
+
+
+
 // Functor object implementing reference versions of the comparison methods
 template <ImageComparator::Type T>
 class Compare
@@ -136,6 +165,12 @@ struct TestType
 
     TestType (pcg::ScanLineMode s, pcg::ImageComparator::Type t, int w, int h) :
     scanlineorder(s), type(t), width(w), height(h) {}
+
+    friend std::ostream& operator<< (std::ostream& os, const TestType& t) {
+        os << "Test " << str(t.type) << ", " << str(t.scanlineorder)
+           << ", " << t.width << 'x' << t.height;
+        return os;
+    }
 };
 
 } // namespace
@@ -264,39 +299,23 @@ protected:
         for (int i = 0; i < numPixels; ++i) {
             ASSERT_RGBA32F_EQ (reference[i], result[i]);
         }
-    }
 
+        // Test the SoA version
+        pcg::RGBAImageSoA src1SoA(src1);
+        pcg::RGBAImageSoA src2SoA(src2);
+        pcg::RGBAImageSoA destSoA(width, height);
+        ASSERT_NO_THROW(ImageComparator::Compare(type,destSoA,src1SoA,src2SoA));
+        for (int h = 0; h < result.Height(); ++h) {
+            for (int w = 0; w < result.Width(); ++w) {
+                const int idx = result.GetIndex(w, h, S);
+                const int idxSoA = destSoA.GetIndex(w, h, S);
 
-
-    const char* str (const pcg::ScanLineMode order) {
-        switch (order) {
-        case pcg::TopDown:  return "TopDown";
-        case pcg::BottomUp: return "BottomUp";
-        default: return "unknown";
+                const pcg::Rgba32F &expected = result[idx];
+                const pcg::Rgba32F actual    = destSoA[idxSoA];
+                ASSSERT_RGBA32F_CLOSE (expected, actual);
+            }
         }
     }
-
-
-
-    const char* str (const ImageComparator::Type type) {
-        switch (type) {
-        case ImageComparator::AbsoluteDifference:
-            return "AbsoluteDifference";
-        case ImageComparator::Addition:
-            return "Addition";
-        case ImageComparator::Division:
-            return "Division";
-        case ImageComparator::RelativeError:
-            return "RelativeError";
-        case ImageComparator::PositiveNegative:
-            return "PositiveNegative";
-        case ImageComparator::PositiveNegativeRelativeError:
-            return "PositiveNegativeRelativeError";
-
-        default: return "unknown";
-        }
-    }
-
 
 
     static const int NUM_RUNS = 2000000;

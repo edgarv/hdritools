@@ -15,9 +15,17 @@
 
 #include "ImageComparator.h"
 #include "Exception.h"
+#include "ImageIterators.h"
+#if !PCG_USE_AVX
+# include "Vec4f.h"
+# include "Vec4i.h"
+#else
+# include "Vec8f.h"
+# include "Vec8i.h"
+#endif
 
 
-// Intel Threading Blocks 2.0
+// Intel Threading Buiding Blocks
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
@@ -31,6 +39,12 @@ using namespace tbb;
 #else
 #include <pmmintrin.h>
 #endif // _MSC_VER
+
+
+// When enabled the SoA comparisons use approximation to the reciprocal and the
+// square root which provide about 18 bits of mantissa accuracy
+#define FAST_COMPARE 1
+
 
 
 namespace
@@ -180,6 +194,257 @@ public:
         }
     }
 };
+
+
+
+// Comparator implementation for SoA Images
+class ComparatorSoA
+{
+#if !PCG_USE_AVX
+    typedef RGBA32FVec4ImageSoAIterator IteratorSoA;
+    typedef Vec4f vf;
+    typedef Vec4i vi;
+
+    static FORCEINLINE_BEG vf castAsFloat(const vi& a) FORCEINLINE_END {
+        return _mm_castsi128_ps(a);
+    }
+
+#if FAST_COMPARE
+    static FORCEINLINE_BEG vf simd_rsqrt(const vf& a) FORCEINLINE_END {
+        return _mm_rsqrt_ps(a);
+    }
+#else
+    static FORCEINLINE_BEG vf simd_sqrt(const vf& a) FORCEINLINE_END {
+        return _mm_sqrt_ps(a);
+    }
+#endif
+
+#else
+    typedef RGBA32FVec8ImageSoAIterator IteratorSoA;
+    typedef Vec8f vf;
+    typedef Vec8i vi;
+
+    static FORCEINLINE_BEG vf castAsFloat(const vi& a) FORCEINLINE_END {
+        return _mm256_castsi256_ps(a);
+    }
+
+#if FAST_COMPARE
+    static FORCEINLINE_BEG vf simd_rsqrt(const vf& a) FORCEINLINE_END {
+        return _mm256_rsqrt_ps(a);
+    }
+#else
+    static FORCEINLINE_BEG vf simd_sqrt(const vf& a) FORCEINLINE_END {
+        return _mm256_sqrt_ps(a);
+    }
+
+#endif
+
+#endif
+    typedef IteratorSoA::difference_type diff_t;
+
+    const ImageComparator::Type type;
+    const IteratorSoA destBegin;
+    const IteratorSoA src1Begin;
+    const IteratorSoA src2Begin;
+
+    static FORCEINLINE_BEG vf absDiff(const vf& a, const vf& b) FORCEINLINE_END{
+        const vf mask(castAsFloat(vi::constant<0x7fffffff>()));
+        return mask & (a - b);
+    }
+
+    static FORCEINLINE_BEG vf
+    norm2(const vf& a, const vf& b, const vf& c) FORCEINLINE_END {
+        const vf n2 = a*a + b*b + c*c;
+
+#if FAST_COMPARE
+        // From Eigen 3.0 (MathFunctions.h)
+        // This is based on Quake3's fast inverse square root.
+        // For detail see here: http://www.beyond3d.com/content/articles/8/
+        const vf negHalf = n2 * vf(-0.5f);
+        
+        // Select only the inverse sqrt of non-zero inputs (using FLT_EPSILON)
+        const vf non_zero_mask(n2 > vf(1.192092896e-07f));
+        vf x = non_zero_mask & simd_rsqrt(n2);
+        
+        x = x * (vf(1.5f) + (negHalf * (x * x)));
+        // at this point x == 1/sqrt(n2)
+        x *= n2;
+        return x;
+#else
+        vf x = simd_sqrt(n2);
+        return x;
+#endif
+    }
+
+
+
+    void AbsoluteDifference(diff_t begin, diff_t end) const
+    {
+        IteratorSoA src1 = src1Begin + begin;
+        IteratorSoA src2 = src2Begin + begin;
+        IteratorSoA dest = destBegin + begin;
+        for (diff_t i = begin; i != end; ++i, ++src1, ++src2, ++dest) {
+            dest->r() = absDiff(src1->r(), src2->r());
+            dest->g() = absDiff(src1->g(), src2->g());
+            dest->b() = absDiff(src1->b(), src2->b());
+            dest->a() = absDiff(src1->a(), src2->a());
+        }
+    }
+
+    void Addition(diff_t begin, diff_t end) const
+    {
+        IteratorSoA src1 = src1Begin + begin;
+        IteratorSoA src2 = src2Begin + begin;
+        IteratorSoA dest = destBegin + begin;
+        for (diff_t i = begin; i != end; ++i, ++src1, ++src2, ++dest) {
+            dest->r() = vf(src1->r()) + vf(src2->r());
+            dest->g() = vf(src1->g()) + vf(src2->g());
+            dest->b() = vf(src1->b()) + vf(src2->b());
+            dest->a() = vf(src1->a()) + vf(src2->a());
+        }
+    }
+
+    void Division(diff_t begin, diff_t end) const
+    {
+        IteratorSoA src1 = src1Begin + begin;
+        IteratorSoA src2 = src2Begin + begin;
+        IteratorSoA dest = destBegin + begin;
+        for (diff_t i = begin; i != end; ++i, ++src1, ++src2, ++dest) {
+#if FAST_COMPARE
+            dest->r() = vf(src1->r()) * rcp_nr(vf(src2->r()));
+            dest->g() = vf(src1->g()) * rcp_nr(vf(src2->g()));
+            dest->b() = vf(src1->b()) * rcp_nr(vf(src2->b()));
+            dest->a() = vf(src1->a()) * rcp_nr(vf(src2->a()));
+#else
+            dest->r() = vf(src1->r()) / (vf(src2->r()));
+            dest->g() = vf(src1->g()) / (vf(src2->g()));
+            dest->b() = vf(src1->b()) / (vf(src2->b()));
+            dest->a() = vf(src1->a()) / (vf(src2->a()));
+#endif
+        }
+    }
+    
+    void RelativeError(diff_t begin, diff_t end) const
+    {
+        IteratorSoA src1 = src1Begin + begin;
+        IteratorSoA src2 = src2Begin + begin;
+        IteratorSoA dest = destBegin + begin;
+
+        const vf const_2(2.0f);
+        for (diff_t i = begin; i != end; ++i, ++src1, ++src2, ++dest) {
+#if FAST_COMPARE
+            dest->r() = const_2 * absDiff(src1->r(), src2->r()) *
+                rcp_nr(vf(src1->r()) + vf(src2->r()));
+            dest->g() = const_2 * absDiff(src1->g(), src2->g()) *
+                rcp_nr(vf(src1->g()) + vf(src2->g()));
+            dest->b() = const_2 * absDiff(src1->b(), src2->b()) *
+                rcp_nr(vf(src1->b()) + vf(src2->b()));
+            dest->a() = const_2 * absDiff(src1->a(), src2->a()) *
+                rcp_nr(vf(src1->a()) + vf(src2->a()));
+#else
+            dest->r() = const_2 * absDiff(src1->r(), src2->r()) /
+                (vf(src1->r()) + vf(src2->r()));
+            dest->g() = const_2 * absDiff(src1->g(), src2->g()) /
+                (vf(src1->g()) + vf(src2->g()));
+            dest->b() = const_2 * absDiff(src1->b(), src2->b()) /
+                (vf(src1->b()) + vf(src2->b()));
+            dest->a() = const_2 * absDiff(src1->a(), src2->a()) /
+                (vf(src1->a()) + vf(src2->a()));
+#endif
+        }
+    }
+
+    void PositiveNegative(diff_t begin, diff_t end) const
+    {
+        IteratorSoA src1 = src1Begin + begin;
+        IteratorSoA src2 = src2Begin + begin;
+        IteratorSoA dest = destBegin + begin;
+        for (diff_t i = begin; i != end; ++i, ++src1, ++src2, ++dest) {
+            const vf dr = vf(src1->r()) - vf(src2->r());
+            const vf dg = vf(src1->g()) - vf(src2->g());
+            const vf db = vf(src1->b()) - vf(src2->b());
+            const vf norm = norm2(dr, dg, db);
+            const vf pn = dr + dg + db;
+
+            dest->r() = norm & vf(pn < vf::zero());
+            dest->g() = norm & vf(pn > vf::zero());
+            dest->b() = norm & vf(pn == vf::zero());
+            dest->a() = norm;
+        }
+    }
+
+    void PositiveNegativeRelativeError(diff_t begin, diff_t end) const
+    {
+        IteratorSoA src1 = src1Begin + begin;
+        IteratorSoA src2 = src2Begin + begin;
+        IteratorSoA dest = destBegin + begin;
+
+        const vf const_2(2.0f);
+        for (diff_t i = begin; i != end; ++i, ++src1, ++src2, ++dest) {
+#if FAST_COMPARE
+            const vf dr = const_2 * (vf(src1->r()) - vf(src2->r())) *
+                rcp_nr(vf(src1->r()) + vf(src2->r()));
+            const vf dg = const_2 * (vf(src1->g()) - vf(src2->g())) *
+                rcp_nr(vf(src1->g()) + vf(src2->g()));
+            const vf db = const_2 * (vf(src1->b()) - vf(src2->b())) *
+                rcp_nr(vf(src1->b()) + vf(src2->b()));
+#else
+            const vf dr = const_2 * (vf(src1->r()) - vf(src2->r())) /
+                (vf(src1->r()) + vf(src2->r()));
+            const vf dg = const_2 * (vf(src1->g()) - vf(src2->g())) /
+                (vf(src1->g()) + vf(src2->g()));
+            const vf db = const_2 * (vf(src1->b()) - vf(src2->b())) /
+                (vf(src1->b()) + vf(src2->b()));
+#endif
+            const vf norm = norm2(dr, dg, db);
+            const vf pn = dr + dg + db;
+
+            dest->r() = norm & vf(pn < vf::zero());
+            dest->g() = norm & vf(pn > vf::zero());
+            dest->b() = norm & vf(pn == vf::zero());
+            dest->a() = norm;
+        }
+    }
+
+
+public:
+    ComparatorSoA(ImageComparator::Type cmpType, RGBAImageSoA& dest, 
+        const RGBAImageSoA& src1, const RGBAImageSoA& src2) :
+    type(cmpType), destBegin(IteratorSoA::begin(dest)),
+    src1Begin(IteratorSoA::begin(src1)), src2Begin(IteratorSoA::begin(src2))
+    {}
+
+    // Linear-style operator (one pixel after the other)
+    void operator()(const blocked_range<diff_t>& r) const {
+
+        switch (type) {
+            case ImageComparator::AbsoluteDifference:
+                AbsoluteDifference(r.begin(), r.end());
+                break;
+            case ImageComparator::Addition:
+                Addition(r.begin(), r.end());
+                break;
+            case ImageComparator::Division:
+                Division(r.begin(), r.end());
+                break;
+            case ImageComparator::RelativeError:
+                RelativeError(r.begin(), r.end());
+                break;
+            case ImageComparator::PositiveNegative:
+                PositiveNegative(r.begin(), r.end());
+                break;
+            case ImageComparator::PositiveNegativeRelativeError:
+                PositiveNegativeRelativeError(r.begin(), r.end());
+                break;
+
+            default:
+                assert(0);
+                break;
+        }
+    }
+
+};
+
 } // namespace
 
 
@@ -190,7 +455,7 @@ void ImageComparator::CompareHelper(Type type, Image<Rgba32F, S> &dest,
 {
     // First check that the images have the save size, otherwise it will throw
     // a nasty exception
-    if ( dest.Width() != src1.Width() || dest.Height() != src1.Height() ||
+    if (dest.Width() != src1.Width() || dest.Height() != src1.Height() ||
         src1.Width() != src2.Width() || src1.Height() != src2.Height() )
     {
         throw IllegalArgumentException("Incompatible images size");
@@ -210,4 +475,28 @@ void ImageComparator::Compare(Type type, Image<Rgba32F, TopDown> &dest,
 void ImageComparator::Compare(Type type, Image<Rgba32F, BottomUp> &dest, 
             const Image<Rgba32F, BottomUp> &src1, const Image<Rgba32F, BottomUp> &src2) {
     CompareHelper(type, dest, src1, src2);
+}
+
+
+void ImageComparator::Compare(Type type, RGBAImageSoA &dest,
+            const RGBAImageSoA &src1, const RGBAImageSoA &src2)
+{
+    // First check that the images have the save size, otherwise it will throw
+    // a nasty exception
+    if (dest.Width() != src1.Width() || dest.Height() != src1.Height() ||
+        src1.Width() != src2.Width() || src1.Height() != src2.Height() )
+    {
+        throw IllegalArgumentException("Incompatible images size");
+    }
+
+#if !PCG_USE_AVX
+    typedef RGBA32FVec4ImageSoAIterator IteratorSoA;
+#else
+    typedef RGBA32FVec8ImageSoAIterator IteratorSoA;
+#endif
+
+    typedef IteratorSoA::difference_type diff_t;
+    const diff_t count = IteratorSoA::end(src1) - IteratorSoA::begin(src1);
+    const blocked_range<diff_t> range(0, count, 4);
+    parallel_for(range, ComparatorSoA(type, dest, src1, src2));
 }
