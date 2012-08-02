@@ -25,7 +25,7 @@
 #include <QSize>
 #include <QPair>
 
-#include "Image.h"
+#include "ImageSoA.h"
 #include "Rgba32F.h"
 #include "LDRPixels.h"
 
@@ -91,7 +91,7 @@ class ImageIODataProvider : public ImageDataProvider {
 protected:
 
     // Reference to the backing hdr image
-    const Image<Rgba32F> &hdr;
+    const RGBAImageSoA &hdr;
 
     // Reference to the backing ldr image
     const Image<Bgra8>   &ldr;
@@ -103,7 +103,7 @@ protected:
 
 public:
     // The constructor just stores the references to the images
-    ImageIODataProvider(const Image<Rgba32F> &hdrImage, const Image<Bgra8> &ldrImage);
+    ImageIODataProvider(const RGBAImageSoA &hdrImage, const Image<Bgra8> &ldrImage);
 
     // Gets the given pixel from the ldr image
     virtual void getLdrPixel(int x, int y, unsigned char &rOut, unsigned char &gOut, unsigned char &bOut) const;

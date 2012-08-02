@@ -35,7 +35,7 @@ void ImageDataProvider::setWhitePointRange( const range_t &otherRange ) {
 
 // ----------------------------------------------------------------------------
 
-ImageIODataProvider::ImageIODataProvider(const Image<Rgba32F> &hdrImage,
+ImageIODataProvider::ImageIODataProvider(const RGBAImageSoA &hdrImage,
                                          const Image<Bgra8> &ldrImage)
 : hdr(hdrImage), ldr(ldrImage), whitePoint(0.0), key(0.0), lw(0.0)
 {
@@ -77,10 +77,9 @@ void ImageIODataProvider::getLdrPixel(int x, int y,
 void ImageIODataProvider::getHdrPixel(int x, int y, 
     float &rOut, float &gOut, float &bOut) const
 {
-    const Rgba32F &pix = hdr.ElementAt(x,y);
-    rOut = pix.r();
-    gOut = pix.g();
-    bOut = pix.b();
+    rOut = hdr.ElementAt<RGBAImageSoA::R>(x, y);
+    gOut = hdr.ElementAt<RGBAImageSoA::G>(x, y);
+    bOut = hdr.ElementAt<RGBAImageSoA::B>(x, y);
 }
 
 

@@ -23,11 +23,11 @@
 #include <rgbe.h>
 #include <Rgba32F.h>
 #include <LDRPixels.h>
-#include <Image.h>
+#include <ImageSoA.h>
 #include <ImageComparator.h>
 
 #include <Reinhard02.h>
-#include <ToneMapper.h>
+#include <ToneMapperSoA.h>
 
 #include "ImageDataProvider.h"
 
@@ -41,7 +41,7 @@ class HDRImageDisplay : public QWidget {
 private:
 
     // The internal representation of the HDR Image
-    Image<Rgba32F> hdrImage;
+    RGBAImageSoA hdrImage;
 
     // The tone mapped version of the Image
     Image<Bgra8> ldrImage;
@@ -50,7 +50,7 @@ private:
     //ImageIODataProvider dataProvider;
 
     // Our nice tonemapper
-    ToneMapper toneMapper;
+    ToneMapperSoA toneMapper;
 
     // QImage version of the stuff, uses implicit sharing
     QImage qImage;
@@ -153,7 +153,7 @@ signals:
 
 private:
 
-    static bool loadHdr(const QString & fileName, Image<Rgba32F> &hdr);
+    static bool loadHdr(const QString & fileName, RGBAImageSoA &hdr);
 
 };
 

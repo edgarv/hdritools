@@ -26,8 +26,8 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
-// SSE3 functions are only available as intrinsic in MSVC
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+// SSE3 functions are only available as intrinsic in older versions of MSVC
+#if defined(_MSC_VER) && _MSC_VER < 1500 && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic ( _mm_hadd_ps )
 #else

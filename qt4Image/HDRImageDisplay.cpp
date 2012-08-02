@@ -18,6 +18,7 @@
 #include "RgbeIO.h"
 #include "OpenEXRIO.h"
 #include "PfmIO.h"
+#include <LoadHDR.h>
 
 #include <QFile>
 #include <QFileInfo>
@@ -30,7 +31,7 @@
 
 
 HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
-    toneMapper(0.0f, 4096), dataProvider(hdrImage, ldrImage),
+    toneMapper(0.0f, 2.2f), dataProvider(hdrImage, ldrImage),
     scaleFactor(1), needsToneMap(true), technique(EXPOSURE)
 {
     // By default we want to receive events whenever the mouse moves around
@@ -97,7 +98,7 @@ bool HDRImageDisplay::compareTo(const QString &fileName, ImageComparator::Type c
         return false;
     }
 
-    Image<Rgba32F> other;
+    RGBAImageSoA other;
 
     try {
 
@@ -132,27 +133,23 @@ bool HDRImageDisplay::compareTo(const QString &fileName, ImageComparator::Type c
 }
 
 
-bool HDRImageDisplay::loadHdr(const QString & fileName, Image<Rgba32F> &hdr) 
+bool HDRImageDisplay::loadHdr(const QString & fileName, RGBAImageSoA &hdr) 
 {
     QFileInfo fileInfo(fileName);
     QString suffix = fileInfo.suffix();		// Suffix without the trailing "."
     
-    // Will only work if the suffix is .rgbe or .hdr
+    // Will only work if the suffix is either .rgbe, .hdr, .exr or .pfm
     if (suffix.compare("rgbe", Qt::CaseInsensitive) == 0 ||
-        suffix.compare("hdr",  Qt::CaseInsensitive) == 0) 
+        suffix.compare("hdr",  Qt::CaseInsensitive) == 0 ||
+        suffix.compare("exr",  Qt::CaseInsensitive) == 0 ||
+        suffix.compare("pfm",  Qt::CaseInsensitive) == 0)
     {
-        // Loads the RGBE Image
-        RgbeIO::Load(hdr,    QFile::encodeName(fileName).constData() );
-    }
-    else if (suffix.compare("exr", Qt::CaseInsensitive) == 0)
-    {
-        // Loads from an OpenEXR Image
-        OpenEXRIO::Load(hdr, QFile::encodeName(fileName).constData());
-    }
-    else if (suffix.compare("pfm", Qt::CaseInsensitive) == 0)
-    {
-        // Loads the Debevec's Pfm file
-        PfmIO::Load(hdr, QFile::encodeName(fileName).constData());
+        try {
+            pcg::LoadHDR(hdr, QFile::encodeName(fileName).constData());
+        }
+        catch (UnkownFileType&) {
+            return false;
+        }
     }
     else {
         return false;
@@ -205,7 +202,7 @@ bool HDRImageDisplay::save(const QString & fileName)
 void HDRImageDisplay::paintEvent(QPaintEvent *event) 
 {
     if (needsToneMap && hdrImage.Width() > 0 && hdrImage.Height() > 0) {
-        toneMapper.ToneMap(ldrImage, hdrImage, true, technique);
+        toneMapper.ToneMap(ldrImage, hdrImage, technique);
         needsToneMap = false;
     }
 

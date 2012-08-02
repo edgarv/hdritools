@@ -70,7 +70,7 @@ public:
     // range [0,1]); the final value is p^(1/gamma). Therefore gamma must be
     // greater than zero; the typical value for LCDs is 2.2.
     // Calling this method implies disabling sRGB
-    inline void setGamma(float gamma) {
+    inline void SetGamma(float gamma) {
         assert(gamma > 0.0f);
         m_gamma    = gamma;
         m_invGamma = 1.0f / gamma;
