@@ -290,9 +290,14 @@ void HDRImageDisplay::mouseMoveEvent(QMouseEvent * event)
 {
     // The position of the event is relative to the image: this means that we
     // don't have to worry about scrollbars!
+    // However it is possible that when the event is reported the position is
+    // outside the boundaries of the image (i.e. the event is reported when
+    // the mouse is outside the widget, which happens with rapid movements)
     qreal invScale = static_cast<qreal>(1) / scaleFactor;
     int x = static_cast<int>(event->pos().x() * invScale);
     int y = static_cast<int>(event->pos().y() * invScale);
+    x = qBound(0, x, hdrImage.Width() - 1);
+    y = qBound(0, y, hdrImage.Height() - 1);
     mouseOverPixel(QPoint(x, y));
 }
 
