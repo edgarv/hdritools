@@ -47,12 +47,11 @@
 #endif
 
 
-#if USE_SSE_POW
 namespace ssemath
 {
 #include "sse_mathfun.h"
 }
-#endif
+#include "Amaths.h"
 
 
 #include <tbb/blocked_range.h>
@@ -93,6 +92,12 @@ inline T pow(const T& x, const T& y)
     return ::pow(x, y);
 }
 
+template <typename T>
+inline T fastpow(const T& x, const T& y)
+{
+    return ::pow(x, y);
+}
+
 template <>
 inline pcg::Vec4f pow(const pcg::Vec4f& x, const pcg::Vec4f& y)
 {
@@ -102,6 +107,13 @@ inline pcg::Vec4f pow(const pcg::Vec4f& x, const pcg::Vec4f& y)
     const pcg::Vec4f result(::pow(x[3], y[3]), ::pow(x[2], y[2]),
         ::pow(x[1], y[1]), ::pow(x[0], y[0]));
 #endif
+    return result;
+}
+
+template <>
+inline pcg::Vec4f fastpow(const pcg::Vec4f& x, const pcg::Vec4f& y)
+{
+    const pcg::Vec4f result = am::pow_eps(x, y);
     return result;
 }
 
@@ -208,6 +220,13 @@ inline pcg::Vec8f pow(const pcg::Vec8f& x, const pcg::Vec8f& y)
         ::pow(x[3], y[3]), ::pow(x[2], y[2]),
         ::pow(x[1], y[1]), ::pow(x[0], y[0]));
 #endif
+    return result;
+}
+
+template <>
+inline pcg::Vec8f fastpow(const pcg::Vec8f& x, const pcg::Vec8f& y)
+{
+    const pcg::Vec8f result = am::pow_avx(x, y);
     return result;
 }
 
@@ -594,6 +613,23 @@ private:
     const T m_invGamma;
 };
 
+// Use the Intel Approximate Math versions
+template <typename T>
+struct DisplayTransformer_Gamma_Fast
+{
+    DisplayTransformer_Gamma_Fast(float invGamma) : m_invGamma(invGamma)
+    {
+        assert(invGamma > 0);
+    }
+
+    inline T operator() (const T& x) const throw()
+    {
+        return ops::fastpow(x, m_invGamma);
+    }
+
+private:
+    const T m_invGamma;
+};
 
 
 template <typename T>
@@ -1022,7 +1058,8 @@ void ToneMapAux(const LuminanceScaler &scaler, const DisplayTransform &display,
 
 enum DisplayMethod
 {
-    EDISPLAY_GAMMA,
+    EDISPLAY_GAMMA_REF,
+    EDISPLAY_GAMMA_FAST,
     EDISPLAY_SRGB_REF,
     EDISPLAY_SRGB_FAST1,
     EDISPLAY_SRGB_FAST2
@@ -1043,7 +1080,14 @@ inline DisplayMethod getDisplayMethod(const pcg::ToneMapperSoA& tm)
         }
     }
     else {
-        return EDISPLAY_GAMMA;
+        switch (tm.GammaMethod()) {
+        case pcg::ToneMapperSoA::GAMMA_REF:
+            return EDISPLAY_GAMMA_REF;
+        case pcg::ToneMapperSoA::GAMMA_FAST:
+            return EDISPLAY_GAMMA_FAST;
+        default:
+            throw pcg::RuntimeException("Unexpected gamma method");
+        }
     }
 }
 
@@ -1056,13 +1100,17 @@ void ToneMapAuxDelegate(const LuminanceScaler& scaler, DisplayMethod dMethod,
     // Setup the display transforms
     typedef typename LuminanceScaler::value_t value_t;
     const DisplayTransformer_Gamma<value_t> displayGamma(invGamma);
+    const DisplayTransformer_Gamma_Fast<value_t> displayGammaFast(invGamma);
     const typename Display_sRGB_Ref<value_t>::display_t   displaySRGB0;
     const typename Display_sRGB_Fast1<value_t>::display_t displaySRGB1;
     const typename Display_sRGB_Fast2<value_t>::display_t displaySRGB2;
 
     switch(dMethod) {
-    case EDISPLAY_GAMMA:
+    case EDISPLAY_GAMMA_REF:
         ToneMapAux(scaler, displayGamma, begin, end, dest);
+        break;
+    case EDISPLAY_GAMMA_FAST:
+        ToneMapAux(scaler, displayGammaFast, begin, end, dest);
         break;
     case EDISPLAY_SRGB_REF:
         ToneMapAux(scaler, displaySRGB0, begin, end, dest);

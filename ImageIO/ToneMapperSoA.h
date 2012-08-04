@@ -44,6 +44,15 @@ public:
         SRGB_FAST2
     };
 
+    // Method to evaluate Gamma
+    enum EGammaMethod
+    {
+        // Reference, most accurate and slowest
+        GAMMA_REF,
+        // Approximation with about 12 bits of accuracy
+        GAMMA_FAST
+    };
+
     
     // Creates a new tone mapper for SoA images specifying wheter to use sRGB
     // or simple gamma. If sRGB is disabled it will use the specified gamma.
@@ -51,7 +60,7 @@ public:
     ToneMapperSoA(bool useSRGB = true, float gamma = 2.2f) :
     m_exposure(0.0f), m_exposureFactor(1.0f),
     m_gamma(gamma), m_invGamma(1.0f / gamma), m_useSRGB(useSRGB),
-    m_sRGBMethod(SRGB_FAST2)
+    m_sRGBMethod(SRGB_FAST2), m_gammaMethod(GAMMA_FAST)
     {
         assert(gamma > 0.0f);
     }
@@ -96,6 +105,11 @@ public:
         return m_invGamma;
     }
 
+    // Selects the gamma method to use. This does not enable gamma automatically.
+    inline void SetGammaMethod(EGammaMethod gammaMethod) {
+        m_gammaMethod = gammaMethod;
+    }
+
     // Returns the exposure
     inline float Exposure() const {
         return m_exposure;
@@ -114,6 +128,11 @@ public:
     // Current sRGB method
     inline ESRGBMethod SRGBMethod() const {
         return m_sRGBMethod;
+    }
+
+    // Current gamma method
+    inline EGammaMethod GammaMethod() const {
+        return m_gammaMethod;
     }
 
 
@@ -147,9 +166,11 @@ private:
     // Method used for sRGB
     ESRGBMethod m_sRGBMethod;
 
+    // Method used for Gamma
+    EGammaMethod m_gammaMethod;
+
     // Parameters for the global Reinhard02 TMO
     Reinhard02::Params m_paramsTMO;
-
 };
 
 
