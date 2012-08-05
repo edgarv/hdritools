@@ -1277,9 +1277,14 @@ Reinhard02::EstimateParams (afloat_t * const PCG_RESTRICT Lw, size_t count,
     // The expression checks that the formula will be larger than the average
     // log luminance
     const float full_range = 1.442695040888963f * (Lmax_log - Lmin_log);
-    const float l_white = full_range > 1.4426950408f*Lw_log + 4.415037499278f ?
+    float l_white = full_range > 1.4426950408f*Lw_log + 4.415037499278f ?
         (1.5f * exp2f(full_range - 5.0f)) : (1.5f * expf(Lmax_log));
     assert (l_white >= l_w);
+    // If the largest luminance value is valid and large enough, the white
+    // point value might have overflowed into infinity
+    if (l_white == std::numeric_limits<float>::infinity()) {
+        l_white = std::max(0.125f * std::numeric_limits<float>::max(), l_w);
+    }
    
     return Params(key, l_white, l_w, Lmin, Lmax);
 }
