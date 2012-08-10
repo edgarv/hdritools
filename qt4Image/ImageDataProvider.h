@@ -47,11 +47,14 @@ protected:
     typedef QPair<double,double> range_t;
     range_t _whitePointRange;
 
-    // Sets a new white point range
-    void setWhitePointRange( const range_t &otherRange );
+    // Average luminance
+    double _avgLuminance;
 
-    inline void setWhitePointRange( double a, double b ) {
-        setWhitePointRange(qMakePair(a,b));
+    // Sets a new white point range
+    void setWhitePointRange( const range_t &otherRange, double average );
+
+    inline void setWhitePointRange( double minval, double midpoint, double maxval ) {
+        setWhitePointRange(qMakePair(minval, maxval), midpoint);
     }
 
 
@@ -60,7 +63,8 @@ signals:
     void sizeChanged( QSize newSize );
 
     // Signal to the indicate that the white point range changed
-    void whitePointRangeChanged ( double whitePointMin, double whitePointMax );
+    void whitePointRangeChanged ( double whitePointMin,
+        double avgLum, double whitePointMax );
 
 public:
 
@@ -78,7 +82,9 @@ public:
     virtual void getToneMapDefaults(double &whitePointOut, double &keyOut) const = 0;
 
     // Returns the average log luminance
-    virtual double avgLogLuminance() const = 0;
+    double avgLogLuminance() const {
+        return _avgLuminance;
+    }
 };
 
 
@@ -113,9 +119,6 @@ public:
 
     // Gets sane tone mapping defaults
     virtual void getToneMapDefaults(double &whitePointOut, double &keyOut) const;
-
-    // Returns the average log luminance
-    virtual double avgLogLuminance() const;
 
 public slots:
     // Request to update the size of the provider from the backing images.

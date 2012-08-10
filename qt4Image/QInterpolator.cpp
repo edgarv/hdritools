@@ -22,7 +22,7 @@
 # include <cmath>
 #endif
 
-QInterpolator::QInterpolator(double minimum, double maximum,
+QInterpolator::QInterpolator(double minimum, double midpoint, double maximum,
                              QAbstractSlider *slider, QLineEdit *edit,
                              QObject *parent):
 QObject(parent),
@@ -33,7 +33,7 @@ m_value(0.0)
     Q_ASSERT(!m_edit.isNull());
     Q_ASSERT(minimum < maximum);
     m_edit->setValidator(&m_validator);
-    setRange(minimum, maximum);
+    setRange(minimum, midpoint, maximum);
 
     // Connect the signals
     connect ( m_slider, SIGNAL(rangeChanged(int,int)),
@@ -45,11 +45,12 @@ m_value(0.0)
 }
 
 
-void QInterpolator::setRange(double minimum, double maximum)
+void QInterpolator::setRange(double minimum, double midpoint, double maximum)
 {
     Q_ASSERT(minimum < maximum);
     m_validator.setRange(minimum, maximum, m_validator.decimals());
-    updateState(minimum, maximum, m_slider->minimum(), m_slider->maximum());
+    updateState(minimum, midpoint, maximum,
+        m_slider->minimum(), m_slider->maximum());
     const double val = value();
     m_value = -val;
     setValue(qBound(minimum, val, maximum));
@@ -89,7 +90,7 @@ void QInterpolator::setValue(double value)
 
 void QInterpolator::sliderRangeChanged(int minimum, int maximum)
 {
-    updateState(bottom(), top(), minimum, maximum);
+    updateState(bottom(), middle(), top(), minimum, maximum);
 }
 
 
@@ -117,15 +118,15 @@ void QInterpolator::textEdited()
 QLinearInterpolator::QLinearInterpolator(double minimum, double maximum,
                                          QAbstractSlider *slider,
                                          QLineEdit *edit, QObject *parent)
-: QInterpolator(minimum, maximum, slider, edit, parent),
+: QInterpolator(minimum, 0.0, maximum, slider, edit, parent),
   m_slope(0.0), m_slopeInv(0.0), m_intercept(0.0)
 {
     // C++ doesn't like virtual functions inside constructors
-    updateState(minimum, maximum, slider->minimum(), slider->maximum());
+    updateState(minimum, 0.0, maximum, slider->minimum(), slider->maximum());
 }
 
 
-void QLinearInterpolator::updateState(double minimum, double maximum,
+void QLinearInterpolator::updateState(double minimum, double, double maximum,
                                       int sliderMinimum, int sliderMaximum)
 {
     m_slope = (maximum - minimum) / 
@@ -156,7 +157,7 @@ double QLinearInterpolator::toValue(int sliderValue)
 QPowerInterpolator::QPowerInterpolator(double exponent, double minimum,
                                        double maximum, QAbstractSlider *slider,
                                        QLineEdit *edit, QObject *parent)
-: QInterpolator(minimum, maximum, slider, edit, parent),
+: QInterpolator(minimum, 0.0, maximum, slider, edit, parent),
   m_exponent(exponent), m_exponentInv(1.0/exponent),
   m_valueRange(maximum-minimum), m_valueRangeInv(1.0/(maximum-minimum)),
   m_valueMin(minimum), m_sliderRange(slider->maximum()-slider->minimum()),
@@ -164,7 +165,7 @@ QPowerInterpolator::QPowerInterpolator(double exponent, double minimum,
   m_sliderMin(slider->minimum())
 {
     // C++ doesn't like virtual functions inside constructors
-    updateState(minimum, maximum, slider->minimum(), slider->maximum());
+    updateState(minimum, 0.0, maximum, slider->minimum(), slider->maximum());
 }
 
 
@@ -172,11 +173,11 @@ void QPowerInterpolator::setExponent(double value)
 {
     m_exponent    = value;
     m_exponentInv = 1.0 / value;
-    updateState(bottom(), top(), sliderMinimum(), sliderMaximum());
+    updateState(bottom(), 0.0, top(), sliderMinimum(), sliderMaximum());
 }
 
 
-void QPowerInterpolator::updateState(double minimum, double maximum,
+void QPowerInterpolator::updateState(double minimum, double, double maximum,
                                      int sliderMinimum, int sliderMaximum)
 {
     m_valueRange     = maximum-minimum;

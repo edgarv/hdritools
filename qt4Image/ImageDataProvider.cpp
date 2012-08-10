@@ -25,11 +25,11 @@ void ImageDataProvider::setSize( const QSize &otherSize ) {
     }
 }
 
-void ImageDataProvider::setWhitePointRange( const range_t &otherRange ) {
-    if (otherRange != _whitePointRange) {
+void ImageDataProvider::setWhitePointRange( const range_t &otherRange, double otherAvgLuminance ) {
+    if (otherRange != _whitePointRange || qFuzzyCompare(otherAvgLuminance, _avgLuminance)) {
         _whitePointRange = otherRange;
-        whitePointRangeChanged(_whitePointRange.first,
-            _whitePointRange.second);
+        _avgLuminance    = otherAvgLuminance;
+        whitePointRangeChanged(_whitePointRange.first, _avgLuminance, _whitePointRange.second);
     }
 }
 
@@ -59,7 +59,7 @@ void ImageIODataProvider::update()
         whitePoint = params.l_white;
         key = params.key;
         lw  = params.l_w;
-        setWhitePointRange(params.l_min, 1.125*qMax(params.l_max,params.l_white));
+        setWhitePointRange(params.l_min, params.l_w, 1.125*qMax(params.l_max,params.l_white));
     }
 }
 
@@ -88,10 +88,4 @@ void ImageIODataProvider::getToneMapDefaults(double &whitePointOut,
 {
     whitePointOut = whitePoint;
     keyOut = key;
-}
-
-
-double ImageIODataProvider::avgLogLuminance() const
-{
-    return lw;
 }

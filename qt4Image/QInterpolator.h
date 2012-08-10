@@ -13,6 +13,7 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#pragma once
 #if !defined(PCG_QINTERPOLATOR)
 #define PCG_QINTERPOLATOR
 
@@ -29,10 +30,10 @@ class QInterpolator : public QObject
     Q_OBJECT
 
 public:
-    QInterpolator(double minimum, double maximum,
+    QInterpolator(double minimum, double midpoint, double maximum,
         QAbstractSlider *slider, QLineEdit *edit, QObject *parent = 0);
 
-    void setRange(double minimum, double maximum);
+    void setRange(double minimum, double midpoint, double maximum);
 
     void setValue(double value);
     inline double value() const {
@@ -46,7 +47,7 @@ protected:
 
     // Function called to update the internal state. The default
     // implementation doesn't do anything!
-    virtual void updateState(double minimum, double maximum,
+    virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum)
     {
     }
@@ -59,19 +60,25 @@ protected:
     // the value it maps to
     virtual double toValue(int sliderValue) = 0;
 
-    inline double top() {
+    // Returns the midpoint of this interpolator. The default implementation
+    // just returns 0
+    virtual double middle() const {
+        return 0.0;
+    }
+
+    inline double top() const {
         return m_validator.top();
     }
 
-    inline double bottom() {
+    inline double bottom() const {
         return m_validator.bottom();
     }
 
-    inline int sliderMinimum() {
+    inline int sliderMinimum() const {
         return !m_slider.isNull() ? m_slider->minimum() : -1;
     }
 
-    inline int sliderMaximum() {
+    inline int sliderMaximum() const {
         return !m_slider.isNull() ? m_slider->maximum() : -1;
     }
 
@@ -95,7 +102,8 @@ private:
 
 
 
-// Concrete implementation which implements simple linear interpolation
+// Concrete implementation which implements simple linear interpolation between
+// the minimum and the maximum, ignorign the middle point
 class QLinearInterpolator : public QInterpolator
 {
     Q_OBJECT
@@ -105,7 +113,7 @@ public:
         QAbstractSlider *slider, QLineEdit *edit, QObject *parent = 0);
 
 protected:
-    virtual void updateState(double minimum, double maximum,
+    virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum);
     virtual int toSliderValue(double value);
     virtual double toValue(int sliderValue);
@@ -134,7 +142,7 @@ public:
     void setExponent(double value);
 
 protected:
-    virtual void updateState(double minimum, double maximum,
+    virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum);
     virtual int toSliderValue(double value);
     virtual double toValue(int sliderValue);

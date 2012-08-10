@@ -59,8 +59,8 @@ m_isSet(false)
 
     connect ( keySldr, SIGNAL(valueChanged(int)), 
               this,    SLOT(keySliderChanged(int)) );
-    connect ( &dataProvider, SIGNAL(whitePointRangeChanged(double,double)),
-              this,          SLOT(updateWhitePointRange(double,double)) );
+    connect ( &dataProvider, SIGNAL(whitePointRangeChanged(double,double,double)),
+              this,          SLOT(updateWhitePointRange(double,double,double)) );
     connect ( this->autoBtn, SIGNAL(clicked()),
               this,          SLOT(autoClicked()) );
 
@@ -74,7 +74,7 @@ m_isSet(false)
 }
 
 
-void ToneMapDialog::updateWhitePointRange(double minimum, double maximum)
+void ToneMapDialog::updateWhitePointRange(double minimum, double average, double maximum)
 {
     // Don't allow to enable if the values are sense-less
     double whitePoint, key;
@@ -89,7 +89,7 @@ void ToneMapDialog::updateWhitePointRange(double minimum, double maximum)
         return;
     }
 
-    whitePointInterpolator->setRange(minimum, maximum);
+    whitePointInterpolator->setRange(minimum, average, maximum);
     if (!m_isSet) {
         whitePointInterpolator->setValue(whitePoint);
         keyInterpolator->setValue(key);

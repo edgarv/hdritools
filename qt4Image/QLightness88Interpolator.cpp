@@ -181,13 +181,13 @@ inline double L_inv(const int pos) {
 QLightness88Interpolator::QLightness88Interpolator(QAbstractSlider *slider,
                                                    QLineEdit *edit,
                                                    QObject *parent)
-: QInterpolator(0.0, 1.0, slider, edit, parent)
+: QInterpolator(0.0, 0.0, 1.0, slider, edit, parent)
 {
-    updateState(0.0, 1.0, slider->minimum(), slider->maximum());
+    updateState(0.0, 0.0, 1.0, slider->minimum(), slider->maximum());
 }
 
 
-void QLightness88Interpolator::updateState(double minimum, double maximum,
+void QLightness88Interpolator::updateState(double minimum, double, double maximum,
                                            int sliderMinimum,
                                            int sliderMaximum)
 {

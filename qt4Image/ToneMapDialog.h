@@ -53,7 +53,7 @@ private slots:
     void keySliderChanged(int rawValue);
 
     // React to the white point range from the data provider
-    void updateWhitePointRange(double minimum, double maximum);
+    void updateWhitePointRange(double minimum, double average, double maximum);
 
     // When the automatic values are requested
     void autoClicked();

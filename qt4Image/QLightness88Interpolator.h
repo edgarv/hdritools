@@ -13,6 +13,7 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
+#pragma once
 #if !defined(PCG_QLIGHTNESS88INTERPOLATOR_H)
 #define PCG_QLIGHTNESS88INTERPOLATOR_H
 
@@ -30,7 +31,7 @@ public:
         QObject *parent = 0);
 
 protected:
-    virtual void updateState(double minimum, double maximum,
+    virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum);
     virtual int toSliderValue(double value);
     virtual double toValue(int sliderValue);
