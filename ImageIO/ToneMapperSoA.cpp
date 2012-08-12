@@ -506,8 +506,7 @@ struct LuminanceScaler_Exposure
     }
 
     // Scales each pixel by multiplier
-    inline void setExposureFactor(float multiplier)
-    {
+    inline void setExposureFactor(float multiplier) {
         m_multiplier = T(multiplier);
     }
 
@@ -544,8 +543,13 @@ struct LuminanceScaler_Reinhard02
 
     // Initial values as for key = 0.18, avgLogLum = 0.18, Lwhite = 1.0f
     LuminanceScaler_Reinhard02() :
-    m_P(1.0f), m_Q(1.0f)
+    m_P(1.0f), m_Q(1.0f), m_multiplier(1.0f)
     {}
+
+    // Scales each pixel by multiplier
+    inline void setExposureFactor(float multiplier) {
+        m_multiplier = T(multiplier);
+    }
 
     // Setup the internal constants
     inline void SetParams(const pcg::Reinhard02::Params &params)
@@ -564,21 +568,25 @@ struct LuminanceScaler_Reinhard02
         const T& LVec2(constants::getValue<T>(constants::LVec[2]));
 
         // Get the luminance
-        const T Y = LVec0*rLinear + LVec1*gLinear + LVec2*bLinear;
+        const T r = rLinear * m_multiplier;
+        const T g = gLinear * m_multiplier;
+        const T b = bLinear * m_multiplier;
+        const T Y = LVec0*r + LVec1*g + LVec2*b;
 
         // Compute the scale
         const T Lp = m_P * Y;
         const T k = (m_P * (ONE + m_Q*Lp)) * ops::rcp(ONE + Lp);
 
         // And apply
-        rOut = k * rLinear;
-        gOut = k * gLinear;
-        bOut = k * bLinear;
+        rOut = k * r;
+        gOut = k * g;
+        bOut = k * b;
     }
 
 private:
     T m_P;
     T m_Q;
+    T m_multiplier;
 };
 
 
@@ -1165,6 +1173,7 @@ void pcg::ToneMapperSoA::ToneMap(
 
     switch(technique) {
     case pcg::REINHARD02:
+        sReinhard02.setExposureFactor(this->m_exposureFactor);
         sReinhard02.SetParams(this->ParamsReinhard02());
         ToneMapAuxDelegate(sReinhard02, dMethod, m_invGamma, begin, end, out);
         break;
@@ -1209,6 +1218,7 @@ void pcg::ToneMapperSoA::ToneMap(
 
     switch(technique) {
     case pcg::REINHARD02:
+        sReinhard02.setExposureFactor(this->m_exposureFactor);
         sReinhard02.SetParams(this->ParamsReinhard02());
         ToneMapAuxDelegate(sReinhard02, dMethod, m_invGamma, begin, end, out);
         break;
