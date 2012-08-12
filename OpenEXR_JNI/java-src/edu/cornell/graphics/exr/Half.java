@@ -15,10 +15,22 @@
 package edu.cornell.graphics.exr;
 
 /**
- * Utility methods to convert from/to single precision floating point values to
- * the binary representation of the <code>half</code> type.
+ * <p>The {@code Half} class wraps the bits of an IEEE 754-2008 half-precision
+ * floating point value in an object. An object of type {@code Half} contains
+ * a single field whose type is {@code short} (the bits of the actual floating
+ * point value.)</p>
+ * 
+ * <p>In addition, this class provides several methods for converting a
+ * {@code Half} to a {@code float}, a {@code float} to a {@code Half}, a
+ * {@code Half} to a {@code String} and a {@code String} to a {@code Half};
+ * as well as other constants and methods useful when dealing with a
+ * {@code Half}.</p>
+ * 
+ * <p>It also provides methods for conversions between a {@code short}
+ * containing the bit pattern of a half-precision floating point value and the
+ * native {@code float} type.</p>
  */
-public final class Half {
+public final class Half extends Number implements Comparable<Half> {
     
     /**
      * A constant holding the smallest positive normal value of type
@@ -57,16 +69,35 @@ public final class Half {
     public final static short NaN_BITS = 0x7e00;
     
     /**
+     * A constant holding the value of Not-a-Number (NaN) of type {@code half}.
+     */
+    public final static Half NaN = new Half(NaN_BITS);
+    
+    /**
      * A constant holding the bit pattern of the negative infinity
      * of type <code>half</code>
      */
     public final static short NEGATIVE_INFINITY_BITS = (short) 0xfc00;
     
     /**
+     * A constant holding the value of the negative infinity
+     * of type {@code half}.
+     */
+    public final static Half NEGATIVE_INFINITY =
+            new Half(Half.NEGATIVE_INFINITY_BITS);
+    
+    /**
      * A constant holding the bit pattern of the positive infinity
      * of type <code>half</code>
      */
     public final static short POSITIVE_INFINITY_BITS = 0x7c00;
+    
+    /**
+     * A constant holding the value of the positive infinity
+     * of type {@code half}.
+     */
+    public final static Half POSITIVE_INFINITY =
+            new Half(Half.POSITIVE_INFINITY_BITS);
     
     /** The number of bits used to represent a {@code half} value. */
     public final static int SIZE = 16;
@@ -220,5 +251,422 @@ public final class Half {
         o_u |= (bits & 0x8000) << 16;   // sign bit
         float f = Float.intBitsToFloat(o_u);
         return f;
+    }
+    
+    /**
+     * Returns {@code true} if the specified bit pattern corresponding to a
+     * half-precision floating point number is a
+     * Not-a-Number (NaN) value, {@code false} otherwise.
+     *
+     * @param bits the bit pattern to be tested.
+     * @return  {@code true} if the argument is NaN;
+     *          {@code false} otherwise.
+     */
+    public static boolean isNaN(short bits) {
+        return ((bits & 0x7c00) == 0x7c00 && (bits & 0x03ff) != 0);
+    }
+    
+    /**
+     * Returns {@code true} if the specified bit pattern corresponding to a
+     * half-precision floating point number is infinitely
+     * large in magnitude, {@code false} otherwise.
+     *
+     * @param bits the bit pattern to be tested.
+     * @return  {@code true} if the argument is positive infinity or
+     *          negative infinity; {@code false} otherwise.
+     */
+    public static boolean isInfinite(short bits) {
+        return bits == POSITIVE_INFINITY_BITS || bits == NEGATIVE_INFINITY_BITS;
+    }
+    
+    
+    /**
+     * The bit pattern of the Half.
+     *
+     * @serial
+     */
+    private final short bits;
+    
+    /**
+     * Constructs a newly allocated {@code Half} object with the bit pattern
+     * of the argument.
+     * 
+     * @param bits the bit pattern which represents the {@code Half}
+     */
+    public Half(short bits) {
+        this.bits = bits;
+    }
+    
+    /**
+     * Constructs a newly allocated {@code Half} object that
+     * represents the argument converted to type {@code half}.
+     *
+     * @param value the value to be represented by the {@code Half}.
+     * @see #floatToShortBits(float) 
+     */
+    public Half(float value) {
+        this.bits = floatToShortBits(value);
+    }
+
+    /**
+     * Constructs a newly allocated {@code Half} object that
+     * represents the argument converted to type {@code half}.
+     *
+     * @param value the value to be represented by the {@code Half}.
+     * @see #floatToShortBits(float) 
+     */
+    public Half(double value) {
+        this.bits = floatToShortBits((float) value);
+    }
+
+    /**
+     * Constructs a newly allocated {@code Half} object that
+     * represents the half-precision floating-point value
+     * represented by the string. The string is converted to a
+     * {@code float} value as if by the {@code valueOf} method.
+     *
+     * @param s a string to be converted to a {@code Half}.
+     * @throws NumberFormatException if the string does not contain a
+     *               parsable number.
+     * @see java.lang.Float#valueOf(java.lang.String)
+     * @see #floatToShortBits(float) 
+     */
+    public Half(String s) throws NumberFormatException {
+        // REMIND: this is inefficient
+        this.bits = floatToShortBits(Float.valueOf(s).floatValue());
+    }
+    
+    /**
+     * <p>Returns a representation of the calling object
+     * according to the IEEE 754-2008 floating-point "half format" bit
+     * layout, preserving Not-a-Number (NaN) values.</p>
+     * 
+     * <p>Bit 15 (the bit that is selected by the mask {@code 0x8000}
+     * represents the sign of the floating point number. Bits 14-10 (the bits
+     * that are selected by the mask {@code 0x7c00} represents the
+     * exponent. Bits 9-0 (the bits that are selected by the mask
+     * {@code 0x3ff}) represent the significand (sometimes called the
+     * mantissa) of the floating-point number.</p>
+     * 
+     * <p>If the argument is positive infinity, the result is {@code 0x7c00}.
+     * 
+     * <p>If the argument is negative infinity, the result is {@code 0xfc00}.
+     * 
+     * <p>If the argument is NaN, the result is the short representing
+     * the actual NaN value.  Unlike the {@code halfToShortBits}
+     * method, {@code halfToRawShortBits} does not collapse all the
+     * bit patterns encoding a NaN to a single &quot;canonical&quot;
+     * NaN value.</p>
+     * 
+     * <p>In all cases, the result is a short that, when given to the
+     * {@link #shortBitsToFloat(short) } method, will produce a
+     * floating-point value the same as invoking object.
+     * 
+     * @return the bits that represent the half-precision floating-point number.
+     */
+    public short halfToRawShortBits() {
+        return bits;
+    }
+    
+    /**
+     * <p>Returns a representation of the calling object
+     * according to the IEEE 754-2008 floating-point "half format" bit
+     * layout.</p>
+     * 
+     * <p>Bit 15 (the bit that is selected by the mask {@code 0x8000}
+     * represents the sign of the floating point number. Bits 14-10 (the bits
+     * that are selected by the mask {@code 0x7c00} represents the
+     * exponent. Bits 9-0 (the bits that are selected by the mask
+     * {@code 0x3ff}) represent the significand (sometimes called the
+     * mantissa) of the floating-point number.</p>
+     * 
+     * <p>If the argument is positive infinity, the result is {@code 0x7c00}.
+     * </p>
+     * <p>If the argument is negative infinity, the result is {@code 0xfc00}.
+     * </p>
+     * <p>If the argument is NaN, the result is {@code 0x7e00}.</p>
+     * 
+     * <p>In all cases, the result is a short that, when given to the
+     * {@link #shortBitsToFloat(short) } method, will produce a
+     * floating-point value the same as invoking object.</p>
+     * 
+     * @return the bits that represent the half-precision floating-point number.
+     */
+    public short halfToShortBits() {
+        return Half.halfToShortBits(this.bits);
+    }
+    
+    /**
+     * <p>Returns a representation of the given bit pattern adhering to
+     * the IEEE 754-2008 floating-point "half format" layout.</p>
+     * 
+     * <p>Bit 15 (the bit that is selected by the mask {@code 0x8000}
+     * represents the sign of the floating point number. Bits 14-10 (the bits
+     * that are selected by the mask {@code 0x7c00} represents the
+     * exponent. Bits 9-0 (the bits that are selected by the mask
+     * {@code 0x3ff}) represent the significand (sometimes called the
+     * mantissa) of the floating-point number.</p>
+     * 
+     * <p>If the argument is positive infinity, the result is {@code 0x7c00}.
+     * </p>
+     * <p>If the argument is negative infinity, the result is {@code 0xfc00}.
+     * </p>
+     * <p>If the argument is NaN, the result is {@code 0x7e00}.</p>
+     * 
+     * <p>In all cases, the result is a short that, when given to the
+     * {@link #shortBitsToFloat(short) } method, will produce a
+     * floating-point value the same as invoking object.</p>
+     * 
+     * @param halfBits the bit pattern of a {@code half} floating-point number.
+     * @return the bits that represent the half-precision floating-point number,
+     *         unifying all NaN values.
+     */
+    public static short halfToShortBits(short halfBits) {
+        // Check for NaN and return canonical value
+        short result = halfBits;
+        if ((result & 0x7c00) == 0x7c00 && (result & 0x03ff) != 0) {
+            result = Half.NaN_BITS;
+        }
+        return result;
+    }
+    
+    /**
+     * Returns {@code true} if this {@code Half} value is a
+     * Not-a-Number (NaN), {@code false} otherwise.
+     *
+     * @return  {@code true} if the value represented by this object is
+     *          NaN; {@code false} otherwise.
+     */
+    public boolean isNaN() {
+        return isNaN(this.bits);
+    }
+    
+    /**
+     * Returns {@code true} if this {@code Half} value is
+     * infinitely large in magnitude, {@code false} otherwise.
+     *
+     * @return  {@code true} if the value represented by this object is
+     *          positive infinity or negative infinity;
+     *          {@code false} otherwise.
+     */
+    public boolean isInfinite() {
+        return isInfinite(this.bits);
+    }
+    
+    /**
+     * Returns the value of this {@code Half} as a
+     * {@code byte} (by casting its {@code float} value to a {@code byte}).
+     *
+     * @return  the {@code float} value represented by this object
+     *          converted to type {@code byte}
+     * @see #floatValue() 
+     */
+    @Override
+    public byte byteValue() {
+        return (byte) shortBitsToFloat(bits);
+    }
+
+    /**
+     * Returns the value of this {@code Half} as a
+     * {@code short} (by casting its {@code float} value to a {@code short}).
+     *
+     * @return  the {@code float} value represented by this object
+     *          converted to type {@code short}
+     * @see #floatValue() 
+     */
+    @Override
+    public short shortValue() {
+        return (short) shortBitsToFloat(bits);
+    }
+
+    /**
+     * Returns the value of this {@code Half} as an
+     * {@code int} (by casting its {@code float} value to an {@code int}).
+     *
+     * @return  the {@code float} value represented by this object
+     *          converted to type {@code int}
+     * @see #floatValue() 
+     */
+    @Override
+    public int intValue() {
+        return (int) shortBitsToFloat(bits);
+    }
+
+    /**
+     * Returns the value of this {@code Half} as a
+     * {@code long} (by casting its {@code float} value to a {@code long}).
+     *
+     * @return  the {@code float} value represented by this object
+     *          converted to type {@code long}
+     * @see #floatValue() 
+     */
+    @Override
+    public long longValue() {
+        return (long) shortBitsToFloat(bits);
+    }
+
+    /**
+     * Returns the exact value of this {@code Half} as a
+     * {@code double} by converting its bit pattern as per the
+     * {@link #shortBitsToFloat(short) } method.
+     * 
+     * @return the {@code float} value represented by this object.
+     * @see #shortBitsToFloat(short) 
+     */
+    @Override
+    public float floatValue() {
+        return shortBitsToFloat(bits);
+    }
+
+    /**
+     * Returns the exact value of this {@code Half} as a
+     * {@code double} (by casting its {@code float} value to an {@code double}).
+     *
+     * @return  the {@code float} value represented by this object
+     *          converted to type {@code double}
+     * @see #floatValue() 
+     */
+    @Override
+    public double doubleValue() {
+        return (double) shortBitsToFloat(bits);
+    }
+    
+    /**
+     * Compares this object against the specified object.  The result
+     * is {@code true} if and only if the argument is not
+     * {@code null} and is a {@code Half} object that
+     * represents a {@code half} with the same value as the
+     * {@code half} represented by this object. For this
+     * purpose, two {@code half} values are considered to be the
+     * same if and only if the method {@link #halfToShortBits() }
+     * returns the identical {@code short} value when applied to each.
+     * <p>
+     * Note that in most cases, for two instances of class
+     * {@code Half}, {@code h1} and {@code h2}, the value
+     * of {@code h1.equals(h2)} is {@code true} if and only if
+     * <blockquote><pre>
+     *   h1.floatValue() == h2.floatValue()
+     * </pre></blockquote>
+     * <p>
+     * also has the value {@code true}. However, there are two exceptions:
+     * <ul>
+     * <li>If {@code h1} and {@code h2} both represent
+     *     {@code Half.NaN}, then the {@code equals} method returns
+     *     {@code true}, even though the operator {@code ==} applied to the
+     *     numerical values has the value {@code false}.
+     * <li>If {@code h1} represents {@code +0.0f} while
+     *     {@code h2} represents {@code -0.0f}, or vice
+     *     versa, the {@code equal} test has the value
+     *     {@code false}, even though {@code 0.0f==-0.0f}
+     *     has the value {@code true}.
+     * </ul>
+     * This definition allows hash tables to operate properly.
+     *
+     * @param obj the object to be compared
+     * @return {@code true} if the objects are the same;
+     *         {@code false} otherwise.
+     * @see #halfToShortBits() 
+     */
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof Half)
+                && (((Half)obj).halfToShortBits() == halfToShortBits());
+    }
+
+    /**
+     * Returns a hash code for this {@code Half} object. The
+     * result is the integer bit representation, exactly as produced
+     * by the method {@link #halfToRawShortBits() }.
+     *
+     * @return a hash code value for this object.  
+     */
+    @Override
+    public int hashCode() {
+        return (int) bits;
+    }
+
+    @Override
+    public String toString() {
+        return Float.toString(shortBitsToFloat(bits));
+    }
+    
+    public String toHexString() {
+        return Float.toHexString(shortBitsToFloat(bits));
+    }
+
+    /**
+     * Compares two {@code Half} objects numerically.  There are
+     * two ways in which comparisons performed by this method differ
+     * from those performed by the Java language numerical comparison
+     * operators ({@code &lt;, &lt;=, ==, &gt;= &gt;}) when
+     * applied to primitive {@code float} values:
+     * <ul><li>
+     *		{@code Half.NaN} is considered by this method to
+     *		be equal to itself and greater than all other
+     *		{@code float} values
+     *		(including {@code Half.POSITIVE_INFINITY}).
+     * <li>
+     *		{@code 0.0f} is considered by this method to be greater
+     *		than {@code -0.0f}.
+     * </ul>
+     * This ensures that the <i>natural ordering</i> of <tt>Half</tt>
+     * objects imposed by this method is <i>consistent with {@code equals}</i>.
+     *
+     * @param anotherHalf   the {@code Half} to be compared.
+     * @return  the value {@code 0} if {@code anotherHalf} is
+     *		numerically equal to this {@code Half}; a value
+     *		less than {@code 0} if this {@code Half}
+     *		is numerically less than {@code anotherHalf};
+     *		and a value greater than {@code 0} if this
+     *		{@code Half} is numerically greater than
+     *		{@code anotherHalf}.
+     *		
+     * @see Comparable#compareTo(Object)
+     */
+    @Override
+    public int compareTo(Half anotherHalf) {
+        return Half.compare(this.bits, anotherHalf.bits);
+    }
+    
+    /**
+     * Compares the two specified {@code short} bit patterns each representing
+     * a half-precision floating-point value. The sign
+     * of the integer value returned is the same as that of the
+     * integer that would be returned by the call:
+     * {@code 
+     * <pre>
+     *    new Half(bitsH1).compareTo(new Half(bitsH2))
+     * </pre>}
+     *
+     * @param bitsH1 the bit pattern of the first {@code half} to compare.
+     * @param bitsH2 the bit pattern of the first {@code half} to compare.
+     * @return  the value {@code 0} if the {@code half} represented by
+     *          {@code bitsH1} is numerically equal to the {@code half}
+     *          represented by {@code bitsH2}; a value less than {@code 0}
+     *          if the {@code half} represented by {@code bitsH1} is numerically
+     *          less than {@code half} represented by {@code bitsH2}; and a
+     *          value greater than {@code 0} if the {@code half} represented by
+     *          {@code bitsH1} is numerically greater than the {@code half}
+     *          represented by {@code bitsH2}.
+     */
+    public static int compare(short bitsH1, short bitsH2) {
+        if (!Half.isNaN(bitsH1) && !Half.isNaN(bitsH2) &&
+            (((bitsH1 & 0x7fff) != 0) || (bitsH2 & 0x7fff) != 0)) {
+            // Change from sign-magnitude to two-complement:
+            // http://www.cygnus-software.com/papers/comparingfloats/Comparing%20floating%20point%20numbers.htm
+            
+            int a = (bitsH1 & 0x8000) == 0 ? bitsH1 : (short)0x8000 - bitsH1;
+            int b = (bitsH2 & 0x8000) == 0 ? bitsH2 : (short)0x8000 - bitsH2;
+            int result = a - b;
+            return result;
+        }
+        
+        // At least one NaN or two zeros; unify all NaN
+        bitsH1 = Half.halfToShortBits(bitsH1);
+        bitsH2 = Half.halfToShortBits(bitsH2);
+        
+        return (bitsH1 == bitsH2 ?  0 : // Values are equal
+                (bitsH1 < bitsH2 ? -1 : // (-0.0, 0.0) or (!NaN, NaN)
+                 1));
     }
 }

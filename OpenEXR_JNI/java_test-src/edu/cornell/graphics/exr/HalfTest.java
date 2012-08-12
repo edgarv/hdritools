@@ -221,4 +221,132 @@ public class HalfTest {
             assertTrue(Float.isNaN(result));
         }
     }
+    
+    private static int sign(int x) {
+        return x == 0 ? 0 : (x > 0 ? 1 : -1);
+    }
+    
+    /**
+     * This test assumes that the routines to convert between float and half
+     * work properly.
+     */
+    @Test
+    public void testCompare(){
+        System.out.println("compare");
+        
+        // Compare -0 and 0
+        assertTrue(Half.compare((short)0x8000, (short)0x0000) < 0);
+        assertTrue(Half.compare((short)0x0000, (short)0x8000) > 0);
+        assertTrue(Half.compare((short)0x0000, (short)0x0000) == 0);
+        assertTrue(Half.compare((short)0x8000, (short)0x8000) == 0);
+        
+        // Infinity comparisons
+        assertTrue(Half.compare(Half.NEGATIVE_INFINITY_BITS,
+                Half.NEGATIVE_INFINITY_BITS) == 0);
+        assertTrue(Half.compare(Half.NEGATIVE_INFINITY_BITS,
+                Half.POSITIVE_INFINITY_BITS) < 0);
+        assertTrue(Half.compare(Half.POSITIVE_INFINITY_BITS,
+                Half.NEGATIVE_INFINITY_BITS) > 0);
+        assertTrue(Half.compare(Half.POSITIVE_INFINITY_BITS,
+                Half.POSITIVE_INFINITY_BITS) == 0);
+        
+        // Without NaNs
+        for (int i = 0; i < 1000000; ++i) {
+            // Generate bit patterns
+            short bitsH1 = (short) rnd.nextInt(Half.POSITIVE_INFINITY_BITS);
+            short bitsH2 = (short) rnd.nextInt(Half.POSITIVE_INFINITY_BITS);
+            short signMask = rnd.nextBoolean() ? (short)0x0000 : (short)0x8000;
+            
+            // Assign signs
+            float pS = rnd.nextFloat();
+            if (pS < 0.25f) {
+                bitsH1 |= signMask;
+            } else if (pS < 0.5f) {
+                bitsH2 |= signMask;
+            } else  {
+                bitsH1 |= signMask;
+                bitsH2 |= signMask;
+            }
+            
+            // Force zeros and infinity
+            float p0 = rnd.nextFloat();
+            if (p0 < 0.025f) {
+                bitsH1 &= (short) 0x8000;
+            } else if (p0 < 0.05f) {
+                bitsH2 &= (short) 0x8000;
+            } else if (p0 < 0.075f) {
+                bitsH1 = (short) (Half.POSITIVE_INFINITY_BITS | signMask);
+            } else if (p0 < 0.1f) {
+                bitsH2 = (short) (Half.POSITIVE_INFINITY_BITS | signMask);
+            }
+            
+            float f1 = Half.shortBitsToFloat(bitsH1);
+            float f2 = Half.shortBitsToFloat(bitsH2);
+            int expected = sign(Float.compare(f1, f2));
+            int actual = sign(Half.compare(bitsH1, bitsH2));
+            assertEquals(expected, actual);
+        }
+        
+        // All NaNs are the same
+        assertEquals(0, Half.compare(Half.NaN_BITS, Half.NaN_BITS));
+        for (int i = 0; i < 1000; ++i) {
+            short bitsNaN1 = (short) (0x7c01 + rnd.nextInt(1023));
+            short bitsNaN2 = (short) (0x7c01 + rnd.nextInt(1023));
+            assertEquals(0, Half.compare(bitsNaN1, bitsNaN2));
+        }
+        
+        // NaN and infinity
+        assertTrue(Half.compare(Half.POSITIVE_INFINITY_BITS,Half.NaN_BITS) < 0);
+        assertTrue(Half.compare(Half.NEGATIVE_INFINITY_BITS,Half.NaN_BITS) < 0);
+        assertTrue(Half.compare(Half.NaN_BITS,Half.POSITIVE_INFINITY_BITS) > 0);
+        assertTrue(Half.compare(Half.NaN_BITS,Half.NEGATIVE_INFINITY_BITS) > 0);
+        
+        // With a NaN
+        for (int i = 0; i < 1000000; ++i) {
+            // Generate bit patterns
+            short bits = (short) rnd.nextInt(Half.POSITIVE_INFINITY_BITS);
+            bits |= rnd.nextBoolean() ? (short)0x0000 : (short)0x8000;
+            assertTrue(Half.compare(bits, Half.NaN_BITS) < 0);
+            assertTrue(Half.compare(Half.NaN_BITS, bits) > 0);
+        }
+    }
+    
+    @Test
+    public void testCompareTo() {
+        System.out.println("compareTo");
+        for (int i = 0; i < 1000000; ++i) {
+            int bits = rnd.nextInt();
+            Half h1 = new Half((short) (bits & 0xffff));
+            Half h2 = new Half((short) (bits >>> 16));
+            float f1 = h1.floatValue();
+            float f2 = h2.floatValue();
+            int expected = sign(Float.compare(f1, f2));
+            int actual = sign(h1.compareTo(h2));
+            assertEquals(expected, actual);
+        }
+    }
+    
+    @Test
+    public void testEquals() {
+        System.out.println("equals");
+        
+        // Basic cases
+        Half half = new Half(1.0f);
+        assertTrue(half.equals(half));
+        assertTrue(half.equals(new Half(1.0f)));
+        assertFalse(half.equals(new Half(1.01f)));
+        assertFalse(half.equals(this));
+        assertFalse(half.equals(null));
+        
+        for (int i = 0; i < 1000000; ++i) {
+            int bits = rnd.nextInt();
+            Half h1 = new Half((short) (bits & 0xffff));
+            Half h2 = new Half((short) (bits >>> 16));
+            Float f1 = h1.floatValue();
+            Float f2 = h2.floatValue();
+            boolean expected = f1.equals(f2);
+            boolean actual = h1.equals(h2);
+            assertEquals(expected, actual);
+        }
+    }
 }

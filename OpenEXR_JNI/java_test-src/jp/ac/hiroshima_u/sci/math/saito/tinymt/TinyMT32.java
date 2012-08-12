@@ -155,6 +155,10 @@ public final class TinyMT32 extends java.util.Random implements Cloneable {
         return output();
     }
     
+    public boolean nextBoolean() {
+	return (nextInt() & 0x1) != 0;
+    }
+    
     /**
      * Returns a pseudorandom, uniformly distributed {@code int} value between
      * 0 (inclusive) and the specified value (exclusive), drawn from this
