@@ -328,6 +328,21 @@ inline v8sf log_avx(v8sf x) {
   const v8sf min_norm_pos = *(v8sf*)_ps_min_norm_pos;
   const v8sf inv_mant_mask = *(v8sf*)_ps_inv_mant_mask;
   const v8sf ps_0p5 = *(v8sf*)_ps_0p5;
+  const v8sf ps_cephes_SQRTHF = *(v8sf*)_ps_cephes_SQRTHF;
+
+  const v8sf ps_cephes_log_p0 = *(v8sf*)_ps_cephes_log_p0;
+  const v8sf ps_cephes_log_p1 = *(v8sf*)_ps_cephes_log_p1;
+  const v8sf ps_cephes_log_p2 = *(v8sf*)_ps_cephes_log_p2;
+  const v8sf ps_cephes_log_p3 = *(v8sf*)_ps_cephes_log_p3;
+  const v8sf ps_cephes_log_p4 = *(v8sf*)_ps_cephes_log_p4;
+  const v8sf ps_cephes_log_p5 = *(v8sf*)_ps_cephes_log_p5;
+  const v8sf ps_cephes_log_p6 = *(v8sf*)_ps_cephes_log_p6;
+  const v8sf ps_cephes_log_p7 = *(v8sf*)_ps_cephes_log_p7;
+  const v8sf ps_cephes_log_p8 = *(v8sf*)_ps_cephes_log_p8;
+
+  const v8sf ps_cephes_log_q1 = *(v8sf*)_ps_cephes_log_q1;
+  const v8sf ps_cephes_log_q2 = *(v8sf*)_ps_cephes_log_q2;
+
 #if !USE_AVX2
   const v4si pi32_0x7f = *(v4si*)_pi32_0x7f;
 #else
@@ -377,7 +392,7 @@ inline v8sf log_avx(v8sf x) {
        x = x + x - 1.0;
      } else { x = x - 1.0; }
   */
-  v8sf mask = _mm256_cmp_ps(x, *(v8sf*)_ps_cephes_SQRTHF, _CMP_LT_OQ);
+  v8sf mask = _mm256_cmp_ps(x, ps_cephes_SQRTHF, _CMP_LT_OQ);
   v8sf tmp = _mm256_and_ps(x, mask);
   x = _mm256_sub_ps(x, one);
   e = _mm256_sub_ps(e, _mm256_and_ps(one, mask));
@@ -386,55 +401,55 @@ inline v8sf log_avx(v8sf x) {
 
   v8sf z = _mm256_mul_ps(x,x);
 
-  v8sf y = *(v8sf*)_ps_cephes_log_p0;
+  v8sf y = ps_cephes_log_p0;
 #if !USE_AVX2
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p1);
+  y = _mm256_add_ps(y, ps_cephes_log_p1);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p2);
+  y = _mm256_add_ps(y, ps_cephes_log_p2);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p3);
+  y = _mm256_add_ps(y, ps_cephes_log_p3);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p4);
+  y = _mm256_add_ps(y, ps_cephes_log_p4);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p5);
+  y = _mm256_add_ps(y, ps_cephes_log_p5);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p6);
+  y = _mm256_add_ps(y, ps_cephes_log_p6);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p7);
+  y = _mm256_add_ps(y, ps_cephes_log_p7);
   y = _mm256_mul_ps(y, x);
-  y = _mm256_add_ps(y, *(v8sf*)_ps_cephes_log_p8);
+  y = _mm256_add_ps(y, ps_cephes_log_p8);
 #else
   /* _mm256_fmadd_ps(a, b, c) == a*b + c */
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p1);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p2);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p3);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p4);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p5);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p6);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p7);
-  y = _mm256_fmadd_ps(y,x, *(v8sf*)_ps_cephes_log_p8);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p1);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p2);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p3);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p4);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p5);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p6);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p7);
+  y = _mm256_fmadd_ps(y,x, ps_cephes_log_p8);
 #endif
   y = _mm256_mul_ps(y, x);
   y = _mm256_mul_ps(y, z);
   
 
 #if !USE_AVX2
-  tmp = _mm256_mul_ps(e, *(v8sf*)_ps_cephes_log_q1);
+  tmp = _mm256_mul_ps(e, ps_cephes_log_q1);
   y = _mm256_add_ps(y, tmp);
 
-  tmp = _mm256_mul_ps(z, *(v8sf*)_ps_0p5);
+  tmp = _mm256_mul_ps(z, ps_0p5);
   y = _mm256_sub_ps(y, tmp);
 
-  tmp = _mm256_mul_ps(e, *(v8sf*)_ps_cephes_log_q2);
+  tmp = _mm256_mul_ps(e, ps_cephes_log_q2);
   x = _mm256_add_ps(x, y);
   x = _mm256_add_ps(x, tmp);
 #else
-  y = _mm256_fmadd_ps(e, *(v8sf*)_ps_cephes_log_q1, y);
-  y = _mm256_fnmadd_ps(z, *(v8sf*)_ps_0p5, y);
+  y = _mm256_fmadd_ps(e, ps_cephes_log_q1, y);
+  y = _mm256_fnmadd_ps(z, ps_0p5, y);
 
   x = _mm256_add_ps(x, y);
-  x = _mm256_fmadd_ps(e, *(v8sf*)_ps_cephes_log_q2, x);
+  x = _mm256_fmadd_ps(e, ps_cephes_log_q2, x);
 #endif
 
   x = _mm256_or_ps(x, invalid_mask); // negative arg will be NAN

@@ -454,16 +454,33 @@ __m256 am::log_avx(__m256 x)
     typedef pcg::Vec8i v8i;
     typedef pcg::Vec8f v8f;
 
+    // Constants
+    const v8f min_normal(avx::min_normal);
+    const v8f inv_mantissa_mask(avx::inv_mantissa_mask);
+    const v8f const_1(avx::const_1);
+    const v8f const_127(avx::const_127);
+
+    const v8f log_p0(avx::log_p0);
+    const v8f log_p1(avx::log_p1);
+    const v8f log_p2(avx::log_p2);
+
+    const v8f log_q0(avx::log_q0);
+    const v8f log_q1(avx::log_q1);
+    const v8f log_q2(avx::log_q2);
+
+    const v8f log_c0(avx::log_c0);
+
+
     // Kill invalid values (ignoring NaN and Inf)
-    const v8f x0 = simd_max(x, avx::min_normal);
+    const v8f x0 = simd_max(x, min_normal);
 
     // Kill the exponent and combine with the exponent of 1.0f to get the
     // actual embedded mantissa as a valid floating point value:
     // a value in the range [1.0, 2.0)
-    const v8f mantissa = (x0 & avx::inv_mantissa_mask) | avx::const_1;
+    const v8f mantissa = (x0 & inv_mantissa_mask) | const_1;
 
-    const v8f v_min1  = mantissa - avx::const_1;
-    const v8f v_plus1 = mantissa + avx::const_1;
+    const v8f v_min1  = mantissa - const_1;
+    const v8f v_plus1 = mantissa + const_1;
 
     // Extract the original exponent and undo the bias
     // The original formulation uses all integer operations for this, but
@@ -471,23 +488,22 @@ __m256 am::log_avx(__m256 x)
     // using floating point: single precision can represent all possible values
     const v8f biasedExponent =
         _mm256_cvtepi32_ps(avx::srl(_mm256_castps_si256(x0), 23));
-    const v8f origExponent = biasedExponent - avx::const_127;
+    const v8f origExponent = biasedExponent - const_127;
     
     v8f vFrac = v_min1 * simd_rcp(v_plus1); // Is it worth it to use rcp_nr?
     vFrac += vFrac;
     const v8f vFracSqr = vFrac * vFrac;
 
     // Evaluate the polynomial
-    const v8f polyP = ((((avx::log_p0 * vFracSqr) + avx::log_p1) *
-                                        vFracSqr) + avx::log_p2) * vFracSqr;
-    const v8f polyQ =  (((avx::log_q0 * vFracSqr) + avx::log_q1) * 
-                                        vFracSqr) + avx::log_q2;
+    const v8f polyP = ((((log_p0 * vFracSqr) + log_p1) * vFracSqr)
+                                             + log_p2) * vFracSqr;
+    const v8f polyQ =  (((log_q0 * vFracSqr) + log_q1) * vFracSqr) + log_q2;
 
     const v8f poly = polyP * simd_rcp(polyQ); // Use rcp_nr?
     const v8f logApprox = poly * vFrac;
 
     // Scale by log(2) to get the natural logarithm of the exponent part
-    const v8f logExpPart = origExponent * avx::log_c0;
+    const v8f logExpPart = origExponent * log_c0;
 
     // Combine the different parts
     const v8f result = logApprox + vFrac + logExpPart;
@@ -507,28 +523,34 @@ __m256 am::pow_avx(__m256 x, __m256 y)
     typedef pcg::Vec8f  v8f;
     typedef pcg::Vec8bf v8bf;
 
+    // Constants
+    const v8f min_normal(avx::min_normal);
+    const v8f inv_mantissa_mask(avx::inv_mantissa_mask);
+    const v8f const_1(avx::const_1);
+    const v8f const_127(avx::const_127);
+
     // Remember negative values
     const v8f negative_mask(v8f::zero() < x);
 
     // Cutoff denormalized stuff (preserving NaN and Infinity)
-    const v8f x0 = simd_max(x, avx::min_normal);
+    const v8f x0 = simd_max(x, min_normal);
 
     // First step: compute log(x)
 
     // Kill the exponent and combine with the exponent of 1.0f to get the
     // actual embedded mantissa as a valid floating point value:
     // a value in the range [1.0, 2.0)
-    const v8f mantissa = (x0 & avx::inv_mantissa_mask) | avx::const_1;
+    const v8f mantissa = (x0 & inv_mantissa_mask) | const_1;
 
-    const v8f v_min1  = mantissa - avx::const_1;
-    const v8f v_plus1 = mantissa + avx::const_1;
+    const v8f v_min1  = mantissa - const_1;
+    const v8f v_plus1 = mantissa + const_1;
 
     // Extract the original exponent and undo the bias
     // The original formulation uses all integer operations for this, but
     // since those aren't supported on AVX, we can safely do the substraction
     // using floating point: single precision can represent all possible values
     const v8f biasedExponent = avx::toFloat(avx::srl(avx::castAsInt(x0), 23));
-    const v8f origExponent = biasedExponent - avx::const_127;
+    const v8f origExponent = biasedExponent - const_127;
 
     v8f vFrac = v_min1 * simd_rcp(v_plus1); // Is it worth it to use rcp_nr?
     vFrac += vFrac;

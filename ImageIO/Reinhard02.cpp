@@ -410,8 +410,8 @@ extractRGB<RGBA32FVec4ImageIterator, Vec4f>(RGBA32FVec4ImageIterator it,
 //   0x7f800000u > floatToBits(x) && x >= float_limits::min(), ossia
 //   isnormal(x)
 inline Vec4f getValidLuminanceMask(const Vec4f& Lw) {
-    const Vec4f& MINVAL(constants::get<Vec4f>(constants::LUM_MINVAL));
-    const Vec4i& MASK_NAN(constants::get<Vec4i>(constants::MASK_NAN));
+    const Vec4f MINVAL(constants::get<Vec4f>(constants::LUM_MINVAL));
+    const Vec4i MASK_NAN(constants::get<Vec4i>(constants::MASK_NAN));
         
     const Vec4f isNotTiny(Lw >= MINVAL);
     const Vec4i LwBits = _mm_castps_si128(Lw);
@@ -449,8 +449,8 @@ inline Vec4i addMasked(const Vec4bf& testMask, const Vec4i& a, const Vec4i& b) {
 inline Vec8f getValidLuminanceMask(const Vec8f& Lw) {
     // We cannot use the bit tricks with AVX (it needs AVX2), but we can test
     // for NaNs using the comparison intrinsics
-    const Vec8f& MINVAL(constants::get<Vec8f>(constants::LUM_MINVAL));
-    const Vec8f& MAXVAL(constants::get<Vec8f>(constants::LUM_MAXVAL));
+    const Vec8f MINVAL(constants::get<Vec8f>(constants::LUM_MINVAL));
+    const Vec8f MAXVAL(constants::get<Vec8f>(constants::LUM_MAXVAL));
 
     const Vec8f isNotTiny(Lw >= MINVAL);
     const Vec8f isFinite (Lw <= MAXVAL);
@@ -654,11 +654,11 @@ private:
         Vecf vec_max(Lmax);
         Veci vec_zero_count(0);
 
-        // References to the global constants
-        const Vecf& LUM_R(constants::get<Vecf>(constants::LUM_R));
-        const Vecf& LUM_G(constants::get<Vecf>(constants::LUM_G));
-        const Vecf& LUM_B(constants::get<Vecf>(constants::LUM_B));
-        const Veci& INT_ONE(constants::get<Veci>(constants::INT_ONE));
+        // Internal copies of the global constants
+        const Vecf LUM_R(constants::get<Vecf>(constants::LUM_R));
+        const Vecf LUM_G(constants::get<Vecf>(constants::LUM_G));
+        const Vecf LUM_B(constants::get<Vecf>(constants::LUM_B));
+        const Veci INT_ONE(constants::get<Veci>(constants::INT_ONE));
 
         for (SourceIterator it = begin; it != end; ++it, ++dest) {
             
@@ -672,7 +672,7 @@ private:
             Vecf validLw = Lw & isValidMask;
 
             if (tailElements != 0) {
-                const Vecf& tailMask(getTailMask<Vecf, tailElements>());
+                const Vecf tailMask(getTailMask<Vecf, tailElements>());
                 validLw     &= tailMask;
                 isValidMask &= tailMask;
             }
@@ -802,7 +802,7 @@ private:
 
             // Kill the invalid values if required
             if (tailElements != 0) {
-                const Vecf& tailMask(getTailMask<Vecf, tailElements>());
+                const Vecf tailMask(getTailMask<Vecf, tailElements>());
                 vec_log_lum &= tailMask;
             }
 
@@ -979,6 +979,10 @@ private:
     {
         hist_t & histogram = params.localHistogram();
 
+        // Local copies of the helper constants
+        const Vecf vec_res_factor(params.vec_res_factor);
+        const Vecf vec_Lmin_log(params.vec_Lmin_log);
+
         // Prepare Kahan summation with 4 elements
         Vecf vec_sum = Vecf::zero();
         Vecf vec_c   = Vecf::zero();
@@ -999,7 +1003,7 @@ private:
 
                 // Kill the invalid values if required
                 if (validPerVector != vector_traits<Vecf>::VEC_LEN) {
-                    const Vecf& tailMask(getTailMask<Vecf,
+                    const Vecf tailMask(getTailMask<Vecf,
                         validPerVector % vector_traits<Vecf>::VEC_LEN>());
                     vec_log_lum &= tailMask;
                 }
@@ -1011,8 +1015,7 @@ private:
                 vec_sum = t;
 
                 // Get the histogram bin indices
-                const Vecf idx_temp = params.vec_res_factor * 
-                    (vec_log_lum - params.vec_Lmin_log);
+                Vecf idx_temp = vec_res_factor * (vec_log_lum - vec_Lmin_log);
                 indices_vec[i] = truncate(idx_temp);
             }
 
