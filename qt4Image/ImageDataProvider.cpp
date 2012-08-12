@@ -59,7 +59,8 @@ void ImageIODataProvider::update()
         whitePoint = params.l_white;
         key = params.key;
         lw  = params.l_w;
-        setWhitePointRange(params.l_min, params.l_w, 1.125*qMax(params.l_max,params.l_white));
+        setWhitePointRange(0.875*params.l_min, params.l_w,
+            1.125*qMax(params.l_max,params.l_white));
     }
 }
 
