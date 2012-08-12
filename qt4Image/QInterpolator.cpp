@@ -25,9 +25,8 @@
 QInterpolator::QInterpolator(double minimum, double midpoint, double maximum,
                              QAbstractSlider *slider, QLineEdit *edit,
                              QObject *parent):
-QObject(parent),
-m_slider(slider), m_edit(edit), m_validator(minimum, maximum, 16, this),
-m_value(0.0)
+QObject(parent), m_slider(slider), m_edit(edit),
+m_validator(minimum, maximum, 16, this), m_value(minimum)
 {
     Q_ASSERT(!m_slider.isNull());
     Q_ASSERT(!m_edit.isNull());
@@ -52,7 +51,7 @@ void QInterpolator::setRange(double minimum, double midpoint, double maximum)
     updateState(minimum, midpoint, maximum,
         m_slider->minimum(), m_slider->maximum());
     const double val = value();
-    m_value = -val;
+    m_value = val;
     setValue(qBound(minimum, val, maximum));
 }
 
@@ -97,9 +96,11 @@ void QInterpolator::sliderRangeChanged(int minimum, int maximum)
 void QInterpolator::sliderChanged(int sliderValue)
 {
     // Don't update if the current value would map to the same slider position
-    if (sliderValue != toSliderValue(m_value)) {
+    const int currSliderValue = toSliderValue(m_value);
+    if (sliderValue != currSliderValue) {
         const double value = toValue(sliderValue);
-        Q_ASSERT(bottom() <= value && value <= top());
+        Q_ASSERT(bottom() <= value || qFuzzyCompare(value, bottom()));
+        Q_ASSERT(top()    >= value || qFuzzyCompare(value, top()));
         setValue(value);
     }
 }
