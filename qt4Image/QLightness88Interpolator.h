@@ -33,8 +33,8 @@ public:
 protected:
     virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum);
-    virtual int toSliderValue(double value);
-    virtual double toValue(int sliderValue);
+    virtual int toSliderValue(double value) const;
+    virtual double toValue(int sliderValue) const;
 };
 
 #endif // PCG_QLIGHTNESS88INTERPOLATOR_H

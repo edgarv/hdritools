@@ -196,13 +196,13 @@ void QLightness88Interpolator::updateState(double minimum, double, double maximu
 }
 
 
-int QLightness88Interpolator::toSliderValue(double value)
+int QLightness88Interpolator::toSliderValue(double value) const
 {
     return ::L(value);
 }
 
 
-double QLightness88Interpolator::toValue(int sliderValue)
+double QLightness88Interpolator::toValue(int sliderValue) const
 {
     return ::L_inv(sliderValue);
 }

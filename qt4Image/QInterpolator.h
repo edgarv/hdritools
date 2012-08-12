@@ -54,11 +54,11 @@ protected:
 
     // Given a certain value (within the valid range), calculate the
     // appropriate value it maps to into the slider
-    virtual int toSliderValue(double value) = 0;
+    virtual int toSliderValue(double value) const = 0;
 
     // Given a certain slider value (within the valid range), calculate
     // the value it maps to
-    virtual double toValue(int sliderValue) = 0;
+    virtual double toValue(int sliderValue) const = 0;
 
     // Returns the midpoint of this interpolator. The default implementation
     // just returns 0
@@ -103,7 +103,7 @@ private:
 
 
 // Concrete implementation which implements simple linear interpolation between
-// the minimum and the maximum, ignorign the middle point
+// the minimum and the maximum, ignoring the middle point
 class QLinearInterpolator : public QInterpolator
 {
     Q_OBJECT
@@ -115,8 +115,8 @@ public:
 protected:
     virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum);
-    virtual int toSliderValue(double value);
-    virtual double toValue(int sliderValue);
+    virtual int toSliderValue(double value) const;
+    virtual double toValue(int sliderValue) const;
 
 private:
     double m_slope;
@@ -144,8 +144,8 @@ public:
 protected:
     virtual void updateState(double minimum, double midpoint, double maximum,
         int sliderMinimum, int sliderMaximum);
-    virtual int toSliderValue(double value);
-    virtual double toValue(int sliderValue);
+    virtual int toSliderValue(double value) const;
+    virtual double toValue(int sliderValue) const;
 
 private:
     double m_exponent;

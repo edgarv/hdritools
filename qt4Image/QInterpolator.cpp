@@ -136,7 +136,7 @@ void QLinearInterpolator::updateState(double minimum, double, double maximum,
 }
 
 
-int QLinearInterpolator::toSliderValue(double value)
+int QLinearInterpolator::toSliderValue(double value) const
 {
     Q_ASSERT(m_slopeInv != 0.0);
     int pos = qRound((value - bottom())*m_slopeInv + 
@@ -145,7 +145,7 @@ int QLinearInterpolator::toSliderValue(double value)
 }
 
 
-double QLinearInterpolator::toValue(int sliderValue)
+double QLinearInterpolator::toValue(int sliderValue) const
 {
     Q_ASSERT(m_slope != 0.0);
     double value = m_slope*static_cast<double>(sliderValue) + m_intercept;
@@ -189,7 +189,7 @@ void QPowerInterpolator::updateState(double minimum, double, double maximum,
 }
 
 
-int QPowerInterpolator::toSliderValue(double value)
+int QPowerInterpolator::toSliderValue(double value) const
 {
     const double v1 = (value - m_valueMin) * m_valueRangeInv;
     const double v2 = pow(v1, m_exponentInv) * m_sliderRange + m_sliderMin;
@@ -198,7 +198,7 @@ int QPowerInterpolator::toSliderValue(double value)
 }
 
 
-double QPowerInterpolator::toValue(int sliderValue)
+double QPowerInterpolator::toValue(int sliderValue) const
 {
     const double v1 = (sliderValue - m_sliderMin) * m_sliderRangeInv;
     const double v2 = pow(v1, m_exponent) * m_valueRange + m_valueMin;
