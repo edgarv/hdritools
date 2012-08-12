@@ -22,6 +22,9 @@
 # include <cmath>
 #endif
 
+#include <limits>
+
+
 QInterpolator::QInterpolator(double minimum, double midpoint, double maximum,
                              QAbstractSlider *slider, QLineEdit *edit,
                              QObject *parent):
@@ -206,3 +209,265 @@ double QPowerInterpolator::toValue(int sliderValue) const
     return v2;
 }
 
+
+
+namespace
+{
+// Functor for linear interpolation between the logarithm of two values,
+// assumes 0 < min < max:
+//
+// y == Power(E,(x*(Log(vMax) - Log(vMin)))/(sliderMax - sliderMin) + 
+//      (-(sliderMin*Log(vMax)) + sliderMax*Log(vMin))/(sliderMax - sliderMin))
+//
+// x == (sliderMin*Log(vMax) - sliderMax*Log(vMin))/(Log(vMax) - Log(vMin)) + 
+//      ((sliderMax - sliderMin)*Log(y))/(Log(vMax) - Log(vMin))
+//
+class LogLinearFunctor
+{
+public:
+#ifndef QT_NO_DEBUG
+    typedef std::numeric_limits<double> double_limits;
+
+    LogLinearFunctor() :
+    m_slope(double_limits::signaling_NaN()),
+    m_offset(double_limits::signaling_NaN()),
+    m_invSlope(double_limits::signaling_NaN()),
+    m_invOffset(double_limits::signaling_NaN()),
+    m_vMin(double_limits::signaling_NaN()),
+    m_vMax(double_limits::signaling_NaN()),
+    m_sliderMin(double_limits::signaling_NaN()),
+    m_sliderMax(double_limits::signaling_NaN()),
+    m_valid(false)
+    {}
+#endif
+
+    void update(double vMin, double vMax, double sliderMin, double sliderMax)
+    {
+        Q_ASSERT(0.0<vMin && vMin<vMax && vMax<double_limits::infinity());
+        Q_ASSERT(sliderMin<sliderMax && sliderMax<double_limits::infinity());
+#ifndef QT_NO_DEBUG
+        m_vMin = vMin;
+        m_vMax = vMax;
+        m_sliderMin = sliderMin;
+        m_sliderMax = sliderMax;
+        m_valid = true;
+#endif
+        const double valMax = log(vMax);
+        const double valMin = log(vMin);
+
+        // To transform from slider to values
+        m_slope = (valMax - valMin)/(sliderMax - sliderMin);
+        m_offset = (-(sliderMin*valMax) + sliderMax*valMin) / 
+            (sliderMax - sliderMin);
+
+        // To transform from values to slider
+        m_invSlope  = (sliderMax - sliderMin)/(valMax - valMin);
+        m_invOffset = (sliderMin*valMax - sliderMax*valMin) / (valMax-valMin);
+    }
+
+    inline void invalidate()  {
+#ifndef QT_NO_DEBUG
+        m_valid = false;
+#endif
+    }
+
+    inline double toValue(double slider) const {
+        Q_ASSERT(m_valid);
+        Q_ASSERT(m_sliderMin <= slider && slider <= m_sliderMax);
+        
+        double y = m_slope * slider + m_offset;
+        y = exp(y);
+        Q_ASSERT(m_vMin <= y || qFuzzyCompare(m_vMin, y));
+        Q_ASSERT(m_vMax >= y || qFuzzyCompare(m_vMax, y));
+        return y;
+    }
+
+    inline double toSlider(double value) const {
+        Q_ASSERT(m_valid);
+        Q_ASSERT(m_vMin <= value && value <= m_vMax);
+        
+        const double y = log(value);
+        double x = m_invSlope * y + m_invOffset;
+        Q_ASSERT(m_sliderMin <= x || qFuzzyCompare(m_sliderMin, x));
+        Q_ASSERT(m_sliderMax >= x || qFuzzyCompare(m_sliderMax, x));
+        return x;
+    }
+
+private:
+    double m_slope;
+    double m_offset;
+    double m_invSlope;
+    double m_invOffset;
+#ifndef QT_NO_DEBUG
+    double m_vMin;
+    double m_vMax;
+    double m_sliderMin;
+    double m_sliderMax;
+    double m_valid;
+#endif
+};
+
+
+
+/**
+ * For a slider with range [sliderMin,sliderMax] interpolating linearly
+ * between [vMin,vMax] in log space, the function returns the number
+ * of stops covered by the reduced range [sliderMin,sliderMax]-sliderDelta
+ * assuming:
+ *  vMax > vMin > 0 && sliderMax > sliderMin && sliderDelta >= 0
+ *
+ * The formula was derived in Mathematica:
+ ******************************************************************************
+ toValue[x_] := 
+ Exp[((Log[vMax] - Log[vMin])/(sliderMax - sliderMin)
+      x + (-sliderMin Log[vMax] + sliderMax Log[vMin])/(
+    sliderMax - sliderMin))]
+
+PowerExpand[
+ FullSimplify[
+  Log[2, toValue[sliderMax - delta]] - Log[2, toValue[sliderMin]], 
+  vMax > vMin > 0 && sliderMax > sliderMin && delta >= 0]]
+(* The next expression yields the same result *)
+PowerExpand[
+ FullSimplify[
+  Log[2, toValue[sliderMax]] - Log[2, toValue[sliderMin + delta]], 
+  vMax > vMin > 0 && sliderMax > sliderMin && delta > 0]]
+(* Evaluation result: *)
+-(((delta - sliderMax + sliderMin) (Log[vMax] - 
+    Log[vMin]))/((sliderMax - sliderMin) Log[2]))
+ ******************************************************************************
+ */
+inline double stopsInReducedSliderRange(int sliderMin, int sliderMax,
+    int sliderDelta, double vMin, double vMax)
+{
+    Q_ASSERT(0.0<vMin && vMin<vMax && sliderMin<sliderMax && 0<=sliderDelta);
+    double logRange    = log(vMax) - log(vMin);
+    double sliderRange = sliderMax - sliderMin;
+    const double invLog2 = 1.442695040888963; // 1/log(2)
+    double stops = invLog2*(((sliderRange-sliderDelta)*logRange)/sliderRange);
+    return stops;
+}
+
+} // namespace
+
+
+
+struct QBiLinearLogInterpolator::Data
+{
+    LogLinearFunctor loLinear;
+    LogLinearFunctor lo;
+    LogLinearFunctor hi;
+    LogLinearFunctor hiLinear;
+    double lowPoint;
+    int sliderLowPoint;
+    double midpoint;
+    int sliderMidpoint;
+    double hiPoint;
+    int sliderHiPoint;
+};
+
+QBiLinearLogInterpolator::QBiLinearLogInterpolator(double minimum,
+    double midpoint, double maximum,
+    QAbstractSlider *slider, QLineEdit *edit, QObject *parent) :
+QInterpolator(minimum, midpoint, maximum, slider, edit, parent), d(new Data)
+{
+    Q_CHECK_PTR(d);
+    updateState(minimum,midpoint,maximum, slider->minimum(),slider->maximum());
+}
+
+QBiLinearLogInterpolator::~QBiLinearLogInterpolator()
+{
+    if (d != NULL) {
+        delete d;
+    }
+}
+
+double QBiLinearLogInterpolator::middle() const
+{
+    return d->midpoint;
+}
+
+void QBiLinearLogInterpolator::updateState(double minimum, double midpoint,
+    double maximum, int sliderMinimum, int sliderMaximum)
+{
+    Q_ASSERT(minimum < midpoint && midpoint < maximum);
+    Q_ASSERT(sliderMinimum < sliderMaximum && (sliderMaximum-sliderMinimum)>1);
+    const int sliderRange = sliderMaximum - sliderMinimum;
+    d->midpoint = midpoint;
+    d->sliderMidpoint = sliderRange / 2;
+    Q_ASSERT(sliderMinimum < d->sliderMidpoint);
+    Q_ASSERT(d->sliderMidpoint < sliderMaximum);
+
+    const int sliderDelta = qMax(1, qRound(0.05 * sliderRange));
+
+    // If there are more than 10 stops between the minimum and the midpoint,
+    // the bottom 5% values of the slider provide very steep linear
+    // interpolation from (midpoint - 10stops) to the minmum value
+    double stopsLo = stopsInReducedSliderRange(sliderMinimum,d->sliderMidpoint,
+        sliderDelta, minimum, d->midpoint);
+    if (stopsLo > 10.0 && sliderMinimum + sliderDelta < d->sliderMidpoint) {
+        d->lowPoint       = (1.0/(1<<10)) * midpoint; // 2^(log2(midpoint)-10)
+        d->sliderLowPoint = sliderMinimum + sliderDelta;
+        d->loLinear.update(minimum, d->lowPoint,
+            sliderMinimum, d->sliderLowPoint);
+        d->lo.update(d->lowPoint, midpoint,
+            d->sliderLowPoint, d->sliderMidpoint);
+    }
+    else {
+        d->lowPoint       = -std::numeric_limits<double>::infinity();
+        d->sliderLowPoint =  std::numeric_limits<int>::min();
+        d->loLinear.invalidate();
+        d->lo.update(minimum, midpoint, sliderMinimum, d->sliderMidpoint);
+    }
+
+    // Similarly, if there are more than 10 stops between the midpoint and the
+    // maximum, the top 5% values of the slider provide very steep linear
+    // interpolation from (midpoint + 10stops) to the maximum value
+    double stopsHi = stopsInReducedSliderRange(d->sliderMidpoint,sliderMaximum,
+        sliderDelta, d->midpoint, maximum);
+    if (stopsHi > 10.0 && d->sliderMidpoint < sliderMaximum - sliderDelta) {
+        d->hiPoint       = (1<<10) * midpoint; // 2^(log2(midpoint)+10)
+        d->sliderHiPoint = sliderMaximum - sliderDelta;
+        d->hi.update(midpoint, d->hiPoint,
+            d->sliderMidpoint, d->sliderHiPoint);
+        d->hiLinear.update(d->hiPoint, maximum,
+            d->sliderHiPoint, sliderMaximum);
+    }
+    else {
+        d->hiPoint       = std::numeric_limits<double>::infinity();
+        d->sliderHiPoint = std::numeric_limits<int>::max();
+        d->hi.update(midpoint, maximum, d->sliderMidpoint, sliderMaximum);
+        d->hiLinear.invalidate();
+    }
+}
+
+int QBiLinearLogInterpolator::toSliderValue(double value) const
+{
+    double result;
+    if (value < d->lowPoint) {
+        result = d->loLinear.toSlider(value);
+    } else if (value < d->midpoint) {
+        result = d->lo.toSlider(value);
+    } else if (value < d->hiPoint) {
+        result = d->hi.toSlider(value);
+    } else {
+        result = d->hiLinear.toSlider(value);
+    }
+    const int sliderResult = qRound(result);
+    return sliderResult;
+}
+
+double QBiLinearLogInterpolator::toValue(int sliderValue) const
+{
+    double value;
+    if (sliderValue < d->sliderLowPoint) {
+        value = d->loLinear.toValue(sliderValue);
+    } else if (sliderValue < d->sliderMidpoint) {
+        value = d->lo.toValue(sliderValue);
+    } else if (sliderValue < d->sliderHiPoint) {
+        value = d->hi.toValue(sliderValue);
+    } else {
+        value = d->hiLinear.toValue(sliderValue);
+    }
+    return value;
+}

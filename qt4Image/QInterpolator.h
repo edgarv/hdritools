@@ -161,4 +161,30 @@ private:
 
 
 
+// Concrete implementation: interpolate between the minimum,
+// middle and maximum values' logarithms linearly. It requires that
+//  0 < mininum < midpoint < maximum < Infinite
+class QBiLinearLogInterpolator : public QInterpolator
+{
+    Q_OBJECT
+
+public:
+    QBiLinearLogInterpolator(double minimum, double midpoint, double maximum,
+        QAbstractSlider *slider, QLineEdit *edit, QObject *parent = 0);
+
+    virtual ~QBiLinearLogInterpolator();
+
+    virtual double middle() const;
+
+protected:
+    virtual void updateState(double minimum, double midpoint, double maximum,
+        int sliderMinimum, int sliderMaximum);
+    virtual int toSliderValue(double value) const;
+    virtual double toValue(int sliderValue) const;
+
+private:
+    struct Data;
+    Data* d;
+};
+
 #endif // PCG_QINTERPOLATOR

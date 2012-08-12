@@ -53,7 +53,7 @@ m_isSet(false)
     brightLbl->setMinimumWidth(maxLbl->sizeHint().width());
 
     // Configure the interpolators
-    whitePointInterpolator = new QPowerInterpolator(8.0, 0.0, 1.0,
+    whitePointInterpolator = new QBiLinearLogInterpolator(0.1e-6, 0.5, 1.0,
         whitePointSldr, whitePointTxt, this);
     keyInterpolator = new QLightness88Interpolator(keySldr, keyTxt, this);
 
@@ -87,6 +87,13 @@ void ToneMapDialog::updateWhitePointRange(double minimum, double average, double
         reinhard02Chk->setChecked(false);
         this->reinhard02Chk->setEnabled(false);
         return;
+    }
+
+    // Avoid non-positive minimum values
+    if (minimum < 1e-30) {
+        // Set the same number of stops as between the midpoint and the maximum
+        const double newMinimum = (average*average) / maximum;
+        minimum = qMax(minimum, newMinimum);
     }
 
     whitePointInterpolator->setRange(minimum, average, maximum);
