@@ -992,7 +992,7 @@ private:
         union {
             VecInt32 indices_vec[BLOCK_SIZE];
             int32_t  indices_i32[4*BLOCK_SIZE];
-        };
+        } u;
 
         for (const Vecf* it = begin; it != end;) {
             const size_t numIter = std::min(static_cast<size_t>(end - it),
@@ -1016,13 +1016,13 @@ private:
 
                 // Get the histogram bin indices
                 Vecf idx_temp = vec_res_factor * (vec_log_lum - vec_Lmin_log);
-                indices_vec[i] = truncate(idx_temp);
+                u.indices_vec[i] = truncate(idx_temp);
             }
 
             // Update the histogram
             for (size_t i = 0; i != numIter; ++i) {
                 const int32_t* const indices_base =
-                    &indices_i32[vector_traits<Vecf>::VEC_LEN * i];
+                    &u.indices_i32[vector_traits<Vecf>::VEC_LEN * i];
                 for (int k = 0; k != validPerVector; ++k) {
                     const int32_t& index = indices_base[k];
                     assert (index >= 0 && index < (int32_t)histogram.size());

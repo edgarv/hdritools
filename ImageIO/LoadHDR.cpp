@@ -30,6 +30,11 @@ using namespace pcg;
 
 namespace
 {
+// Returns the 'magic number' of the two characters when read as little endian
+template <size_t N>
+inline int magic(const char (&m)[N]) {
+    return (m[0] | (m[1] << 8));
+}
 
 template <class ImageCls>
 void LoadHDRImpl(ImageCls &img, std::istream &is)
@@ -43,10 +48,9 @@ void LoadHDRImpl(ImageCls &img, std::istream &is)
     union {
         int32_t magic;
         char magic_buffer[4];
-    };
-    magic = 0;
+    } u = {0};
 
-    is.read(magic_buffer, sizeof(magic_buffer));
+    is.read(u.magic_buffer, sizeof(u.magic_buffer));
     if (!is.good()) {
         throw IOException("Could not read the magic number.");
     }
@@ -60,23 +64,21 @@ void LoadHDRImpl(ImageCls &img, std::istream &is)
     };
     int type = UNKNOWN;
 
-    if (magic == 20000630) {
+    if (u.magic == 20000630) {
         // Assume OpenEXR
         type = OpenEXR;
     } else {
         // RGBE and PFM only use the first two bytes
-        magic &= 0xFFFF;
-        if (magic == 16163) {
-            // Assume RGBE: "#?"
+        u.magic &= 0xFFFF;
+        if (u.magic == magic("#?")) {
             type = RGBE;
-        } else if (magic == 18000 || magic == 26192) {
-            // Assume PFM: "PF" or "Pf"
+        } else if (u.magic == magic("PF") || magic("Pf")) {
             type = PFM;
         } else {
             std::stringstream ss;
-            ss << "Unknown magic number ["
-               << std::showbase << std::hex
-               << (int)magic_buffer[0] << ", " << (int)magic_buffer[1] << "]";
+            ss << "Unknown magic number [" << std::showbase << std::hex
+               << static_cast<int>(u.magic_buffer[0]) << ", "
+               << static_cast<int>(u.magic_buffer[1]) << "]";
             throw UnkownFileType(ss.str());
         }
     }
