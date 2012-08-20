@@ -50,6 +50,7 @@
 package edu.cornell.graphics.exr.apps;
 
 import edu.cornell.graphics.exr.Channel;
+import edu.cornell.graphics.exr.ChannelList;
 import edu.cornell.graphics.exr.Chromaticities;
 import edu.cornell.graphics.exr.Compression;
 import edu.cornell.graphics.exr.EXRVersion;
@@ -197,11 +198,12 @@ public class EXRHeaderApp {
         }
     }
     
-    private static String toString(List<Channel> cl) {
+    private static String toString(ChannelList cl) {
         StringBuilder sb = new StringBuilder(128);
-        for (Channel channel : cl) {
+        for (ChannelList.ChannelListElement elem : cl) {
+            final Channel channel = elem.getChannel();
             sb.append("\n    ");
-            sb.append(channel.name);
+            sb.append(elem.getName());
             sb.append(", ");
             sb.append(toString(channel.type));
             sb.append(", sampling ");
@@ -296,7 +298,7 @@ public class EXRHeaderApp {
             out.printf("%s (type %s)", entry.getKey(), a.typeName());
             
             if (a instanceof ChannelListAttribute) {
-                List<Channel> chlist = ((ChannelListAttribute)a).getValue();
+                ChannelList chlist = ((ChannelListAttribute)a).getValue();
                 if (chlist.size() > 1) {
                     out.printf(" [x %d] ", chlist.size());
                 }

@@ -16,21 +16,20 @@
 package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.Channel;
+import edu.cornell.graphics.exr.ChannelList;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput.BytesReadTO;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 // TODO: Add documentation
-public class ChannelListAttribute extends TypedAttribute<List<Channel>> {
+public class ChannelListAttribute extends TypedAttribute<ChannelList> {
 
     public ChannelListAttribute() {}
     
-    public ChannelListAttribute(ArrayList<Channel> list) {
-        setValue(list);
+    public ChannelListAttribute(ChannelList chlist) {
+        setValue(chlist);
     }
 
     @Override
@@ -38,16 +37,16 @@ public class ChannelListAttribute extends TypedAttribute<List<Channel>> {
         return "chlist";
     }
     
-    private static Channel readChannel(EXRBufferedDataInput input,
+    private static void readChannel(EXRBufferedDataInput input, ChannelList lst,
             int maxNameLength, BytesReadTO bytesRead) throws
             EXRIOException, IOException {
         assert bytesRead != null;
-        Channel c = new Channel();
-        c.name = input.readNullTerminatedUTF8(maxNameLength, bytesRead);
-        if (c.name.isEmpty()) {
+        String name = input.readNullTerminatedUTF8(maxNameLength, bytesRead);
+        if (name.isEmpty()) {
             throw new EXRIOException("Empty channel name.");
         }
 
+        final Channel c = new Channel();
         int typeOrdinal = input.readInt();
         c.type = checkedValueOf(typeOrdinal, Channel.PixelType.values());
 
@@ -60,19 +59,19 @@ public class ChannelListAttribute extends TypedAttribute<List<Channel>> {
         c.xSampling = input.readInt();
         c.ySampling = input.readInt();
         
+        lst.insert(name, c);
+        
         // Add the fixed length fields
         bytesRead.count += 4 + 1 + 3 + 4 + 4;
-
-        return c;
     }
 
     @Override
     public void readValueFrom(EXRBufferedDataInput input, int size, int version)
         throws EXRIOException, IOException {
         
-        List<Channel> chlist = getValue();
+        ChannelList chlist = getValue();
         if (chlist == null) {
-            chlist = new ArrayList<Channel>();
+            chlist = new ChannelList();
             setValue(chlist);
         } else {
             chlist.clear();
@@ -82,9 +81,8 @@ public class ChannelListAttribute extends TypedAttribute<List<Channel>> {
         BytesReadTO bytesRead = new BytesReadTO();
         final int maxNameLength = EXRVersion.getMaxNameLength(version);
         while (input.peekByte() != 0) {
-            Channel c = readChannel(input, maxNameLength, bytesRead);
+            readChannel(input, chlist, maxNameLength, bytesRead);
             readCount += bytesRead.count;
-            chlist.add(c);
         }
         // Consume the last byte
         if (input.readByte() != 0) {

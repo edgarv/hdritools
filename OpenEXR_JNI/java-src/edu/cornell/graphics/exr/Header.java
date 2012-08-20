@@ -64,9 +64,7 @@ import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -94,7 +92,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         insert("screenWindowWidth",  new FloatAttribute(1.0f));
         insert("lineOrder",   new LineOrderAttribute(LineOrder.INCREASING_Y));
         insert("compression", new CompressionAttribute(Compression.ZIP));
-        insert("channels", new ChannelListAttribute(new ArrayList<Channel>()));
+        insert("channels", new ChannelListAttribute(new ChannelList()));
     }
     
     /**
@@ -238,7 +236,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                 FloatAttribute.class).getValue();
     }
     
-    public List<Channel> getChannels() {
+    public ChannelList getChannels() {
         System.err.println("ChannelAttrib: " + getTypedAttribute("channels",
                 ChannelListAttribute.class));
         return getTypedAttribute("channels",
@@ -405,52 +403,56 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         // be divisible by the x and y subsampling factors.
         //
         
-        List<Channel> channels = h.getChannels();
+        ChannelList channels = h.getChannels();
         if (isTiled) {
-            for (Channel c : channels) {
+            for (ChannelList.ChannelListElement elem : channels) {
+                final String name = elem.getName();
+                final Channel c   = elem.getChannel();
                 if (c.type == null) {
                     throw new IllegalArgumentException("Pixel type of \"" +
-                            c.name + "\" image channel is invalid.");
+                            name + "\" image channel is invalid.");
                 }
                 if (c.xSampling != 1) {
                     throw new IllegalArgumentException("The x subsampling "
-                            + "factor for the \"" + c.name + "\" channel "
+                            + "factor for the \"" + name + "\" channel "
                             + "is not 1.");
                 }
                 if (c.ySampling != 1) {
                     throw new IllegalArgumentException("The y subsampling "
-                            + "factor for the \"" + c.name + "\" channel "
+                            + "factor for the \"" + name + "\" channel "
                             + "is not 1.");
                 }
             }
         }
         else {
-            for (Channel c : channels) {
+            for (ChannelList.ChannelListElement elem : channels) {
+                final String name = elem.getName();
+                final Channel c   = elem.getChannel();
                 if (c.type == null) {
                     throw new IllegalArgumentException("Pixel type of \"" +
-                            c.name + "\" image channel is invalid.");
+                            name + "\" image channel is invalid.");
                 }
                 if (c.xSampling < 1) {
                     throw new IllegalArgumentException("The x subsampling "
-                            + "factor for the \"" + c.name + "\" channel "
+                            + "factor for the \"" + name + "\" channel "
                             + "is invalid.");
                 }
                 if (c.ySampling < 1) {
                     throw new IllegalArgumentException("The y subsampling "
-                            + "factor for the \"" + c.name + "\" channel "
+                            + "factor for the \"" + name + "\" channel "
                             + "is invalid.");
                 }
                 if (dataWindow.xMin.intValue() % c.xSampling != 0) {
                     throw new IllegalArgumentException("The minimum x "
                             + "coordinate of the image's data window is not a "
                             + "multiple of the x subsampling factor of the \"" 
-                            + c.name + "\" channel.");
+                            + name + "\" channel.");
                 }
                 if (dataWindow.yMin.intValue() % c.ySampling != 0) {
                     throw new IllegalArgumentException("The minimum y "
                             + "coordinate of the image's data window is not a "
                             + "multiple of the y subsampling factor of the \"" 
-                            + c.name + "\" channel.");
+                            + name + "\" channel.");
                 }
                 
                 int width = dataWindow.xMax.intValue() -
@@ -459,7 +461,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                     throw new IllegalArgumentException("The number of pixels "
                             + "per row in the image's data window is not a "
                             + "multiple of the x subsampling factor of the \"" 
-                            + c.name + "\" channel.");
+                            + name + "\" channel.");
                 }
                 
                 int height = dataWindow.yMax.intValue() -
@@ -468,7 +470,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                     throw new IllegalArgumentException("The number of pixels "
                             + "per column in the image's data window is not a "
                             + "multiple of the y subsampling factor of the \"" 
-                            + c.name + "\" channel.");
+                            + name + "\" channel.");
                 }
             }
         }
