@@ -54,7 +54,7 @@ else()
   set(_WiX_PATHS PATHS)
 
   # Fixed search paths
-  foreach (version "3.6" "3.5" "3.0"  "3")
+  foreach (version "3.7" "3.6" "3.5" "3.0"  "3")
     # Try to get the value from the registry
     list(APPEND _WiX_PATHS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Installer XML\\${version};InstallRoot]")
     list(APPEND _WiX_PATHS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows Installer XML\\${version};InstallRoot]")
