@@ -52,8 +52,8 @@ import java.util.Set;
  */
 public class BasicInputFile implements Closeable {
     
-    /** Maximum admissible length for a channel name as of OpenEXr 1.7 */
-    private final static int MAX_CHANNEL_LENGTH = 254;
+    /** Maximum admissible length for a channel name as of OpenEXr 1.7.1 */
+    private final static int MAX_CHANNEL_LENGTH = 255;
     
     /** Set of channels present in the file */
     private LinkedHashSet<String> channelNames = new LinkedHashSet<String>();
@@ -230,6 +230,7 @@ public class BasicInputFile implements Closeable {
         return height;
     }
 
+    @Override
     public void close() throws EXRIOException {
         if (handle != 0) {
             throw new UnsupportedOperationException("Not supported yet.");
