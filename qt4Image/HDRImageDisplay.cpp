@@ -28,6 +28,8 @@
 #include <QClipboard>
 #include <QtDebug>
 
+#include <fstream>
+
 
 
 HDRImageDisplay::HDRImageDisplay(QWidget *parent) : QWidget(parent), 
@@ -179,34 +181,52 @@ bool HDRImageDisplay::save(const QString & fileName)
 
     try {
         // First we try to save it as an HDR File
-        if (suffix.compare("rgbe", Qt::CaseInsensitive) == 0 ||
-            suffix.compare("hdr",  Qt::CaseInsensitive) == 0) 
-        {
-            // Saves a RGBE Image
-            RgbeIO::Save(hdrImage,    QFile::encodeName(fileName).constData() );
-        }
-        else if (suffix.compare("exr", Qt::CaseInsensitive) == 0)
-        {
-            // Saves an OpenEXR Image
-            OpenEXRIO::Save(hdrImage, QFile::encodeName(fileName).constData() );
-        }
-        else if (suffix.compare("pfm", Qt::CaseInsensitive) == 0)
-        {
-            // Saves a Pfm Image
-            PfmIO::Save(hdrImage, QFile::encodeName(fileName).constData() );
-        }
-        else {
+        enum { HDR_RGBE, HDR_EXR, HDR_PFM, NO_HDR };
+        int type = NO_HDR;
 
+        if (suffix.compare("rgbe", Qt::CaseInsensitive) == 0 ||
+            suffix.compare("hdr",  Qt::CaseInsensitive) == 0) {
+            type = HDR_RGBE;
+        }
+        else if (suffix.compare("exr", Qt::CaseInsensitive) == 0) {
+            type = HDR_EXR;
+        }
+        else if (suffix.compare("pfm", Qt::CaseInsensitive) == 0) {
+            type = HDR_PFM;
+        }
+
+        std::ofstream os;
+        if (type != NO_HDR) {
+#if !defined(_WIN32)
+            os.open(qPrintable(fileName), ios_base::binary);
+#else
+            const wchar_t *wFileName =
+                reinterpret_cast<const wchar_t*>(fileName.constData());
+            os.open(wFileName, ios_base::binary);
+#endif
+            if (!os)
+                return false;
+        }
+
+        switch(type) {
+        case HDR_RGBE:
+            RgbeIO::Save(hdrImage, os);
+            return true;
+        case HDR_EXR:
+            OpenEXRIO::Save(hdrImage, os);
+            return true;
+        case HDR_PFM:
+            PfmIO::Save(hdrImage, os);
+            return true;
+        default:
             // We just save the currently displayed image, that's it!
             Q_ASSERT( ldrImage.Width() > 0 && ldrImage.Height() > 0 );
             return qImage.save(fileName);
         }
-        return true;
     }
     catch(...) {
         return false;
     }
-
 }
 
 void HDRImageDisplay::paintEvent(QPaintEvent *event) 
