@@ -145,7 +145,17 @@ bool HDRImageDisplay::loadHdr(const QString & fileName, RGBAImageSoA &hdr)
         suffix.compare("pfm",  Qt::CaseInsensitive) == 0)
     {
         try {
-            pcg::LoadHDR(hdr, QFile::encodeName(fileName).constData());
+#if !defined(_WIN32)
+            pcg::LoadHDR(hdr, qPrintable(fileName));
+#else
+            // Assume QChar is binary-compatible with wchar_t
+#if defined(_MSC_VER) && (_MSC_VER >= 1600)
+            static_assert(sizeof(QChar) == sizeof(wchar_t), "Incompatible!");
+#endif
+            const wchar_t* wFileName =
+                reinterpret_cast<const wchar_t*>(fileName.constData());
+            pcg::LoadHDR(hdr, wFileName);
+#endif
         }
         catch (UnkownFileType&) {
             return false;

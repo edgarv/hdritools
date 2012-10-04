@@ -24,6 +24,15 @@
 #include <sstream>
 #include <cassert>
 
+#if defined(_WIN32)
+# ifdef NOMINMAX
+#  undef NOMINMAX
+# endif
+# define NOMINMAX
+# define WIN32_LEAN_AND_MEAN
+# include <Windows.h>
+#endif
+
 
 using namespace pcg;
 
@@ -104,8 +113,39 @@ void LoadHDRImpl(ImageCls &img, std::istream &is)
 
 
 
-template <class ImageCls>
-void LoadHDRImpl(ImageCls &img, const char *filename)
+inline const char* toPrintable(const char* str) {
+    return str;
+}
+
+#if defined(_WIN32)
+inline std::string toPrintable(const wchar_t* str) {
+    // Code after
+    // https://buildsecurityin.us-cert.gov/bsi/articles/knowledge/coding/870-BSI.html
+
+    int nLenUnicode = ::lstrlenW(str);
+    int nLen = ::WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS,
+        str, nLenUnicode, // string to convert
+        NULL, 0,          // no output buffer since we are calculating length
+        NULL, NULL);      // use default unrepresented char replacement
+
+    if (nLen == 0) {
+        return "";
+    }
+
+    // Once more, with feeling
+    std::vector<char> result(nLen); // nLen includes the null character
+    nLen = ::WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, str, nLenUnicode,
+        &result[0], nLen, NULL, NULL);
+    if (nLen != 0) {
+        return std::string(result.begin(), result.end());
+    } else {
+        return "";
+    }
+}
+#endif
+
+template <class ImageCls, typename CharT>
+void LoadHDRImpl(ImageCls &img, const CharT *filename)
 {
     if (filename == NULL) {
         throw IllegalArgumentException("The filename cannot be null.");
@@ -115,7 +155,7 @@ void LoadHDRImpl(ImageCls &img, const char *filename)
 
     if(!is) {
         std::string msg("Could not open the file \"");
-        msg += filename;
+        msg += toPrintable(filename);
         msg += "\".";
         throw IOException(msg);
     }
@@ -139,3 +179,12 @@ void pcg::LoadHDR(RGBAImageSoA &img, std::istream &is) {
 void pcg::LoadHDR(RGBAImageSoA &img, const char *filename) {
     LoadHDRImpl(img, filename);
 }
+
+#if defined(_WIN32)
+void pcg::LoadHDR(Image<Rgba32F,TopDown> &img, const wchar_t *filename) {
+    LoadHDRImpl(img, filename);
+}
+void pcg::LoadHDR(RGBAImageSoA &img, const wchar_t *filename) {
+    LoadHDRImpl(img, filename);
+}
+#endif

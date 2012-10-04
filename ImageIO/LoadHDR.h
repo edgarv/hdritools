@@ -52,6 +52,18 @@ namespace pcg
     inline static void LoadHDR(RGBAImageSoA &img, const std::string& filename) {
         LoadHDR(img, filename.c_str());
     }
+#if defined(_WIN32)
+    IMAGEIO_API void LoadHDR(Image<Rgba32F,TopDown> &img, const wchar_t *fname);
+    IMAGEIO_API void LoadHDR(RGBAImageSoA &img, const wchar_t *filename);
+
+    inline static void LoadHDR(Image<Rgba32F,TopDown> &img,
+        const std::wstring& filename) {
+        LoadHDR(img, filename.c_str());
+    }
+    inline static void LoadHDR(RGBAImageSoA &img, const std::wstring& filename){
+        LoadHDR(img, filename.c_str());
+    }
+#endif
 
 } // namespace pcg
 

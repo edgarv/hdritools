@@ -66,7 +66,13 @@ void* FileLoaderFilter::operator()(void* arg)
     const QString *filename = static_cast<const QString*>(arg);
 
     // Opens the input stream
-    ifstream is(filename->toLocal8Bit(), ios_base::binary);
+#if !defined(_WIN32)
+    ifstream is(qPrintable(*filename), ios_base::binary);
+#else
+    const wchar_t * wFilename =
+        reinterpret_cast<const wchar_t*>(filename->constData());
+    ifstream is(wFilename, ios_base::binary);
+#endif
     if (! is.bad() ) {
         return FloatImageProcessor::load(*filename, is, formatStr, offset);
     }
@@ -74,5 +80,4 @@ void* FileLoaderFilter::operator()(void* arg)
         cerr << "Ooops! Unable to open " << *filename << " for reading.";
         return new ImageInfo;
     }
-
 }
