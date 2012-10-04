@@ -34,84 +34,116 @@
 
 #include <cerrno>
 
-// Almost a copy of Imf::StdIFStream, but this one works with any kind of istreams,
-// it won't close them when it's done
-namespace pcg {
+namespace {
 
-    class StdIStream: public Imf::IStream
-    {
-    public:
-
-        //---------------------------------------------------------
-        // A constructor that uses a std::ifstream that has already
-        // been opened by the caller.  The StdIFStream's destructor
-        // will not close the std::ifstream.
-        //---------------------------------------------------------
-        StdIStream (std::istream &is, const char fileName[] = "internalBuffer.exr") :
-          IStream(fileName),
-          _is(is)
-        {
-            // empty
-        }
-
-
-          virtual ~StdIStream () {}
-
-          virtual bool	read (char c[/*n*/], int n)
-          {
-              if (!_is)
-                  throw Iex::InputExc ("Unexpected end of file.");
-
-              clearError();
-              _is.read (c, n);
-              return checkError (_is);
-          }
-
-          virtual Imath::Int64	tellg ()
-          {
-              return std::streamoff (_is.tellg());
-          }
-
-          virtual void	seekg (Imath::Int64 pos)
-          {
-              _is.seekg (pos);
-              checkError (_is);
-          }
-
-          virtual void	clear ()
-          {
-              _is.clear();
-          }
-
-    private:
-
-        std::istream &	_is;
-
-        inline bool checkError (std::istream &is)
-        {
-            if (!is)
-            {
-                if (errno)
-                    Iex::throwErrnoExc();
-                return false;
-            }
-
-            return true;
-        }
-
-        inline void clearError ()
-        {
-            errno = 0;
-        }
-    };
-
+inline void clearError() {
+    errno = 0;
 }
 
-using namespace pcg;
+inline bool checkError(std::istream &is) {
+    if (!is) {
+        if (errno)
+            Iex::throwErrnoExc();
+        return false;
+    }
+    return true;
+}
 
-
-namespace
+inline void checkError(std::ostream &os)
 {
+    if (!os) {
+        if (errno)
+            Iex::throwErrnoExc();
+
+        throw Iex::ErrnoExc ("File output failed.");
+    }
+}
+
+// Almost a copy of Imf::StdIFStream, but this one works with any kind of
+// istreams, it won't close them when it's done
+class StdIStream : public Imf::IStream
+{
+public:
+
+    //---------------------------------------------------------
+    // A constructor that uses a std::ifstream that has already
+    // been opened by the caller.  The StdIFStream's destructor
+    // will not close the std::ifstream.
+    //---------------------------------------------------------
+    StdIStream (std::istream &is, const char fileName[] = "internalBuffer.exr") :
+        IStream(fileName),
+        _is(is)
+    {
+        // empty
+    }
+
+    virtual ~StdIStream () {}
+
+    virtual bool read (char c[/*n*/], int n) {
+        if (!_is)
+            throw Iex::InputExc ("Unexpected end of file.");
+
+        clearError();
+        _is.read (c, n);
+        return checkError (_is);
+    }
+
+    virtual Imath::Int64 tellg () {
+        return std::streamoff (_is.tellg());
+    }
+
+    virtual void seekg (Imath::Int64 pos) {
+        _is.seekg (pos);
+        checkError (_is);
+    }
+
+    virtual void clear () {
+        _is.clear();
+    }
+
+private:
+    std::istream &	_is;
+};
+
+
+// Almost a copy of Imf::StdIFStream, but this one works with any kind of
+// istreams, it won't close them when it's done
+class StdOFStream : public Imf::OStream
+{
+public:
+
+    //---------------------------------------------------------
+    // A constructor that uses a std::ofstream that has already
+    // been opened by the caller.  The StdOFStream's destructor
+    // will not close the std::ofstream.
+    //---------------------------------------------------------
+    StdOFStream (std::ofstream &os, const char fileName[] = "internalBuffer.exr") :
+        OStream(fileName), _os(&os)
+    {
+        // empty
+    }
+
+    virtual ~StdOFStream () {}
+
+    virtual void write (const char c[/*n*/], int n) {
+        clearError();
+        _os->write (c, n);
+        checkError (*_os);
+    }
+
+    virtual Imf::Int64 tellp () {
+        return std::streamoff (_os->tellp());
+    }
+
+    virtual void seekp (Imf::Int64 pos) {
+        _os->seekp (pos);
+        checkError (*_os);
+    }
+
+private:
+    std::ofstream *	_os;
+};
+
 
 // Helper to generate Slices for a framebuffer. The offsets are specified as
 // multiples of the given type, *NOT* bytes!
@@ -126,6 +158,8 @@ inline Imf::Slice newSlice(T* base, size_t xStride, size_t yStride,
 }
 
 
+
+using namespace pcg;
 
 // Small function to actually copy the pixels from the already open file into the image
 void ReadImage(Image<Rgba32F, TopDown> &img, Imf::RgbaInputFile &file)
@@ -265,13 +299,23 @@ void ReadImage(RGBAImageSoA &img, Imf::InputFile &file)
 
 
 template <class ImageCls>
-void LoadImpl(ImageCls& img, std::istream &is, int nThreads = 0) {
-
+void LoadImpl(ImageCls& img, std::istream &is, int nThreads = 0)
+{
     try {
         IlmThread::ThreadPool::globalThreadPool().setNumThreads(nThreads);
         StdIStream stdis(is);
         Imf::InputFile file(stdis);
-        ReadImage(img, file);
+        const Imf::ChannelList & channels = file.header().channels();
+        const bool isYC = channels.findChannel("Y")  != NULL || 
+                          channels.findChannel("RY") != NULL || 
+                          channels.findChannel("BY") != NULL;
+        if (!isYC) {
+            ReadImage(img, file);
+        } else {
+            stdis.seekg(0);
+            Imf::RgbaInputFile ycFile(stdis);
+            ReadImage(img, ycFile);
+        }
     }
     catch (Iex::BaseExc &e) {
         throw IOException(e);
@@ -279,8 +323,8 @@ void LoadImpl(ImageCls& img, std::istream &is, int nThreads = 0) {
 }
 
 template <class ImageCls>
-void LoadImpl(ImageCls& img,  const char *filename, int nThreads = 0) {
-
+void LoadImpl(ImageCls& img,  const char *filename, int nThreads = 0)
+{
     try {
         IlmThread::ThreadPool::globalThreadPool().setNumThreads(nThreads);
         Imf::InputFile file(filename);
@@ -299,41 +343,6 @@ void LoadImpl(ImageCls& img,  const char *filename, int nThreads = 0) {
         throw IOException(e);
     }
 }
-
-} // namespace
-
-
-
-
-int OpenEXRIO::numThreads = tbb::task_scheduler_init::default_num_threads();
-
-
-void OpenEXRIO::setNumThreads(int num)
-{
-    if (num < 0) {
-        throw IllegalArgumentException("The number of threads for OpenEXR IO "
-            "cannot be negative.");
-    }
-    numThreads = num;
-}
-
-
-void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename){
-    LoadImpl(img, filename, numThreads);
-}
-
-void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  std::istream &is) {
-    LoadImpl(img, is, numThreads);
-}
-
-void OpenEXRIO::Load(RGBAImageSoA& img, const char* filename) {
-    LoadImpl(img, filename, numThreads);
-}
-
-void OpenEXRIO::Load(RGBAImageSoA& img, std::istream& is) {
-    LoadImpl(img, is, numThreads);
-}
-
 
 
 // Small function to translate between our enum and the actual Ilm type
@@ -403,9 +412,10 @@ inline Imf::RgbaChannels getImfRgbaChannels(OpenEXRIO::RgbaChannels channels)
 
 
 
-template <typename ImgIterator>
-void SaveImpl(ImgIterator begin, const char* filename, int width, int height,
-    pcg::ScanLineMode scanlineMode,
+// OStreamArgT should be either const char* or a subclass of Imf::Ostream
+template <typename ImgIterator, class OStreamArgT>
+void SaveImpl(const ImgIterator begin, OStreamArgT &ostreamArg,
+    int width, int height, pcg::ScanLineMode scanlineMode,
     OpenEXRIO::Compression compression, OpenEXRIO::RgbaChannels rgbaChannels,
     int nThreads)
 {
@@ -433,8 +443,8 @@ void SaveImpl(ImgIterator begin, const char* filename, int width, int height,
         // Hyper-easy IlmImf-based file creation:
         // Filename, width, height, channels, pixel aspect ratio,
         // screen window center, screen window width, line order, compression
-        Imf::RgbaOutputFile file(filename, width, height, cn, 1, 
-            Imath::V2f(0,0), 1, order, c);
+        Imf::Header hd (width, height, 1.0f, Imath::V2f(0.0f,0.0f), 1.0f, order, c);
+        Imf::RgbaOutputFile file(ostreamArg, hd, cn);
         file.setFrameBuffer(&halfPixels[0][0], 1, width);
         file.writePixels(height);
     }
@@ -443,42 +453,97 @@ void SaveImpl(ImgIterator begin, const char* filename, int width, int height,
     }
 }
 
+} // namespace
 
-template<ScanLineMode S>
-void OpenEXRIO::SaveHelper(Image<Rgba32F, S> &img, const char *filename,
-    Compression compression, RgbaChannels rgbaChannels)
+
+
+
+int OpenEXRIO::numThreads = tbb::task_scheduler_init::default_num_threads();
+
+
+void OpenEXRIO::setNumThreads(int num)
 {
-    SaveImpl(img.GetDataPointer(), filename, img.Width(), img.Height(),
+    if (num < 0) {
+        throw IllegalArgumentException("The number of threads for OpenEXR IO "
+            "cannot be negative.");
+    }
+    numThreads = num;
+}
+
+
+void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  const char *filename){
+    LoadImpl(img, filename, numThreads);
+}
+
+void OpenEXRIO::LoadHelper(Image<Rgba32F, TopDown> &img,  std::istream &is) {
+    LoadImpl(img, is, numThreads);
+}
+
+void OpenEXRIO::Load(RGBAImageSoA& img, const char* filename) {
+    LoadImpl(img, filename, numThreads);
+}
+
+void OpenEXRIO::Load(RGBAImageSoA& img, std::istream& is) {
+    LoadImpl(img, is, numThreads);
+}
+
+
+template<ScanLineMode S, class OStreamArgT>
+void OpenEXRIO::SaveHelper(const Image<Rgba32F, S> &img,  OStreamArgT &ostreamArg,
+    Compression compression, RgbaChannels rgbaChannels) {
+    SaveImpl(img.GetDataPointer(), ostreamArg, img.Width(), img.Height(),
         S, compression, rgbaChannels, numThreads);
 }
 
 
-// Actually instanciate the saving template
-void OpenEXRIO::Save(Image<Rgba32F, TopDown> &img, const char *filename,
-    Compression compression)
-{
+// Actually instantiate the saving template
+void OpenEXRIO::Save(const Image<Rgba32F, TopDown> &img, std::ofstream &os,
+    Compression compression) {
+    StdOFStream stdos(os);
+    SaveHelper(img, stdos, compression, WRITE_RGB);
+}
+void OpenEXRIO::Save(const Image<Rgba32F, BottomUp> &img, std::ofstream &os,
+    Compression compression) {
+    StdOFStream stdos(os);
+    SaveHelper(img, stdos, compression, WRITE_RGB);
+}
+void OpenEXRIO::Save(const Image<Rgba32F, TopDown> &img, const char *filename,
+    Compression compression) {
     SaveHelper(img, filename, compression, WRITE_RGB);
 }
-void OpenEXRIO::Save(Image<Rgba32F, BottomUp> &img, const char *filename,
-    Compression compression)
-{
+void OpenEXRIO::Save(const Image<Rgba32F, BottomUp> &img, const char *filename,
+    Compression compression) {
     SaveHelper(img, filename, compression, WRITE_RGB);
 }
 
-void OpenEXRIO::Save(Image<Rgba32F, TopDown> &img, const char *filename,
-    RgbaChannels rgbaChannels, Compression compression)
-{
+void OpenEXRIO::Save(const Image<Rgba32F, TopDown> &img, std::ofstream &os,
+    RgbaChannels rgbaChannels, Compression compression) {
+    StdOFStream stdos(os);
+    SaveHelper(img, stdos, compression, rgbaChannels);
+}
+void OpenEXRIO::Save(const Image<Rgba32F, BottomUp> &img, std::ofstream &os,
+    RgbaChannels rgbaChannels, Compression compression) {
+    StdOFStream stdos(os);
+    SaveHelper(img, stdos, compression, rgbaChannels);
+}
+void OpenEXRIO::Save(const Image<Rgba32F, TopDown> &img, const char *filename,
+    RgbaChannels rgbaChannels, Compression compression) {
     SaveHelper(img, filename, compression, rgbaChannels);
 }
-void OpenEXRIO::Save(Image<Rgba32F, BottomUp> &img, const char *filename,
-    RgbaChannels rgbaChannels, Compression compression)
-{
+void OpenEXRIO::Save(const Image<Rgba32F, BottomUp> &img, const char *filename,
+    RgbaChannels rgbaChannels, Compression compression) {
     SaveHelper(img, filename, compression, rgbaChannels);
 }
 
-void OpenEXRIO::Save(RGBAImageSoA& img, const char* filename,
-    RgbaChannels rgbaChannels, Compression compression)
-{
+void OpenEXRIO::Save(const RGBAImageSoA& img, std::ofstream &os,
+    RgbaChannels rgbaChannels, Compression compression) {
+    StdOFStream stdos(os);
+    RGBA32FScalarImageSoAIterator it=RGBA32FScalarImageSoAIterator::begin(img);
+    SaveImpl(it, stdos, img.Width(), img.Height(), img.GetMode(),
+        compression, rgbaChannels, numThreads);
+}
+void OpenEXRIO::Save(const RGBAImageSoA& img, const char* filename,
+    RgbaChannels rgbaChannels, Compression compression) {
     RGBA32FScalarImageSoAIterator it=RGBA32FScalarImageSoAIterator::begin(img);
     SaveImpl(it, filename, img.Width(), img.Height(), img.GetMode(),
         compression, rgbaChannels, numThreads);

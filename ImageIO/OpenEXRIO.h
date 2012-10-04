@@ -29,13 +29,13 @@
 
 namespace pcg {
 
-    // The base class has only static method
+    // The base class has only static methods
     class OpenEXRIO {
 
     public:
 
         // An enum for the different types of compression available when saving the file
-        // (Valid as of OpenEXR 1.6.1)
+        // (Valid as of OpenEXR 1.7.1)
         enum Compression {
             None,
             RLE,
@@ -92,21 +92,35 @@ namespace pcg {
         static void IMAGEIO_API Load(RGBAImageSoA& img, const char* filename);
 
         // To save the images with a different scanline order we only set a flag!
-        static void IMAGEIO_API Save(Image<Rgba32F, TopDown> &img, const char *filename,
+        static void IMAGEIO_API Save(const Image<Rgba32F, TopDown> &img, std::ofstream& os,
             Compression compression = ZIP);
-        static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename,
+        static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, std::ofstream& os,
+            Compression compression = ZIP);
+        static void IMAGEIO_API Save(const Image<Rgba32F, TopDown> &img, const char *filename,
+            Compression compression = ZIP);
+        static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename,
             Compression compression = ZIP);
 
         // New methods to specify the channels to write, to preserve binary compatibility
-        static void IMAGEIO_API Save(Image<Rgba32F, TopDown> &img, const char *filename,
+        static void IMAGEIO_API Save(const Image<Rgba32F, TopDown> &img, std::ofstream& os,
             RgbaChannels rgbaChannels, Compression compression = ZIP);
-        static void IMAGEIO_API Save(Image<Rgba32F, BottomUp> &img, const char *filename,
+        static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, std::ofstream& os,
+            RgbaChannels rgbaChannels, Compression compression = ZIP);
+        static void IMAGEIO_API Save(const Image<Rgba32F, TopDown> &img, const char *filename,
+            RgbaChannels rgbaChannels, Compression compression = ZIP);
+        static void IMAGEIO_API Save(const Image<Rgba32F, BottomUp> &img, const char *filename,
             RgbaChannels rgbaChannels, Compression compression = ZIP);
 
         // Save SoA images
-        static void IMAGEIO_API Save(RGBAImageSoA& img, const char* filename,
+        static void IMAGEIO_API Save(const RGBAImageSoA& img, std::ofstream& os,
             RgbaChannels rgbaChannels, Compression compression = ZIP);
-        inline static void Save(RGBAImageSoA& img, const char* filename,
+        inline static void Save(const RGBAImageSoA& img, std::ofstream& os,
+            Compression comression = ZIP) {
+            Save(img, os, WRITE_RGB, ZIP);
+        }
+        static void IMAGEIO_API Save(const RGBAImageSoA& img, const char* filename,
+            RgbaChannels rgbaChannels, Compression compression = ZIP);
+        inline static void Save(const RGBAImageSoA& img, const char* filename,
             Compression comression = ZIP) {
             Save(img, filename, WRITE_RGB, ZIP);
         }
@@ -118,9 +132,9 @@ namespace pcg {
         static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, const char *filename);
         static void IMAGEIO_API LoadHelper(Image<Rgba32F, TopDown> &img, std::istream &is);
 
-        // Declare the super utility function for saving
-        template<ScanLineMode S>
-        static void SaveHelper(Image<Rgba32F, S> &image, const char *filename,
+        // Declare the super utility functions for saving
+        template <ScanLineMode S, class OStreamArgT>
+        static void SaveHelper(const Image<Rgba32F, S> &image, OStreamArgT &ostreamArg,
             Compression compression, RgbaChannels rgbaChannels);
         
         static int numThreads;
