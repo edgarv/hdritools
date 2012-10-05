@@ -37,75 +37,56 @@
 # include "Vec4i.h"
 
 
-// Intel AM constants
-#define _PS_CONST(Name, Val) \
-static const ALIGN16_BEG float _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
-
-#define _PS_EXTERN_CONST(Name, Val) \
-const ALIGN16_BEG float _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
-
-#define _PS_EXTERN_CONST_TYPE(Name, Type, Val) \
-const ALIGN16_BEG Type _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }; \
-
-#define _EPI32_CONST(Name, Val) \
-static const ALIGN16_BEG int32_t _epi32_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
-
-_PS_EXTERN_CONST(am_1, 1.0f);
-_PS_EXTERN_CONST(am_0p5, 0.5f);
-_PS_EXTERN_CONST_TYPE(am_min_norm_pos, int32_t, 0x00800000)
-_PS_EXTERN_CONST_TYPE(am_inv_mant_mask, int32_t, ~0x7f800000)
-
-_EPI32_CONST(1, 1);
-_EPI32_CONST(0x7f, 0x7f);
-
-
 /////////////////////////////////////////////////////////////////////////////
-// Helper functions
+// Intel AM constants
+namespace am
+{
 namespace
 {
 
-inline __m128 sse_load(const float (&arr)[4]) {
-    return _mm_load_ps (&arr[0]);
-}
+const pcg::Vec4f _ps_am_1(1.0f);
+const pcg::Vec4f _ps_am_0p5(0.5f);
+const pcg::Vec4f _ps_am_min_norm_pos(
+    _mm_castsi128_ps(pcg::Vec4i::constant<0x00800000>()));
+const pcg::Vec4f _ps_am_inv_mant_mask(
+    _mm_castsi128_ps(pcg::Vec4i::constant<~0x7f800000>()));
 
-inline __m128 sse_load(const int (&arr)[4]) {
-    return _mm_load_ps (reinterpret_cast<const float*>(&arr[0]));
-}
-
-inline __m128i sse_load_epi32(const int (&arr)[4]) {
-    return _mm_load_si128 (reinterpret_cast<const __m128i*>(&arr[0]));
-}
-
-} // namespace
-
+const pcg::Vec4i _epi32_1(pcg::Vec4i::constant<1>());
+const pcg::Vec4i _epi32_0x7f(pcg::Vec4i::constant<0x7f>());
 
 /////////////////////////////////////////////////////////////////////////////
 // log functions
 
-_PS_CONST(log_p0, -7.89580278884799154124e-1f);
-_PS_CONST(log_p1, 1.63866645699558079767e1f);
-_PS_CONST(log_p2, -6.41409952958715622951e1f);
+const pcg::Vec4f _ps_log_p0( -7.89580278884799154124e-1f);
+const pcg::Vec4f _ps_log_p1(  1.63866645699558079767e1f);
+const pcg::Vec4f _ps_log_p2( -6.41409952958715622951e1f);
 
-_PS_CONST(log_q0, -3.56722798256324312549e1f);
-_PS_CONST(log_q1, 3.12093766372244180303e2f);
-_PS_CONST(log_q2, -7.69691943550460008604e2f);
+const pcg::Vec4f _ps_log_q0( -3.56722798256324312549e1f);
+const pcg::Vec4f _ps_log_q1(  3.12093766372244180303e2f);
+const pcg::Vec4f _ps_log_q2( -7.69691943550460008604e2f);
 
-_PS_CONST(log_c0, 0.693147180559945f);
+const pcg::Vec4f _ps_log_c0(  0.693147180559945f);
 
-_PS_CONST(log2_c0, 1.44269504088896340735992f);
+const pcg::Vec4f _ps_log2_c0( 1.44269504088896340735992f);
 
 /////////////////////////////////////////////////////////////////////////////
 // exp2 functions
 
-_PS_CONST(exp2_hi,  127.4999961853f);
-_PS_CONST(exp2_lo, -127.4999961853f);
+const pcg::Vec4f _ps_exp2_hi(  127.4999961853f);
+const pcg::Vec4f _ps_exp2_lo( -127.4999961853f);
 
-_PS_CONST(exp2_p0, 2.30933477057345225087e-2f);
-_PS_CONST(exp2_p1, 2.02020656693165307700e1f);
-_PS_CONST(exp2_p2, 1.51390680115615096133e3f);
+const pcg::Vec4f _ps_exp2_p0( 2.30933477057345225087e-2f);
+const pcg::Vec4f _ps_exp2_p1( 2.02020656693165307700e1f);
+const pcg::Vec4f _ps_exp2_p2( 1.51390680115615096133e3f);
 
-_PS_CONST(exp2_q0, 2.33184211722314911771e2f);
-_PS_CONST(exp2_q1, 4.36821166879210612817e3f);
+const pcg::Vec4f _ps_exp2_q0( 2.33184211722314911771e2f);
+const pcg::Vec4f _ps_exp2_q1( 4.36821166879210612817e3f);
+
+} // namespace
+} // namespace am
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // am_log_eps
@@ -113,20 +94,20 @@ _PS_CONST(exp2_q1, 4.36821166879210612817e3f);
 __m128 am::log_eps(__m128 x)
 {
     // Constants
-    const __m128 am_1          = sse_load(_ps_am_1);
-    const __m128 min_norm_pos  = sse_load(_ps_am_min_norm_pos);
-    const __m128 inv_mant_mask = sse_load(_ps_am_inv_mant_mask);
-    const __m128i epi32_0x7f   = sse_load_epi32(_epi32_0x7f);
+    const __m128 am_1          = _ps_am_1;
+    const __m128 min_norm_pos  = _ps_am_min_norm_pos;
+    const __m128 inv_mant_mask = _ps_am_inv_mant_mask;
+    const __m128i epi32_0x7f   = _epi32_0x7f;
 
-    const __m128 log_p0 = sse_load(_ps_log_p0);
-    const __m128 log_p1 = sse_load(_ps_log_p1);
-    const __m128 log_p2 = sse_load(_ps_log_p2);
+    const __m128 log_p0 = _ps_log_p0;
+    const __m128 log_p1 = _ps_log_p1;
+    const __m128 log_p2 = _ps_log_p2;
 
-    const __m128 log_q0 = sse_load(_ps_log_q0);
-    const __m128 log_q1 = sse_load(_ps_log_q1);
-    const __m128 log_q2 = sse_load(_ps_log_q2);
+    const __m128 log_q0 = _ps_log_q0;
+    const __m128 log_q1 = _ps_log_q1;
+    const __m128 log_q2 = _ps_log_q2;
 
-    const __m128 log_c0 = sse_load(_ps_log_c0);
+    const __m128 log_c0 = _ps_log_c0;
 
 
     // Use variables named like the registers to keep the code close
@@ -196,32 +177,32 @@ __m128 am::log_eps(__m128 x)
 __m128 am::pow_eps(__m128 x, __m128 y)
 {
     // Constants
-    const __m128 am_1          = sse_load(_ps_am_1);
-    const __m128 am_0p5        = sse_load(_ps_am_0p5);
-    const __m128 min_norm_pos  = sse_load(_ps_am_min_norm_pos);
-    const __m128 inv_mant_mask = sse_load(_ps_am_inv_mant_mask);
-    const __m128i epi32_1      = sse_load_epi32(_epi32_1);
-    const __m128i epi32_0x7f   = sse_load_epi32(_epi32_0x7f);
+    const __m128 am_1          = _ps_am_1;
+    const __m128 am_0p5        = _ps_am_0p5;
+    const __m128 min_norm_pos  = _ps_am_min_norm_pos;
+    const __m128 inv_mant_mask = _ps_am_inv_mant_mask;
+    const __m128i epi32_1      = _epi32_1;
+    const __m128i epi32_0x7f   = _epi32_0x7f;
 
-    const __m128 log_p0 = sse_load(_ps_log_p0);
-    const __m128 log_p1 = sse_load(_ps_log_p1);
-    const __m128 log_p2 = sse_load(_ps_log_p2);
+    const __m128 log_p0 = _ps_log_p0;
+    const __m128 log_p1 = _ps_log_p1;
+    const __m128 log_p2 = _ps_log_p2;
 
-    const __m128 log_q0 = sse_load(_ps_log_q0);
-    const __m128 log_q1 = sse_load(_ps_log_q1);
-    const __m128 log_q2 = sse_load(_ps_log_q2);
+    const __m128 log_q0 = _ps_log_q0;
+    const __m128 log_q1 = _ps_log_q1;
+    const __m128 log_q2 = _ps_log_q2;
 
-    const __m128 log2_c0 = sse_load(_ps_log2_c0);
+    const __m128 log2_c0 = _ps_log2_c0;
 
-    const __m128 exp2_hi = sse_load(_ps_exp2_hi);
-    const __m128 exp2_lo = sse_load(_ps_exp2_lo);
+    const __m128 exp2_hi = _ps_exp2_hi;
+    const __m128 exp2_lo = _ps_exp2_lo;
 
-    const __m128 exp2_p0 = sse_load(_ps_exp2_p0);
-    const __m128 exp2_p1 = sse_load(_ps_exp2_p1);
-    const __m128 exp2_p2 = sse_load(_ps_exp2_p2);
+    const __m128 exp2_p0 = _ps_exp2_p0;
+    const __m128 exp2_p1 = _ps_exp2_p1;
+    const __m128 exp2_p2 = _ps_exp2_p2;
 
-    const __m128 exp2_q0 = sse_load(_ps_exp2_q0);
-    const __m128 exp2_q1 = sse_load(_ps_exp2_q1);
+    const __m128 exp2_q0 = _ps_exp2_q0;
+    const __m128 exp2_q1 = _ps_exp2_q1;
 
     // Use variables named like the registers to keep the code close
     __m128 xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, ecx_16;
