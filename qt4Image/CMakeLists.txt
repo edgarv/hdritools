@@ -80,9 +80,12 @@ if(WIN32)
   set(EXECUTABLE_TYPE "WIN32")
   
   # Create the resource file from the template
-  string(REGEX REPLACE ".*([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1,\\2,\\3,0"
-    RC_VERSION_COMMA ${HDRITOOLS_VERSION})
-  set(RC_VERSION ${HDRITOOLS_VERSION})
+  set(RC_VERSION_COMMA ${HDRITOOLS_VERSION_MAJOR},${HDRITOOLS_VERSION_MINOR},${HDRITOOLS_VERSION_PATCH},0)
+  if(HDRITOOLS_HAS_VALID_REV)
+    set(RC_VERSION ${HDRITOOLS_VERSION}-${HDRITOOLS_VERSION_BUILD}hg${HDRITOOLS_REV_ID})
+  else()
+    set(RC_VERSION ${HDRITOOLS_VERSION})
+  endif()
   configure_file("res/qt4Image.rc.in"
     "${CMAKE_CURRENT_BINARY_DIR}/res/qt4Image.rc")
   include_directories("res")  # Necessary so the icons may be found
@@ -140,8 +143,8 @@ endif()
 # uic generates header in the build directory which need to be found
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
   
-# TODO: there should be a better way to do this...
-include_directories(../ImageIO)
+# pcgImageIO headers
+include_directories("${PROJECT_SOURCE_DIR}/ImageIO")
 
 # Installs this
 install(TARGETS qt4Image

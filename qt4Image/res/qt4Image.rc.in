@@ -13,22 +13,26 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
-#include <windows.h>
+/*
+ *  MSDN Documentation:
+ *  http://msdn.microsoft.com/en-us/library/windows/desktop/aa381058%28v=vs.85%29.aspx
+ */
 
-// Application and HDR Files icons
-IDI_ICON1			ICON    DISCARDABLE     "app.ico"
-IDI_ICON2			ICON    DISCARDABLE     "exr.ico"
-IDI_ICON3			ICON    DISCARDABLE     "rgbe.ico"
-IDI_ICON4			ICON    DISCARDABLE     "hdr.ico"
-IDI_ICON5			ICON    DISCARDABLE     "pbm.ico"
+#include <winresrc.h>
 
-// Strings with the long description. Don't forget to use
-// the same ID number when refering to the resources, as
-// in @C:\Path...\qt4Image.exe,-20
-// Check the documentation at 
-// http://msdn.microsoft.com/en-us/library/aa381050(VS.85).aspx
+/* Application and HDR Files icons */
+IDI_ICON1           ICON    DISCARDABLE     "app.ico"
+IDI_ICON2           ICON    DISCARDABLE     "exr.ico"
+IDI_ICON3           ICON    DISCARDABLE     "rgbe.ico"
+IDI_ICON4           ICON    DISCARDABLE     "hdr.ico"
+IDI_ICON5           ICON    DISCARDABLE     "pbm.ico"
 
-// I checked as example iTunes, which uses the ID 20 for the description
+/* Strings with the long description. Don't forget to use the same ID number
+ * when refering to the resources e.g. @C:\Path...\qt4Image.exe,-20
+ *
+ * MSDN Documentation:
+ *   http://msdn.microsoft.com/en-us/library/aa381050(VS.85).aspx
+ */
 #define IDS_QT4IMAGE_DESC 20
 
 STRINGTABLE DISCARDABLE
@@ -43,39 +47,45 @@ END
 
 
 #ifdef GCC_WINDRES
-VS_VERSION_INFO		VERSIONINFO
+VS_VERSION_INFO     VERSIONINFO
 #else
-VS_VERSION_INFO		VERSIONINFO	MOVEABLE IMPURE LOADONCALL DISCARDABLE
+VS_VERSION_INFO     VERSIONINFO     MOVEABLE IMPURE LOADONCALL DISCARDABLE
 #endif
-  FILEVERSION		@RC_VERSION_COMMA@ /* e.g. 1,0,0,0 */
-  PRODUCTVERSION	@RC_VERSION_COMMA@
-  FILEFLAGSMASK		VS_FFI_FILEFLAGSMASK
+  FILEVERSION       @RC_VERSION_COMMA@ /* e.g. 1,0,0,0 */
+  PRODUCTVERSION    @RC_VERSION_COMMA@
+  FILEFLAGSMASK     VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
-  FILEFLAGS		1
+  FILEFLAGS         VS_FF_DEBUG | VS_FF_PRERELEASE
 #else
-  FILEFLAGS		0
+  FILEFLAGS         0 | VS_FF_PRERELEASE
 #endif
-  FILEOS		VOS_DOS_WINDOWS32
-  FILETYPE		VFT_DLL
-  FILESUBTYPE		0	// not used
+  FILEOS            VOS_NT_WINDOWS32
+  FILETYPE          VFT_APP
+  FILESUBTYPE       0 /* not used */
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904E4"
-    //language ID = U.S. English, char set = Windows, Multilingual
+    /* language ID = U.S. English, char set = Windows, Multilingual */
     BEGIN
-      VALUE "FileDescription",	"Qt4Image HDR image viewer\0"
-      VALUE "CompanyName", "Program of Computer Graphics, Cornell University\0"
-      VALUE "FileVersion",	"@RC_VERSION@\0"
-      VALUE "InternalName",	"qt4Image.exe\0"
-      VALUE "LegalCopyright",	"Copyright (c) 2008-2011, Program of Computer Graphics, Cornell University\0"
+      VALUE "CompanyName",      "Program of Computer Graphics, Cornell University\0"
+      VALUE "FileDescription",  "Qt4Image HDR image viewer\0"
+      VALUE "FileVersion",      "@RC_VERSION@\0"
+      VALUE "InternalName",     "qt4Image\0"
+      VALUE "LegalCopyright",   "Copyright (c) 2008-2012, Program of Computer Graphics, Cornell University\0"
       VALUE "OriginalFilename",	"qt4Image.exe\0"
-      VALUE "ProductName",	"qt4Image\0"
-      VALUE "ProductVersion",	"@RC_VERSION@\0"
+      VALUE "ProductName",      "HDRITools\0"
+      VALUE "ProductVersion",   "@RC_VERSION@\0"
     END
   END
   BLOCK "VarFileInfo"
   BEGIN
+    /* The following line should only be modified for localized versions.     */
+    /* It consists of any number of WORD,WORD pairs, with each pair           */
+    /* describing a language,codepage combination supported by the file.      */
+    /*                                                                        */
+    /* For example, a file might have values "0x409,1252" indicating that it  */
+    /* supports English language (0x409) in the Windows ANSI codepage (1252). */
     VALUE "Translation", 0x0409, 1252
   END
 END
