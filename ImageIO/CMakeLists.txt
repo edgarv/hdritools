@@ -51,7 +51,7 @@ set(SRCS
   RgbeIO.h RgbeIO.cpp
   RgbeIOPrivate.h
   sse_mathfun.h
-  Amaths.h Amaths.cpp
+  Amaths.h Amaths.inl
   ToneMapper.h ToneMapper.cpp
   ToneMapperSoA.h ToneMapperSoA.cpp
   Reinhard02.h Reinhard02.cpp

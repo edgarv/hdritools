@@ -18,23 +18,13 @@
 // Third-party brands and names are the property of their respective owners
 //
 /////////////////////////////////////////////////////////////////////////////
-// Approximate Math Library for SSE / SSE2
+// Approximate Math Library for SSE / SSE2 [Implementation file]
 //  Implementation File
 //  Version 2.0
 //  Author Alex Klimovitski, Intel GmbH
 /////////////////////////////////////////////////////////////////////////////
 
 #include "Amaths.h"
-#include "StdAfx.h"
-
-#include <emmintrin.h>
-
-#if PCG_USE_AVX
-# include "Vec8f.h"
-# include "Vec8i.h"
-#endif
-# include "Vec4f.h"
-# include "Vec4i.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -91,7 +81,7 @@ const pcg::Vec4f _ps_exp2_q1( 4.36821166879210612817e3f);
 /////////////////////////////////////////////////////////////////////////////
 // am_log_eps
 
-__m128 am::log_eps(__m128 x)
+inline __m128 am::log_eps(__m128 x)
 {
     // Constants
     const __m128 am_1          = _ps_am_1;
@@ -174,7 +164,7 @@ __m128 am::log_eps(__m128 x)
 /////////////////////////////////////////////////////////////////////////////
 // am_pow_eps
 
-__m128 am::pow_eps(__m128 x, __m128 y)
+inline __m128 am::pow_eps(__m128 x, __m128 y)
 {
     // Constants
     const __m128 am_1          = _ps_am_1;
@@ -430,7 +420,7 @@ inline v8i sll(const v8i& a, const int& count)
 
 
 
-__m256 am::log_avx(__m256 x)
+inline __m256 am::log_avx(__m256 x)
 {
     typedef pcg::Vec8i v8i;
     typedef pcg::Vec8f v8f;
@@ -498,7 +488,7 @@ __m256 am::log_avx(__m256 x)
 // am_pow_eps [AVX Version]
 // Based on a straightforward reinterpretation of the original code
 /////////////////////////////////////////////////////////////////////////////
-__m256 am::pow_avx(__m256 x, __m256 y)
+inline __m256 am::pow_avx(__m256 x, __m256 y)
 {
     typedef pcg::Vec8i  v8i;
     typedef pcg::Vec8f  v8f;

@@ -29,22 +29,26 @@
 #define _AMATHS_H_
 
 #include <emmintrin.h>
-
+#include "Vec4f.h"
+#include "Vec4i.h"
 #if PCG_USE_AVX
 # include <immintrin.h>
+# include "Vec8f.h"
+# include "Vec8i.h"
 #endif
-
 
 namespace am
 {
-    __m128 log_eps(__m128 x);
-    __m128 pow_eps(__m128 x, __m128 y);
+__m128 log_eps(__m128 x);
+__m128 pow_eps(__m128 x, __m128 y);
 
 #if PCG_USE_AVX
-    __m256 log_avx(__m256 x);
-    __m256 pow_avx(__m256 x, __m256 y);
+__m256 log_avx(__m256 x);
+__m256 pow_avx(__m256 x, __m256 y);
 #endif
-
 }
+
+// Actual implementation
+#include "Amaths.inl"
 
 #endif // _AMATHS_H_
