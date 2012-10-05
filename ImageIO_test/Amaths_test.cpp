@@ -125,16 +125,12 @@ TEST(AMaths, Pow)
         // Compare
         for (int k = 0; k != 8; ++k) {
 #if PCG_USE_AVX
-            // For some reason the SSE and the AVX versions of pow generate
-            // slightly different numbers
-            double relErrorAMAVX =
-                abs((static_cast<double>(rAM_AVX.f32[k])-ref[k]) / ref[k]);
-            EXPECT_LT(relErrorAMAVX, 1e-4);
-
-            EXPECT_FLOAT_EQ(rCephes.f32[k], rCephes_AVX.f32[k]);
+            // SSE and AVX have to generate exactly the same values
+            EXPECT_EQ(rAM.f32[k], rAM_AVX.f32[k]);
+            EXPECT_EQ(rCephes.f32[k], rCephes_AVX.f32[k]);
 #endif
             // Error between amath and stdlib
-#if !PCG_USE_AVX || 1
+#if !PCG_USE_AVX
             double absErrorAM =abs(static_cast<double>(rAM.f32[k])-ref[k]);
 #else
             double absErrorAM =abs(static_cast<double>(rAM_AVX.f32[k])-ref[k]);
@@ -147,7 +143,6 @@ TEST(AMaths, Pow)
                 " (" << x.f32[k] << " ** " << y.f32[k] << ")";
             varAM_Abs.update(absErrorAM);
             varAM_Rel.update(relErrorAM);
-
 
             // Error between cephes version and stdlib
             double absError = abs(static_cast<double>(ref[k]) - rCephes.f32[k]);
@@ -310,7 +305,6 @@ TEST(AMaths, Log)
     DataVec8 rCephes_AVX;
 #endif
     float ref[8];
-    
     
     VarianceFunctor varAM_Rel;
     VarianceFunctor varAM_Abs;
