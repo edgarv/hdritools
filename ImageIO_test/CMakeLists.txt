@@ -13,7 +13,7 @@
 #      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 # ============================================================================
 
-# Cmake file for running the ImageIO tests. It uses the GTest library.
+# CMake file for running the ImageIO tests. It uses the GTest library.
 
 find_package(GTest REQUIRED)
 
@@ -32,6 +32,7 @@ set(SRCS
   ToneMapper_test.cpp
   ToneMapperSoA_test.cpp
   Reinhard02Params_test.cpp
+  Amaths_test.cpp
   
   tableau_f32.h tableau_f32.cpp
   Timer.h Timer.cpp
