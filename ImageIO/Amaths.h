@@ -42,9 +42,23 @@ namespace am
 __m128 log_eps(__m128 x);
 __m128 pow_eps(__m128 x, __m128 y);
 
+inline __m128 log(__m128 x) {
+    return log_eps(x);
+}
+inline __m128 pow(__m128 x, __m128 y) {
+    return pow_eps(x, y);
+}
+
 #if PCG_USE_AVX
 __m256 log_avx(__m256 x);
 __m256 pow_avx(__m256 x, __m256 y);
+
+inline __m256 log(__m256 x) {
+    return log_avx(x);
+}
+inline __m256 pow(__m256 x, __m256 y) {
+    return pow_avx(x, y);
+}
 #endif
 }
 
