@@ -13,42 +13,74 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
-#include <windows.h>
+/*
+    MSDN Documentation:
+    http://msdn.microsoft.com/en-us/library/windows/desktop/aa381058%28v=vs.85%29.aspx
+*/
+
+#include <winresrc.h>
+
+#cmakedefine01 RC_FILETYPE
+#cmakedefine01 RC_COMPANY
+#cmakedefine01 RC_FILEVERSION
+#cmakedefine01 RC_PRODUCTNAME
 
 #ifdef GCC_WINDRES
-VS_VERSION_INFO		VERSIONINFO
+VS_VERSION_INFO     VERSIONINFO
 #else
-VS_VERSION_INFO		VERSIONINFO	MOVEABLE IMPURE LOADONCALL DISCARDABLE
+VS_VERSION_INFO     VERSIONINFO     MOVEABLE IMPURE LOADONCALL DISCARDABLE
 #endif
-  FILEVERSION		@RC_VERSION_COMMA@  /* e.g. 1,0,0,0 */
-  PRODUCTVERSION	@RC_VERSION_COMMA@
-  FILEFLAGSMASK		VS_FFI_FILEFLAGSMASK
+  FILEVERSION       @RC_VERSION_COMMA@  /* e.g. 1,0,0,0 */
+  PRODUCTVERSION    @RC_VERSION_COMMA@
+  FILEFLAGSMASK     VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
-  FILEFLAGS		1
+  FILEFLAGS         VS_FF_DEBUG | VS_FF_PRERELEASE
 #else
-  FILEFLAGS		0
+  FILEFLAGS         0 | VS_FF_PRERELEASE
 #endif
-  FILEOS		VOS_DOS_WINDOWS32
-  FILETYPE		VFT_DLL
-  FILESUBTYPE		0	// not used
+  FILEOS            VOS_NT_WINDOWS32
+#if RC_FILETYPE
+  FILETYPE          @RC_FILETYPE@
+#else
+  FILETYPE          VFT_UNKNOWN
+#endif
+  FILESUBTYPE       0 /* not used */
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904E4"
-    //language ID = U.S. English, char set = Windows, Multilingual
+    /* language ID = U.S. English, char set = Windows, Multilingual */
     BEGIN
-      VALUE "FileDescription",	"@RC_DESCRIPTION@\0"
-      VALUE "CompanyName", "@RC_COMPANY@\0"
-      VALUE "FileVersion",	"@RC_VERSION@\0"
-      VALUE "InternalName",	"@RC_FILENAME@\0"
-      VALUE "LegalCopyright",	"@RC_COPYRIGHT@\0"
-      VALUE "OriginalFilename",	"@RC_FILENAME@\0"
-      VALUE "ProductName",	"@RC_NAME@\0"
-      VALUE "ProductVersion",	"@RC_VERSION@\0"
+#if RC_COMPANY
+      VALUE "CompanyName",      "@RC_COMPANY@\0"
+#else
+      VALUE "CompanyName",      "Program of Computer Graphics, Cornell University\0"
+#endif
+      VALUE "FileDescription",  "@RC_DESCRIPTION@\0"
+#if RC_FILEVERSION
+      VALUE "FileVersion",      "@RC_FILEVERSION@\0"
+#else
+      VALUE "FileVersion",      "@RC_VERSION@\0"
+#endif
+      VALUE "InternalName",     "@RC_NAME@\0"
+      VALUE "LegalCopyright",   "@RC_COPYRIGHT@\0"
+      VALUE "OriginalFilename", "@RC_FILENAME@\0"
+#if RC_PRODUCTNAME
+      VALUE "ProductName",      "@RC_PRODUCTNAME@\0"
+#else
+      VALUE "ProductName",      "HDRITools\0"
+#endif
+      VALUE "ProductVersion",   "@RC_VERSION@\0"
     END
   END
   BLOCK "VarFileInfo"
   BEGIN
+    /* The following line should only be modified for localized versions.     */
+    /* It consists of any number of WORD,WORD pairs, with each pair           */
+    /* describing a language,codepage combination supported by the file.      */
+    /*                                                                        */
+    /* For example, a file might have values "0x409,1252" indicating that it  */
+    /* supports English language (0x409) in the Windows ANSI codepage (1252). */
     VALUE "Translation", 0x0409, 1252
   END
 END
