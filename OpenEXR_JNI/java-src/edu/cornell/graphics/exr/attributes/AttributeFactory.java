@@ -34,15 +34,15 @@ public class AttributeFactory {
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     
     /**
-     * Creates a new attribute for which {@link #typeName() } matches the
-     * {@code typeName} argument, using one of the registered instances of
+     * Creates a new attribute for which {@link Attribute#typeName()} matches
+     * the {@code typeName} argument, using one of the registered instances of
      * {@link AttributeFactory}. If the type name is not know it throws
      * {@code IllegalArgumentException}.
      * 
      * @param typeName the name representing the type of the desired attribute.
      * @return a non-null instance of the given type of attribute.
      * @throws IllegalArgumentException if the type is not known.
-     * @see #registerAttributeType(java.lang.String, edu.cornell.graphics.exr.to.Attribute.AttributeCreator) 
+     * @see #registerAttributeType(java.lang.String, edu.cornell.graphics.exr.attributes.Attribute.AttributeCreator) 
      */
     public Attribute newAttribute(String typeName)
             throws IllegalArgumentException {
