@@ -39,9 +39,68 @@ endif()
 # Java sources relative to the "java-src" directory
 set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/Attributes.java
+  java-src/edu/cornell/graphics/exr/BasicInputFile.java
+  java-src/edu/cornell/graphics/exr/Channel.java
+  java-src/edu/cornell/graphics/exr/ChannelList.java
+  java-src/edu/cornell/graphics/exr/Chromaticities.java
   java-src/edu/cornell/graphics/exr/Compression.java
+  java-src/edu/cornell/graphics/exr/EnvMap.java
   java-src/edu/cornell/graphics/exr/EXRIOException.java
   java-src/edu/cornell/graphics/exr/EXRSimpleImage.java
+  java-src/edu/cornell/graphics/exr/EXRTypeException.java
+  java-src/edu/cornell/graphics/exr/EXRVersion.java
+  java-src/edu/cornell/graphics/exr/Half.java
+  java-src/edu/cornell/graphics/exr/Header.java
+  java-src/edu/cornell/graphics/exr/KeyCode.java
+  java-src/edu/cornell/graphics/exr/LineOrder.java
+  java-src/edu/cornell/graphics/exr/NoSuchChannelException.java
+  java-src/edu/cornell/graphics/exr/PreviewImage.java
+  java-src/edu/cornell/graphics/exr/Rational.java
+  java-src/edu/cornell/graphics/exr/TileDescription.java
+  java-src/edu/cornell/graphics/exr/TimeCode.java
+  
+  java-src/edu/cornell/graphics/exr/apps/EXRHeaderApp.java
+  
+  java-src/edu/cornell/graphics/exr/attributes/Attribute.java
+  java-src/edu/cornell/graphics/exr/attributes/AttributeFactory.java
+  java-src/edu/cornell/graphics/exr/attributes/Box2fAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/Box2iAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/ChannelListAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/ChromaticitiesAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/CompressionAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/DoubleAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/EnvMapAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/FloatAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/IntegerAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/KeyCodeAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/LineOrderAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/M33dAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/M33fAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/M44dAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/M44fAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/OpaqueAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/PreviewImageAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/RationalAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/StringAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/StringVectorAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/TileDescriptionAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/TimeCodeAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/TypedAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/V2dAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/V2fAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/V2iAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/V3dAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/V3fAttribute.java
+  java-src/edu/cornell/graphics/exr/attributes/V3iAttribute.java
+  
+  java-src/edu/cornell/graphics/exr/ilmbaseto/Box2.java
+  java-src/edu/cornell/graphics/exr/ilmbaseto/Matrix33.java
+  java-src/edu/cornell/graphics/exr/ilmbaseto/Matrix44.java
+  java-src/edu/cornell/graphics/exr/ilmbaseto/Vector2.java
+  java-src/edu/cornell/graphics/exr/ilmbaseto/Vector3.java
+  
+  java-src/edu/cornell/graphics/exr/io/EXRBufferedDataInput.java
+  java-src/edu/cornell/graphics/exr/io/InputFileInfo.java
 )
   
 # The jar which will contain the compiled java files
@@ -81,22 +140,23 @@ endif()
 
 
 # Commands to builds the jar file
-add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
-  COMMAND "${JAVA_COMPILE}" -source 1.6
+add_custom_command(OUTPUT "${OPENEXRJNI_JAR}"
+  COMMAND "${JAVA_COMPILE}" -source 1.6 -Xlint:unchecked
     -d "${CMAKE_CURRENT_BINARY_DIR}"
     ${JAVA_SRCS}
   COMMAND "${JAVA_ARCHIVE}" cf "${OPENEXRJNI_JAR}" -C "${CMAKE_CURRENT_BINARY_DIR}" edu
   DEPENDS ${JAVA_SRCS}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Compiling OpenEXR-JNI java files and builing jar..."
 )
 # Adds a target so that dependencies are properly tracked
-add_custom_target(openexrjni_jar DEPENDS ${OPENEXRJNI_JAR})
+add_custom_target(openexrjni_jar ALL DEPENDS "${OPENEXRJNI_JAR}")
 set_target_properties(openexrjni_jar PROPERTIES FOLDER "Java-JNI")
   
 # Build the jni headers using the jar
 add_custom_command(OUTPUT ${JNI_HEADERS}
-  COMMAND ${JAVA_JAVAH} -classpath ${OPENEXRJNI_JAR} edu.cornell.graphics.exr.EXRSimpleImage
+  COMMAND ${JAVA_JAVAH} -classpath "${OPENEXRJNI_JAR}"
+    edu.cornell.graphics.exr.EXRSimpleImage
   DEPENDS openexrjni_jar
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating OpenEXR JNI headers..."
