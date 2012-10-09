@@ -16,7 +16,7 @@
 # CMake file for the OpenEXR JNI binding version 2
 
 # Read the version info from the version file at the root directory
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION.txt" VERSION_TXT)
+file(READ "${PROJECT_SOURCE_DIR}/VERSION.txt" VERSION_TXT)
 string(REGEX REPLACE ".*openexrjni - ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
   OPENEXRJNI_VERSION "${VERSION_TXT}")
 unset(VERSION_TXT)
@@ -82,10 +82,10 @@ endif()
 
 # Commands to builds the jar file
 add_custom_command(OUTPUT ${OPENEXRJNI_JAR}
-  COMMAND ${JAVA_COMPILE} -source 1.5
-    -d ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND "${JAVA_COMPILE}" -source 1.6
+    -d "${CMAKE_CURRENT_BINARY_DIR}"
     ${JAVA_SRCS}
-  COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_JAR} -C ${CMAKE_CURRENT_BINARY_DIR} edu
+  COMMAND "${JAVA_ARCHIVE}" cf "${OPENEXRJNI_JAR}" -C "${CMAKE_CURRENT_BINARY_DIR}" edu
   DEPENDS ${JAVA_SRCS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Compiling OpenEXR-JNI java files and builing jar..."
@@ -97,7 +97,7 @@ set_target_properties(openexrjni_jar PROPERTIES FOLDER "Java-JNI")
 # Build the jni headers using the jar
 add_custom_command(OUTPUT ${JNI_HEADERS}
   COMMAND ${JAVA_JAVAH} -classpath ${OPENEXRJNI_JAR} edu.cornell.graphics.exr.EXRSimpleImage
-  DEPENDS ${OPENEXRJNI_JAR}
+  DEPENDS openexrjni_jar
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating OpenEXR JNI headers..."
 )
