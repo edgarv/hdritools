@@ -104,7 +104,10 @@ set(JAVA_SRCS
 )
   
 # The jar which will contain the compiled java files
-set(OPENEXRJNI_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni-${OPENEXRJNI_VERSION}.jar)
+set(OPENEXRJNI_JAR
+  "${CMAKE_CURRENT_BINARY_DIR}/openexrjni-${OPENEXRJNI_VERSION}.jar")
+set(OPENEXRJNI_JAVADOC_JAR
+  "${CMAKE_CURRENT_BINARY_DIR}/openexrjni-${OPENEXRJNI_VERSION}-javadoc.jar")
   
 # The jni headers are generated with javah from the java sources
 set(JNI_HEADERS
@@ -152,7 +155,27 @@ add_custom_command(OUTPUT "${OPENEXRJNI_JAR}"
 # Adds a target so that dependencies are properly tracked
 add_custom_target(openexrjni_jar ALL DEPENDS "${OPENEXRJNI_JAR}")
 set_target_properties(openexrjni_jar PROPERTIES FOLDER "Java-JNI")
-  
+
+# Build the javadoc and package it in a jar
+set(JAVADOC_DIR "${CMAKE_CURRENT_BINARY_DIR}/javadoc")
+if(NOT EXISTS "${JAVADOC_DIR}/doc")
+  file(MAKE_DIRECTORY "${JAVADOC_DIR}/doc")
+endif()
+configure_file("java-src/overview.html" "${JAVADOC_DIR}/overview.html" @ONLY)
+add_custom_command(OUTPUT "${OPENEXRJNI_JAVADOC_JAR}"
+  COMMAND "${Java_JAVADOC_EXECUTABLE}" -d "${JAVADOC_DIR}/doc"
+    -doctitle "Java bindings for OpenEXR ${OPENEXRJNI_VERSION}"
+    -overview "${JAVADOC_DIR}/overview.html"
+    -link "http://docs.oracle.com/javase/6/docs/api/" ${JAVA_SRCS}
+  COMMAND "${Java_JAR_EXECUTABLE}" cf "${OPENEXRJNI_JAVADOC_JAR}"
+    -C "${JAVADOC_DIR}" doc
+  DEPENDS ${JAVA_SRCS}
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  COMMENT "Creating OpenEXR-JNI javadoc and its jar..."
+)
+add_custom_target(openexrjni_javadoc_jar ALL DEPENDS "${OPENEXRJNI_JAVADOC_JAR}")
+set_target_properties(openexrjni_javadoc_jar PROPERTIES FOLDER "Java-JNI")
+ 
 # Build the jni headers using the jar
 add_custom_command(OUTPUT ${JNI_HEADERS}
   COMMAND ${JAVA_JAVAH} -classpath "${OPENEXRJNI_JAR}"
@@ -197,7 +220,7 @@ install(TARGETS openexrjni
   RUNTIME DESTINATION "${HDRITOOLS_SHARE_DIR}/java" COMPONENT "openexrjni"
   LIBRARY DESTINATION "${HDRITOOLS_SHARE_DIR}/java" COMPONENT "openexrjni"
 )
-install(FILES ${OPENEXRJNI_JAR}
+install(FILES "${OPENEXRJNI_JAR}" "${OPENEXRJNI_JAVADOC_JAR}"
   DESTINATION "${HDRITOOLS_SHARE_DIR}/java" COMPONENT "openexrjni"
 )
 
