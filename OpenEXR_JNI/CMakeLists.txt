@@ -28,9 +28,19 @@ set(SRCS
   
 # Add the resource file to the windows build
 if(WIN32)
+  set(RC_PRODUCTVERSION_COMMA ${HDRITOOLS_VERSION_MAJOR},${HDRITOOLS_VERSION_MINOR},${HDRITOOLS_VERSION_PATCH},0)
+  if(HDRITOOLS_HAS_VALID_REV)
+    set(RC_PRODUCTVERSION ${HDRITOOLS_VERSION}-${HDRITOOLS_VERSION_BUILD}hg${HDRITOOLS_REV_ID})
+  else()
+    set(RC_PRODUCTVERSION ${HDRITOOLS_VERSION})
+  endif()
+  set(RC_FILEVERSION ${OPENEXRJNI_VERSION})
+  string(REPLACE "." "," RC_FILEVERSION_COMMA "${OPENEXRJNI_VERSION}.0")
+  configure_file("openexrjni.rc.in" "openexrjni.rc")
+
   list(APPEND SRCS 
     UnicodeStream.h UnicodeStream.cpp
-    openexrjni.rc)
+    "${CMAKE_CURRENT_BINARY_DIR}/openexrjni.rc")
   add_definitions(-DUSE_JAVA_UTF8=0)
 else()
   add_definitions(-DUSE_JAVA_UTF8=1)
