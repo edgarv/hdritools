@@ -471,3 +471,70 @@ TEST(AMaths, Log_Benchmark)
     pcg::free_align(valuesX);
     pcg::free_align(result);
 }
+
+
+
+namespace
+{
+
+inline double fastExp(double y) {
+    // Super cheap approximation of exp(y) from:
+    // http://nic.schraudolph.org/pubs/Schraudolph99.pdf
+    // It has *very* poor accuracy (about 1 decimal digit!)
+    //
+    // i = a*y + (b-c)
+    //For doubles:
+    //  a = 2^20 / ln(2)
+    //  b = 1023 * 2^23
+    //  c = "magic constant"
+
+    // ln(2)   ~= 0.69314718055994530941723212145818
+    // 1/ln(2) ~= 1.4426950408889634073599246810019
+
+    const double EXP_A = (1 << 20) * 1.4426950408889634073599246810019;
+    const double EXP_B = 1023.0 * (1 << 20);
+    const double EXP_C = 60801.48;
+
+    union {
+        struct {
+            int32_t lo;
+            int32_t hi;
+        } x;
+        double fp64;
+    };
+    x.lo = 0;
+    x.hi = static_cast<int32_t>(EXP_A * (y) + (EXP_B - EXP_C));
+    return fp64;
+}
+
+} // namespace
+
+TEST(AMaths, FastExpGamma)
+{
+    // Test the accuracy of fastExp as a way to calculate gamma 2.2:
+    // pow(x, 1/2.2) = exp(1/2.2 * log(x))
+
+    VarianceFunctor varAbs, varRel;
+    RandomMT rnd(0x819a151e);
+    const int N = 100000;
+
+    for (int i = 0; i < N; ++i) {
+        double x    = rnd.nextDouble();
+        double logX = log(x);
+        double ref    = exp((1.0/2.2) * logX);
+        double actual = fastExp((1.0/2.2) * logX);
+
+        double absError = abs(ref - actual);
+        double relError = ref != 0.0f ? abs(absError/ref) 
+                                      : (actual == 0.0f ? 0.0 : absError);
+        
+        ASSERT_NEAR(actual, ref, 0.04*ref) << "x=" << x << " log(x)=" << logX;
+        varAbs.update(absError);
+        varRel.update(relError);
+    }
+
+    printf("FastExp Absolute error   | mean: %-10g stddev: %-10g max: %-10g\n",
+        varAbs.mean(), varAbs.stddev(), varAbs.max());
+    printf("FastExp Relative error   | mean: %-10g stddev: %-10g max: %-10g\n",
+        varRel.mean(), varRel.stddev(), varRel.max());
+}
