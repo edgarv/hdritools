@@ -259,7 +259,7 @@ public class EXRBufferedDataInput implements DataInput {
         }
         if (maxLength >= buffer.length) {
             throw new IllegalArgumentException("The requested maximum length " +
-                    "exceeds the internal buffer capacity.");
+                    "exceeds the internal buffer capacity (" + maxLength + ")");
         }
         // The +1 is because a string of length "maxLength" still need the
         // null character terminator
@@ -289,13 +289,29 @@ public class EXRBufferedDataInput implements DataInput {
         if (length < 0) {
             throw new IllegalArgumentException("Invalid lenght: " + length);
         }
-        if (length > buffer.length) {
-            throw new IllegalArgumentException("The requested String length " +
-                    "exceeds the internal buffer capacity.");
+        if (length <= buffer.length) {
+            // Simple case: the string fits in the buffer
+            requireAvailableBytes(length);
+            String s = new String(buffer, bufPos, length, UTF8);
+            bufPos += length;
+            return s;
+        } else {
+            // More complicated case: get as many characters as possible from
+            // the buffer, the rest directly from the data input
+            byte[] utf8Buffer = new byte[length];
+            int count = available();
+            readFully(utf8Buffer, 0, count);
+            
+            while (count < length) {
+                int nBytes = input.read(utf8Buffer, count, length - count);
+                if (nBytes < 0) {
+                    throw new EOFException();
+                }
+                count += nBytes;
+            }
+            
+            String s = new String(utf8Buffer, UTF8);
+            return s;
         }
-        requireAvailableBytes(length);
-        String s = new String(buffer, bufPos, length, UTF8);
-        bufPos += length;
-        return s;
     }
 }
