@@ -12,6 +12,7 @@
  Primary author:
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
+
 package edu.cornell.graphics.exr;
 
 import java.io.Closeable;

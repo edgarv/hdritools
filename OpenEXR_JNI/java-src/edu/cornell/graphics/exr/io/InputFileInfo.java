@@ -12,11 +12,11 @@
  Primary author:
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
+
 package edu.cornell.graphics.exr.io;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import edu.cornell.graphics.exr.Header;
 import java.io.File;
 import java.io.FileInputStream;
