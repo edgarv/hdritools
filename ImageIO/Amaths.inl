@@ -501,7 +501,7 @@ inline __m256 am::pow_avx(__m256 x, __m256 y)
     const v8f const_127(avx::const_127);
 
     // Remember negative values
-    const v8f negative_mask(v8f::zero() < x);
+    const v8f negative_mask(v8f::zero() < v8f(x));
 
     // Cutoff denormalized stuff (preserving NaN and Infinity)
     const v8f x0 = simd_max(x, min_normal);
@@ -537,7 +537,7 @@ inline __m256 am::pow_avx(__m256 x, __m256 y)
         (logApprox * avx::log2_c0) + ((vFrac * avx::log2_c0) + origExponent);
 
     // y * log2(x)
-    v8f exponent = y * log2Val;
+    v8f exponent = v8f(y) * log2Val;
 
     // Clamp the exponent
     exponent = simd_max(simd_min(exponent, avx::exp2_hi), avx::exp2_lo);
