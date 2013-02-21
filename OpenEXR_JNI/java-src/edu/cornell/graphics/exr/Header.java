@@ -1,6 +1,6 @@
 /*============================================================================
   HDRITools - High Dynamic Range Image Tools
-  Copyright 2008-2012 Program of Computer Graphics, Cornell University
+  Copyright 2008-2013 Program of Computer Graphics, Cornell University
 
   Distributed under the OSI-approved MIT License (the "License");
   see accompanying file LICENSE for details.
@@ -64,6 +64,8 @@ import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -133,7 +135,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                     + "type \"%s\" to image attribute \"%s\" of type \"%s\".",
                     attr.typeName(), n, oldValue.typeName()));
         }
-        // TODO Copy the attribute
+        // TODO Deep-copy the attribute value
         map.put(n, attr);
     }
     
@@ -172,12 +174,34 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         if (value == null) {
             throw new IllegalStateException("null attribute value!");
         }
-        if (cls.isInstance(value)) {
-            return (TypedAttribute<T>) typedAttr;
+        
+        // Get the class of "T" at runtime through reflection. See:
+        // http://blog.xebia.com/2009/02/07/acessing-generic-types-at-runtime-in-java/
+        Class<?> clazz = cls;
+        while (clazz.getSuperclass() != null &&
+              !clazz.getSuperclass().equals(TypedAttribute.class)) {
+            clazz = clazz.getSuperclass();
         }
-        else {
+        if (clazz.getSuperclass() == null) {
+            throw new IllegalStateException("Not instance of TypedAttribute");
+        }
+        ParameterizedType type=(ParameterizedType) clazz.getGenericSuperclass();
+        final Type argType = type.getActualTypeArguments()[0];
+        final Class<?> argClass;
+        if (argType instanceof Class) {
+            argClass = (Class<?>) argType;
+        } else if (argType instanceof ParameterizedType) {
+            argClass = (Class<?>) ((ParameterizedType) argType).getRawType();
+        } else {
+            throw new IllegalStateException("Invalid type: " + argType);
+        }
+        
+        if (argClass.isInstance(value)) {
+            return (TypedAttribute<T>) typedAttr;
+        } else {
             throw new EXRTypeException("The attribute does not match the " +
-                    "requested type.");
+                    "requested type: expected: " + argClass.getCanonicalName() +
+                    ", actual: " + value.getClass().getCanonicalName());
         }
     }
     
