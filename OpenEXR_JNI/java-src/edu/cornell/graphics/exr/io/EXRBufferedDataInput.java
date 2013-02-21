@@ -22,8 +22,9 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 /**
- *
- * @author edgar
+ * Buffered data input whose main use is to read data from OpenEXR files,
+ * always in little-endian format, for further processing and decoding.
+ * This is a low-level IO class which the final users should not need to use.
  */
 public class EXRBufferedDataInput implements DataInput {
     
@@ -163,7 +164,20 @@ public class EXRBufferedDataInput implements DataInput {
 
     @Override
     public int skipBytes(int n) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (n <= 0) {
+            return 0;
+        }
+        // Discard buffer data
+        int totalCount = Math.min(n, available());
+        bufPos += totalCount;
+        assert bufPos <= bufLen;
+        if (totalCount == n) {
+            return totalCount;
+        }
+        // Relly on the underlying stream
+        assert n > totalCount;
+        totalCount += (int) input.skip(n - totalCount);
+        return totalCount;
     }
 
     @Override
@@ -260,11 +274,12 @@ public class EXRBufferedDataInput implements DataInput {
         throw new UnsupportedOperationException("Not supported.");
     }
     
-    public java.lang.String readNullTerminatedUTF8(int maxLength) throws IOException {
+    public String readNullTerminatedUTF8(int maxLength) throws IOException {
         return readNullTerminatedUTF8(maxLength, null);
     }
 
-    public String readNullTerminatedUTF8(int maxLength, BytesReadTO bytesRead) throws IOException {
+    public String readNullTerminatedUTF8(int maxLength, BytesReadTO bytesRead)
+            throws IOException {
         if (maxLength < 1) {
             throw new IllegalArgumentException("Invalid lenght: " + maxLength);
         }
