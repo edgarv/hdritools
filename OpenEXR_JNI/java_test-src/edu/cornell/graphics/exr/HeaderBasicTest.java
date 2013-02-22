@@ -7,8 +7,10 @@ package edu.cornell.graphics.exr;
 import edu.cornell.graphics.exr.attributes.Attribute;
 import edu.cornell.graphics.exr.attributes.ChannelListAttribute;
 import edu.cornell.graphics.exr.attributes.CompressionAttribute;
+import edu.cornell.graphics.exr.attributes.M33fAttribute;
 import edu.cornell.graphics.exr.attributes.TypedAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
+import edu.cornell.graphics.exr.ilmbaseto.Matrix33;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import edu.cornell.graphics.exr.io.InputFileInfo;
@@ -88,6 +90,30 @@ public class HeaderBasicTest {
         assertFalse(expected.retainAll(actual));
         assertFalse(actual.retainAll(expected));
     }
+    
+    private void testInsertBadType(Header header, String name, Attribute attr) {
+        try {
+            header.insert(name, attr);
+            fail("insert had to fail");
+        } catch(RuntimeException ex) {
+            if (!(ex instanceof EXRTypeException)) {
+                fail("Unexpected exception: " + ex.getMessage());
+                throw ex;
+            }
+        }
+    }
+    
+    private void testInsertBadArg(Header header, String name, Attribute attr) {
+        try {
+            header.insert(name, attr);
+            fail("insert had to fail");
+        } catch(RuntimeException ex) {
+            if (!(ex instanceof IllegalArgumentException)) {
+                fail("Unexpected exception: " + ex.getMessage());
+                throw ex;
+            }
+        }
+    }
 
     /**
      * Test of insert method, of class Header.
@@ -95,8 +121,60 @@ public class HeaderBasicTest {
     @Test
     public void testInsert() {
         System.out.println("insert");
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+
+        // Header with default attributes
+        Header header = new Header();
+        M33fAttribute m33Attrib = new M33fAttribute();
+        
+        // Name nor attribute may be null
+        testInsertBadArg(header, null, null);
+        testInsertBadArg(header, "", null);
+        testInsertBadArg(header, "", m33Attrib);
+        testInsertBadArg(header, "matrix", null);
+        testInsertBadArg(header, "matrix", m33Attrib);
+        
+        m33Attrib.setValue(new Matrix33<Float>(1.0f));
+        
+        // Cannot insert an attribute with an exising name and different type
+        testInsertBadType(header, "displayWindow",      m33Attrib);
+        testInsertBadType(header, "dataWindow",         m33Attrib);
+        testInsertBadType(header, "pixelAspectRatio",   m33Attrib);
+        testInsertBadType(header, "screenWindowCenter", m33Attrib);
+        testInsertBadType(header, "screenWindowWidth",  m33Attrib);
+        testInsertBadType(header, "lineOrder",          m33Attrib);
+        testInsertBadType(header, "compression",        m33Attrib);
+        testInsertBadType(header, "channels",           m33Attrib);
+        
+        // Fresh, non null attribute has to succeed
+        assertNull(header.findTypedAttribute("matrix", M33fAttribute.class));
+        header.insert("matrix", m33Attrib);
+        assertNotNull(header.findTypedAttribute("matrix", M33fAttribute.class));
+        
+        Matrix33<Float> m1 = m33Attrib.getValue();
+        Matrix33<Float> m2 = new Matrix33<Float>(2.0f);
+
+        // The attribute is fully copied
+        assertEquals(m33Attrib, header.getTypedAttribute("matrix",
+                M33fAttribute.class));
+        assertNotSame(m33Attrib, header.getTypedAttribute("matrix",
+                M33fAttribute.class));
+        assertNotSame(m1, header.getTypedAttribute("matrix",
+                M33fAttribute.class).getValue());
+        assertEquals(m1, header.getTypedAttribute("matrix",
+                M33fAttribute.class).getValue());
+        
+        m33Attrib.setValue(m2);
+        assertEquals(m1, header.getTypedAttribute("matrix",
+                M33fAttribute.class).getValue());
+        
+        // The value is fully copied
+        m1.m00 *= -2.0f;
+        assertFalse(m1.equals(header.getTypedAttribute("matrix",
+                M33fAttribute.class).getValue()));
+        header.getTypedAttribute("matrix", M33fAttribute.class).getValue()
+                .m00 *= -2.0f;
+        assertEquals(m1, header.getTypedAttribute("matrix",
+                M33fAttribute.class).getValue());
     }
 
     /**
