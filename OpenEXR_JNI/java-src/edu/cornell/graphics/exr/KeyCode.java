@@ -26,6 +26,16 @@ public class KeyCode {
     public int perfsPerCount;
     
     public KeyCode() {}
+    
+    public KeyCode(KeyCode other) {
+        this.filmMfcCode   = other.filmMfcCode;
+        this.filmType      = other.filmType;
+        this.prefix        = other.prefix;
+        this.count         = other.count;
+        this.perfOffset    = other.perfOffset;
+        this.perfsPerFrame = other.perfsPerFrame;
+        this.perfsPerCount = other.perfsPerCount;
+    }
 
     public KeyCode(int filmMfcCode, int filmType, int prefix, int count,
             int perfOffset, int perfsPerFrame, int perfsPerCount) {

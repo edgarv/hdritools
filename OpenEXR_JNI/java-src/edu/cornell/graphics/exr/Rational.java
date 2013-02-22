@@ -33,6 +33,11 @@ public class Rational {
     public int d;
     
     public Rational() {}
+    
+    public Rational(Rational other) {
+        this.n = other.n;
+        this.d = other.d;
+    }
 
     public Rational(int n, int d) {
         this.n = n;

@@ -16,7 +16,7 @@
 package edu.cornell.graphics.exr;
 
 // TODO: Add documentation
-public class TileDescription {
+public class TileDescription implements Cloneable {
     
     public static enum LevelMode {
         ONE_LEVEL,
@@ -67,6 +67,15 @@ public class TileDescription {
         hash = 29 * hash + (this.roundingMode != null ?
                 this.roundingMode.hashCode() : 0);
         return hash;
+    }
+
+    @Override
+    public TileDescription clone() {
+        try {
+            return (TileDescription) super.clone();
+        } catch (CloneNotSupportedException ex) {
+            throw new IllegalStateException("Clone failed", ex);
+        }
     }
     
 }

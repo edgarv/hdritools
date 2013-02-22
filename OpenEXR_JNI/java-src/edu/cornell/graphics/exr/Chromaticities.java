@@ -23,6 +23,17 @@ public class Chromaticities {
     public float whiteX, whiteY;
     
     public Chromaticities() {}
+    
+    public Chromaticities(Chromaticities other) {
+        this.redX   = other.redX;
+        this.redY   = other.redY;
+        this.greenX = other.greenX;
+        this.greenY = other.greenY;
+        this.blueX  = other.blueX;
+        this.blueY  = other.blueY;
+        this.whiteX = other.whiteX;
+        this.whiteY = other.whiteY;
+    }
 
     public Chromaticities(float redX, float redY, float greenX, float greenY,
             float blueX, float blueY, float whiteX, float whiteY) {

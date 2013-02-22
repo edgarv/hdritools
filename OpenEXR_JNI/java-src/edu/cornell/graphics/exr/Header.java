@@ -135,8 +135,8 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                     + "type \"%s\" to image attribute \"%s\" of type \"%s\".",
                     attr.typeName(), n, oldValue.typeName()));
         }
-        // TODO Deep-copy the attribute value
-        map.put(n, attr);
+        Attribute myAttr = attr.clone();
+        map.put(n, myAttr);
     }
     
     private static Class<?> getParamClass(Class<? extends TypedAttribute<?>> c){

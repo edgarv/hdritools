@@ -264,7 +264,7 @@ package edu.cornell.graphics.exr;
  * </tr>
  * </table>
  */
-public class TimeCode {
+public class TimeCode implements Cloneable {
     
     /** Bit packing variants */
     public static enum Packing {
@@ -280,6 +280,11 @@ public class TimeCode {
     public int userData;
     
     public TimeCode() {}
+    
+    public TimeCode(TimeCode other) {
+        this.timeAndFlags = other.timeAndFlags;
+        this.userData = other.userData;
+    }
 
     public TimeCode(int timeAndFlags, int userData) {
         this.timeAndFlags = timeAndFlags;
@@ -532,6 +537,15 @@ public class TimeCode {
     public String toString() {
         return String.format("%02d:%02d:%02d:%02d %#x",
             getHours(), getMinutes(), getSeconds(), getFrame(), getUserData());
+    }
+
+    @Override
+    public TimeCode clone() {
+        try {
+            return (TimeCode) super.clone();
+        } catch (CloneNotSupportedException ex) {
+            throw new IllegalStateException("Clone failed", ex);
+        }
     }
     
 }
