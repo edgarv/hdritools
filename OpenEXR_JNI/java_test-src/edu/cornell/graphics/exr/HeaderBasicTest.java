@@ -5,6 +5,9 @@
 package edu.cornell.graphics.exr;
 
 import edu.cornell.graphics.exr.attributes.Attribute;
+import edu.cornell.graphics.exr.attributes.ChannelListAttribute;
+import edu.cornell.graphics.exr.attributes.CompressionAttribute;
+import edu.cornell.graphics.exr.attributes.TypedAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
@@ -99,11 +102,24 @@ public class HeaderBasicTest {
     /**
      * Test of getTypedAttribute method, of class Header.
      */
-    @Test
-    public void testGetTypedAttribute() {
-        System.out.println("getTypedAttribute");
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    @Test(expected=IllegalArgumentException.class)
+    public void testGetTypedAttribute1() {
+        System.out.println("getTypedAttribute1");
+        instance.getTypedAttribute("channelsX", ChannelListAttribute.class);
+    }
+    
+    @Test(expected=EXRTypeException.class)
+    public void testGetTypedAttribute2() {
+        System.out.println("getTypedAttribute2");
+        instance.getTypedAttribute("channels", CompressionAttribute.class);
+    }
+    
+    public void testGetTypedAttribute3() {
+        System.out.println("getTypedAttribute3");
+        TypedAttribute<Compression> result = instance.getTypedAttribute(
+                "compression", CompressionAttribute.class);
+        assertNotNull(result);
+        assertEquals(Compression.PIZ, result.getValue());
     }
 
     /**
@@ -111,8 +127,18 @@ public class HeaderBasicTest {
      */
     @Test
     public void testFindTypedAttribute() {
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        System.out.println("findTypedAttribute");
+        TypedAttribute<?> result;
+        result = instance.findTypedAttribute("channelsX",
+                ChannelListAttribute.class);
+        assertNull(result);
+        result = instance.findTypedAttribute("channels",
+                CompressionAttribute.class);
+        assertNull(result);
+        result = instance.findTypedAttribute("compression",
+                CompressionAttribute.class);
+        assertNotNull(result);
+        assertEquals(Compression.PIZ, result.getValue());
     }
 
     /**
