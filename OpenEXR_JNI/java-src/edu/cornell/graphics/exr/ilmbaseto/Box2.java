@@ -28,6 +28,13 @@ public class Box2<T extends Number> {
     
     public Box2() {}
     
+    public Box2(Box2<T> other) {
+        this.xMin = other.xMin;
+        this.yMin = other.yMin;
+        this.xMax = other.xMax;
+        this.yMax = other.yMax;
+    }
+    
     public Box2(T xMin, T yMin, T xMax, T yMax) {
         this.xMin = xMin;
         this.yMin = yMin;

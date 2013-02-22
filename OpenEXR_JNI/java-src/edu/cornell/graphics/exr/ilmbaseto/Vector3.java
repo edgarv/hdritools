@@ -26,6 +26,12 @@ public class Vector3<T extends Number> {
     
     public Vector3() {}
     
+    public Vector3(Vector3<T> other) {
+        this.x = other.x;
+        this.y = other.y;
+        this.z = other.z;
+    }
+    
     public Vector3(T x, T y, T z) {
         this.x = x;
         this.y = y;

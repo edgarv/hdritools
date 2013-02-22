@@ -38,6 +38,20 @@ public class Matrix33<T extends Number> {
         m20 = m21 = m22 = a;
     }
     
+    public Matrix33(Matrix33<T> other) {
+        this.m00 = other.m00;
+        this.m01 = other.m01;
+        this.m02 = other.m02;
+        
+        this.m10 = other.m10;
+        this.m11 = other.m11;
+        this.m12 = other.m12;
+        
+        this.m20 = other.m20;
+        this.m21 = other.m21;
+        this.m22 = other.m22;
+    }
+    
     public Matrix33(T m00, T m01, T m02,
         T m10, T m11, T m12,
         T m20, T m21, T m22) {
