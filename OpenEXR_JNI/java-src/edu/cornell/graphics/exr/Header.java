@@ -139,6 +139,30 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         map.put(n, attr);
     }
     
+    private static Class<?> getParamClass(Class<? extends TypedAttribute<?>> c){
+        // Get the parameter class at runtime through reflection. See:
+        // http://blog.xebia.com/2009/02/07/acessing-generic-types-at-runtime-in-java/
+        Class<?> clazz = c;
+        while (clazz.getSuperclass() != null &&
+              !clazz.getSuperclass().equals(TypedAttribute.class)) {
+            clazz = clazz.getSuperclass();
+        }
+        if (clazz.getSuperclass() == null) {
+            throw new IllegalStateException("Not instance of TypedAttribute");
+        }
+        ParameterizedType type=(ParameterizedType) clazz.getGenericSuperclass();
+        final Type argType = type.getActualTypeArguments()[0];
+        final Class<?> argClass;
+        if (argType instanceof Class) {
+            argClass = (Class<?>) argType;
+        } else if (argType instanceof ParameterizedType) {
+            argClass = (Class<?>) ((ParameterizedType) argType).getRawType();
+        } else {
+            throw new IllegalStateException("Invalid type: " + argType);
+        }
+        return argClass;
+    }
+    
     /**
      * Returns a reference to the typed attribute with name {@code n} and value
      * type {@code T}. If no attribute with name {@code n} exists, an
@@ -175,27 +199,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
             throw new IllegalStateException("null attribute value!");
         }
         
-        // Get the class of "T" at runtime through reflection. See:
-        // http://blog.xebia.com/2009/02/07/acessing-generic-types-at-runtime-in-java/
-        Class<?> clazz = cls;
-        while (clazz.getSuperclass() != null &&
-              !clazz.getSuperclass().equals(TypedAttribute.class)) {
-            clazz = clazz.getSuperclass();
-        }
-        if (clazz.getSuperclass() == null) {
-            throw new IllegalStateException("Not instance of TypedAttribute");
-        }
-        ParameterizedType type=(ParameterizedType) clazz.getGenericSuperclass();
-        final Type argType = type.getActualTypeArguments()[0];
-        final Class<?> argClass;
-        if (argType instanceof Class) {
-            argClass = (Class<?>) argType;
-        } else if (argType instanceof ParameterizedType) {
-            argClass = (Class<?>) ((ParameterizedType) argType).getRawType();
-        } else {
-            throw new IllegalStateException("Invalid type: " + argType);
-        }
-        
+        final Class<?> argClass = getParamClass(cls);
         if (argClass.isInstance(value)) {
             return (TypedAttribute<T>) typedAttr;
         } else {
@@ -228,7 +232,12 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         
         TypedAttribute<?> typedAttr = (TypedAttribute<?>) attr;
         Object value = typedAttr.getValue();
-        return (TypedAttribute<T>) (cls.isInstance(value) ? typedAttr : null);
+        if (value == null) {
+            throw new IllegalStateException("null attribute value!");
+        }
+        
+        final Class<?> aClass = getParamClass(cls);
+        return (TypedAttribute<T>)(aClass.isInstance(value) ? typedAttr : null);
     }
 
     //--------------------------------
@@ -261,8 +270,6 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     public ChannelList getChannels() {
-        System.err.println("ChannelAttrib: " + getTypedAttribute("channels",
-                ChannelListAttribute.class));
         return getTypedAttribute("channels",
                 ChannelListAttribute.class).getValue();
     }
@@ -548,5 +555,5 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
             }
         }
     }
-    
+
 }
