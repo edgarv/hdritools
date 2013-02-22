@@ -29,6 +29,8 @@
 #include "dSFMT/RandomMT.h"
 #include "tableau_f32.h"
 
+#include <cmath>
+
 
 class Reinhard02ParamsTest : public ::testing::Test
 {
@@ -308,8 +310,14 @@ TEST_F(Reinhard02ParamsTest, TwoValid)
             ASSERT_LT (p.key, 1.0f);
         } else {
             ASSERT_FLOAT_EQ (0.18f, p.key);
-            ASSERT_FLOAT_EQ (val, p.l_w);
-            ASSERT_FLOAT_EQ (1.5f * val, p.l_white);
+
+            double wRelError = fabs((static_cast<double>(val)-p.l_w)/val);
+            ASSERT_LT (wRelError, 1.5e-4)
+                << "Expected: " << val << "\n  Actual: " << p.l_w;
+
+            double whiteRelError = fabs((1.5*val - p.l_white)/(1.5*val));
+            ASSERT_LT (whiteRelError, 1.5e-4)
+                << "Expected: " << 1.5*val << "\n  Actual: " << p.l_white;
         }
 
         checkSoA(img, p);
