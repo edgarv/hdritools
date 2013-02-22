@@ -127,8 +127,12 @@ int main (int argc, char **argv) {
 " HAVE_COMPLETE_IOMANIP)
 
 # Check if the stack is large enough (ie more than 256 KiB)
-include(CheckCSourceRuns)
-CHECK_C_SOURCE_RUNS("
+# On Windows this only works if the executables request a large stack, as is
+# the case with CMake default options for executables. However this is likely
+# to cause problems with other programs (Java, Matlab) when using PIZ
+if (NOT WIN32)
+  include(CheckCSourceRuns)
+  CHECK_C_SOURCE_RUNS("
 #include <stddef.h>
 #include <string.h>
 int main (int argc, char **argv)
@@ -138,6 +142,7 @@ int main (int argc, char **argv)
     return 0;
 }
 " HAVE_LARGE_STACK)
+endif()
 
 # Create the configuration headers
 configure_file(
