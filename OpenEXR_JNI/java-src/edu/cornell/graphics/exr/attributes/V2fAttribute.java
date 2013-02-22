@@ -43,4 +43,10 @@ public class V2fAttribute extends TypedAttribute<Vector2<Float>> {
         v.y = input.readFloat();
         setValue(v);
     }
+
+    @Override
+    protected Vector2<Float> cloneValue() {
+        return new Vector2<Float>(value);
+    }
+    
 }

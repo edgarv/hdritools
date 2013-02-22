@@ -38,4 +38,10 @@ public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
         v.z = input.readInt();
         setValue(v);
     }
+    
+    @Override
+    protected Vector3<Integer> cloneValue() {
+        return new Vector3<Integer>(value);
+    }
+    
 }

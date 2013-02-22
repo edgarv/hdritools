@@ -34,4 +34,10 @@ public class DoubleAttribute extends TypedAttribute<Double> {
         double v = input.readDouble();
         setValue(v);
     }
+
+    @Override
+    protected Double cloneValue() {
+        return new Double(value);
+    }
+    
 }

@@ -52,4 +52,10 @@ public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
         
         setValue(t);
     }
+
+    @Override
+    protected TileDescription cloneValue() {
+        return value.clone();
+    }
+    
 }

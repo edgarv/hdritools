@@ -56,4 +56,10 @@ public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
 
         setValue(m);
     }
+
+    @Override
+    protected Matrix44<Double> cloneValue() {
+        return new Matrix44<Double>(value);
+    }
+    
 }

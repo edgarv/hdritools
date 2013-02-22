@@ -37,4 +37,10 @@ public class V2dAttribute extends TypedAttribute<Vector2<Double>> {
         v.y = input.readDouble();
         setValue(v);
     }
+
+    @Override
+    protected Vector2<Double> cloneValue() {
+        return new Vector2<Double>(value);
+    }
+    
 }

@@ -40,4 +40,10 @@ public class FloatAttribute extends TypedAttribute<Float> {
         float f = input.readFloat();
         setValue(f);
     }
+
+    @Override
+    protected Float cloneValue() {
+        return new Float(value);
+    }
+    
 }

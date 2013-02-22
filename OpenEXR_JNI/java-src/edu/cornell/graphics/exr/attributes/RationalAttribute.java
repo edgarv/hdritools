@@ -37,4 +37,10 @@ public class RationalAttribute extends TypedAttribute<Rational> {
         r.d = input.readInt();
         setValue(r);
     }
+
+    @Override
+    protected Rational cloneValue() {
+        return new Rational(value);
+    }
+    
 }

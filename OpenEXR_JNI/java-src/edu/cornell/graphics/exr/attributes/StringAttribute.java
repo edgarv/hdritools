@@ -33,4 +33,10 @@ public class StringAttribute extends TypedAttribute<String> {
         String s = input.readUTF8(size);
         setValue(s);
     }
+
+    @Override
+    protected String cloneValue() {
+        // Strings are immutable
+        return value;
+    }
 }

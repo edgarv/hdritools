@@ -64,4 +64,54 @@ public abstract class TypedAttribute<T> implements Attribute {
     public String toString() {
         return typeName() + '{' + value + '}';
     }
+
+    @Override
+    public int hashCode() {
+        final String name = typeName();
+        int hash = 3;
+        hash = 83 * hash + (this.value != null ? this.value.hashCode() : 0);
+        hash = 83 * hash + (name != null ? name.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final TypedAttribute<T> other = (TypedAttribute<T>) obj;
+        if (this.value != other.value && 
+           (this.value == null || !this.value.equals(other.value))) {
+            return false;
+        }
+        final String name = typeName();
+        final String otherName = other.typeName();
+        if ((name == null) ? (otherName != null) : !name.equals(otherName)) {
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Clones the value, required by {@link #clone() }. Most of the times
+     * instances should create a deep copy of their value.
+     * 
+     * @return a clone of the value.
+     */
+    protected abstract T cloneValue();
+
+    @Override
+    public final TypedAttribute clone() {
+        try {
+            TypedAttribute<T> attr = (TypedAttribute<T>) super.clone();
+            attr.value = this.cloneValue();
+            return attr;
+        } catch (CloneNotSupportedException ex) {
+            throw new IllegalStateException("Clone failed", ex);
+        }
+    }
+    
 }

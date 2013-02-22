@@ -43,4 +43,10 @@ public class ChromaticitiesAttribute extends TypedAttribute<Chromaticities> {
         c.whiteY = input.readFloat();
         setValue(c);
     }
+
+    @Override
+    protected Chromaticities cloneValue() {
+        return new Chromaticities(value);
+    }
+    
 }

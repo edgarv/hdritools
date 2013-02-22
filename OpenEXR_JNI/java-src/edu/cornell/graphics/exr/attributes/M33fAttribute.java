@@ -48,4 +48,10 @@ public class M33fAttribute extends TypedAttribute<Matrix33<Float>> {
 
         setValue(m);
     }
+
+    @Override
+    protected Matrix33<Float> cloneValue() {
+        return new Matrix33<Float>(value);
+    }
+    
 }

@@ -42,4 +42,10 @@ public class LineOrderAttribute extends TypedAttribute<LineOrder> {
         LineOrder lo = checkedValueOf(ordinal, LineOrder.values());
         setValue(lo);
     }
+
+    @Override
+    protected LineOrder cloneValue() {
+        return value;
+    }
+    
 }

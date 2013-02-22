@@ -34,4 +34,10 @@ public class IntegerAttribute extends TypedAttribute<Integer> {
         int i = input.readInt();
         setValue(i);
     }
+
+    @Override
+    protected Integer cloneValue() {
+        return new Integer(value);
+    }
+    
 }

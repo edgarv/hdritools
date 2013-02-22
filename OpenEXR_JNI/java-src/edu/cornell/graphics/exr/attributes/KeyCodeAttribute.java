@@ -42,4 +42,10 @@ public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
         k.perfsPerCount = input.readInt();
         setValue(k);
     }
+
+    @Override
+    protected KeyCode cloneValue() {
+        return new KeyCode(value);
+    }
+    
 }

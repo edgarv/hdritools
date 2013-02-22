@@ -45,4 +45,10 @@ public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
         box.yMax = input.readInt();
         setValue(box);
     }
+
+    @Override
+    protected Box2<Integer> cloneValue() {
+        return new Box2<Integer>(value);
+    }
+    
 }

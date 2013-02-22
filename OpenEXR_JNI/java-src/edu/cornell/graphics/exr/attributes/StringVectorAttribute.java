@@ -43,4 +43,10 @@ public class StringVectorAttribute extends TypedAttribute<List<String>> {
         checkSize(read, size);
         setValue(lst);
     }
+
+    @Override
+    protected List<String> cloneValue() {
+        return new ArrayList<String>(value);
+    }
+    
 }

@@ -48,4 +48,10 @@ public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
         
         setValue(p);
     }
+
+    @Override
+    protected PreviewImage cloneValue() {
+        return value.clone();
+    }
+    
 }

@@ -36,4 +36,10 @@ public class EnvMapAttribute extends TypedAttribute<EnvMap> {
         EnvMap v = checkedValueOf(ordinal, EnvMap.values());
         setValue(v);
     }
+
+    @Override
+    protected EnvMap cloneValue() {
+        return value;
+    }
+    
 }

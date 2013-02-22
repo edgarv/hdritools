@@ -38,4 +38,10 @@ public class V3dAttribute extends TypedAttribute<Vector3<Double>> {
         v.z = input.readDouble();
         setValue(v);
     }
+
+    @Override
+    protected Vector3<Double> cloneValue() {
+        return new Vector3<Double>(value);
+    }
+    
 }

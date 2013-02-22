@@ -39,4 +39,10 @@ public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
         box.yMax = input.readFloat();
         setValue(box);
     }
+
+    @Override
+    protected Box2<Float> cloneValue() {
+        return new Box2<Float>(value);
+    }
+    
 }

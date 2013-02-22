@@ -38,4 +38,10 @@ public class V3fAttribute extends TypedAttribute<Vector3<Float>> {
         v.z = input.readFloat();
         setValue(v);
     }
+    
+    @Override
+    protected Vector3<Float> cloneValue() {
+        return new Vector3<Float>(value);
+    }
+    
 }

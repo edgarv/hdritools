@@ -37,4 +37,10 @@ public class V2iAttribute extends TypedAttribute<Vector2<Integer>> {
         v.y = input.readInt();
         setValue(v);
     }
+
+    @Override
+    protected Vector2<Integer> cloneValue() {
+        return new Vector2<Integer>(value);
+    }
+    
 }

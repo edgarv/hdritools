@@ -37,4 +37,10 @@ public class TimeCodeAttribute extends TypedAttribute<TimeCode> {
         r.userData     = input.readInt();
         setValue(r);
     }
+
+    @Override
+    protected TimeCode cloneValue() {
+        return value.clone();
+    }
+    
 }

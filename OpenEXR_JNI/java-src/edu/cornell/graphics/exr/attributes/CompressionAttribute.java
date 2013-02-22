@@ -42,4 +42,10 @@ public class CompressionAttribute extends TypedAttribute<Compression> {
         Compression c = checkedValueOf(ordinal, Compression.values());
         setValue(c);
     }
+
+    @Override
+    protected Compression cloneValue() {
+        return value;
+    }
+    
 }

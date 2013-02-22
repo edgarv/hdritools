@@ -20,7 +20,7 @@ import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import java.io.IOException;
 
 // TODO: Add documentation
-public interface Attribute {
+public interface Attribute extends Cloneable {
     
     /** Interface for objects which are registered with the attribute system */
     public static interface AttributeCreator {
@@ -61,4 +61,11 @@ public interface Attribute {
      */
     void readValueFrom(EXRBufferedDataInput input, int size, int version)
             throws EXRIOException, IOException;
+
+    /**
+     * Creates a deep-copy of this attribute.
+     * @return a deep-copy of this attribute.
+     */
+    Attribute clone();
+    
 }

@@ -90,4 +90,20 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         }
         checkSize(++readCount, size);
     }
+
+    @Override
+    protected ChannelList cloneValue() {
+        ChannelList chlist = new ChannelList();
+        for (ChannelList.ChannelListElement e : value) {
+            final Channel orig = e.getChannel();
+            Channel channel   = new Channel();
+            channel.pLinear   = orig.pLinear;
+            channel.type      = orig.type;
+            channel.xSampling = orig.xSampling;
+            channel.ySampling = orig.ySampling;
+            chlist.insert(e.getName(), channel);
+        }
+        return chlist;
+    }
+    
 }
