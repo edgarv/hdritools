@@ -59,4 +59,9 @@ public abstract class TypedAttribute<T> implements Attribute {
         }
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return typeName() + '{' + value + '}';
+    }
 }
