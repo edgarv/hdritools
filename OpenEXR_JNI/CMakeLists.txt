@@ -36,7 +36,7 @@ if(WIN32)
   endif()
   set(RC_FILEVERSION ${OPENEXRJNI_VERSION})
   string(REPLACE "." "," RC_FILEVERSION_COMMA "${OPENEXRJNI_VERSION}.0")
-  configure_file("openexrjni.rc.in" "openexrjni.rc")
+  configure_file("openexrjni.rc.in" "${CMAKE_CURRENT_BINARY_DIR}/openexrjni.rc")
 
   list(APPEND SRCS 
     UnicodeStream.h UnicodeStream.cpp
@@ -127,37 +127,48 @@ set(JNI_HEADERS
 )
   
 # Of course this module needs Java and JNI
-find_package(Java REQUIRED)
+find_package(Java 1.6 REQUIRED)
 find_package(JNI REQUIRED)
-
-# Workaround for Cmake 2.6.0, as it doesn't set JNI_INCLUDE_DIRS
-if(NOT JNI_INCLUDE_DIRS)
-  set(JNI_INCLUDE_DIRS 
-      ${JAVA_INCLUDE_PATH} 
-      ${JAVA_INCLUDE_PATH2} 
-      ${JAVA_AWT_INCLUDE_PATH}
-  )
-endif()
 
 # Another workaround: as of Cmake 2.6.3 FindJNI ignores the "REQUIRED" flag
 if(NOT JNI_INCLUDE_DIRS)
   message(FATAL_ERROR "Could NOT find JNI (missing header files)")
 endif()
 
-get_filename_component(JAVA_BIN_PATH "${JAVA_COMPILE}" PATH)
-find_program(JAVA_JAVAH javah PATHS ${JAVA_BIN_PATH})
-mark_as_advanced(JAVA_BIN_PATH JAVA_JAVAH)
-if(NOT JAVA_COMPILE OR NOT JAVA_ARCHIVE OR NOT JAVA_JAVAH)
-  message(FATAL_ERROR "Not all the Java components (javac,jar,javah) were found.")
+# JAVA_RUNTIME, JAVA_COMPILE, JAVA_ARCHIVE were deprecated in CMake 2.8.1
+if(JAVA_RUNTIME AND NOT Java_JAVA_EXECUTABLE)
+  set(Java_JAVA_EXECUTABLE "${JAVA_RUNTIME}")
+endif()
+if(JAVA_COMPILE AND NOT Java_JAVAC_EXECUTABLE)
+  set(Java_JAVAC_EXECUTABLE "${JAVA_COMPILE}")
+endif()
+if(JAVA_ARCHIVE AND NOT Java_JAR_EXECUTABLE)
+  set(Java_JAR_EXECUTABLE "${JAVA_ARCHIVE}")
+endif()
+
+# Java_JAVAH_EXECUTABLE, Java_JAVADOC_EXECUTABLE were added in CMake 2.8.6
+if(CMAKE_VERSION VERSION_LESS "2.8.6")
+  get_filename_component(_JAVA_BIN_PATH "${Java_JAVAC_EXECUTABLE}" PATH)
+  find_program(Java_JAVAH_EXECUTABLE   javah
+    HINTS "${_JAVA_BIN_PATH}" NO_DEFAULT_PATH)
+  find_program(Java_JAVADOC_EXECUTABLE javadoc 
+    HINTS "${_JAVA_BIN_PATH}" NO_DEFAULT_PATH)
+  mark_as_advanced(Java_JAVAH_EXECUTABLE Java_JAVADOC_EXECUTABLE)
+endif()
+
+if(NOT Java_JAVAC_EXECUTABLE OR NOT Java_JAR_EXECUTABLE OR
+   NOT Java_JAVAH_EXECUTABLE OR NOT Java_JAVADOC_EXECUTABLE)
+  message(FATAL_ERROR "Not all of the Java components were found.")
 endif()
 
 
 # Commands to builds the jar file
 add_custom_command(OUTPUT "${OPENEXRJNI_JAR}"
-  COMMAND "${JAVA_COMPILE}" -source 1.6 -Xlint:unchecked
+  COMMAND "${Java_JAVAC_EXECUTABLE}" -source 1.6 -Xlint:unchecked
     -d "${CMAKE_CURRENT_BINARY_DIR}"
     ${JAVA_SRCS}
-  COMMAND "${JAVA_ARCHIVE}" cf "${OPENEXRJNI_JAR}" -C "${CMAKE_CURRENT_BINARY_DIR}" edu
+  COMMAND "${Java_JAR_EXECUTABLE}"
+    cf "${OPENEXRJNI_JAR}" -C "${CMAKE_CURRENT_BINARY_DIR}" edu
   DEPENDS ${JAVA_SRCS}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Compiling OpenEXR-JNI java files and builing jar..."
@@ -188,7 +199,7 @@ set_target_properties(openexrjni_javadoc_jar PROPERTIES FOLDER "Java-JNI")
  
 # Build the jni headers using the jar
 add_custom_command(OUTPUT ${JNI_HEADERS}
-  COMMAND ${JAVA_JAVAH} -classpath "${OPENEXRJNI_JAR}"
+  COMMAND "${Java_JAVAH_EXECUTABLE}" -classpath "${OPENEXRJNI_JAR}"
     edu.cornell.graphics.exr.EXRSimpleImage
   DEPENDS openexrjni_jar
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -277,10 +288,11 @@ if (NOT EXISTS ${TEST_OUT_DIR})
   file(MAKE_DIRECTORY ${TEST_OUT_DIR})
 endif()
 add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
-  COMMAND ${JAVA_COMPILE} -source 1.6 -Xlint:unchecked
+  COMMAND "${Java_JAVAC_EXECUTABLE}" -source 1.6 -Xlint:unchecked
     -d ${TEST_OUT_DIR} -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
     ${JAVA_TEST_SRCS}
-  COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu
+  COMMAND "${Java_JAR_EXECUTABLE}"
+    cf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu
   DEPENDS ${JAVA_TEST_SRCS} ${OPENEXRJNI_JAR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Compiling OpenEXR-JNI JUnit4 test java files and builing jar..."
