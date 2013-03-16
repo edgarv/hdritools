@@ -144,9 +144,9 @@ if(NOT JNI_INCLUDE_DIRS)
   message(FATAL_ERROR "Could NOT find JNI (missing header files)")
 endif()
 
-get_filename_component (JAVA_BIN_PATH "${JAVA_COMPILE}" PATH)
-find_program( JAVA_JAVAH javah PATHS ${JAVA_BIN_PATH} )
-mark_as_advanced( JAVA_BIN_PATH JAVA_JAVAH )
+get_filename_component(JAVA_BIN_PATH "${JAVA_COMPILE}" PATH)
+find_program(JAVA_JAVAH javah PATHS ${JAVA_BIN_PATH})
+mark_as_advanced(JAVA_BIN_PATH JAVA_JAVAH)
 if(NOT JAVA_COMPILE OR NOT JAVA_ARCHIVE OR NOT JAVA_JAVAH)
   message(FATAL_ERROR "Not all the Java components (javac,jar,javah) were found.")
 endif()
@@ -259,6 +259,9 @@ endif()
 set(OPENEXRJNI_TEST_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni-test.jar)
 set(JAVA_TEST_SRCS
   java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
+  java_test-src/edu/cornell/graphics/exr/HalfTest.java
+  java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
+  java_test-src/edu/cornell/graphics/exr/io/InputFileInfoBasicTest.java
 )
 
 # Separator for the classpath
@@ -274,7 +277,7 @@ if (NOT EXISTS ${TEST_OUT_DIR})
   file(MAKE_DIRECTORY ${TEST_OUT_DIR})
 endif()
 add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
-  COMMAND ${JAVA_COMPILE} -source 1.5
+  COMMAND ${JAVA_COMPILE} -source 1.6 -Xlint:unchecked
     -d ${TEST_OUT_DIR} -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
     ${JAVA_TEST_SRCS}
   COMMAND ${JAVA_ARCHIVE} cf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu
