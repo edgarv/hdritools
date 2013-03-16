@@ -93,7 +93,7 @@ public:
     }
 
     virtual void seekg (Imath::Int64 pos) {
-        _is.seekg (pos);
+        _is.seekg (static_cast<std::istream::off_type>(pos));
         checkError (_is);
     }
 
@@ -136,7 +136,7 @@ public:
     }
 
     virtual void seekp (Imf::Int64 pos) {
-        _os->seekp (pos);
+        _os->seekp (static_cast<std::ofstream::off_type>(pos));
         checkError (*_os);
     }
 

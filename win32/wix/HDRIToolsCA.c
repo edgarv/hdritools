@@ -15,13 +15,16 @@ UINT __stdcall NotifyAssocChanged (MSIHANDLE handle)
 
 UINT __stdcall CheckHasAVX (MSIHANDLE handle)
 {
+#if (_MSC_FULL_VER < 160040219)
+    return ERROR_INSTALL_FAILURE;
+#else
     BOOL avxSupported, hasOSXSAVE, hasAVX;
     unsigned __int64 xcrFeatureMask;
     int cpuInfo[4];
 
     avxSupported = FALSE;
+    
     /* Visual Studio 2010 SP1 or later */
-#if (_MSC_FULL_VER >= 160040219)
     /* AVX requires XSAVE/XSTORE, AVX flag and support from the OS */
     __cpuid(cpuInfo, 1);
     hasOSXSAVE = (cpuInfo[2] & (1 << 27)) != 0;
@@ -31,6 +34,6 @@ UINT __stdcall CheckHasAVX (MSIHANDLE handle)
         xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
         avxSupported = (xcrFeatureMask & 0x6) == 0x6;
     }
-#endif
     return avxSupported ? ERROR_SUCCESS : ERROR_INSTALL_FAILURE;
+#endif
 }

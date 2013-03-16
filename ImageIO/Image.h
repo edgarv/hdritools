@@ -135,7 +135,7 @@ namespace pcg {
 		// 64-bytes as well.
 		inline void alloc() {
 			const size_t totalBytes = ((static_cast<size_t>(w)*h) + 63) & ~0x3F;
-			assert (totalBytes >= w*h);
+			assert (totalBytes >= (static_cast<size_t>(w)*h));
 			assert (totalBytes % 64 == 0);
 			this->d = alloc_align<T>(64, totalBytes);
             if (this->d == NULL) {
