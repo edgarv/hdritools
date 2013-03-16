@@ -1,6 +1,6 @@
 /*============================================================================
   HDRITools - High Dynamic Range Image Tools
-  Copyright 2008-2011 Program of Computer Graphics, Cornell University
+  Copyright 2008-2013 Program of Computer Graphics, Cornell University
 
   Distributed under the OSI-approved MIT License (the "License");
   see accompanying file LICENSE for details.
@@ -33,16 +33,6 @@ import java.util.Set;
  * <ul>
  * <li>Only channels with <code>(1,1)</code> sampling are supported.</li>
  * <li>It can only read images from files.</li>
- * <li>Reads only attributes of the types:
- *  <ul>
- *      <li>String</li>
- *      <li>String vector</li>
- *      <li>Integer</li>
- *      <li>Float</li>
- *      <li>Double</li>
- *      <li>{@linkplain Compression}</li>
- *  </ul>
- * </li>
  * <li>The class is not thread-safe</li>
  * <li>The EXR data window is ignored, the class only stores width and height.</li>
  * <li>The class does not support multiple images. All channels have the
@@ -78,9 +68,7 @@ public class BasicInputFile implements Closeable {
     }
     
     BasicInputFile(String filename) throws EXRIOException {
-        if (filename == null) {
-            throw new IllegalArgumentException("Null filename");
-        } else if (filename.isEmpty()) {
+        if (filename.isEmpty()) {
             throw new IllegalArgumentException("Empty filename");
         }
         
@@ -108,26 +96,12 @@ public class BasicInputFile implements Closeable {
             throw new IllegalStateException("Unexpected compression: " + obj);
         }
         final int c = (Integer)obj;
-        switch(c) {
-            case 0:
-                return Compression.NONE;
-            case 1:
-                return Compression.RLE;
-            case 2:
-                return Compression.ZIPS;
-            case 3:
-                return Compression.ZIP;
-            case 4:
-                return Compression.PIZ;
-            case 5:
-                return Compression.PXR24;
-            case 6:
-                return Compression.B44;
-            case 7:
-                return Compression.B44A;
-            default:
-                throw new IllegalStateException("Unknown compression: "+ c);
+        for (Compression compression : Compression.values()) {
+            if (compression.getFlag() == c) {
+                return compression;
+            }
         }
+        throw new IllegalStateException("Unknown compression: " + c);
     }
     
     
