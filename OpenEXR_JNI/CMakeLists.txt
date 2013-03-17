@@ -168,7 +168,7 @@ add_custom_command(OUTPUT "${OPENEXRJNI_JAR}"
     -d "${CMAKE_CURRENT_BINARY_DIR}"
     ${JAVA_SRCS}
   COMMAND "${Java_JAR_EXECUTABLE}"
-    cf "${OPENEXRJNI_JAR}" -C "${CMAKE_CURRENT_BINARY_DIR}" edu
+    cMf "${OPENEXRJNI_JAR}" -C "${CMAKE_CURRENT_BINARY_DIR}" edu
   DEPENDS ${JAVA_SRCS}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   COMMENT "Compiling OpenEXR-JNI java files and builing jar..."
@@ -188,7 +188,7 @@ add_custom_command(OUTPUT "${OPENEXRJNI_JAVADOC_JAR}"
     -doctitle "Java bindings for OpenEXR ${OPENEXRJNI_VERSION}"
     -overview "${JAVADOC_DIR}/overview.html"
     -link "http://docs.oracle.com/javase/6/docs/api/" ${JAVA_SRCS}
-  COMMAND "${Java_JAR_EXECUTABLE}" cf "${OPENEXRJNI_JAVADOC_JAR}"
+  COMMAND "${Java_JAR_EXECUTABLE}" cMf "${OPENEXRJNI_JAVADOC_JAR}"
     -C "${JAVADOC_DIR}" doc
   DEPENDS ${JAVA_SRCS}
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -269,6 +269,10 @@ endif()
 # Commands to builds the jar file with the tests
 set(OPENEXRJNI_TEST_JAR ${CMAKE_CURRENT_BINARY_DIR}/openexrjni-test.jar)
 set(JAVA_TEST_SRCS
+  java_test-src/jp/ac/hiroshima_u/sci/math/saito/tinymt/F2Polynomial.java
+  java_test-src/jp/ac/hiroshima_u/sci/math/saito/tinymt/TinyMT32.java
+  java_test-src/jp/ac/hiroshima_u/sci/math/saito/tinymt/TinyMT32Parameter.java
+  
   java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
   java_test-src/edu/cornell/graphics/exr/HalfTest.java
   java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
@@ -292,10 +296,10 @@ add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
     -d ${TEST_OUT_DIR} -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
     ${JAVA_TEST_SRCS}
   COMMAND "${Java_JAR_EXECUTABLE}"
-    cf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu
+    cMf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu -C ${TEST_OUT_DIR} jp
   DEPENDS ${JAVA_TEST_SRCS} ${OPENEXRJNI_JAR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "Compiling OpenEXR-JNI JUnit4 test java files and builing jar..."
+  COMMENT "Compiling OpenEXR-JNI JUnit4 test java files and building jar..."
 )
 # Adds a target so that dependencies are properly tracked
 add_custom_target(openexrjni_test_jar DEPENDS ${OPENEXRJNI_TEST_JAR})
