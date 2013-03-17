@@ -273,10 +273,16 @@ set(JAVA_TEST_SRCS
   java_test-src/jp/ac/hiroshima_u/sci/math/saito/tinymt/TinyMT32.java
   java_test-src/jp/ac/hiroshima_u/sci/math/saito/tinymt/TinyMT32Parameter.java
   
+  java_test-src/edu/cornell/graphics/exr/AllTests.java
   java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
   java_test-src/edu/cornell/graphics/exr/HalfTest.java
   java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
   java_test-src/edu/cornell/graphics/exr/io/InputFileInfoBasicTest.java
+)
+
+# Tests resources to be included in the jar, relative to "java_test-src"
+set(TEST_RESOURCES
+  edu/cornell/graphics/exr/resources/test-piz-rgb.exr
 )
 
 # Separator for the classpath
@@ -297,6 +303,7 @@ add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
     ${JAVA_TEST_SRCS}
   COMMAND "${Java_JAR_EXECUTABLE}"
     cMf ${OPENEXRJNI_TEST_JAR} -C ${TEST_OUT_DIR} edu -C ${TEST_OUT_DIR} jp
+    -C "java_test-src" ${TEST_RESOURCES}
   DEPENDS ${JAVA_TEST_SRCS} ${OPENEXRJNI_JAR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Compiling OpenEXR-JNI JUnit4 test java files and building jar..."
@@ -307,9 +314,9 @@ add_dependencies(openexrjni openexrjni_test_jar)
 set_target_properties(openexrjni_test_jar PROPERTIES
   FOLDER "Java-JNI/test")
 
-add_test(NAME JUnit4_EXRSimpleImageTest COMMAND
+add_test(NAME JUnit4_OpenEXR COMMAND
   "${Java_JAVA_EXECUTABLE}"
   -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${OPENEXRJNI_TEST_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
   -Xcheck:jni -Djava.library.path=$<TARGET_FILE_DIR:openexrjni>
-  org.junit.runner.JUnitCore edu.cornell.graphics.exr.EXRSimpleImageTest
+  org.junit.runner.JUnitCore edu.cornell.graphics.exr.AllTests
 )
