@@ -127,10 +127,10 @@ int main (int argc, char **argv) {
 " HAVE_COMPLETE_IOMANIP)
 
 # Check if the stack is large enough (ie more than 256 KiB)
-# On Windows this only works if the executables request a large stack, as is
+# On Windows/OSX this only works if the executables request a large stack, as is
 # the case with CMake default options for executables. However this is likely
 # to cause problems with other programs (Java, Matlab) when using PIZ
-if (NOT WIN32)
+if (NOT WIN32 AND NOT APPLE)
   include(CheckCSourceRuns)
   CHECK_C_SOURCE_RUNS("
 #include <stddef.h>
