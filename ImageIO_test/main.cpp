@@ -13,9 +13,11 @@
      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 ============================================================================*/
 
-#include <iostream>
+#if defined(_MSC_VER)
+#define _SCL_SECURE_NO_WARNINGS
+#endif
 
-//#include <QImage.h>
+#include "Timer.h"
 
 #include <Rgba32F.h>
 #include <rgbe.h>
@@ -28,9 +30,9 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <iostream>
 #include <cmath>
-
-#include "Timer.h"
 
 // For TBB initialization
 //#include <tbb/task_scheduler_init.h>

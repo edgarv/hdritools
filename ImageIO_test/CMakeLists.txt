@@ -15,10 +15,19 @@
 
 # CMake file for running the ImageIO tests. It uses the GTest library.
 
-find_package(GTest REQUIRED)
+# Because of the C++ single definition rule, and since this is the only
+# component using gtest, we just add all its sources from the 3rdparty folder
+set(GTEST_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/3rdparty/gtest/include")
+set(GTEST_SRCS
+  "${PROJECT_SOURCE_DIR}/3rdparty/gtest/fused-src/gtest/gtest-all.cc"
+  )
+if(MSVC AND MSVC_VERSION GREATER 1500)
+  # As of Visual C++ 2012, variadic templates are not truly supported.
+  # The default VARIADIC_MAX of 5 is not enough for gtest
+  add_definitions(-D_VARIADIC_MAX=9)
+endif()
 
-include_directories(${GTEST_INCLUDE_DIRS})
-include_directories(../ImageIO)
+include_directories(${GTEST_INCLUDE_DIRS} "${PROJECT_SOURCE_DIR}/ImageIO")
 
 # Hard-coded Mersenne Twister definitions
 add_definitions (-DDSFMT_DO_NOT_USE_OLD_NAMES -DDHAVE_SSE2=1 -DDSFMT_MEXP=19937)
@@ -49,11 +58,11 @@ source_group(dSFMT REGULAR_EXPRESSION "dSFMT.+")
 # Easily find the ImageIO headers at the parent directory
 include_directories(..)
 
-# We link againt ImageIO, so we need to remove that definition
+# We link against ImageIO, so we need to remove that definition
 remove_definitions(-DIMAGEIO_EXPORTS)
 
-add_executable(ImageIO_Test ${SRCS})
-target_link_libraries(ImageIO_Test ImageIO ${GTEST_LIBRARIES})
+add_executable(ImageIO_Test ${SRCS} ${GTEST_SRCS})
+target_link_libraries(ImageIO_Test ImageIO)
 
 if(NOT WIN32)
   find_package(Threads)
