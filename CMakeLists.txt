@@ -128,8 +128,8 @@ elseif(NOT MSVC OR NOT WIN32)
     set(SIMD_COMPILER_FLAGS "${SIMD_COMPILER_FLAGS} -mfpmath=sse")
   endif()
 endif()
-set ( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SIMD_COMPILER_FLAGS}" )
-set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_COMPILER_FLAGS}" )
+set (CMAKE_C_FLAGS   "${SIMD_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
+set (CMAKE_CXX_FLAGS "${SIMD_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 # For GCC 4.1+ we always want to use the source fortify options
 if(CMAKE_COMPILER_IS_GNUCXX)
