@@ -340,6 +340,8 @@ endif() # APPLE OR WIN32
   file(GLOB_RECURSE QTPLUGINS
     \"\${CMAKE_INSTALL_PREFIX}/${plugin_dest_dir}/plugins/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
   include(BundleUtilities)
+  # This will enforce copied libraries to be writeable
+  set(BU_CHMOD_BUNDLE_ITEMS TRUE)
   fixup_bundle(\"${APPS}\" \"\${QTPLUGINS}\" \"${DIRS}\")
   "
   COMPONENT "qt4image")
