@@ -15,7 +15,7 @@
 
 if(NOT OPENEXR_IS_INTERNAL)
   project(OpenEXR)
-  cmake_minimum_required(VERSION 2.6)
+  cmake_minimum_required(VERSION 2.6.2 FATAL_ERROR)
 endif()
 
 
@@ -33,24 +33,19 @@ if(OPENEXR_SHARED_LIBS AND MSVC)
   set(OPENEXR_DLL ON)
 endif()
 
-# The SOVERSION is very different from the marketing version
-set(ILMBASE_SOVERSION "7.0.0")
-set(OPENEXR_SOVERSION "7.0.0")
 
 # Small macro to set the LIBNAME_VERSION variable accoring to the contents of the VERSION
 macro(GET_VERSION libname)
   string(TOUPPER "${libname}" libname_upper)
-  if(NOT ${libname_upper}_VERSION)
-    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" AUX_VERSION)
-    string(REGEX MATCH "${libname} - ([0-9]+\\.[0-9]+\\.[0-9]+)"
-      AUX_VERSION "${AUX_VERSION}")
-    unset(AUX_VERSION)
-    set(${libname_upper}_VERSION ${CMAKE_MATCH_1} 
-      CACHE STRING 
-	  "Version number for ${libname} as defined in the VERSION file.")
-    mark_as_advanced(${libname_upper}_VERSION)
-  endif(NOT ${libname_upper}_VERSION)
-endmacro(GET_VERSION)
+  file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" AUX_VERSION REGEX "${libname}")
+  string(REGEX MATCH "${libname} - ([0-9]+\\.[0-9]+\\.[0-9]+) - ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    AUX_VERSION "${AUX_VERSION}")
+  unset(AUX_VERSION)
+  set(${libname_upper}_VERSION ${CMAKE_MATCH_1})
+  set(${libname_upper}_SOVERSION ${CMAKE_MATCH_2})
+  set(${libname_upper}_VERSION_STRING "\"${${libname_upper}_VERSION}\"")
+  set(${libname_upper}_PACKAGE_STRING "\"${libname} ${${libname_upper}_VERSION}\"")
+endmacro()
 
 # A small macro to pass extra compiler properties to MSVC (useful to disable warnings)
 macro(MSVC_COMPILE_FLAGS targetname flags)
@@ -83,24 +78,28 @@ endmacro()
 
  
 # The version of the ilmbase and openexr libraries.
-GET_VERSION("openexr")
-GET_VERSION("ilmbase")
+GET_VERSION("IlmBase")
+GET_VERSION("OpenEXR")
 
 
 # First we need to create the configuration headers
 
 # Directory for the generated configuration files
-set(OPENEXR_CFG_DIR ${CMAKE_CURRENT_BINARY_DIR}/config)
+set(OPENEXR_CFG_DIR "${CMAKE_CURRENT_BINARY_DIR}/config")
 
 find_package(Threads)
 
-# pthreads
-if(CMAKE_USE_PTHREADS_INIT)
+# pthreads (do not use in MinGW)
+if(CMAKE_USE_PTHREADS_INIT AND NOT WIN32)
   set(HAVE_PTHREAD 1)
 endif()
 
-# POSIX semaphores
 include(CheckIncludeFile)
+CHECK_INCLUDE_FILE("limits.h"   HAVE_LIMITS_H)
+CHECK_INCLUDE_FILE("unistd.h"   HAVE_UNISTD_H)
+CHECK_INCLUDE_FILE("ucontext.h" HAVE_UCONTEXT_H)
+
+# POSIX semaphores
 if(APPLE)
   set(HAVE_POSIX_SEMAPHORES 0)
 else()
@@ -130,9 +129,8 @@ int main (int argc, char **argv) {
 # On Windows/OSX this only works if the executables request a large stack, as is
 # the case with CMake default options for executables. However this is likely
 # to cause problems with other programs (Java, Matlab) when using PIZ
-if (NOT WIN32 AND NOT APPLE)
-  include(CheckCSourceRuns)
-  CHECK_C_SOURCE_RUNS("
+include(CheckCSourceRuns)
+CHECK_C_SOURCE_RUNS("
 #include <stddef.h>
 #include <string.h>
 int main (int argc, char **argv)
@@ -141,7 +139,21 @@ int main (int argc, char **argv)
     memset(arr, 0, sizeof(arr));
     return 0;
 }
-" HAVE_LARGE_STACK)
+" HAVE_LARGE_STACK_0x40000)
+
+if(HAVE_LARGE_STACK_0x40000)
+  if(WIN32 OR APPLE)
+    option(USE_LARGE_STACK "Use large stack optimizations (possible compatibility issues)" OFF)
+    if(USE_LARGE_STACK)
+      set(HAVE_LARGE_STACK ${HAVE_LARGE_STACK_0x40000})
+    endif()
+  else()
+    set(HAVE_LARGE_STACK ${HAVE_LARGE_STACK_0x40000})
+  endif()
+endif()
+
+if(DEFINED HAVE_LARGE_STACK)
+  set(ILMBASE_HAVE_LARGE_STACK ${HAVE_LARGE_STACK})
 endif()
 
 # Create the configuration headers
@@ -278,35 +290,51 @@ endif()
 
 
 if (WIN32 AND OPENEXR_SHARED_LIBS)
-  # Store in cache the master resource file
-  get_filename_component(OPENEXR_RC_PATH "win32/openexr.rc" 
-    ABSOLUTE CACHE)
-  mark_as_advanced(OPENEXR_RC_PATH)
+  # Resource template file
+  set(OPENEXR_RC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/win32/openexr.rc.cmake")
+  
+  # Set a human-readable version number for MSVC
+  if(MSVC_VERSION)
+    math(EXPR MSVC_VER_MAJOR "${MSVC_VERSION}/100 - 6")
+    math(EXPR MSVC_VER_MINOR "(${MSVC_VERSION}-(${MSVC_VER_MAJOR}+6)*100)/10")
+    if(CMAKE_CL_64)
+      set(MSVC_BITS "amd64")
+    else()
+      set(MSVC_BITS "x86")
+    endif()
+    set(MSVC_VER_STRING "${MSVC_VER_MAJOR}.${MSVC_VER_MINOR} ${MSVC_BITS}")
+  endif()
 
   # Macro to add the resource file
   macro(ADD_RESOURCE targetname sourceslst_var description version year)
     
     set(RC_DESCRIPTION "${description}")
-    set(RC_VERSION "${version}.0")
-    string(REPLACE "." "," RC_VERSION_COMMA ${RC_VERSION})
-    set(RC_FILENAME "${targetname}.dll")
-    set(RC_NAME "${targetname}")
+    set(RC_VERSION "${version}")
+    string(REPLACE "." "," RC_VERSION_COMMA "${RC_VERSION}.0")
+    set(RC_FILENAME "${targetname}")
+    # FIXME Add an extra parameter for the product name.
+    # This is coupled with the GET_VERSION macro
+    if(CURRENT_PACKAGE)
+      set(RC_PRODUCT_NAME "${CURRENT_PACKAGE}")
+    else()
+      set(RC_PRODUCT_NAME "${targetname}")
+    endif()
     set(RC_YEAR "${year}")
     configure_file("${OPENEXR_RC_PATH}"
-      "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}.rc"  ESCAPE_QUOTES)
+      "${CMAKE_CURRENT_BINARY_DIR}/${targetname}.rc" ESCAPE_QUOTES)
     
     # MSVC can take the .rc file directly, MINGW needs more magic
     if (MSVC)
-      list(APPEND ${sourceslst_var} "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}.rc")
+      list(APPEND ${sourceslst_var} "${CMAKE_CURRENT_BINARY_DIR}/${targetname}.rc")
     elseif (MINGW)
       # Based on the function from zlib 1.2.5:
       # This gets us DLL resource information when compiling on MinGW.
-      add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}_rc.obj"
+      add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${targetname}_rc.obj"
                          COMMAND windres.exe
                               -D GCC_WINDRES
-                              -o "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}_rc.obj"
-                              -i "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}.rc")
-      list(APPEND ${sourceslst_var} "${CMAKE_CURRENT_BINARY_DIR}/${RC_NAME}_rc.obj")
+                              -o "${CMAKE_CURRENT_BINARY_DIR}/${targetname}_rc.obj"
+                              -i "${CMAKE_CURRENT_BINARY_DIR}/${targetname}.rc")
+      list(APPEND ${sourceslst_var} "${CMAKE_CURRENT_BINARY_DIR}/${targetname}_rc.obj")
     endif ()
   
   endmacro()
@@ -347,9 +375,7 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description
   
   # If built as a static library in gcc we need to add the fpic flag, so that the code will work when linked into a shared lib
   if(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
-    set_target_properties(${targetname} PROPERTIES 
-      COMPILE_FLAGS "-fpic"
-    )
+    set_target_properties(${targetname} PROPERTIES COMPILE_FLAGS "-fpic")
   endif()
   
   # For MSVC static libraries, modify the name for easier identification
@@ -367,10 +393,11 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description
     set_target_properties(${targetname} PROPERTIES FOLDER "3rdparty/OpenEXR")
   endif()
   
-  # For the windows dll we need extra definitions and use createDLL
+  # For the windows dll we need extra definitions and to use createDLL
   if(OPENEXR_DLL)
     string(TOUPPER ${targetname} targetUpper)
-    add_definitions(-D${targetUpper}_EXPORTS)
+    set_target_properties(${targetname} PROPERTIES
+      DEFINE_SYMBOL "${targetUpper}_EXPORTS")
     CREATEDLL(${targetname} ${ARGV7})
   endif()
   

@@ -410,7 +410,7 @@ void throwErrnoExc (const std::string &text, int errnum)
 	    throw EnametoolongExc (tmp);
       #endif
 
-      #if defined (EOVERFLOW)
+      #if defined (EOVERFLOW) && (EOVERFLOW != EFBIG)
 	  case EOVERFLOW:
 	    throw EoverflowExc (tmp);
       #endif

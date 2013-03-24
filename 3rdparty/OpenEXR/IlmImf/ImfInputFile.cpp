@@ -277,10 +277,10 @@ bufferedReadPixels (InputFile::Data* ifd, int scanLine1, int scanLine2)
 		 y <= maxYThisRow;
 		 y += toSlice.ySampling)
             {
-		//
+                //
                 // Set the pointers to the start of the y scanline in
                 // this row of tiles
-		//
+                //
                 
                 fromPtr = fromSlice.base +
                           (y - tileRange.min.y) * static_cast<ptrdiff_t>(fromSlice.yStride) +
@@ -290,9 +290,9 @@ bufferedReadPixels (InputFile::Data* ifd, int scanLine1, int scanLine2)
                         divp (y, toSlice.ySampling) * static_cast<ptrdiff_t>(toSlice.yStride) +
                         divp (xStart, toSlice.xSampling) * static_cast<ptrdiff_t>(toSlice.xStride);
 
-		//
+                //
                 // Copy all pixels for the scanline in this row of tiles
-		//
+                //
 
                 for (int x = xStart;
 		     x <= levelRange.max.x;

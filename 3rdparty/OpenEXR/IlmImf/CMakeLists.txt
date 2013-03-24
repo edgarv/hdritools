@@ -54,6 +54,7 @@ set(ILMIMF_HEADERS
   ImfMultiView.h
   ImfName.h
   ImfOpaqueAttribute.h
+  ImfOptimizedPixelReading.h
   ImfOutputFile.h
   ImfPixelType.h
   ImfPreviewImage.h
@@ -66,6 +67,7 @@ set(ILMIMF_HEADERS
   ImfStandardAttributes.h
   ImfStringAttribute.h
   ImfStringVectorAttribute.h
+  ImfSystemSpecific.h
   ImfTestFile.h
   ImfThreading.h
   ImfTileDescription.h

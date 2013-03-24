@@ -40,7 +40,6 @@
 //-----------------------------------------------------------------------------
 
 #include <ImfStringVectorAttribute.h>
-#include <cassert>
 
 
 namespace Imf {
@@ -64,7 +63,7 @@ StringVectorAttribute::writeValueTo (OStream &os, int version) const
     {
         int strSize = _value[i].size();
         Xdr::write <StreamIO> (os, strSize);
-        Xdr::write <StreamIO> (os, &_value[i][0], strSize);
+	Xdr::write <StreamIO> (os, &_value[i][0], strSize);
     }
 }
 
@@ -79,16 +78,20 @@ StringVectorAttribute::readValueFrom (IStream &is, int size, int version)
     {   
        int strSize;
        Xdr::read <StreamIO> (is, strSize);
-       assert (strSize >= 0);
        read += Xdr::size<int>();       
 
        std::string str;
-
-       if (strSize != 0) {
-           str.resize (strSize);
+       str.resize (strSize);
+  
+       // Some implementations of std::string throw exceptions when 
+       // tyring to access any element of a string resized to 0.  
+       // The following check is necessary on some compilers.
+       if(strSize > 0)
+       {
            Xdr::read<StreamIO> (is, &str[0], strSize);
-           read += strSize;
        }
+       
+       read += strSize;
 
        _value.push_back (str);
     }

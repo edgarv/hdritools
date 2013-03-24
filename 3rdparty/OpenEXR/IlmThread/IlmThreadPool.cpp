@@ -492,7 +492,6 @@ ThreadPool::globalThreadPool ()
     #if _MSC_VER < 1400
         #pragma message(__FILE__ " : Warning : double lock needs at least MSVC 2005.")
     #endif
-    //volatile ThreadPool *gThreadPool(NULL);
     static std::auto_ptr<volatile ThreadPool> gThreadPool;
 
     if (gThreadPool.get() == NULL) {
