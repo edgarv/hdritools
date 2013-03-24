@@ -24,7 +24,8 @@
 
   <!-- OpenEXR Java bindings -->
   <?define openexrjni.openexrjni.dll="43987520-a3e0-4f09-b51f-e637b2bb32cb" ?>
-  <?define openexrjni.openexrjni.2.0.0.jar="a19c5e79-ab3d-44e9-ad48-c616eb747efd" ?>
+  <?define openexrjni.openexrjni.2.1.0.jar="c731813f-c573-4fe2-a75b-56e15c35c08b" ?>
+  <?define openexrjni.openexrjni.2.1.0.javadoc.jar="3da4d53c-4f17-4f44-a372-b3c15fb753bc" ?>
   
   <!-- OpenEXR Matlab bindings -->
   <?define openexrmex.exrinfo.mexw="79add3df-7ec1-40bd-9aaa-efebbe226dd9" ?>

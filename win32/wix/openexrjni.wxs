@@ -10,8 +10,11 @@
       <Component Id="openexrjni.openexrjni.dll" Guid="$(var.openexrjni.openexrjni.dll)" Win64="$(var.IsX64)">
         <File Name="openexrjni.dll" KeyPath="yes" Source="java\openexrjni.dll" />
       </Component>
-      <Component Id="openexrjni.openexrjni.2.0.0.jar" Guid="$(var.openexrjni.openexrjni.2.0.0.jar)" Win64="$(var.IsX64)">
-        <File Name="openexrjni-2.0.0.jar" KeyPath="yes" Source="java\openexrjni-2.0.0.jar" />
+      <Component Id="openexrjni.openexrjni.2.1.0.jar" Guid="$(var.openexrjni.openexrjni.2.1.0.jar)" Win64="$(var.IsX64)">
+        <File Name="openexrjni-2.1.0.jar" KeyPath="yes" Source="java\openexrjni-2.1.0.jar" />
+      </Component>
+      <Component Id="openexrjni.openexrjni.2.1.0.javadoc.jar" Guid="$(var.openexrjni.openexrjni.2.1.0.javadoc.jar)" Win64="$(var.IsX64)">
+        <File Name="openexrjni-2.1.0-javadoc.jar" KeyPath="yes" Source="java\openexrjni-2.1.0-javadoc.jar" />
       </Component>
     </DirectoryRef>
 
@@ -19,7 +22,8 @@
              AllowAdvertise="no"
              Description="Java JNI bindings to do basic operations with OpenEXR files.">
       <ComponentRef Id="openexrjni.openexrjni.dll"/>
-      <ComponentRef Id="openexrjni.openexrjni.2.0.0.jar"/>
+      <ComponentRef Id="openexrjni.openexrjni.2.1.0.jar"/>
+      <ComponentRef Id="openexrjni.openexrjni.2.1.0.javadoc.jar"/>
     </Feature>
   
   </Fragment>
