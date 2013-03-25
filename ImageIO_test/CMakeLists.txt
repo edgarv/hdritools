@@ -72,5 +72,39 @@ if(NOT WIN32)
 endif()
 
 
+# Helper function to add tests. When using the Visual Studio generators with
+# CMake 2.8 it will wrap the test in a batch file so that tests may be launched
+# from within the IDE
+function(add_ImageIO_test testname Exename)  
+  if (NOT MSVC_IDE OR ${CMAKE_VERSION} VERSION_LESS "2.8")
+    add_test("${testname}" "${Exename}" ${ARGN})
+    return()
+  endif()
+  
+  # More involved test specification using generator expressions
+  set(extra "")
+  foreach (target ImageIO)
+    if(TARGET ${target})
+      list(APPEND extra "$<TARGET_FILE_DIR:${target}>")
+    endif()
+  endforeach()
+  if(NOT extra)
+    set(extra "NONE")
+  endif()
+  
+  if(TARGET "${Exename}")
+    set(exe "$<TARGET_FILE:${Exename}>")
+  else()
+    set(exe "${Exename}")
+  endif()
+  
+  # Protect the semicolons in the path list using batch delayed expansion
+  string(REPLACE ";" "!CMAKE_PATH_SEPARATOR!" extra "${extra}")
+  add_test(NAME "${testname}"
+    COMMAND "${PROJECT_SOURCE_DIR}\\win32\\test_wrapper.cmd"
+    "${extra}" "${exe}" ${ARGN}
+  )
+endfunction()
+
 # Run the executable with CTest
-add_test(ImageIOUnitTests ImageIO_Test)
+add_ImageIO_test(ImageIOUnitTests ImageIO_Test)
