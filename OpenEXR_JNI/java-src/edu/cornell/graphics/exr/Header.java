@@ -66,35 +66,133 @@ import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 
-// TODO: Add documentation
+/**
+ * Abstraction of the header describing an OpenEXR file.
+ * 
+ * <p>The header contains the set of attributes and channels; it is used for
+ * writing new files and contains all the information from existing ones.
+ * An instance of {@code Header} provides iterator access to the named
+ * attributes. While all aspects of a file are specified as attributes, this
+ * class provides accessors and setters for the attributes which have to be
+ * present in all OpenEXR files.</p>
+ * 
+ * <p>This class is modeled after {@code ImfHeader} in the origial C++ OpenEXR
+ * library.</p>
+ */
 public final class Header implements Iterable<Entry<String, Attribute>> {
+    
+    private final static HashSet<String> predefinedAttributes;
     
     private final TreeMap<String, Attribute> map =
             new TreeMap<String, Attribute>();
     
     private static final AttributeFactory factory =
             AttributeFactory.newDefaultFactory();
+    
+    static {
+        predefinedAttributes = new HashSet<String>(8);
+        predefinedAttributes.add("displayWindow");
+        predefinedAttributes.add("dataWindow");
+        predefinedAttributes.add("pixelAspectRatio");
+        predefinedAttributes.add("screenWindowCenter");
+        predefinedAttributes.add("screenWindowWidth");
+        predefinedAttributes.add("lineOrder");
+        predefinedAttributes.add("compression");
+        predefinedAttributes.add("channels");
+    }
 
+    /**
+     * Returns a read-only iterator over the existing attributes.
+     * 
+     * <p>The elements are ordered by attribute name. The returned entries
+     * represent snapshots of the attributes at the time they were produced.
+     * 
+     * @return Returns an iterator over the existing attributes.
+     */
     @Override
     public Iterator<Entry<String, Attribute>> iterator() {
-        return map.entrySet().iterator();
+        return Collections.unmodifiableSet(map.entrySet()).iterator();
     }
     
+    /**
+     * Returns a read-only {@link Set} view of the attribute names contained
+     * in this header. The set's iterator returns the attribute names in
+     * ascending order.
+     * 
+     * @return a read-only {@code Set} view of the attribute names contained
+     *         in this header.
+     */
+    public Set<String> attributeNameSet() {
+        return Collections.unmodifiableSet(map.keySet());
+    }
     
+    /**
+     * Default constructor. Creates a file with width and height 64, with the
+     * attributes set as in {@link #Header(int, int) }.
+     */
     public Header() {
-        // Assign the predefined attributes with default non-null values
-        insert("displayWindow",      new Box2iAttribute(new Box2<Integer>(0,0,64,64)));
-        insert("dataWindow",         new Box2iAttribute(new Box2<Integer>(0,0,64,64)));
+        this(64, 64);
+    }
+    
+    /**
+     * Creates a header where the display window and the data window are both
+     * set to <tt>[0,0] x [width-1, height-1]</tt>, with an empty channel list.
+     * 
+     * <p>The other predefined attributes are initialized as follows:
+     * <table>
+     *   <tr><th>Attribute</th><th>Value</th></tr>
+     *   <tr><td><tt>pixelAspectRatio</tt></td><td>1.0</td>
+     *   <tr><td><tt>screenWindowCenter</tt></td><td>(0.0, 0.0)</td>
+     *   <tr><td><tt>screenWindowWidth</tt></td><td>1.0</td>
+     *   <tr><td><tt>lineOrder</tt></td><td>{@link LineOrder#INCREASING_Y}</td>
+     *   <tr><td><tt>compression</tt></td><td>{@link Compression#ZIP}</td>
+     * </table>
+     * 
+     * @param width positive width of the file.
+     * @param height positive height of the file.
+     * @throws IllegalArgumentException if either parameter is less than 1.
+     */
+    public Header(int width, int height) throws IllegalArgumentException {
+        if (width < 1) {
+            throw new IllegalArgumentException("Illegal width: "  + width);
+        } else if (height < 1) {
+            throw new IllegalArgumentException("Illegal height: " + height);
+        }
+        insert("displayWindow",
+                new Box2iAttribute(new Box2<Integer>(0,0, width-1,height-1)));
+        insert("dataWindow",
+                new Box2iAttribute(new Box2<Integer>(0,0, width-1,height-1)));
         insert("pixelAspectRatio",   new FloatAttribute(1.0f));
-        insert("screenWindowCenter", new V2fAttribute(new Vector2<Float>(0.0f,0.0f)));
+        insert("screenWindowCenter",
+                new V2fAttribute(new Vector2<Float>(0.0f,0.0f)));
         insert("screenWindowWidth",  new FloatAttribute(1.0f));
         insert("lineOrder",   new LineOrderAttribute(LineOrder.INCREASING_Y));
         insert("compression", new CompressionAttribute(Compression.ZIP));
         insert("channels", new ChannelListAttribute(new ChannelList()));
+    }
+    
+    /**
+     * Copy constructor. Creates a deep copy of the other header attributes.
+     * 
+     * @param other the header to duplicate.
+     * @throws IllegalArgumentException if {@code other} is {@code null}.
+     */
+    public Header(Header other) throws IllegalArgumentException {
+        if (other == null) {
+            throw new IllegalArgumentException("null header");
+        }
+        for (Entry<String, Attribute> attr : other) {
+            assert attr.getKey() != null && !attr.getKey().isEmpty();
+            assert attr.getValue() != null;
+            insert(attr.getKey(), attr.getValue().clone());
+        }
     }
     
     /**
@@ -139,9 +237,29 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         map.put(n, myAttr);
     }
     
+    /**
+     * If an attribute with the given name exists, then it is removed from the
+     * map of present attributes. Otherwise this function is a "no-op".
+     * 
+     * @param name the name of the attribute to remove.
+     * @throws IllegalArgumentException if {@code name} is either {@code null}
+     *         or empty, or it corresponds to a predefined attribute.
+     */
+    public void erase(String name) throws IllegalArgumentException {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("invalid attribute name");
+        } else if (predefinedAttributes.contains(name)) {
+            throw new IllegalArgumentException("cannot erase predefined " +
+                    "attribute: " + name);
+        }
+        map.remove(name);
+    }
+    
+    /**
+     * Get the parameter class at runtime through reflection. See:
+     * http://blog.xebia.com/2009/02/07/acessing-generic-types-at-runtime-in-java/
+     */
     private static Class<?> getParamClass(Class<? extends TypedAttribute<?>> c){
-        // Get the parameter class at runtime through reflection. See:
-        // http://blog.xebia.com/2009/02/07/acessing-generic-types-at-runtime-in-java/
         Class<?> clazz = c;
         while (clazz.getSuperclass() != null &&
               !clazz.getSuperclass().equals(TypedAttribute.class)) {
@@ -244,51 +362,128 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     // Access to predefined attributes
     //--------------------------------
     
+    /**
+     * Returns a reference to the value of the <tt>displayWindow</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>displayWindow</tt> attribute
+     */
     public Box2<Integer> getDisplayWindow() {
         return getTypedAttribute("displayWindow",
                 Box2iAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>dataWindow</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>dataWindow</tt> attribute
+     */
     public Box2<Integer> getDataWindow() {
         return getTypedAttribute("dataWindow",
                 Box2iAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>pixelAspectRatio</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>pixelAspectRatio</tt>
+     * attribute
+     */
     public Float getPixelAspectRatio() {
         return getTypedAttribute("pixelAspectRatio",
                 FloatAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>screenWindowCenter</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>screenWindowCenter</tt>
+     * attribute
+     */
     public Vector2<Float> getScreenWindowCenter() {
         return getTypedAttribute("screenWindowCenter",
                 V2fAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>screenWindowWidth</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>screenWindowWidth</tt> 
+     * attribute
+     */
     public Float getScreenWindowWidth() {
         return getTypedAttribute("screenWindowWidth",
                 FloatAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>channels</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>channels</tt> attribute
+     */
     public ChannelList getChannels() {
         return getTypedAttribute("channels",
                 ChannelListAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>lineOrder</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>lineOrder</tt> attribute
+     */
     public LineOrder getLineOrder() {
         return getTypedAttribute("lineOrder",
                 LineOrderAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>compression</tt>
+     * predefined attribute.
+     * 
+     * @return a reference to the value of the <tt>compression</tt> attribute
+     */
     public Compression getCompression() {
         return getTypedAttribute("compression",
                 CompressionAttribute.class).getValue();
     }
     
+    /**
+     * Returns a reference to the value of the <tt>tiles</tt> attribute
+     * attribute if and only if {@link #hasTileDescription() } 
+     * returns {@code true}.
+     * 
+     * <p>The "tiles" attribute must be present in any tiled image file.
+     * When present, it describes various properties of the tiles that make up
+     * the file. If the "tiles" attribute is not present this method
+     * throws an exception.</p>
+     * 
+     * @return a reference to the value of the <tt>tiles</tt> attribute
+     */
     public TileDescription getTileDescription() {
         return getTypedAttribute("tiles",
                 TileDescriptionAttribute.class).getValue();
     }
     
+    /**
+     * Returns whether the header contains a {@link TileDescriptionAttribute}
+     * whose name is "tiles".
+     * 
+     * <p>The "tiles" attribute must be present in any tiled image file.
+     * When present, it describes various properties of the tiles that make up
+     * the file. The implementation simply returns
+     * {@code findTypedAttribute("tiles",TileDescriptionAttribute.class)!=null}.
+     * </p>
+     * 
+     * @return {@code true} if the header contains a
+     * {@link TileDescriptionAttribute} whose name is "tiles", {@code false}
+     * otherwise.
+     */
     public boolean hasTileDescription() {
         return findTypedAttribute("tiles",TileDescriptionAttribute.class)!=null;
     }
