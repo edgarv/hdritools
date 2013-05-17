@@ -28,11 +28,6 @@ import java.nio.charset.Charset;
  */
 public class EXRBufferedDataInput implements DataInput {
     
-    /** Helper transfer object to know the actual amount of bytes read. */
-    public static class BytesReadTO {
-        public int count;
-    }
-    
     /** Size of the input buffer in bytes */
     private final static int BUFFER_SIZE = 8192;
     
@@ -51,6 +46,12 @@ public class EXRBufferedDataInput implements DataInput {
     /** Current position within the buffer */
     private int bufPos = 0;
     
+    /**
+     * Total bytes consumed. This is less than or equal to the bytes read
+     * from the underlying stream.
+     */
+    private long bytesUsed = 0;
+    
     public EXRBufferedDataInput(InputStream input) {
         if (input == null) {
             throw new IllegalArgumentException("Null input stream.");
@@ -68,6 +69,17 @@ public class EXRBufferedDataInput implements DataInput {
      */
     public int available() {
         return bufLen - bufPos;
+    }
+    
+    /**
+     * Returns the number of bytes used by the read and skip functions. This 
+     * value does not include elements read from the underlying stream into
+     * the buffer which have not been used yet.
+     * 
+     * @return the number of bytes used by the read and skip functions.
+     */
+    public long getBytesUsed() {
+        return bytesUsed;
     }
     
     /**
@@ -127,6 +139,7 @@ public class EXRBufferedDataInput implements DataInput {
     @Override
     public byte readByte() throws EOFException, IOException {
         requireAvailableBytes(1);
+        ++bytesUsed;
         return buffer[bufPos++];
     }
 
@@ -146,6 +159,7 @@ public class EXRBufferedDataInput implements DataInput {
             bufPos += origAvailable;
             curOff += origAvailable;
             needed -= origAvailable;
+            bytesUsed += origAvailable;
         }
         assert needed >= 0;
         
@@ -158,6 +172,7 @@ public class EXRBufferedDataInput implements DataInput {
             }
             curOff += bytesRead;
             needed -= bytesRead;
+            bytesUsed += bytesRead;
             assert needed >= 0;
         }
     }
@@ -170,13 +185,16 @@ public class EXRBufferedDataInput implements DataInput {
         // Discard buffer data
         int totalCount = Math.min(n, available());
         bufPos += totalCount;
+        bytesUsed += totalCount;
         assert bufPos <= bufLen;
         if (totalCount == n) {
             return totalCount;
         }
         // Relly on the underlying stream
         assert n > totalCount;
-        totalCount += (int) input.skip(n - totalCount);
+        int skippedCount = (int) input.skip(n - totalCount);
+        totalCount += skippedCount;
+        bytesUsed  += skippedCount;
         return totalCount;
     }
 
@@ -204,6 +222,7 @@ public class EXRBufferedDataInput implements DataInput {
         int a = buffer[bufPos++] & 0xff;
         int b = buffer[bufPos++] & 0xff;
         short s = (short) ((b << 8) | a);
+        bytesUsed += 2;
         return s;
     }
 
@@ -213,6 +232,7 @@ public class EXRBufferedDataInput implements DataInput {
         int a = buffer[bufPos++] & 0xff;
         int b = buffer[bufPos++] & 0xff;
         int s = (b << 8) | a;
+        bytesUsed += 2;
         return s;
     }
 
@@ -222,6 +242,7 @@ public class EXRBufferedDataInput implements DataInput {
         int a = buffer[bufPos++] & 0xff;
         int b = buffer[bufPos++] & 0xff;
         char c = (char) ((b << 8) | a);
+        bytesUsed += 2;
         return c;
     }
 
@@ -233,6 +254,7 @@ public class EXRBufferedDataInput implements DataInput {
         int c = buffer[bufPos++] & 0xff;
         int d = buffer[bufPos++] & 0xff;
         int n = (d << 24) | (c << 16) | (b << 8) | a;
+        bytesUsed += 4;
         return n;
     }
 
@@ -249,6 +271,7 @@ public class EXRBufferedDataInput implements DataInput {
         long h = buffer[bufPos++] & 0xff;
         long n = (h << 56) | (g << 48) | (f << 40) | (e << 32) |
                  (d << 24) | (c << 16) | (b <<  8) |  a;
+        bytesUsed += 8;
         return n;
     }
 
@@ -269,17 +292,20 @@ public class EXRBufferedDataInput implements DataInput {
         throw new UnsupportedOperationException("Not supported.");
     }
 
+    /**
+     * Unsupported operation: OpenEXR uses only null-terminated strings or
+     * fixed-length strings. Use the other strings methods provided.
+     * 
+     * @see #readNullTerminatedUTF8() 
+     * @see #readNullTerminatedUTF8(int) 
+     * @see #readUTF8(int) 
+     */
     @Override
     public String readUTF() throws IOException {
         throw new UnsupportedOperationException("Not supported.");
     }
     
     public String readNullTerminatedUTF8(int maxLength) throws IOException {
-        return readNullTerminatedUTF8(maxLength, null);
-    }
-
-    public String readNullTerminatedUTF8(int maxLength, BytesReadTO bytesRead)
-            throws IOException {
         if (maxLength < 1) {
             throw new IllegalArgumentException("Invalid lenght: " + maxLength);
         }
@@ -297,9 +323,7 @@ public class EXRBufferedDataInput implements DataInput {
                 // the trailing null character
                 String s = new String(buffer, bufPos, i, UTF8);
                 bufPos += i + 1;
-                if (bytesRead != null) {
-                    bytesRead.count = i + 1;
-                }
+                bytesUsed += i + 1;
                 return s;
             }
         }
@@ -320,6 +344,7 @@ public class EXRBufferedDataInput implements DataInput {
             requireAvailableBytes(length);
             String s = new String(buffer, bufPos, length, UTF8);
             bufPos += length;
+            bytesUsed += length;
             return s;
         } else {
             // More complicated case: get as many characters as possible from
@@ -334,6 +359,7 @@ public class EXRBufferedDataInput implements DataInput {
                     throw new EOFException();
                 }
                 count += nBytes;
+                bytesUsed += nBytes;
             }
             
             String s = new String(utf8Buffer, UTF8);

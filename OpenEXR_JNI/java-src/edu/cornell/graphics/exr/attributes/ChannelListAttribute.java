@@ -20,7 +20,6 @@ import edu.cornell.graphics.exr.ChannelList;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput.BytesReadTO;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -38,10 +37,11 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
     }
     
     private static void readChannel(EXRBufferedDataInput input, ChannelList lst,
-            int maxNameLength, BytesReadTO bytesRead) throws
-            EXRIOException, IOException {
-        assert bytesRead != null;
-        String name = input.readNullTerminatedUTF8(maxNameLength, bytesRead);
+            int maxNameLength) throws EXRIOException, IOException {
+        final long origBytesUsed = input.getBytesUsed();
+        String name = input.readNullTerminatedUTF8(maxNameLength);
+        final long nameBytes = input.getBytesUsed() - origBytesUsed;
+        assert nameBytes > 0;
         if (name.isEmpty()) {
             throw new EXRIOException("Empty channel name.");
         }
@@ -62,7 +62,8 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         lst.insert(name, c);
         
         // Add the fixed length fields
-        bytesRead.count += 4 + 1 + 3 + 4 + 4;
+        assert (nameBytes + (4 + 1 + 3 + 4 + 4)) ==
+               (input.getBytesUsed() - origBytesUsed);
     }
 
     @Override
@@ -77,18 +78,17 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
             chlist.clear();
         }
         
-        int readCount = 0;
-        BytesReadTO bytesRead = new BytesReadTO();
+        final long origBytesUsed = input.getBytesUsed();
         final int maxNameLength = EXRVersion.getMaxNameLength(version);
         while (input.peekByte() != 0) {
-            readChannel(input, chlist, maxNameLength, bytesRead);
-            readCount += bytesRead.count;
+            readChannel(input, chlist, maxNameLength);
         }
         // Consume the last byte
         if (input.readByte() != 0) {
             throw new IllegalStateException("Missing trailing 0x0");
         }
-        checkSize(++readCount, size);
+        final int readCount = (int) (input.getBytesUsed() - origBytesUsed);
+        checkSize(readCount, size);
     }
 
     @Override
