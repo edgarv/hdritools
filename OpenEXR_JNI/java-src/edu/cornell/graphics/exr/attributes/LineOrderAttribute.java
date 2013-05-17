@@ -35,9 +35,8 @@ public class LineOrderAttribute extends TypedAttribute<LineOrder> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(1, size);
         int ordinal = input.readUnsignedByte();
         LineOrder lo = checkedValueOf(ordinal, LineOrder.values());
         setValue(lo);

@@ -35,9 +35,8 @@ public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(4*4, size);
         Box2<Integer> box = new Box2<Integer>();
         box.xMin = input.readInt();
         box.yMin = input.readInt();

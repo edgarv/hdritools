@@ -67,7 +67,7 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
         throws EXRIOException, IOException {
         
         ChannelList chlist = getValue();
@@ -78,7 +78,6 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
             chlist.clear();
         }
         
-        final long origBytesUsed = input.getBytesUsed();
         final int maxNameLength = EXRVersion.getMaxNameLength(version);
         while (input.peekByte() != 0) {
             readChannel(input, chlist, maxNameLength);
@@ -87,8 +86,6 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         if (input.readByte() != 0) {
             throw new IllegalStateException("Missing trailing 0x0");
         }
-        final int readCount = (int) (input.getBytesUsed() - origBytesUsed);
-        checkSize(readCount, size);
     }
 
     @Override

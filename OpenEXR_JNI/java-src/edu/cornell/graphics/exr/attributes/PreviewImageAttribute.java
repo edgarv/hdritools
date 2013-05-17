@@ -29,7 +29,7 @@ public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
         PreviewImage p = new PreviewImage();
         p.width  = input.readInt();
@@ -42,7 +42,6 @@ public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
         }
         
         int pixelsLen = 4 * p.width * p.height;
-        checkSize(2*4 + pixelsLen, size);
         p.pixelData = new byte[pixelsLen];
         input.readFully(p.pixelData);
         

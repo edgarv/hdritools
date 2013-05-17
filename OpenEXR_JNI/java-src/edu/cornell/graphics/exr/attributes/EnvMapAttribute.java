@@ -29,9 +29,8 @@ public class EnvMapAttribute extends TypedAttribute<EnvMap> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(1, size);
         int ordinal = input.readUnsignedByte();
         EnvMap v = checkedValueOf(ordinal, EnvMap.values());
         setValue(v);

@@ -29,9 +29,8 @@ public class V3fAttribute extends TypedAttribute<Vector3<Float>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(3*4, size);
         Vector3<Float> v = new Vector3<Float>();
         v.x = input.readFloat();
         v.y = input.readFloat();

@@ -35,9 +35,8 @@ public class V2fAttribute extends TypedAttribute<Vector2<Float>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(2*4, size);
         Vector2<Float> v = new Vector2<Float>();
         v.x = input.readFloat();
         v.y = input.readFloat();

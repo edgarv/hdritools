@@ -16,6 +16,8 @@
 package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
+import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import java.io.IOException;
 
 // TODO: Add documentation
 public abstract class TypedAttribute<T> implements Attribute {
@@ -47,6 +49,34 @@ public abstract class TypedAttribute<T> implements Attribute {
             throw new EXRIOException(String.format(
                     "Expected size %d, actual %d", expected, actual));
         }
+    }
+    
+    /**
+     * Set the value of this attribute by reading from the given input buffer.
+     * The {@code version} parameters is the 4-byte integer
+     * following the magic number at the beginning of an OpenEXR file with the
+     * file version and feature flags.
+     * 
+     * <p>The default implementation throws an
+     * {@code UnsupportedOperationException}</p>
+     * 
+     * @param input data input from which the value will be read.
+     * @param version file version and flags as provided in the OpenEXR file.
+     * @throws EXRIOException if there is an error in the file format.
+     * @throws IOException if there is an I/O error.
+     */
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
+            throws EXRIOException, IOException {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public void readValueFrom(EXRBufferedDataInput input, int size,
+            int version) throws EXRIOException, IOException {
+        final long origCount  = input.getBytesUsed();
+        readValueFrom(input, version);
+        final int actualCount = (int) (input.getBytesUsed() - origCount);
+        checkSize(size, actualCount);
     }
     
     public T getValue() {

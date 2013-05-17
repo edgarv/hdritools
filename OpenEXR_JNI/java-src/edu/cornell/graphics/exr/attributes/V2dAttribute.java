@@ -29,9 +29,8 @@ public class V2dAttribute extends TypedAttribute<Vector2<Double>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(2*8, size);
         Vector2<Double> v = new Vector2<Double>();
         v.x = input.readDouble();
         v.y = input.readDouble();

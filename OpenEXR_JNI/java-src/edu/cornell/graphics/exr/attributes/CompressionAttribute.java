@@ -35,9 +35,8 @@ public class CompressionAttribute extends TypedAttribute<Compression> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(1, size);
         int ordinal = input.readUnsignedByte();
         Compression c = checkedValueOf(ordinal, Compression.values());
         setValue(c);

@@ -29,9 +29,8 @@ public class RationalAttribute extends TypedAttribute<Rational> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(4+4, size);
         Rational r = new Rational();
         r.n = input.readInt();
         r.d = input.readInt();

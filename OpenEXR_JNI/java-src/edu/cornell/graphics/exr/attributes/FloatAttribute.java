@@ -34,9 +34,8 @@ public class FloatAttribute extends TypedAttribute<Float> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(4, size);
         float f = input.readFloat();
         setValue(f);
     }

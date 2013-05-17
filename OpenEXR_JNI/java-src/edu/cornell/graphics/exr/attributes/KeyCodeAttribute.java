@@ -29,9 +29,8 @@ public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(7*4, size);
         KeyCode k = new KeyCode();
         k.filmMfcCode   = input.readInt();
         k.filmType      = input.readInt();

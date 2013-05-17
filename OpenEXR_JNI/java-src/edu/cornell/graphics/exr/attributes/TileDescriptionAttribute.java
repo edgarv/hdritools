@@ -29,9 +29,8 @@ public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(4+4+1, size);
         TileDescription t = new TileDescription();
         t.xSize = input.readInt();
         if (t.xSize < 0) {

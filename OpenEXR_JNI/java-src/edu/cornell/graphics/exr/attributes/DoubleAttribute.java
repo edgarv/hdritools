@@ -28,9 +28,8 @@ public class DoubleAttribute extends TypedAttribute<Double> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(8, size);
         double v = input.readDouble();
         setValue(v);
     }

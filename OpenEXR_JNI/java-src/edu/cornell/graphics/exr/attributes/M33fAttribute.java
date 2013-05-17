@@ -29,9 +29,8 @@ public class M33fAttribute extends TypedAttribute<Matrix33<Float>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(9*4, size);
         Matrix33<Float> m = new Matrix33<Float>();
                 
         m.m00 = input.readFloat();

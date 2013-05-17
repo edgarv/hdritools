@@ -29,9 +29,8 @@ public class V3dAttribute extends TypedAttribute<Vector3<Double>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(3*8, size);
         Vector3<Double> v = new Vector3<Double>();
         v.x = input.readDouble();
         v.y = input.readDouble();

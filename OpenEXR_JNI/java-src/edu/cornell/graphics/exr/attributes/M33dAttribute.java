@@ -29,9 +29,8 @@ public class M33dAttribute extends TypedAttribute<Matrix33<Double>> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(9*8, size);
         Matrix33<Double> m = new Matrix33<Double>();
                 
         m.m00 = input.readDouble();

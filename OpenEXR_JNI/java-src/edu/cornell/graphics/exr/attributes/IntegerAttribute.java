@@ -28,9 +28,8 @@ public class IntegerAttribute extends TypedAttribute<Integer> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(4, size);
         int i = input.readInt();
         setValue(i);
     }

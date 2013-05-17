@@ -29,9 +29,8 @@ public class ChromaticitiesAttribute extends TypedAttribute<Chromaticities> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(8*4, size);
         Chromaticities c = new Chromaticities();
         c.redX   = input.readFloat();
         c.redY   = input.readFloat();

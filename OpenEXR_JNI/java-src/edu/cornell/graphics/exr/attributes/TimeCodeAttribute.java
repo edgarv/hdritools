@@ -29,9 +29,8 @@ public class TimeCodeAttribute extends TypedAttribute<TimeCode> {
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    protected void readValueFrom(EXRBufferedDataInput input, int version)
             throws EXRIOException, IOException {
-        checkSize(4+4, size);
         TimeCode r = new TimeCode();
         r.timeAndFlags = input.readInt();
         r.userData     = input.readInt();
