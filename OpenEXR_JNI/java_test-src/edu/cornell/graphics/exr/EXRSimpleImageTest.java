@@ -15,34 +15,31 @@
 
 package edu.cornell.graphics.exr;
 
+import edu.cornell.graphics.exr.EXRSimpleImage.Channels;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Random;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Map.Entry;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import edu.cornell.graphics.exr.EXRSimpleImage.Channels;
-
 
 public class EXRSimpleImageTest {
-    
+
     private static final float HALF_MAX = 65504.0f;
 
     private static ArrayList<Compression> COMPRESSION_LOSSLESS = 
-        new ArrayList<Compression>();
+        new ArrayList<>();
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -62,24 +59,30 @@ public class EXRSimpleImageTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testEXRSimpleImageIntIntChannelsEx1() {
-        new EXRSimpleImage(0, 0, null);
+        EXRSimpleImage img = new EXRSimpleImage(0, 0, null);
+        fail(img.toString());
     }
     @Test(expected=IllegalArgumentException.class)
     public void testEXRSimpleImageIntIntChannelsEx2() {
-        new EXRSimpleImage(10, 0, null);
+        EXRSimpleImage img = new EXRSimpleImage(10, 0, null);
+        fail(img.toString());
     }
     @Test(expected=IllegalArgumentException.class)
     public void testEXRSimpleImageIntIntChannelsEx3() {
-        new EXRSimpleImage(0, 10, null);
+        EXRSimpleImage img = new EXRSimpleImage(0, 10, null);
+        fail(img.toString());
     }
     @Test(expected=NullPointerException.class)
     public void testEXRSimpleImageIntIntChannelsEx4() {
-        new EXRSimpleImage(10, 10, null);
+        EXRSimpleImage img = new EXRSimpleImage(10, 10, null);
+        fail(img.toString());
     }
 
     @Test(expected=EXRIOException.class)
     public void testEXRSimpleImageFileChannels() throws EXRIOException {
-        new EXRSimpleImage(new File("non existent"), Channels.RGB);
+        EXRSimpleImage img =
+                new EXRSimpleImage(new File("non existent"), Channels.RGB);
+        fail(img.toString());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -203,13 +206,12 @@ public class EXRSimpleImageTest {
             img.getIndex(x, y);
             fail("The index (" + x +"," + y + ") was expected to be invalid.");            
         }
-        catch(IndexOutOfBoundsException e1) {}
-        catch(IllegalArgumentException e2) {}
+        catch(IndexOutOfBoundsException | IllegalArgumentException e1) {}
     }
 
     @Test
     public void testGetIndex() {
-        EXRSimpleImage img = null;
+        EXRSimpleImage img;
         int nc;
         
         img = new EXRSimpleImage(640,480,Channels.RGB);
@@ -244,7 +246,7 @@ public class EXRSimpleImageTest {
 
     @Test
     public void testGetIndexFast() {
-        EXRSimpleImage img = null;
+        EXRSimpleImage img;
         int nc;
         
         img = new EXRSimpleImage(640,480,Channels.RGB);
@@ -439,7 +441,7 @@ public class EXRSimpleImageTest {
         
         
         // Set pixels randomly
-        HashMap<Long, float[]> pixels = new HashMap<Long, float[]>();
+        HashMap<Long, float[]> pixels = new HashMap<>();
         for(int i = 0; i < 1.5f*width*height; ++i) {
             final int x = rnd.nextInt(width);
             final int y = rnd.nextInt(height);
@@ -643,7 +645,9 @@ public class EXRSimpleImageTest {
     
     @Test(expected=EXRIOException.class)
     public void testReadInvalid() throws EXRIOException {
-        new EXRSimpleImage("++Invalid filename++", Channels.RGB);
+        EXRSimpleImage img =
+                new EXRSimpleImage("++Invalid filename++", Channels.RGB);
+        fail(img.toString());
     }
     
     @Test(expected=EXRIOException.class)

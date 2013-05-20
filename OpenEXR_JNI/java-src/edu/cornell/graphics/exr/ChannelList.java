@@ -129,7 +129,7 @@ public class ChannelList implements Iterable<ChannelList.ChannelListElement> {
     
     
     // Set of channels sorted by name
-    private TreeMap<String, Channel> map = new TreeMap<String, Channel>();
+    private final TreeMap<String, Channel> map = new TreeMap<>();
     
     /**
      * Add a channel to the current channel list. The {@code name} cannot

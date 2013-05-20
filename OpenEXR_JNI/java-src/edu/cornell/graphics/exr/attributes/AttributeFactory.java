@@ -30,7 +30,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AttributeFactory {
     
     private final HashMap<String, Attribute.AttributeCreator> typeMap =
-            new HashMap<String, Attribute.AttributeCreator>();
+            new HashMap<>();
     
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     
@@ -137,7 +137,9 @@ public class AttributeFactory {
                     try {
                         Attribute attr = c.newInstance();
                         return attr;
-                    } catch (Exception e) {
+                    } catch (InstantiationException | IllegalAccessException |
+                             IllegalArgumentException |
+                             InvocationTargetException e) {
                         throw new RuntimeException(e);
                     }
                 }

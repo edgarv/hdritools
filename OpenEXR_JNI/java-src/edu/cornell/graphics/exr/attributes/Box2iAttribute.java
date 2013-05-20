@@ -37,7 +37,7 @@ public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
-        Box2<Integer> box = new Box2<Integer>();
+        Box2<Integer> box = new Box2<>();
         box.xMin = input.readInt();
         box.yMin = input.readInt();
         box.xMax = input.readInt();
@@ -47,7 +47,7 @@ public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
 
     @Override
     protected Box2<Integer> cloneValue() {
-        return new Box2<Integer>(value);
+        return new Box2<>(value);
     }
     
 }

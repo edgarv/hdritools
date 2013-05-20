@@ -90,14 +90,13 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     
     private final static HashSet<String> predefinedAttributes;
     
-    private final TreeMap<String, Attribute> map =
-            new TreeMap<String, Attribute>();
+    private final TreeMap<String, Attribute> map = new TreeMap<>();
     
     private static final AttributeFactory factory =
             AttributeFactory.newDefaultFactory();
     
     static {
-        predefinedAttributes = new HashSet<String>(8);
+        predefinedAttributes = new HashSet<>(8);
         predefinedAttributes.add("displayWindow");
         predefinedAttributes.add("dataWindow");
         predefinedAttributes.add("pixelAspectRatio");
@@ -165,13 +164,11 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         } else if (height < 1) {
             throw new IllegalArgumentException("Illegal height: " + height);
         }
-        insert("displayWindow",
-                new Box2iAttribute(new Box2<Integer>(0,0, width-1,height-1)));
-        insert("dataWindow",
-                new Box2iAttribute(new Box2<Integer>(0,0, width-1,height-1)));
+        final int bW = width-1, bH = height-1;
+        insert("displayWindow", new Box2iAttribute(new Box2<>(0, 0, bW, bH)));
+        insert("dataWindow",    new Box2iAttribute(new Box2<>(0, 0, bW, bH)));
         insert("pixelAspectRatio",   new FloatAttribute(1.0f));
-        insert("screenWindowCenter",
-                new V2fAttribute(new Vector2<Float>(0.0f,0.0f)));
+        insert("screenWindowCenter", new V2fAttribute(new Vector2<>(0.f, 0.f)));
         insert("screenWindowWidth",  new FloatAttribute(1.0f));
         insert("lineOrder",   new LineOrderAttribute(LineOrder.INCREASING_Y));
         insert("compression", new CompressionAttribute(Compression.ZIP));

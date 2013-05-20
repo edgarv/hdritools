@@ -159,7 +159,9 @@ public final class Half extends Number implements Comparable<Half> {
             f_u = Float.floatToRawIntBits(f_f);
             f_u -= round_mask;
             // Clamp to signed infinity if overflowed
-            if (f_u > f16infty_u) f_u = f16infty_u;
+            if (f_u > f16infty_u) {
+                f_u = f16infty_u;
+            }
             
             o_u = (short) (f_u >> 13); // Take the bits!
         }

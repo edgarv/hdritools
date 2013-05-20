@@ -47,10 +47,10 @@ public class BasicInputFile implements Closeable {
     private final static int MAX_CHANNEL_LENGTH = 255;
     
     /** Set of channels present in the file */
-    private LinkedHashSet<String> channelNames = new LinkedHashSet<String>();
+    private LinkedHashSet<String> channelNames = new LinkedHashSet<>();
     
     /** Map of supported attributes */
-    private HashMap<String, Object> attributes = new HashMap<String, Object>();
+    private HashMap<String, Object> attributes = new HashMap<>();
     
     /** Handle to the native class doing the actual IO */
     private long handle = 0L;
@@ -107,12 +107,12 @@ public class BasicInputFile implements Closeable {
     
     public Map<String, float[]> read(String... channels) throws EXRIOException,
             NoSuchChannelException {
-        return read(new HashSet<String>(Arrays.asList(channels)));
+        return read(new HashSet<>(Arrays.asList(channels)));
     }
     
     public Map<String, float[]> read(Collection<? extends String> channels)
             throws EXRIOException, NoSuchChannelException {
-        return read(new HashSet<String>(channels));
+        return read(new HashSet<>(channels));
     }
     
     public Map<String, float[]> readAll() throws EXRIOException {
@@ -149,7 +149,7 @@ public class BasicInputFile implements Closeable {
         }
         
         // Allocate the result
-        HashMap<String, float[]> result = new HashMap<String, float[]>();
+        HashMap<String, float[]> result = new HashMap<>();
         final int len = getWidth() * getHeight();
         for (String c : channels) {
             result.put(c, new float[len]);

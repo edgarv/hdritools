@@ -31,7 +31,7 @@ public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
-        Vector3<Integer> v = new Vector3<Integer>();
+        Vector3<Integer> v = new Vector3<>();
         v.x = input.readInt();
         v.y = input.readInt();
         v.z = input.readInt();
@@ -40,7 +40,7 @@ public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
     
     @Override
     protected Vector3<Integer> cloneValue() {
-        return new Vector3<Integer>(value);
+        return new Vector3<>(value);
     }
     
 }

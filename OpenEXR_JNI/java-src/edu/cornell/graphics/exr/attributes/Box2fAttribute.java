@@ -31,7 +31,7 @@ public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
-        Box2<Float> box = new Box2<Float>();
+        Box2<Float> box = new Box2<>();
         box.xMin = input.readFloat();
         box.yMin = input.readFloat();
         box.xMax = input.readFloat();
@@ -41,7 +41,7 @@ public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
 
     @Override
     protected Box2<Float> cloneValue() {
-        return new Box2<Float>(value);
+        return new Box2<>(value);
     }
     
 }

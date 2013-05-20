@@ -71,7 +71,7 @@ public class HeaderBasicTest {
         assertNotNull(result);
         
         // Reference attribute names
-        HashSet<String> expected = new HashSet<String>(8);
+        HashSet<String> expected = new HashSet<>(8);
         expected.add("channels");
         expected.add("compression");
         expected.add("dataWindow");
@@ -81,7 +81,7 @@ public class HeaderBasicTest {
         expected.add("screenWindowCenter");
         expected.add("screenWindowWidth");
         
-        HashSet<String> actual = new HashSet<String>(8);
+        HashSet<String> actual = new HashSet<>(8);
         for (Map.Entry<String, Attribute> e : instance) {
             final String name    = e.getKey();
             final Attribute attr = e.getValue();
@@ -139,7 +139,7 @@ public class HeaderBasicTest {
         testInsertBadArg(header, "matrix", null);
         testInsertBadArg(header, "matrix", m33Attrib);
         
-        m33Attrib.setValue(new Matrix33<Float>(1.0f));
+        m33Attrib.setValue(new Matrix33<>(1.0f));
         
         // Cannot insert an attribute with an exising name and different type
         testInsertBadType(header, "displayWindow",      m33Attrib);
@@ -157,7 +157,7 @@ public class HeaderBasicTest {
         assertNotNull(header.findTypedAttribute("matrix", M33fAttribute.class));
         
         Matrix33<Float> m1 = m33Attrib.getValue();
-        Matrix33<Float> m2 = new Matrix33<Float>(2.0f);
+        Matrix33<Float> m2 = new Matrix33<>(2.0f);
 
         // The attribute is fully copied
         assertEquals(m33Attrib, header.getTypedAttribute("matrix",
@@ -231,7 +231,7 @@ public class HeaderBasicTest {
     @Test
     public void testGetDisplayWindow() {
         System.out.println("getDisplayWindow");
-        Box2<Integer> expResult = new Box2<Integer>(0, 0, 1023, 31);
+        Box2<Integer> expResult = new Box2<>(0, 0, 1023, 31);
         Box2<Integer> result = instance.getDisplayWindow();
         assertEquals(expResult, result);
     }
@@ -242,7 +242,7 @@ public class HeaderBasicTest {
     @Test
     public void testGetDataWindow() {
         System.out.println("getDataWindow");
-        Box2<Integer> expResult = new Box2<Integer>(0, 0, 1023, 31);
+        Box2<Integer> expResult = new Box2<>(0, 0, 1023, 31);
         Box2<Integer> result = instance.getDataWindow();
         assertEquals(expResult, result);
     }
@@ -264,7 +264,7 @@ public class HeaderBasicTest {
     @Test
     public void testGetScreenWindowCenter() {
         System.out.println("getScreenWindowCenter");
-        Vector2<Float> expResult = new Vector2<Float>(0.0f, 0.0f);
+        Vector2<Float> expResult = new Vector2<>(0.0f, 0.0f);
         Vector2<Float> result = instance.getScreenWindowCenter();
         assertEquals(expResult, result);
     }
@@ -314,7 +314,7 @@ public class HeaderBasicTest {
             assertFalse(channel.pLinear);
         }
         
-        HashSet<String> names = new HashSet<String>(chlst.nameSet());
+        HashSet<String> names = new HashSet<>(chlst.nameSet());
         assertTrue(names.remove("R"));
         assertTrue(names.remove("G"));
         assertTrue(names.remove("B"));

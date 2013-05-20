@@ -37,7 +37,7 @@ public class V2fAttribute extends TypedAttribute<Vector2<Float>> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
-        Vector2<Float> v = new Vector2<Float>();
+        Vector2<Float> v = new Vector2<>();
         v.x = input.readFloat();
         v.y = input.readFloat();
         setValue(v);
@@ -45,7 +45,7 @@ public class V2fAttribute extends TypedAttribute<Vector2<Float>> {
 
     @Override
     protected Vector2<Float> cloneValue() {
-        return new Vector2<Float>(value);
+        return new Vector2<>(value);
     }
     
 }

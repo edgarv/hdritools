@@ -33,7 +33,7 @@ public class StringVectorAttribute extends TypedAttribute<List<String>> {
     public void readValueFrom(XdrInput input, int size, int version)
             throws EXRIOException, IOException {
         int read = 0;
-        ArrayList<String> lst = new ArrayList<String>();
+        ArrayList<String> lst = new ArrayList<>();
         while (read < size) {
             int length = input.readInt();
             String s = input.readUTF8(length);
@@ -46,7 +46,7 @@ public class StringVectorAttribute extends TypedAttribute<List<String>> {
 
     @Override
     protected List<String> cloneValue() {
-        return new ArrayList<String>(value);
+        return new ArrayList<>(value);
     }
     
 }

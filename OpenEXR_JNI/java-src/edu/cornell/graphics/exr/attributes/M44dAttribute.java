@@ -31,7 +31,7 @@ public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
-        Matrix44<Double> m = new Matrix44<Double>();
+        Matrix44<Double> m = new Matrix44<>();
                 
         m.m00 = input.readDouble();
         m.m01 = input.readDouble();
@@ -58,7 +58,7 @@ public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
 
     @Override
     protected Matrix44<Double> cloneValue() {
-        return new Matrix44<Double>(value);
+        return new Matrix44<>(value);
     }
     
 }

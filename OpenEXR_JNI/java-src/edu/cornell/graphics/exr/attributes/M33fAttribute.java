@@ -31,7 +31,7 @@ public class M33fAttribute extends TypedAttribute<Matrix33<Float>> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
-        Matrix33<Float> m = new Matrix33<Float>();
+        Matrix33<Float> m = new Matrix33<>();
                 
         m.m00 = input.readFloat();
         m.m01 = input.readFloat();
@@ -50,7 +50,7 @@ public class M33fAttribute extends TypedAttribute<Matrix33<Float>> {
 
     @Override
     protected Matrix33<Float> cloneValue() {
-        return new Matrix33<Float>(value);
+        return new Matrix33<>(value);
     }
     
 }
