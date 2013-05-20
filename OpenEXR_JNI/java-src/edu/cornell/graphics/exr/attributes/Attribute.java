@@ -16,7 +16,7 @@
 package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -59,7 +59,7 @@ public interface Attribute extends Cloneable {
      * @throws EXRIOException if there is an error in the file format.
      * @throws IOException if there is an I/O error.
      */
-    void readValueFrom(EXRBufferedDataInput input, int size, int version)
+    void readValueFrom(XdrInput input, int size, int version)
             throws EXRIOException, IOException;
 
     /**

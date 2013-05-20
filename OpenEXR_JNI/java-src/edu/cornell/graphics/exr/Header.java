@@ -62,7 +62,7 @@ import edu.cornell.graphics.exr.attributes.TypedAttribute;
 import edu.cornell.graphics.exr.attributes.V2fAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -704,7 +704,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
 
     
     
-    public void readFrom(EXRBufferedDataInput input, int version) throws 
+    public void readFrom(XdrInput input, int version) throws 
             EXRIOException, IOException {
         
         final int maxNameLength = EXRVersion.getMaxNameLength(version);

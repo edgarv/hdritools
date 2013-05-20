@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.attributes.Attribute.AttributeCreator;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 

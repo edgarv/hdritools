@@ -17,7 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -29,7 +29,7 @@ public class M44fAttribute extends TypedAttribute<Matrix44<Float>> {
     }
 
     @Override
-    protected void readValueFrom(EXRBufferedDataInput input, int version)
+    protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
         Matrix44<Float> m = new Matrix44<Float>();
         

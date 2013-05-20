@@ -16,7 +16,7 @@
 package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -65,17 +65,17 @@ public abstract class TypedAttribute<T> implements Attribute {
      * @throws EXRIOException if there is an error in the file format.
      * @throws IOException if there is an I/O error.
      */
-    protected void readValueFrom(EXRBufferedDataInput input, int version)
+    protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
         throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
-    public void readValueFrom(EXRBufferedDataInput input, int size,
+    public void readValueFrom(XdrInput input, int size,
             int version) throws EXRIOException, IOException {
-        final long origCount  = input.getBytesUsed();
+        final long p0  = input.position();
         readValueFrom(input, version);
-        final int actualCount = (int) (input.getBytesUsed() - origCount);
+        final int actualCount = (int) (input.position() - p0);
         checkSize(size, actualCount);
     }
     

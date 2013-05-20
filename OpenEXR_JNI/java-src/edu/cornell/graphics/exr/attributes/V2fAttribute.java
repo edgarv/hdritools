@@ -17,7 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -35,7 +35,7 @@ public class V2fAttribute extends TypedAttribute<Vector2<Float>> {
     }
 
     @Override
-    protected void readValueFrom(EXRBufferedDataInput input, int version)
+    protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
         Vector2<Float> v = new Vector2<Float>();
         v.x = input.readFloat();

@@ -17,7 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -29,7 +29,7 @@ public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
     }
 
     @Override
-    protected void readValueFrom(EXRBufferedDataInput input, int version)
+    protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
         Box2<Float> box = new Box2<Float>();
         box.xMin = input.readFloat();

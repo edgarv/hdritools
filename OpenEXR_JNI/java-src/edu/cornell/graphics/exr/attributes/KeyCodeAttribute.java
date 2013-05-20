@@ -17,7 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.KeyCode;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -29,7 +29,7 @@ public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
     }
 
     @Override
-    protected void readValueFrom(EXRBufferedDataInput input, int version)
+    protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException, IOException {
         KeyCode k = new KeyCode();
         k.filmMfcCode   = input.readInt();

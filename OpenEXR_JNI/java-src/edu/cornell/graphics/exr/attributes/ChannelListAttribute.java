@@ -19,11 +19,21 @@ import edu.cornell.graphics.exr.Channel;
 import edu.cornell.graphics.exr.ChannelList;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
 // TODO: Add documentation
 public class ChannelListAttribute extends TypedAttribute<ChannelList> {
+    
+    private static class Pair {
+        final String name;
+        final Channel c;
+
+        private Pair(String name) {
+            this.name = name;
+            this.c = new Channel();
+        }
+    }
 
     public ChannelListAttribute() {}
     
@@ -36,38 +46,35 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         return "chlist";
     }
     
-    private static void readChannel(EXRBufferedDataInput input, ChannelList lst,
-            int maxNameLength) throws EXRIOException, IOException {
-        final long origBytesUsed = input.getBytesUsed();
+    private static Pair readChannel(XdrInput input, int maxNameLength) 
+            throws EXRIOException, IOException {
+        final long p0 = input.position();
         String name = input.readNullTerminatedUTF8(maxNameLength);
-        final long nameBytes = input.getBytesUsed() - origBytesUsed;
-        assert nameBytes > 0;
+        final long nameBytes = input.position() - p0;
         if (name.isEmpty()) {
-            throw new EXRIOException("Empty channel name.");
+            return null;
         }
 
-        final Channel c = new Channel();
+        final Pair pair = new Pair(name);
         int typeOrdinal = input.readInt();
-        c.type = checkedValueOf(typeOrdinal, Channel.PixelType.values());
+        pair.c.type = checkedValueOf(typeOrdinal, Channel.PixelType.values());
 
-        c.pLinear = input.readBoolean();
+        pair.c.pLinear = input.readBoolean();
         byte[] reserved = new byte[3];
         input.readFully(reserved);
         if (((reserved[2] << 16) | (reserved[1] << 8) | reserved[0]) != 0) {
             throw new EXRIOException("Reserved bytes have non-zero values");
         }
-        c.xSampling = input.readInt();
-        c.ySampling = input.readInt();
-        
-        lst.insert(name, c);
+        pair.c.xSampling = input.readInt();
+        pair.c.ySampling = input.readInt();
         
         // Add the fixed length fields
-        assert (nameBytes + (4 + 1 + 3 + 4 + 4)) ==
-               (input.getBytesUsed() - origBytesUsed);
+        assert (nameBytes + (4 + 1 + 3 + 4 + 4)) == (input.position() - p0);
+        return pair;
     }
 
     @Override
-    protected void readValueFrom(EXRBufferedDataInput input, int version)
+    protected void readValueFrom(XdrInput input, int version)
         throws EXRIOException, IOException {
         
         ChannelList chlist = getValue();
@@ -79,12 +86,9 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         }
         
         final int maxNameLength = EXRVersion.getMaxNameLength(version);
-        while (input.peekByte() != 0) {
-            readChannel(input, chlist, maxNameLength);
-        }
-        // Consume the last byte
-        if (input.readByte() != 0) {
-            throw new IllegalStateException("Missing trailing 0x0");
+        Pair pair;
+        while ((pair = readChannel(input, maxNameLength)) != null) {
+            chlist.insert(pair.name, pair.c);
         }
     }
 

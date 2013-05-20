@@ -12,10 +12,13 @@ import edu.cornell.graphics.exr.attributes.TypedAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix33;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
-import edu.cornell.graphics.exr.io.EXRBufferedDataInput;
+import edu.cornell.graphics.exr.io.EXRFileInputStream;
 import edu.cornell.graphics.exr.io.InputFileInfo;
+import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -39,15 +42,18 @@ public class HeaderBasicTest {
     }
     
     @BeforeClass
-    public static void setUpClass() throws IOException {
+    public static void setUpClass() throws IOException, URISyntaxException {
         // As a basic test, they all use the same instance
-        InputStream is = ClassLoader.getSystemResourceAsStream(RES_FILENMAME);
-        if (is == null) {
+        java.net.URL url = ClassLoader.getSystemResource(RES_FILENMAME);
+        if (url == null) {
             fail("Could not open source resource: " + RES_FILENMAME);
         }
-        EXRBufferedDataInput input = new EXRBufferedDataInput(is);
-        InputFileInfo info = new InputFileInfo(input);
-        instance = info.getHeader();
+        final Path path = Paths.get(url.toURI());
+        try (EXRFileInputStream is = new EXRFileInputStream(path)) {
+            XdrInput input = new XdrInput(is);
+            InputFileInfo info = new InputFileInfo(input);
+            instance = info.getHeader();
+        }
     }
     
     @Before

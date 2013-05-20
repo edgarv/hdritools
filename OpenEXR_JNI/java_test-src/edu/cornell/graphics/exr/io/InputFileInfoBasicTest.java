@@ -16,7 +16,8 @@ package edu.cornell.graphics.exr.io;
 
 import edu.cornell.graphics.exr.Header;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -37,14 +38,13 @@ public class InputFileInfoBasicTest {
     }
     
     @BeforeClass
-    public static void setUpClass() throws IOException {
+    public static void setUpClass() throws IOException, URISyntaxException {
         // As a basic test, they all use the same instance
-        InputStream is = ClassLoader.getSystemResourceAsStream(RES_FILENMAME);
-        if (is == null) {
+        java.net.URL url = ClassLoader.getSystemResource(RES_FILENMAME);
+        if (url == null) {
             fail("Could not open source resource: " + RES_FILENMAME);
         }
-        EXRBufferedDataInput input = new EXRBufferedDataInput(is);
-        instance = new InputFileInfo(input);
+        instance = new InputFileInfo(Paths.get(url.toURI()));
     }
     
     @Before
@@ -92,7 +92,7 @@ public class InputFileInfoBasicTest {
     public void testGetFilename() {
         System.out.println("getFilename");
         String result = instance.getFilename();
-        assertNull(result);
+        assertNotNull(result);
     }
 
     /**

@@ -19,8 +19,9 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.Header;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * A simpler version of a full input file: this class only reads the header
@@ -35,7 +36,7 @@ public class InputFileInfo {
     
     private final Header header = new Header();
     
-    private void initialize(EXRBufferedDataInput input) throws EXRIOException,
+    private void initialize(XdrInput input) throws EXRIOException,
             IOException {
         if (input == null) {
             throw new IllegalArgumentException("Null data input.");
@@ -55,27 +56,24 @@ public class InputFileInfo {
         header.readFrom(input, version);
     }
     
-    public InputFileInfo(EXRBufferedDataInput input) throws EXRIOException,
+    public InputFileInfo(XdrInput input) throws EXRIOException,
             IOException {
         initialize(input);
     }
     
     public InputFileInfo(String filename) throws EXRIOException, IOException {
-        this(new File(filename));
+        this(Paths.get(filename));
+    }
+    
+    public InputFileInfo(File file) throws EXRIOException, IOException {
+        this(file.toPath());
     }
 
-    public InputFileInfo(File file) throws EXRIOException, IOException {
-        filename = file.getAbsolutePath();
-        FileInputStream stream = null;
-        try {
-            stream = new FileInputStream(file);
-            EXRBufferedDataInput input = new EXRBufferedDataInput(stream);
+    public InputFileInfo(Path path) throws EXRIOException, IOException {
+        try (EXRFileInputStream is = new EXRFileInputStream(path)) {
+            XdrInput input = new XdrInput(is);
             initialize(input);
-        }
-        finally {
-            if (stream != null) {
-                stream.close();
-            }
+            filename = path.toAbsolutePath().toString();
         }
     }
     
