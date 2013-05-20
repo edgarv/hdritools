@@ -119,7 +119,7 @@ public class EXRVersion {
     //
     
     public static int getMaxNameLength(int version) {
-        return (version & LONG_NAMES_FLAG) != 0 ? 255 : 32;
+        return (version & LONG_NAMES_FLAG) != 0 ? 255 : 31;
     }
     
     public static boolean isTiled(int version) {
