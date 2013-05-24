@@ -23,11 +23,11 @@
 
 // Forward declarations
 namespace Imf {
-	class Header;
-	struct Rgba;
+    class Header;
+    struct Rgba;
 
-	template<class T>
-	class Array2D;
+    template<class T>
+    class Array2D;
 }
 
 // Construct a Java Exception extending IExBase
@@ -60,10 +60,10 @@ inline JNIEnv* getJNIEnv(JavaVM* jvm) {
  * written into the float buffer: full RGBA or just RGB).
  */
 void saveToTransferObject(JNIEnv *env, jobject jTo,
-						  const Imf::Header &header,
-						  const Imf::Array2D<Imf::Rgba> &halfPixels,
-						  const int width, const int height,
-						  const int numChannels);
+                          const Imf::Header &header,
+                          const Imf::Array2D<Imf::Rgba> &halfPixels,
+                          const int width, const int height,
+                          const int numChannels);
 
 /** 
  * Class to handle stuff related to the edu.cornell.graphics.exr.Attributes class.
@@ -72,52 +72,52 @@ void saveToTransferObject(JNIEnv *env, jobject jTo,
 class Attributes {
 
 private:
-	static jfieldID ownerID;
-	static jfieldID commentsID;
-	static jfieldID capDateID;
-	static jfieldID utcOffsetID;
-	static jmethodID constructorID;
-	static bool isCacheUpdated;
+    static jfieldID ownerID;
+    static jfieldID commentsID;
+    static jfieldID capDateID;
+    static jfieldID utcOffsetID;
+    static jmethodID constructorID;
+    static bool isCacheUpdated;
 
-	// An actual java instance of this class
-	jobject instance;
+    // An actual java instance of this class
+    jobject instance;
 
-	// Sets one of the strings fields
-	void setStringField(JNIEnv *env, jfieldID fid, const char * val);
-	void setStringField(JNIEnv *env, jfieldID fid, const std::string & val);
+    // Sets one of the strings fields
+    void setStringField(JNIEnv *env, jfieldID fid, const char * val);
+    void setStringField(JNIEnv *env, jfieldID fid, const std::string & val);
 
-	// Sets float fields
-	void setFloatField(JNIEnv *env, jfieldID fid, jfloat val);
+    // Sets float fields
+    void setFloatField(JNIEnv *env, jfieldID fid, jfloat val);
 
-	// Sets the value of a string field into the header using the
-	// function pointed by attribMethod if it's not null
-	void setStringAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
-		void (*attribMethod)(Imf::Header &, const std::string &) );
+    // Sets the value of a string field into the header using the
+    // function pointed by attribMethod if it's not null
+    void setStringAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
+        void (*attribMethod)(Imf::Header &, const std::string &) );
 
-	// Sets the value of a float field into the header using the
-	// function pointed by attribMethod, it it's not NaN or Infinity.
-	void setFloatAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
-		void (*attribMethod)(Imf::Header &, const float &) );
+    // Sets the value of a float field into the header using the
+    // function pointed by attribMethod, it it's not NaN or Infinity.
+    void setFloatAttrib(JNIEnv *env, Imf::Header & header, jfieldID fid,
+        void (*attribMethod)(Imf::Header &, const float &) );
 
 public:
 
-	// This needs to be called before anything!
-	static void initCache(JNIEnv *env);
+    // This needs to be called before anything!
+    static void initCache(JNIEnv *env);
 
-	Attributes(JNIEnv *env, const Imf::Header & header);
+    Attributes(JNIEnv *env, const Imf::Header & header);
 
 
-	// The constructor assumes that the given object is a non-null
-	// instance of Attributes!
-	Attributes(jobject attrib);
+    // The constructor assumes that the given object is a non-null
+    // instance of Attributes!
+    Attributes(jobject attrib);
 
-	// Returns the java instance version of the attributes object
-	jobject getInstance() const {
-		return instance;
-	}
+    // Returns the java instance version of the attributes object
+    jobject getInstance() const {
+        return instance;
+    }
 
-	// Adds the attributes to the header
-	void setHeaderAttribs(JNIEnv *env, Imf::Header & header);
+    // Adds the attributes to the header
+    void setHeaderAttribs(JNIEnv *env, Imf::Header & header);
 
 };
 
@@ -129,28 +129,28 @@ public:
 class OpenEXRTo {
 
 private:
-	static jfieldID attribID;
-	static jfieldID widthID;
-	static jfieldID heightID;
-	static jfieldID bufferID;
-	static bool isCacheUpdated;
+    static jfieldID attribID;
+    static jfieldID widthID;
+    static jfieldID heightID;
+    static jfieldID bufferID;
+    static bool isCacheUpdated;
 
-	// An actual java instance of this class
-	jobject instance;
+    // An actual java instance of this class
+    jobject instance;
 
 public:
 
-	// Call before using any other method!
-	static void initCache(JNIEnv *env);
+    // Call before using any other method!
+    static void initCache(JNIEnv *env);
 
-	/** Basic constructor: it is just a wrapper for a non null instance */
-	OpenEXRTo(jobject obj);
+    /** Basic constructor: it is just a wrapper for a non null instance */
+    OpenEXRTo(jobject obj);
 
-	// Setters which modify the underlying java instance
-	void setWidth(JNIEnv *env, int width);
-	void setHeight(JNIEnv *env, int height);
-	void setAttributes(JNIEnv *env, const Attributes & attrib);
-	void setBuffer(JNIEnv *env, jobject buffer);
+    // Setters which modify the underlying java instance
+    void setWidth(JNIEnv *env, int width);
+    void setHeight(JNIEnv *env, int height);
+    void setAttributes(JNIEnv *env, const Attributes & attrib);
+    void setBuffer(JNIEnv *env, jobject buffer);
 };
 
 
