@@ -41,6 +41,19 @@ DEFINE_EXC (JavaExc, Iex::BaseExc)
 //
 void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg);
 
+// Get an environment from a cached JVM pointer
+inline JNIEnv* getJNIEnv(JavaVM* jvm) {
+    if (jvm != NULL) {
+        JNIEnv* env;
+        if (jvm->AttachCurrentThread((void**)&env, NULL) != JNI_OK) {
+            throw JavaExc("Could not get a Java environment for the thread");
+        }
+        return env;
+    } else {
+        throw Iex::NullExc("null jvm pointer");
+    }
+}
+
 /**
  * Saves the half buffer into the transfer object, converting the data to 32-bit floating point.
  * It receives either 3 or 4 as the number or channels parameter (those are the channels
