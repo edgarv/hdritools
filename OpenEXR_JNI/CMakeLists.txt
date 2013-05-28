@@ -114,6 +114,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/ilmbaseto/Vector2.java
   java-src/edu/cornell/graphics/exr/ilmbaseto/Vector3.java
   
+  java-src/edu/cornell/graphics/exr/io/ByteBufferInputStream.java
   java-src/edu/cornell/graphics/exr/io/ByteChannelInputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRBufferedDataInput.java
   java-src/edu/cornell/graphics/exr/io/EXRFileInputStream.java
