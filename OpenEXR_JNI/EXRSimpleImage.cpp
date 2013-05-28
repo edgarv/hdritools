@@ -401,23 +401,17 @@ void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_initCache
 void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_read
     (JNIEnv *env, jclass, jobject jexrTo, jint numChannels, jstring jfilename)
 {
-
-#if USE_JAVA_UTF8
-    const char * filename = env->GetStringUTFChars(jfilename, NULL);
-#else
-    const jchar * filename = env->GetStringChars(jfilename, NULL);
-#endif
-
     try {
-        if (filename == NULL) {
+        if (jfilename == NULL) {
             throw JavaExc("Null filename.");
         }
 
 #if USE_JAVA_UTF8
+        JNIUTFString filename(env, jfilename);
         Imf::RgbaInputFile file(filename);
 #else
-        const jint filenameLen = env->GetStringLength(jfilename);
-        UnicodeIFStream imfIs(filename, filenameLen);
+        JNIString filename(env, jfilename);
+        UnicodeIFStream imfIs(filename, filename.len());
         Imf::RgbaInputFile file(imfIs);
 #endif
         Imath::Box2i dw = file.dataWindow();
@@ -443,13 +437,6 @@ void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_read
         }
     }
 
-#if USE_JAVA_UTF8
-    env->ReleaseStringUTFChars(jfilename, filename);
-#else
-    // Release the filename
-    env->ReleaseStringChars(jfilename, filename);
-#endif
-
 }
 
 
@@ -460,16 +447,9 @@ void Java_edu_cornell_graphics_exr_EXRSimpleImage_write
      jint numChannels, jobject jattrib, jint compressionFlag)
 {
     assert(numChannels == 3 || numChannels == 4);
-    
-#if USE_JAVA_UTF8
-    const char * filename = env->GetStringUTFChars(jfilename, NULL);
-#else
-    // Get the Unicode filename
-    const jchar * filename = env->GetStringChars(jfilename, NULL);
-#endif
 
     try {
-        if (filename == NULL) {
+        if (jfilename == NULL) {
             throw JavaExc("Null filename.");
         }
         
@@ -520,10 +500,11 @@ void Java_edu_cornell_graphics_exr_EXRSimpleImage_write
 
         // Actually write the file
 #if USE_JAVA_UTF8
+        JNIUTFString filename(env, jfilename);
         Imf::RgbaOutputFile file(filename, hd, channels);
 #else
-        const jint filenameLen = env->GetStringLength(jfilename);
-        UnicodeOFStream omfOs(filename, filenameLen);
+        JNIString filename(env, jfilename);
+        UnicodeOFStream omfOs(filename, filename.len());
         Imf::RgbaOutputFile file(omfOs, hd, channels);
 #endif
         file.setFrameBuffer(&halfPixels[0][0], 1, width);
@@ -534,11 +515,4 @@ void Java_edu_cornell_graphics_exr_EXRSimpleImage_write
         // Something ugly has happened, so we throw that exception to Java
         JNU_ThrowByName(env, EXR_EXCEPTION, e.what());
     }
-
-    // Release the filename
-#if USE_JAVA_UTF8
-    env->ReleaseStringUTFChars(jfilename, filename);
-#else
-    env->ReleaseStringChars(jfilename, filename);
-#endif
 }
