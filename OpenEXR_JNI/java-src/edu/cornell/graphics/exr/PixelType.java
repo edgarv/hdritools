@@ -54,11 +54,35 @@ package edu.cornell.graphics.exr;
  */
 public enum PixelType {
     /** Unsigned 32-bit integers */
-    UINT,
+    UINT(4),
     
     /** 16-bit half precision floating point */
-    HALF,
+    HALF(2),
     
     /** 32-bit single precision floating point */
-    FLOAT
+    FLOAT(4);
+    
+    
+    protected final int bytes;
+    
+    PixelType(int bytes) {
+        this.bytes = bytes;
+    }
+    
+    /**
+     * Returns the number of bytes used to represent a single value of this type.
+     * @return the number of bytes used to represent a single value of this type
+     */
+    public int byteSize() {
+        return bytes;
+    }
+    
+    /**
+     * Returns the number of bits used to represent a single value of this type.
+     * @return the number of bits used to represent a single value of this type
+     */
+    public int size() {
+        return bytes * 8;
+    }
+    
 }
