@@ -185,32 +185,27 @@ void Attributes::initCache(JNIEnv *env)
 
     ownerID = env->GetFieldID(attribClass, "owner", "Ljava/lang/String;");
     if (ownerID == NULL) { 
-        env->DeleteLocalRef(attribClass);
         throw JavaExc("ownerID NULL"); 
     }
 
     commentsID = env->GetFieldID(attribClass, "comments", "Ljava/lang/String;");
     if (commentsID == NULL) { 
-        env->DeleteLocalRef(attribClass);
         throw JavaExc("commentsID NULL"); 
     }
 
     capDateID = env->GetFieldID(attribClass, "capDate", "Ljava/lang/String;");
     if (capDateID == NULL) { 
-        env->DeleteLocalRef(attribClass);
         throw JavaExc("capDateID NULL"); 
     }
 
     utcOffsetID = env->GetFieldID(attribClass, "utcOffset", "F");
     if (utcOffsetID == NULL) { 
-        env->DeleteLocalRef(attribClass);
         throw JavaExc("utcOffsetID NULL"); 
     }
 
     // We'll use the explicit boolean constructor
     constructorID = env->GetMethodID(attribClass, "<init>", "(Z)V");
     if (constructorID == NULL) { 
-        env->DeleteLocalRef(attribClass);
         throw JavaExc("constructorID NULL"); 
     }
 
@@ -331,25 +326,21 @@ void OpenEXRTo::initCache(JNIEnv *env)
 
     attribID = env->GetFieldID(toClass, "attrib", "Ledu/cornell/graphics/exr/Attributes;");
     if (attribID == NULL) { 
-        env->DeleteLocalRef(toClass);
         throw JavaExc("attribID NULL"); 
     }
 
     widthID = env->GetFieldID(toClass, "width", "I");
     if (widthID == NULL) { 
-        env->DeleteLocalRef(toClass);
         throw JavaExc("widthID NULL"); 
     }
 
     heightID = env->GetFieldID(toClass, "height", "I");
     if (heightID == NULL) { 
-        env->DeleteLocalRef(toClass);
         throw JavaExc("heightID NULL"); 
     }
 
     bufferID = env->GetFieldID(toClass, "buffer", "[F");
     if (bufferID == NULL) { 
-        env->DeleteLocalRef(toClass);
         throw JavaExc("bufferID NULL"); 
     }
 
