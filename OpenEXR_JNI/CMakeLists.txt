@@ -23,6 +23,7 @@ unset(VERSION_TXT)
 
 set(SRCS
   EXRJavaStream.h EXRJavaStream.cpp
+  EXRSimpleImage.h EXRSimpleImage.cpp
   util.h util.cpp
   jniBinding.cpp
 )
