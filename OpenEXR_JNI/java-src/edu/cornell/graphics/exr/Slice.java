@@ -50,7 +50,6 @@
 package edu.cornell.graphics.exr;
 
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
 /**
  * Description of a single slice of the frame buffer.
@@ -244,11 +243,29 @@ public class Slice {
         return new SliceBuilder();
     }
 
+    /**
+     * Returns the current hash code of this slice.
+     * 
+     * <p>The hash code of a slice uses all of its components in the standard
+     * way except for the buffer: for two slices to have the same hash code
+     * they must reference the same buffer object, and the buffer's position and
+     * limit must remain unchanged between calls to {@code hashCode}. The
+     * actual contents of the buffer are ignored.</p>
+     * 
+     * <p>Because of the weak conditions for equality, slices should not be used
+     * as keys in hash maps or similar structures.</p>
+     * 
+     * @return the current hash code of this slice
+     */
     @Override
     public int hashCode() {
         int hash = 7;
         hash = 67 * hash + (this.type != null ? this.type.hashCode() : 0);
-        hash = 67 * hash + Objects.hashCode(this.buffer);
+        if (this.buffer != null) {
+            hash = 67 * hash + System.identityHashCode(this.buffer);
+            hash = 67 * hash + this.buffer.position();
+            hash = 67 * hash + this.buffer.limit();
+        }
         hash = 67 * hash + this.baseOffset;
         hash = 67 * hash + this.xStride;
         hash = 67 * hash + this.yStride;
@@ -261,6 +278,26 @@ public class Slice {
         return hash;
     }
 
+    /**
+     * Tells whether or not this slice is equal to another object.
+     * 
+     * <p>Two slices are equal if, and only if,
+     * <ol>
+     *   <li>They have the same baseOffset, pixel type, x/y stride, x/y sampling 
+     *   factors, fill value and x/y tile addressing mode.</li>
+     *   <li>They reference exactly the same buffer object, hence the weak
+     *   equivalence expression {@code this.buffer == ((Slice)obj).buffer} will
+     *   be {@code true}.</li>
+     * </ol>
+     * A slice is not equal to any other type of object.</p>
+     * <p>Note that even if two slices are equal, their hash codes may change
+     * depending on their buffer's current position and limit.</p>
+     * 
+     * @param obj the object to which this slice is to be compared
+     * @return {@code true} if, and only if, this slice is equal to the
+     *         given object
+     * @see #hashCode() 
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -273,7 +310,7 @@ public class Slice {
         if (this.type != other.type) {
             return false;
         }
-        if (!Objects.equals(this.buffer, other.buffer)) {
+        if (this.buffer != other.buffer) {
             return false;
         }
         if (this.baseOffset != other.baseOffset) {
