@@ -70,6 +70,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -83,7 +84,7 @@ import java.util.TreeMap;
  * class provides accessors and setters for the attributes which have to be
  * present in all OpenEXR files.</p>
  * 
- * <p>This class is modeled after {@code ImfHeader} in the origial C++ OpenEXR
+ * <p>This class is modeled after {@code ImfHeader} in the original C++ OpenEXR
  * library.</p>
  */
 public final class Header implements Iterable<Entry<String, Attribute>> {
@@ -125,11 +126,43 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * in this header. The set's iterator returns the attribute names in
      * ascending order.
      * 
-     * @return a read-only {@code Set} view of the attribute names contained
+     * @return a read-only set view of the attribute names contained
      *         in this header.
      */
     public Set<String> attributeNameSet() {
         return Collections.unmodifiableSet(map.keySet());
+    }
+    
+    /**
+     * Returns a read-only {@link Set} view of the name-attribute mappings 
+     * contained in this header. The set's iterator returns the entries in 
+     * ascending name order.
+     * 
+     * @return a read-only set view of the name-attribute mappings 
+     *         contained in this header.
+     */
+    public Set<Entry<String, Attribute>> entrySet() {
+        return Collections.unmodifiableSet(map.entrySet());
+    }
+    
+    /**
+     * Returns the number of name-attribute mappings in this header.
+     *
+     * @return the number of name-attribute mappings in this header
+     */
+    public int size() {
+        return map.size();
+    }
+    
+    /**
+     * Returns {@code true} if this header contains no name-attribute mappings.
+     *
+     * <p>This implementation returns {@code size() == 0}.</p>
+     * 
+     * @return {@code true} if this header contains no name-attribute mappings
+     */
+    public boolean isEmpty() {
+        return map.isEmpty();
     }
     
     /**
@@ -699,11 +732,27 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         }
     }
 
-    
-    
+    /**
+     * Populates this header by reading from the {@link XdrInput} encapsulating
+     * an input stream, replacing its previous contents.
+     * 
+     * <p>This method reads a sequence of name-attribute pairs. The names are
+     * null-terminated strings; a zero-length attribute name indicates the
+     * end of the header. Each attribute is stored as a null-terminated string
+     * with the attribute's type name, followed by a 32-bit integer with the
+     * length of the attribute's data, followed by that many bytes.</p>
+     * 
+     * <p>Depending on the {@code version} value the will be specific limitations
+     * on the attribute values and structure of the header.</p>
+     * 
+     * @param input data source which contains the header data
+     * @param version OpenEXR version number as stored in the file
+     * @throws EXRIOException if there is an error in the file format
+     * @throws IOException if there is another I/O error
+     */
     public void readFrom(XdrInput input, int version) throws 
             EXRIOException, IOException {
-        
+        map.clear();
         final int maxNameLength = EXRVersion.getMaxNameLength(version);
         
         // Read all attributes
@@ -746,6 +795,63 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                 insert(name, attr);
             }
         }
+    }
+
+    /**
+     * Returns the hash code value for this header.  The hash code of a header
+     * is defined to be the sum of the hash codes of each attribute in the
+     * header's {@code entrySet()} view. This ensures that {@code h1.equals(h2)}
+     * implies that {@code h1.hashCode()==h2.hashCode()} for any two headers
+     * h1 and h2, as required by the general contract of
+     * {@code Object.hashCode}.
+     * 
+     * <p>This implementation relies on the underlying map, which iterates over
+     * {@code entrySet()}, calling {@code hashCode()} on each attribute (entry)
+     * in the set, and adding up the results.</p>
+     *  
+     * @return the hash code value for this header.
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + this.map.hashCode();
+        return hash;
+    }
+
+    /**
+     * Compares the specified object with this header for equality.  Returns
+     * <tt>true</tt> if the given object is also a header and the two headers
+     * contain the same attributes.  More formally, two headers <tt>h1</tt> and
+     * <tt>h2</tt> represent the same attributes if
+     * <tt>h1.entrySet().equals(h2.entrySet())</tt>.  This ensures that the
+     * <tt>equals</tt> method works properly across different implementations
+     * of the <tt>Map</tt> interface.
+     *
+     * <p>This implementation first checks if the specified object is this 
+     * header; if so it returns <tt>true</tt>.  Then, it checks if the specified
+     * object is a header whose size is identical to the size of this header; if
+     * not, it returns <tt>false</tt>.  If so, it iterates over this header's
+     * <tt>entrySet</tt> collection, and checks that the specified header
+     * contains each mapping that this header contains.  If the specified header
+     * fails to contain such a mapping, <tt>false</tt> is returned.  If the
+     * iteration completes, <tt>true</tt> is returned.
+     *
+     * @param obj object to be compared for equality with this header
+     * @return <tt>true</tt> if the specified object is equal to this header
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Header other = (Header) obj;
+        if (!Objects.equals(this.map, other.map)) {
+            return false;
+        }
+        return true;
     }
 
 }
