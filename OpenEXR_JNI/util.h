@@ -44,11 +44,27 @@ void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg);
 // Get an environment from a cached JVM pointer
 inline JNIEnv* getJNIEnv(JavaVM* jvm) {
     if (jvm != NULL) {
-        JNIEnv* env;
-        if (jvm->AttachCurrentThread((void**)&env, NULL) != JNI_OK) {
-            throw JavaExc("Could not get a Java environment for the thread");
+        union {
+            JNIEnv* env;
+            void* void_env;
+        };
+        jint retval = jvm->GetEnv(&void_env, JNI_VERSION_1_6);
+        switch (retval) {
+        case JNI_OK:
+            return env;
+            break;
+        case JNI_EDETACHED:
+            if (jvm->AttachCurrentThread(&void_env, NULL) != JNI_OK) {
+                throw JavaExc("Could not get java environment for the thread");
+            }
+            return env;
+            break;
+        case JNI_EVERSION:
+            throw JavaExc("Unsupported JNI version");
+            break;
+        default:
+            throw JavaExc("Could not get the JVM thread environment");
         }
-        return env;
     } else {
         throw Iex::NullExc("null jvm pointer");
     }
