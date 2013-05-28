@@ -22,6 +22,7 @@ string(REGEX REPLACE ".*openexrjni - ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
 unset(VERSION_TXT)
 
 set(SRCS
+  EXRJavaStream.h EXRJavaStream.cpp
   util.h util.cpp
   jniBinding.cpp
 )
