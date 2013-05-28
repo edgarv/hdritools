@@ -41,6 +41,17 @@ DEFINE_EXC (JavaExc, Iex::BaseExc)
 //
 void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg);
 
+// Helper to throw a java.lang.IllegalArgumentException
+inline void JNU_ThrowIllegalArgumentException(JNIEnv *env,
+                                              const std::string& str) {
+    JNU_ThrowByName(env, "java/lang/IllegalArgumentException", str.c_str());
+}
+
+// Helper to throw a java.lang.RuntimeException
+inline void JNU_ThrowRuntimeException(JNIEnv *env, const std::string& str) {
+    JNU_ThrowByName(env, "java/lang/RuntimeException", str.c_str());
+}
+
 // Get an environment from a cached JVM pointer
 inline JNIEnv* getJNIEnv(JavaVM* jvm) {
     if (jvm != NULL) {
