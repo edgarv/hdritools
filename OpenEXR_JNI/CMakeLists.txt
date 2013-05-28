@@ -59,6 +59,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/EXRSimpleImage.java
   java-src/edu/cornell/graphics/exr/EXRTypeException.java
   java-src/edu/cornell/graphics/exr/EXRVersion.java
+  java-src/edu/cornell/graphics/exr/FrameBuffer.java
   java-src/edu/cornell/graphics/exr/Half.java
   java-src/edu/cornell/graphics/exr/Header.java
   java-src/edu/cornell/graphics/exr/KeyCode.java
@@ -67,6 +68,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/PixelType.java
   java-src/edu/cornell/graphics/exr/PreviewImage.java
   java-src/edu/cornell/graphics/exr/Rational.java
+  java-src/edu/cornell/graphics/exr/Slice.java
   java-src/edu/cornell/graphics/exr/TileDescription.java
   java-src/edu/cornell/graphics/exr/TimeCode.java
   
