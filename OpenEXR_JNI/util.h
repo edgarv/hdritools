@@ -140,4 +140,51 @@ private:
     jint m_len;
 };
 
+
+
+/// <summary>
+/// Helper class which encapsulates a JNIEnv pointer so that some of its
+/// commonly used functions throw a C++ exception in case of an error.
+/// </summary>
+class JNIEnvHelper
+{
+public:
+    JNIEnvHelper(JNIEnv* env);
+
+    /// <summary>
+    /// Returns the Java VM interface (used in the Invocation API)
+    /// associated with the current thread. Throws JavaExc in case of error.
+    /// </summary>
+    JavaVM* getJavaVM();
+
+    /// <summary>
+    /// Returns a global reference to a class object from a fully-qualified
+    /// class name. Throws JavaExc in case of error.
+    /// </summary>
+    jclass findClassGlobalRef(const char* name);
+
+    /// <summary>
+    /// Returns a local reference to a class object from a fully-qualified
+    /// class name. Throws JavaExc in case of error.
+    /// </summary>
+    jclass findClassLocalRef(const char* name);
+
+    /// <summary>
+    /// Returns the method ID handle for an instance (nonstatic) method of a
+    /// class or interface. The method is specified by its name and signature.
+    /// Throws JavaExc in case of error.
+    /// </summary>
+    jmethodID getMethodID(jclass clazz, const char* name, const char* sig);
+
+    /// <summary>
+    /// Returns the field ID handle for an instance (nonstatic) field of a 
+    /// class. The field is specified by its name and signature.
+    /// Throws JavaExc in case of error.
+    /// </summary>
+    jfieldID getFieldID(jclass clazz, const char* name, const char* sig);
+
+private:
+    JNIEnv* const m_env;
+};
+
 #endif // UTIL_H

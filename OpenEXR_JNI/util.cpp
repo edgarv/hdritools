@@ -40,3 +40,70 @@ void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg) {
     /* free the local ref */
     env->DeleteLocalRef(cls);
 }
+
+
+
+JNIEnvHelper::JNIEnvHelper(JNIEnv* env) : m_env(env)
+{
+    assert(env != NULL);
+}
+
+JavaVM* JNIEnvHelper::getJavaVM()
+{
+    JavaVM* jvm;
+    if (m_env->GetJavaVM(&jvm) != JNI_OK) {
+        throw JavaExc("Could not get pointer to the Java VM");
+    }
+    return jvm;
+}
+
+jclass JNIEnvHelper::findClassGlobalRef(const char* name) {
+    jclass localClass = m_env->FindClass(name);
+    if (!localClass) {
+        JavaExc ex("Could not find the JVM id for class ");
+        ex.append(name);
+        throw ex;
+    }
+    jclass globalClass = reinterpret_cast<jclass>(
+        m_env->NewGlobalRef(localClass));
+    if (!globalClass) {
+        JavaExc ex("Could not create a global reference for class ");
+        ex.append(name);
+        throw ex;
+    }
+    return globalClass;
+}
+
+jclass JNIEnvHelper::findClassLocalRef(const char* name) {
+    jclass localClass = m_env->FindClass(name);
+    if (!localClass) {
+        JavaExc ex("Could not find the JVM id for class ");
+        ex.append(name);
+        throw ex;
+    }
+    return localClass;
+}
+
+jmethodID JNIEnvHelper::getMethodID(jclass clazz,
+                                    const char* name, const char* signature)
+{
+    jmethodID method = m_env->GetMethodID(clazz, name, signature);
+    if (!method) {
+        JavaExc ex("Could not get the JVM method id for ");
+        ex.append(name);
+        throw ex;
+    }
+    return method;
+}
+
+jfieldID JNIEnvHelper::getFieldID(jclass clazz,
+                                  const char* name, const char* signature)
+{
+    jfieldID field = m_env->GetFieldID(clazz, name, signature);
+    if (!field) {
+        JavaExc ex("Could not get the JVM field id for ");
+        ex.append(name);
+        throw ex;
+    }
+    return field;
+}
