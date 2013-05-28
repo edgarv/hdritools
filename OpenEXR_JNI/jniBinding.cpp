@@ -38,6 +38,19 @@
 const char *EXCEPTION = "fileformat/OpenEXRFormat$OpenEXRIOException";
 const char *EXR_EXCEPTION = "edu/cornell/graphics/exr/EXRIOException";
 
+// DLL-main for JNI
+jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
+{
+    union {
+        JNIEnv* env;
+        void* void_env;
+    };
+    if (vm->GetEnv(&void_env, JNI_VERSION_1_6) != JNI_OK) {
+        return -1;
+    }
+    return JNI_VERSION_1_6;
+}
+
 // Such a simple method, but will save painful debugging
 jlong JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_getNativeVersion
   (JNIEnv *, jclass)
