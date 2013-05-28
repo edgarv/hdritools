@@ -22,6 +22,7 @@ string(REGEX REPLACE ".*openexrjni - ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
 unset(VERSION_TXT)
 
 set(SRCS
+  EXRInputFile.cpp
   EXRJavaStream.h EXRJavaStream.cpp
   EXRSimpleImage.h EXRSimpleImage.cpp
   StdSStream.h StdSStream.cpp
@@ -58,6 +59,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/Chromaticities.java
   java-src/edu/cornell/graphics/exr/Compression.java
   java-src/edu/cornell/graphics/exr/EnvMap.java
+  java-src/edu/cornell/graphics/exr/EXRInputFile.java
   java-src/edu/cornell/graphics/exr/EXRIOException.java
   java-src/edu/cornell/graphics/exr/EXRSimpleImage.java
   java-src/edu/cornell/graphics/exr/EXRTypeException.java
@@ -134,6 +136,7 @@ set(JNI_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage.h
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_Channels.h
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_OpenEXRTo.h
+  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRInputFile.h
 )
   
 # Of course this module needs Java and JNI
@@ -211,6 +214,7 @@ set_target_properties(openexrjni_javadoc_jar PROPERTIES FOLDER "Java-JNI")
 add_custom_command(OUTPUT ${JNI_HEADERS}
   COMMAND "${Java_JAVAH_EXECUTABLE}" -classpath "${OPENEXRJNI_JAR}"
     edu.cornell.graphics.exr.EXRSimpleImage
+    edu.cornell.graphics.exr.EXRInputFile
   DEPENDS openexrjni_jar
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating OpenEXR JNI headers..."
