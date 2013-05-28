@@ -110,8 +110,12 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/ilmbaseto/Vector2.java
   java-src/edu/cornell/graphics/exr/ilmbaseto/Vector3.java
   
+  java-src/edu/cornell/graphics/exr/io/ByteChannelInputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRBufferedDataInput.java
+  java-src/edu/cornell/graphics/exr/io/EXRFileInputStream.java
+  java-src/edu/cornell/graphics/exr/io/EXRInputStream.java
   java-src/edu/cornell/graphics/exr/io/InputFileInfo.java
+  java-src/edu/cornell/graphics/exr/io/XdrInput.java
 )
   
 # The jar which will contain the compiled java files
@@ -128,7 +132,7 @@ set(JNI_HEADERS
 )
   
 # Of course this module needs Java and JNI
-find_package(Java 1.6 REQUIRED)
+find_package(Java 1.7 REQUIRED)
 find_package(JNI REQUIRED)
 
 # Another workaround: as of Cmake 2.6.3 FindJNI ignores the "REQUIRED" flag
@@ -165,7 +169,7 @@ endif()
 
 # Commands to builds the jar file
 add_custom_command(OUTPUT "${OPENEXRJNI_JAR}"
-  COMMAND "${Java_JAVAC_EXECUTABLE}" -source 1.6 -Xlint:unchecked
+  COMMAND "${Java_JAVAC_EXECUTABLE}" -source 1.7 -Xlint:unchecked
     -d "${CMAKE_CURRENT_BINARY_DIR}"
     ${JAVA_SRCS}
   COMMAND "${Java_JAR_EXECUTABLE}"
@@ -300,7 +304,7 @@ if (NOT EXISTS ${TEST_OUT_DIR})
   file(MAKE_DIRECTORY ${TEST_OUT_DIR})
 endif()
 add_custom_command(OUTPUT ${OPENEXRJNI_TEST_JAR}
-  COMMAND "${Java_JAVAC_EXECUTABLE}" -source 1.6 -Xlint:unchecked
+  COMMAND "${Java_JAVAC_EXECUTABLE}" -source 1.7 -Xlint:unchecked
     -d ${TEST_OUT_DIR} -cp "${OPENEXRJNI_JAR}${PATH_SEPARATOR}${JUNIT4_JAR}"
     ${JAVA_TEST_SRCS}
   COMMAND "${Java_JAR_EXECUTABLE}"
