@@ -308,7 +308,7 @@ public class HeaderBasicTest {
             // In the test file all channels have the same specs
             final Channel channel = elem.getChannel();
             assertNotNull(channel);
-            assertEquals(Channel.PixelType.HALF, channel.type);
+            assertEquals(PixelType.HALF, channel.type);
             assertEquals(1, channel.xSampling);
             assertEquals(1, channel.ySampling);
             assertFalse(channel.pLinear);

@@ -64,6 +64,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/KeyCode.java
   java-src/edu/cornell/graphics/exr/LineOrder.java
   java-src/edu/cornell/graphics/exr/NoSuchChannelException.java
+  java-src/edu/cornell/graphics/exr/PixelType.java
   java-src/edu/cornell/graphics/exr/PreviewImage.java
   java-src/edu/cornell/graphics/exr/Rational.java
   java-src/edu/cornell/graphics/exr/TileDescription.java
@@ -277,6 +278,7 @@ set(JAVA_TEST_SRCS
   java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
   java_test-src/edu/cornell/graphics/exr/HalfTest.java
   java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
+  java_test-src/edu/cornell/graphics/exr/PixelTypeTest.java
   java_test-src/edu/cornell/graphics/exr/io/InputFileInfoBasicTest.java
 )
 

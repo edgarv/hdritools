@@ -55,15 +55,6 @@ package edu.cornell.graphics.exr;
  */
 public class Channel {
     
-    public static enum PixelType {
-        /** Unsigned 32-bit integers */
-        UINT,
-        /** 16-bit half precision floating point */
-        HALF,
-        /** 32-bit single precision floating point */
-        FLOAT
-    }
-    
     /**
      * Pixel data type.
      */

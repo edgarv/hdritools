@@ -19,6 +19,7 @@ import edu.cornell.graphics.exr.Channel;
 import edu.cornell.graphics.exr.ChannelList;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
+import edu.cornell.graphics.exr.PixelType;
 import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 
@@ -57,7 +58,7 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
 
         final Pair pair = new Pair(name);
         int typeOrdinal = input.readInt();
-        pair.c.type = checkedValueOf(typeOrdinal, Channel.PixelType.values());
+        pair.c.type = checkedValueOf(typeOrdinal, PixelType.values());
 
         pair.c.pLinear = input.readBoolean();
         byte[] reserved = new byte[3];

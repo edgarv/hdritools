@@ -58,6 +58,7 @@ import edu.cornell.graphics.exr.EnvMap;
 import edu.cornell.graphics.exr.Header;
 import edu.cornell.graphics.exr.KeyCode;
 import edu.cornell.graphics.exr.LineOrder;
+import edu.cornell.graphics.exr.PixelType;
 import edu.cornell.graphics.exr.PreviewImage;
 import edu.cornell.graphics.exr.Rational;
 import edu.cornell.graphics.exr.TileDescription;
@@ -132,7 +133,7 @@ public class EXRHeaderApp {
         }
     }
     
-    private static String toString(Channel.PixelType pt) {
+    private static String toString(PixelType pt) {
         switch(pt) {
             case UINT:
                 return "32-bit unsigned integer";
