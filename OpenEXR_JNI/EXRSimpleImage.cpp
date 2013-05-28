@@ -39,7 +39,6 @@ namespace
 {
 
 // Our favourite exceptions for this DLL
-const char *EXCEPTION = "fileformat/OpenEXRFormat$OpenEXRIOException";
 const char *EXR_EXCEPTION = "edu/cornell/graphics/exr/EXRIOException";
 
 } // namespace
