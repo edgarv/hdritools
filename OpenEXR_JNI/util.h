@@ -81,6 +81,76 @@ inline JNIEnv* getJNIEnv(JavaVM* jvm) {
     }
 }
 
+
+
+/// Helper for strings which remain valid only during a single JNI Call
+class JNIString
+{
+public:
+    JNIString(JNIEnv* env, jstring javaString) : m_env(env),
+        m_javaString(javaString), m_str(NULL), m_len(-1) {
+        m_str = env->GetStringChars(javaString, NULL);
+        m_len = env->GetStringLength(javaString);
+    }
+
+    ~JNIString() {
+        if (m_str != NULL) {
+            m_env->ReleaseStringChars(m_javaString, m_str);
+            m_env->DeleteLocalRef(m_javaString);
+        }
+    }
+
+    inline operator const jchar*() const {
+        return m_str;
+    }
+
+    inline jint len() const {
+        return m_len;
+    }
+
+private:
+    JNIEnv* const m_env;
+    jstring const m_javaString;
+    const jchar* m_str;
+    jint m_len;
+};
+
+
+
+/// Helper for UTF strings which remain valid only during a single JNI Call
+class JNIUTFString
+{
+public:
+    JNIUTFString(JNIEnv* env, jstring javaString) : m_env(env),
+        m_javaString(javaString), m_str(NULL), m_len(-1) {
+        m_str = env->GetStringUTFChars(javaString, NULL);
+        m_len = env->GetStringUTFLength(javaString);
+    }
+
+    ~JNIUTFString() {
+        if (m_str != NULL) {
+            m_env->ReleaseStringUTFChars(m_javaString, m_str);
+            m_env->DeleteLocalRef(m_javaString);
+        }
+    }
+
+    inline operator const char*() const {
+        return m_str;
+    }
+
+    inline jint len() const {
+        return m_len;
+    }
+
+private:
+    JNIEnv* const m_env;
+    jstring const m_javaString;
+    const char* m_str;
+    jint m_len;
+};
+
+
+
 /**
  * Saves the half buffer into the transfer object, converting the data to 32-bit floating point.
  * It receives either 3 or 4 as the number or channels parameter (those are the channels
