@@ -75,8 +75,8 @@ public class EXRInputFile implements AutoCloseable {
      * A constructor that opens the file denoted by the given path.
      * 
      * <p>Calling {@code close} will close the file and destroy the underlying
-     * native object. It uses the current default number of native threads
-     * for reading the file.</p>
+     * native object. Both the image IO and decompression run on the 
+     * current thread.</p>
      * 
      * <p>Note that even though constructing an input file this way instead of
      * using an {@link EXRInputStream} may yield higher throughput, there is
@@ -95,7 +95,7 @@ public class EXRInputFile implements AutoCloseable {
      * 
      * <p>Calling {@code close} will close the file and destroy the underlying
      * native object. {@code numThreads} determines the number of threads that
-     * will be used to read the file.</p>
+     * will be used to read and decompress the file.</p>
      * 
      * <p>Note that even though constructing an input file this way instead of
      * using an {@link EXRInputStream} may yield higher throughput, there is
@@ -103,12 +103,16 @@ public class EXRInputFile implements AutoCloseable {
      * On Windows 7 this limit is about 500.</p>
      * 
      * @param path the path to be opened for reading
-     * @param numThreads 
+     * @param numThreads number of native threads to read and decompress the
+     *        file, if zero all tasks run on the current thread.
      */
     public EXRInputFile(Path path, int numThreads) throws 
             EXRIOException, IOException {
         if (path == null) {
             throw new IllegalArgumentException("null file path");
+        }
+        if (numThreads < 0) {
+            throw new IllegalArgumentException("Invalid number of threads");
         }
         // This constructor uses a native stream, not the Java-based one
         stream = null;
@@ -128,8 +132,8 @@ public class EXRInputFile implements AutoCloseable {
      * that has already been opened.
      * 
      * <p>Closing this instance will not close the
-     * stream, it will only destroy the underlying native object. It uses the 
-     * current default number of native threads for reading the file.</p>
+     * stream, it will only destroy the underlying native object.
+     * Both the image IO and decompression run on the current thread.</p>
      * 
      * <p>Note that by using this constructor the reading performance will be
      * lower than that attained by the constructors which explicitly get a file
@@ -150,7 +154,7 @@ public class EXRInputFile implements AutoCloseable {
      * <p>Closing this instance will not close the
      * stream, it will only destroy the underlying native object.
      * {@code numThreads} determines the number of threads that will be used to
-     * read the file.</p>
+     * read and decompress the file.</p>
      * 
      * <p>Note that by using this constructor the reading performance will be
      * lower than that attained by the constructors which explicitly get a file
@@ -158,7 +162,8 @@ public class EXRInputFile implements AutoCloseable {
      * calls to the OpenEXR C++ library.</p>
      * 
      * @param is an already open input stream
-     * @param numThreads 
+     * @param numThreads number of native threads to read and decompress the
+     *        file, if zero all tasks run on the current thread.
      */
     public EXRInputFile(EXRFileInputStream is, int numThreads) throws 
             EXRIOException, IOException {
@@ -173,8 +178,8 @@ public class EXRInputFile implements AutoCloseable {
      * <p>If {@code closeStream} is {@code true} closing this instance will
      * close the input stream as well (if it implements {@link AutoCloseable}),
      * otherwise the stream will remain open and it will only destroy the
-     * underlying native object. It uses the current default number of 
-     * native threads for reading the file.</p>
+     * underlying native object.
+     * Both the image IO and decompression run on the current thread.</p>
      * 
      * <p>Note that by using this constructor the reading performance will be
      * lower than that attained by the constructors which explicitly get a file
@@ -200,7 +205,7 @@ public class EXRInputFile implements AutoCloseable {
      * otherwise the stream will remain open and it will only destroy the
      * underlying native object.
      * {@code numThreads} determines the number of threads that will be used to
-     * read the file.</p>
+     * read and decompress the file.</p>
      * 
      * <p>Note that by using this constructor the reading performance will be
      * lower than that attained by the constructors which explicitly get a file
@@ -210,7 +215,8 @@ public class EXRInputFile implements AutoCloseable {
      * @param is an already open input stream
      * @param closeStream if {@code true} closing this input file will close
      *        the stream as well.
-     * @param numThreads 
+     * @param numThreads number of native threads to read and decompress the
+     *        file, if zero all tasks run on the current thread.
      */
     public EXRInputFile(EXRFileInputStream is, boolean closeStream,
             int numThreads) throws EXRIOException, IOException {
@@ -219,6 +225,9 @@ public class EXRInputFile implements AutoCloseable {
         }
         if (closeStream && !(is instanceof AutoCloseable)) {
             throw new IllegalArgumentException("the stream is not closeable");
+        }
+        if (numThreads < 0) {
+            throw new IllegalArgumentException("Invalid number of threads");
         }
         stream = is;
         autoCloseStream = closeStream;
