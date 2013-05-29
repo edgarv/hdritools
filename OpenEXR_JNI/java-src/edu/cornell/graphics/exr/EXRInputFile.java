@@ -78,7 +78,12 @@ public class EXRInputFile implements AutoCloseable {
      * native object. It uses the current default number of native threads
      * for reading the file.</p>
      * 
-     * @param path 
+     * <p>Note that even though constructing an input file this way instead of
+     * using an {@link EXRInputStream} may yield higher throughput, there is
+     * a limitation on the number of files that can be simultaneously open.
+     * On Windows 7 this limit is about 500.</p>
+     * 
+     * @param path the path to be opened for reading
      */
     public EXRInputFile(Path path) throws EXRIOException, IOException {
         this(path, 0);
@@ -92,7 +97,12 @@ public class EXRInputFile implements AutoCloseable {
      * native object. {@code numThreads} determines the number of threads that
      * will be used to read the file.</p>
      * 
-     * @param path
+     * <p>Note that even though constructing an input file this way instead of
+     * using an {@link EXRInputStream} may yield higher throughput, there is
+     * a limitation on the number of files that can be simultaneously open.
+     * On Windows 7 this limit is about 500.</p>
+     * 
+     * @param path the path to be opened for reading
      * @param numThreads 
      */
     public EXRInputFile(Path path, int numThreads) throws 
@@ -100,6 +110,10 @@ public class EXRInputFile implements AutoCloseable {
         if (path == null) {
             throw new IllegalArgumentException("null file path");
         }
+        // This constructor uses a native stream, not the Java-based one
+        stream = null;
+        autoCloseStream = false;
+        
         String filename = path.toAbsolutePath().toString();
         nativePtr = getNativeInputFile(null, filename, numThreads);
         assert nativePtr != 0L;
@@ -148,9 +162,66 @@ public class EXRInputFile implements AutoCloseable {
      */
     public EXRInputFile(EXRFileInputStream is, int numThreads) throws 
             EXRIOException, IOException {
+       this(is, false, numThreads); 
+    }
+    
+    /**
+     * A constructor that attaches the new {@code EXRInputFile} to a stream
+     * that has already been opened and allows to close the input stream along
+     * with the input file.
+     * 
+     * <p>If {@code closeStream} is {@code true} closing this instance will
+     * close the input stream as well (if it implements {@link AutoCloseable}),
+     * otherwise the stream will remain open and it will only destroy the
+     * underlying native object. It uses the current default number of 
+     * native threads for reading the file.</p>
+     * 
+     * <p>Note that by using this constructor the reading performance will be
+     * lower than that attained by the constructors which explicitly get a file
+     * to open. This is due to the current implementation which relies on JNI
+     * calls to the OpenEXR C++ library.</p>
+     * 
+     * @param is an already open input stream
+     * @param closeStream if {@code true} closing this input file will close
+     *        the stream as well.
+     */
+    public EXRInputFile(EXRFileInputStream is, boolean closeStream) throws
+            EXRIOException, IOException {
+        this(is, closeStream, 0);
+    }
+    
+    /**
+     * A constructor that attaches the new {@code EXRInputFile} to a stream
+     * that has already been opened, using a specific number of threads for I/O
+     * and allows to close the input stream along with the input file.
+     * 
+     * <p>If {@code closeStream} is {@code true} closing this instance will
+     * close the input stream as well (if it implements {@link AutoCloseable}),
+     * otherwise the stream will remain open and it will only destroy the
+     * underlying native object.
+     * {@code numThreads} determines the number of threads that will be used to
+     * read the file.</p>
+     * 
+     * <p>Note that by using this constructor the reading performance will be
+     * lower than that attained by the constructors which explicitly get a file
+     * to open. This is due to the current implementation which relies on JNI
+     * calls to the OpenEXR C++ library.</p>
+     * 
+     * @param is an already open input stream
+     * @param closeStream if {@code true} closing this input file will close
+     *        the stream as well.
+     * @param numThreads 
+     */
+    public EXRInputFile(EXRFileInputStream is, boolean closeStream,
+            int numThreads) throws EXRIOException, IOException {
         if (is == null) {
             throw new IllegalArgumentException("null input stream");
         }
+        if (closeStream && !(is instanceof AutoCloseable)) {
+            throw new IllegalArgumentException("the stream is not closeable");
+        }
+        stream = is;
+        autoCloseStream = closeStream;
         nativePtr = getNativeInputFile(is, null, numThreads);
         assert nativePtr != 0L;
         version  = getNativeVersion(nativePtr);
@@ -186,6 +257,10 @@ public class EXRInputFile implements AutoCloseable {
         if (nativePtr != 0L) {
             deleteNativeInputFile(nativePtr);
             nativePtr = 0L;
+            if (stream != null && autoCloseStream) {
+                assert stream instanceof AutoCloseable;
+                ((AutoCloseable) stream).close();
+            }
         }
     }
     
@@ -538,6 +613,11 @@ public class EXRInputFile implements AutoCloseable {
             int scanLine1, int scanLine2);
     
     
+    /** Optional reference to the EXRInput stream being used */
+    private final EXRInputStream stream;
+    
+    /** Flag to close the EXRInputStream along with the input file */
+    private final boolean autoCloseStream;
     
     /** Native pointer to the underlying class */
     private long nativePtr = 0L;
