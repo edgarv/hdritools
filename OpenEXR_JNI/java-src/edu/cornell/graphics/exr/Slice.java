@@ -180,36 +180,36 @@ public class Slice {
     public PixelType type = PixelType.HALF;
     
     /** Buffer containing the actual slice data */
-    ByteBuffer buffer = null;
+    public ByteBuffer buffer = null;
     
     /**
      * Offset within the buffer, used when calculating the address of a pixel.
      */
-    int baseOffset = 0;
+    public int baseOffset = 0;
     
     /**
      * Distance in bytes between pixels {@code (x,y)} and {@code (x+1,y)}. It
      * may be a negative number.
      */
-    int xStride = 0;
+    public int xStride = 0;
     
     /**
      * Distance in bytes between pixels {@code (x,y)} and {@code (x,y+1)}. It
      * may be a negative number.
      */
-    int yStride = 0;
+    public int yStride = 0;
     
     /** Pixel sampling interval along {@code x} (the image width.) */
-    int xSampling = 1;
+    public int xSampling = 1;
     
     /** Pixel sampling interval along {@code y} (the image height.) */
-    int ySampling = 1;
+    public int ySampling = 1;
     
     /**
      * Default value, used to fill the slice when a file without a channel that
      * corresponds to this slice is read.
      */
-    double fillValue = 0.0;
+    public double fillValue = 0.0;
     
     /**
      * {@code x} absolute/relative addressing flag for tiled files.
@@ -220,7 +220,7 @@ public class Slice {
      * For scanline-based files this flag has no effect; pixel addressing is
      * always done using absolute coordinates.</p>
      */
-    boolean xTileCoords = false;
+    public boolean xTileCoords = false;
     
     /**
      * {@code y} absolute/relative addressing flag for tiled files.
@@ -231,7 +231,7 @@ public class Slice {
      * For scanline-based files this flag has no effect; pixel addressing is
      * always done using absolute coordinates.</p>
      */
-    boolean yTileCoords = false;
+    public boolean yTileCoords = false;
     
     /**
      * Syntactic-sugar method which return a {@code SliceBuilder} to 
