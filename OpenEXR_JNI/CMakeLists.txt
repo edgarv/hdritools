@@ -289,6 +289,7 @@ set(JAVA_TEST_SRCS
   
   java_test-src/edu/cornell/graphics/exr/AllTests.java
   java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
+  java_test-src/edu/cornell/graphics/exr/EXRInputFileBasicTest.java
   java_test-src/edu/cornell/graphics/exr/HalfTest.java
   java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
   java_test-src/edu/cornell/graphics/exr/PixelTypeTest.java
