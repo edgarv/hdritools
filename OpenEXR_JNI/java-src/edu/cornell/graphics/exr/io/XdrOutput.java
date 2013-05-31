@@ -92,56 +92,56 @@ public class XdrOutput {
     }
     
     public void writeByte(byte b) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(1);
         buffer.put(b);
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeUnsignedByte(int value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(1);
         buffer.put((byte) (value & 0xff));
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeShort(short value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(2);
         buffer.putShort(value);
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeUnsignedShort(int value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(2);
         buffer.putShort((short) (value & 0xffff));
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeInt(int value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(4);
         buffer.putInt(value);
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeUnsignedInt(long value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(4);
         buffer.putInt((int) (value & 0xffffffffL));
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeFloat(float value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(4);
         buffer.putFloat(value);
         buffer.flip();
         os.write(buffer);
     }
     
     public void writeDouble(double value) throws EXRIOException {
-        buffer.rewind();
+        buffer.rewind().limit(8);
         buffer.putDouble(value);
         buffer.flip();
         os.write(buffer);
@@ -153,14 +153,32 @@ public class XdrOutput {
     }
     
     public void writeNullTerminatedUTF8(String s) throws EXRIOException {
-        final byte[] b = s.getBytes(UTF8);
-        writeByteArray(b);
-        writeByte((byte) 0);
+        writeUTF8Impl(s, Integer.MAX_VALUE, true);
+    }
+    
+    public void writeNullTerminatedUTF8(String s, int maxLen) throws EXRIOException {
+        writeUTF8Impl(s, maxLen, true);
     }
     
     public void writeUTF8(String s) throws EXRIOException {
+        writeUTF8Impl(s, Integer.MAX_VALUE, false);
+    }
+    
+    public void writeUTF8(String s, int maxLen) throws EXRIOException {
+        writeUTF8Impl(s, maxLen, false);
+    }
+    
+    private void writeUTF8Impl(String s, int maxLen, boolean appendNull)
+            throws EXRIOException {
         final byte[] b = s.getBytes(UTF8);
+        if (b.length > maxLen) {
+            throw new EXRIOException(
+                    "UTF8 encoded string exceeds maximum length: " + b.length);
+        }
         writeByteArray(b);
+        if (appendNull) {
+            writeByte((byte) 0);
+        }
     }
     
     /**
@@ -210,17 +228,20 @@ public class XdrOutput {
             throw new IndexOutOfBoundsException("invalid length: " + len);
         }
         
-        assert buffer.array() != null;
         final int numPasses = (len + BUFFER_LEN - 1) / BUFFER_LEN;
         assert BUFFER_LEN*numPasses >= len;
+        buffer.limit(buffer.capacity());
         for (int passIdx = 0; passIdx < numPasses; ++passIdx) {
             final int length = Math.min(BUFFER_LEN, len - BUFFER_LEN*passIdx);
-            // This should be more efficient than buffer.put(b, offset, length)
-            System.arraycopy(b, BUFFER_LEN*passIdx, buffer.array(), 0, length);
-            buffer.limit(length).rewind();
+            final int offset = off + BUFFER_LEN*passIdx;
+            buffer.rewind();
+            buffer.put(b, offset, length).flip();
             os.write(buffer);
-            buffer.put(b, off, length);
         }
+    }
+    
+    public void writeBuffer(ByteBuffer src) throws EXRIOException {
+        os.write(src);
     }
     
 }
