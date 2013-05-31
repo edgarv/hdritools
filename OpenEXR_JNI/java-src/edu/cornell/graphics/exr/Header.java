@@ -226,6 +226,49 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
+     * If an OpenEXR file contains any attribute names, attribute type names
+     * or channel names longer than 31 characters, then the file cannot be
+     * read by older versions of the IlmImf library (up to OpenEXR 1.6.1).
+     * Before writing the file header, we check if the header contains
+     * any names longer than 31 characters; if it does, then we set the
+     * LONG_NAMES_FLAG in the file version number.  Older versions of the
+     * IlmImf library will refuse to read files that have the LONG_NAMES_FLAG
+     * set.  Without the flag, older versions of the library would mis-
+     * interpret the file as broken.
+     */
+    private boolean usesLongNames() {
+        for (Entry<String, Attribute> attr : this) {
+            if (attr.getKey().length() >= 32 ||
+                attr.getValue().typeName().length() >= 32) {
+                return true;
+            }
+        }
+        
+        for (ChannelListElement c : getChannels()) {
+            if (c.getName().length() >= 32) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Returns the appropriate version number that corresponds to this header.
+     * @return the appropriate version number that corresponds to this header.
+     */
+    public int version() {
+        int version = EXRVersion.EXR_VERSION;
+        if (hasTileDescription()) {
+            version |= EXRVersion.TILED_FLAG;
+        }
+        if (usesLongNames()) {
+            version |= EXRVersion.LONG_NAMES_FLAG;
+        }
+        return version;
+    }
+    
+    /**
      * <p>Add an attribute to the header. If no attribute with name {@code n}
      * exists, a new attribute with name {@code n} and the same type as
      * {@code attr}, is added, and the value of {@code attr} is copied into
