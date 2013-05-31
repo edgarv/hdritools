@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -54,6 +55,31 @@ public class M44fAttribute extends TypedAttribute<Matrix44<Float>> {
         m.m33 = input.readFloat();
 
         setValue(m);
+    }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Matrix44<Float> m = getValue();
+        
+        output.writeFloat(m.m00);
+        output.writeFloat(m.m01);
+        output.writeFloat(m.m02);
+        output.writeFloat(m.m03);
+        
+        output.writeFloat(m.m10);
+        output.writeFloat(m.m11);
+        output.writeFloat(m.m12);
+        output.writeFloat(m.m13);
+        
+        output.writeFloat(m.m20);
+        output.writeFloat(m.m21);
+        output.writeFloat(m.m22);
+        output.writeFloat(m.m23);
+        
+        output.writeFloat(m.m30);
+        output.writeFloat(m.m31);
+        output.writeFloat(m.m32);
+        output.writeFloat(m.m33);
     }
 
     @Override

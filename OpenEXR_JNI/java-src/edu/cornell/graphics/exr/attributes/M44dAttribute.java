@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -54,6 +55,31 @@ public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
         m.m33 = input.readDouble();
 
         setValue(m);
+    }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Matrix44<Double> m = getValue();
+        
+        output.writeDouble(m.m00);
+        output.writeDouble(m.m01);
+        output.writeDouble(m.m02);
+        output.writeDouble(m.m03);
+        
+        output.writeDouble(m.m10);
+        output.writeDouble(m.m11);
+        output.writeDouble(m.m12);
+        output.writeDouble(m.m13);
+        
+        output.writeDouble(m.m20);
+        output.writeDouble(m.m21);
+        output.writeDouble(m.m22);
+        output.writeDouble(m.m23);
+        
+        output.writeDouble(m.m30);
+        output.writeDouble(m.m31);
+        output.writeDouble(m.m32);
+        output.writeDouble(m.m33);
     }
 
     @Override
