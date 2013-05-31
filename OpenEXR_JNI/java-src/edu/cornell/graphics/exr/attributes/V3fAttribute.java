@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Vector3;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -36,6 +37,14 @@ public class V3fAttribute extends TypedAttribute<Vector3<Float>> {
         v.y = input.readFloat();
         v.z = input.readFloat();
         setValue(v);
+    }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Vector3<Float> v = getValue();
+        output.writeFloat(v.x);
+        output.writeFloat(v.y);
+        output.writeFloat(v.z);
     }
     
     @Override

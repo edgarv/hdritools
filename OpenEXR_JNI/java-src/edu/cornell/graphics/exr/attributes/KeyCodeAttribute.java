@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.KeyCode;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -40,6 +41,18 @@ public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
         k.perfsPerFrame = input.readInt();
         k.perfsPerCount = input.readInt();
         setValue(k);
+    }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final KeyCode k = getValue();
+        output.writeInt(k.filmMfcCode);
+        output.writeInt(k.filmType);
+        output.writeInt(k.prefix);
+        output.writeInt(k.count);
+        output.writeInt(k.perfOffset);
+        output.writeInt(k.perfsPerFrame);
+        output.writeInt(k.perfsPerCount);
     }
 
     @Override

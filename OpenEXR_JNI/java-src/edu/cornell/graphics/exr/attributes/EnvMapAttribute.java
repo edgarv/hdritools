@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EnvMap;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -34,6 +35,12 @@ public class EnvMapAttribute extends TypedAttribute<EnvMap> {
         int ordinal = input.readUnsignedByte();
         EnvMap v = checkedValueOf(ordinal, EnvMap.values());
         setValue(v);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        int ordinal = getValue().ordinal();
+        output.writeUnsignedByte(ordinal);
     }
 
     @Override

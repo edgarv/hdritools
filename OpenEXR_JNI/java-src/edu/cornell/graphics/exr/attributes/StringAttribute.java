@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -32,6 +33,12 @@ public class StringAttribute extends TypedAttribute<String> {
             throws EXRIOException, IOException {
         String s = input.readUTF8(size);
         setValue(s);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final String s = getValue();
+        output.writeUTF8(s);
     }
 
     @Override

@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -32,6 +33,12 @@ public class DoubleAttribute extends TypedAttribute<Double> {
             throws EXRIOException, IOException {
         double v = input.readDouble();
         setValue(v);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        double v = getValue();
+        output.writeDouble(v);
     }
 
     @Override

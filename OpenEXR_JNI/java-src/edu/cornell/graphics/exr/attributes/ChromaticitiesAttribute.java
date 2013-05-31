@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.Chromaticities;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO Add documentation
@@ -41,6 +42,19 @@ public class ChromaticitiesAttribute extends TypedAttribute<Chromaticities> {
         c.whiteX = input.readFloat();
         c.whiteY = input.readFloat();
         setValue(c);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Chromaticities c = this.getValue();
+        output.writeFloat(c.redX);
+        output.writeFloat(c.redY);
+        output.writeFloat(c.greenX);
+        output.writeFloat(c.greenY);
+        output.writeFloat(c.blueX);
+        output.writeFloat(c.blueY);
+        output.writeFloat(c.whiteX);
+        output.writeFloat(c.whiteY);
     }
 
     @Override

@@ -17,10 +17,12 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.Channel;
 import edu.cornell.graphics.exr.ChannelList;
+import edu.cornell.graphics.exr.ChannelList.ChannelListElement;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.PixelType;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -91,6 +93,29 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         while ((pair = readChannel(input, maxNameLength)) != null) {
             chlist.insert(pair.name, pair.c);
         }
+    }
+
+    @Override
+    public void writeValueTo(XdrOutput output, int version)
+            throws EXRIOException {
+        final int maxNameLength = EXRVersion.getMaxNameLength(version);
+        final ChannelList chlist = getValue();
+        
+        for (ChannelListElement c : chlist) {
+            // Write name
+            output.writeNullTerminatedUTF8(c.getName(), maxNameLength);
+            
+            // Write channel struct
+            final Channel channel = c.getChannel();
+            output.writeInt(channel.type.ordinal());
+            output.writeBoolean(channel.pLinear);
+            output.pad(3);
+            output.writeInt(channel.xSampling);
+            output.writeInt(channel.ySampling);
+        }
+        
+        // Write end of list marker
+        output.writeNullTerminatedUTF8("");
     }
 
     @Override

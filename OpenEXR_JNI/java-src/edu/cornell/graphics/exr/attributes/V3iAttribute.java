@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Vector3;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -36,6 +37,14 @@ public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
         v.y = input.readInt();
         v.z = input.readInt();
         setValue(v);
+    }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Vector3<Integer> v = getValue();
+        output.writeInt(v.x);
+        output.writeInt(v.y);
+        output.writeInt(v.z);
     }
     
     @Override

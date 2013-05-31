@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.Rational;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -35,6 +36,13 @@ public class RationalAttribute extends TypedAttribute<Rational> {
         r.n = input.readInt();
         r.d = input.readInt();
         setValue(r);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Rational r = getValue();
+        output.writeInt(r.n);
+        output.writeInt(r.d);
     }
 
     @Override

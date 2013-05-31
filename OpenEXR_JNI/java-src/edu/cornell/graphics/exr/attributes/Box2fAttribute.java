@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -38,10 +39,19 @@ public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
         box.yMax = input.readFloat();
         setValue(box);
     }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Box2<Float> box = getValue();
+        output.writeFloat(box.xMin);
+        output.writeFloat(box.yMin);
+        output.writeFloat(box.xMax);
+        output.writeFloat(box.yMax);
+    }
 
     @Override
     protected Box2<Float> cloneValue() {
         return new Box2<>(value);
     }
-    
+
 }

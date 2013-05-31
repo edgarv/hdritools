@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -38,6 +39,12 @@ public class FloatAttribute extends TypedAttribute<Float> {
             throws EXRIOException, IOException {
         float f = input.readFloat();
         setValue(f);
+    }
+    
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        float v = getValue();
+        output.writeFloat(v);
     }
 
     @Override
