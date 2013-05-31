@@ -49,6 +49,7 @@
 
 package edu.cornell.graphics.exr;
 
+import edu.cornell.graphics.exr.ChannelList.ChannelListElement;
 import edu.cornell.graphics.exr.attributes.Attribute;
 import edu.cornell.graphics.exr.attributes.AttributeFactory;
 import edu.cornell.graphics.exr.attributes.Box2iAttribute;
@@ -57,12 +58,15 @@ import edu.cornell.graphics.exr.attributes.CompressionAttribute;
 import edu.cornell.graphics.exr.attributes.FloatAttribute;
 import edu.cornell.graphics.exr.attributes.LineOrderAttribute;
 import edu.cornell.graphics.exr.attributes.OpaqueAttribute;
+import edu.cornell.graphics.exr.attributes.PreviewImageAttribute;
 import edu.cornell.graphics.exr.attributes.TileDescriptionAttribute;
 import edu.cornell.graphics.exr.attributes.TypedAttribute;
 import edu.cornell.graphics.exr.attributes.V2fAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
+import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -838,6 +842,69 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
                 insert(name, attr);
             }
         }
+    }
+    
+    /**
+     * Serializes this header by writing into the {@link XdrOutput}
+     * encapsulating an output stream.
+     * 
+     * <p>This method writes a sequence of name-attribute pairs. The names are
+     * null-terminated strings; a zero-length attribute name marks the
+     * end of the header. Each attribute is stored as a null-terminated string
+     * with the attribute's type name, followed by a 32-bit integer with the
+     * length of the attribute's data, followed by that many bytes.</p>
+     * 
+     * <p>This method does <em>not</em> write neither the version number nor
+     * the magic number, it serializes the header data only.</p>
+     * 
+     * <p>If the header contains a preview image attribute,
+     * then {@code writeTo()} returns the position of that attribute in the
+     * output stream; this information is used to update the preview image
+     * when writing an output file. If the header contains no preview image
+     * attribute, then {@code writeTo()} returns {@literal 0}.</p>
+     * 
+     * @param output data sink where the header data will be written
+     * @return the position of the preview image attribute in the output
+     *         stream, or {@literal 0} if the header contains no such attribute
+     * @throws EXRIOException if there is an I/O error
+     * @see #version() 
+     */
+    public long writeTo(XdrOutput output) throws EXRIOException {
+        // Write all attributes.  If we have a preview image attribute,
+        // keep track of its position in the file.
+        long previewPosition = 0L;
+        
+        final int version = version();
+        final int maxNameLength = EXRVersion.getMaxNameLength(version);
+        TypedAttribute<PreviewImage> preview = findTypedAttribute("preview",
+                PreviewImageAttribute.class);
+        
+        EXRByteArrayOutputStream attrStream = new EXRByteArrayOutputStream();
+        XdrOutput attrOutput = new XdrOutput(attrStream);
+        
+        for (Entry<String, Attribute> attr : this) {
+            // Write the attribute's name and type.
+            final Attribute value = attr.getValue();
+            output.writeNullTerminatedUTF8(attr.getKey(),    maxNameLength);
+            output.writeNullTerminatedUTF8(value.typeName(), maxNameLength);
+            
+            // Write the size of the attribute value, and the value itself.
+            attrOutput.position(0);
+            value.writeValueTo(attrOutput, version);
+            final int valueSize = (int) attrOutput.position();
+            output.writeInt(valueSize);
+            
+            if (value.equals(preview)) {
+                previewPosition = output.position();
+            }
+            
+            output.writeByteArray(attrStream.array(), 0, valueSize);
+        }
+        
+        // Write zero-length attribute name to mark the end of the header.
+        output.writeNullTerminatedUTF8("");
+        
+        return previewPosition;
     }
 
     /**
