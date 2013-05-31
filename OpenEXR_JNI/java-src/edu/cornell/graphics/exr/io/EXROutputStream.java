@@ -35,10 +35,10 @@ public interface EXROutputStream {
      * 
      * <p>If an I/O error occurs, {@code write(dst)} throws an exception.</p>
      * 
-     * @param dst The buffer from which bytes are to be transferred 
+     * @param src The buffer from which bytes are to be transferred 
      * @throws EXRIOException if an I/O error occurs.
      */
-    void write(ByteBuffer dst) throws EXRIOException;
+    void write(ByteBuffer src) throws EXRIOException;
    
     /**
      * Get the current writing position, in bytes from the beginning of the
