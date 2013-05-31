@@ -21,16 +21,17 @@ import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 
 /**
- * Helper class which encapsulates an {@code EXRInputStream} to read primitive and
- * string data.
+ * Helper class which encapsulates an {@code EXRInputStream} to read primitive
+ * and string data.
  * 
- * <p>Each instance uses a private buffer to read data from the string. All
+ * <p>Each instance uses a private buffer to read data from the stream. All
  * methods are <em>not</em> thread safe, and assume that the stream will remain
  * valid through the lifetime of a {@code XdrInput} instance.</p>
  * 
  * <p>Modeled after the functions in ImfXdr.h from the C++ OpenEXR library.</p>
  * 
  * @see EXRInputStream
+ * @since 0.3
  */
 public class XdrInput {
     
@@ -49,7 +50,7 @@ public class XdrInput {
         }
         buffer = ByteBuffer.allocate(BUFFER_LEN);
         if (!buffer.hasArray()) {
-            throw new IllegalStateException("buffer not backed by array");
+            throw new IllegalStateException("buffer not backed by an array");
         }
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         is = stream;

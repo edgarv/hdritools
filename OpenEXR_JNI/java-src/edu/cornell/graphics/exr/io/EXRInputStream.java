@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 
 /**
  * Low-level EXR input stream interface.
+ * 
+ * @since 0.3
  */
 public interface EXRInputStream {
     
@@ -29,7 +31,7 @@ public interface EXRInputStream {
      * <p>{@code read(dst)} reads <em>n</em> bytes from the stream, where
      * <em>n</em> is the number of bytes remaining in the buffer, that is,
      * {@code dst.remaining()}, at the moment this method is invoked. The bytes
-     * are written at the current position of the buffer.</p>
+     * are read into the current position of the buffer.</p>
      * 
      * <p>If the stream contains less than <em>n</em> bytes, or if an I/O error
      * occurs, {@code read(dst)} throws an exception. If {@code read(dst)}
@@ -46,11 +48,11 @@ public interface EXRInputStream {
     
     /**
      * Get the current reading position, in bytes from the beginning of the
-     * file. If the next call to {@code read()} will read the first byte in the
-     * file, {@code position()} returns {@literal 0}.
+     * stream. If the next call to {@code read()} will read the first byte in
+     * the stream file, {@code position()} returns {@literal 0}.
      * 
      * @return the current reading position, in bytes from the beginning of the
-     *         file.
+     *         stream.
      * @throws EXRIOException if an I/O error occurs.
      */
     long position() throws EXRIOException;
