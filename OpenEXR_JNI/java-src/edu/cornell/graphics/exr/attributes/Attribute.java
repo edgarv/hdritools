@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -30,8 +31,8 @@ public interface Attribute extends Cloneable {
     /** Interface for providers of attributes creators */
     public static interface AttributeCreatorProvider {
         /**
-         * Creates a new instance of an {@code AttributeCreator} which can create
-         * instances of this attribute type.
+         * Creates a new instance of an {@code AttributeCreator} which can
+         * create instances of this attribute type.
          * 
          * @return a new instance of an {@code AttributeCreator}.
          */
@@ -61,6 +62,18 @@ public interface Attribute extends Cloneable {
      */
     void readValueFrom(XdrInput input, int size, int version)
             throws EXRIOException, IOException;
+    
+    /**
+     * Writes the value of this attribute into the given output buffer.
+     * The {@code version} parameter is the 4-byte integer following the
+     * magic number at the beginning of an OpenEXR file with the
+     * file version and feature flags.
+     * 
+     * @param output data output into which the value will be written.
+     * @param version file version and flags as provided in the OpenEXR file.
+     * @throws EXRIOException if there is an I/O error.
+     */
+    void writeValueTo(XdrOutput output, int version) throws EXRIOException;
 
     /**
      * Creates a deep-copy of this attribute.

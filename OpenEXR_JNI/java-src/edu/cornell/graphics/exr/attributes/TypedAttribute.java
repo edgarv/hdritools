@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -77,6 +78,27 @@ public abstract class TypedAttribute<T> implements Attribute {
         readValueFrom(input, version);
         final int actualCount = (int) (input.position() - p0);
         checkSize(size, actualCount);
+    }
+    
+    /**
+     * Writes the value of this attribute into the given output buffer. This
+     * method is used by the default implementation of
+     * {@link #writeValueTo(XdrOutput, int) }.
+     * 
+     * <p>The default implementation throws an
+     * {@code UnsupportedOperationException}</p>
+     * 
+     * @param output data output into which the value will be written.
+     * @throws EXRIOException if there is an I/O error.
+     */
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    
+    @Override
+    public void writeValueTo(XdrOutput output, int version)
+            throws EXRIOException {
+        writeValueTo(output);
     }
     
     public T getValue() {

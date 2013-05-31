@@ -17,6 +17,7 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -82,6 +83,11 @@ public class OpaqueAttribute implements Attribute {
             throws EXRIOException, IOException {
         data = new byte[size];
         input.readFully(data);
+    }
+
+    @Override
+    public void writeValueTo(XdrOutput output, int ver) throws EXRIOException {
+        output.writeByteArray(data);
     }
 
     @Override
