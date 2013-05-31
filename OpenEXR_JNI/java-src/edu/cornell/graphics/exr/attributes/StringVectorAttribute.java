@@ -17,7 +17,9 @@ package edu.cornell.graphics.exr.attributes;
 
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +44,17 @@ public class StringVectorAttribute extends TypedAttribute<List<String>> {
         }
         checkSize(read, size);
         setValue(lst);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final Charset UTF8 = Charset.forName("UTF-8");
+        final List<String> lst = getValue();
+        for (String str : lst) {
+            final byte[] b = str.getBytes(UTF8);
+            output.writeInt(b.length);
+            output.writeByteArray(b);
+        }
     }
 
     @Override

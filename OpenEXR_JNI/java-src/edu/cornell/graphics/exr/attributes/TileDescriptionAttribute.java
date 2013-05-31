@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.TileDescription;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -50,6 +51,23 @@ public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
                 TileDescription.RoundingMode.values());
         
         setValue(t);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final TileDescription t = getValue();
+        
+        if (t.xSize < 0) {
+            throw new EXRIOException("xSize overflow: " + t.xSize);
+        }
+        if (t.ySize < 0) {
+            throw new EXRIOException("ySize overflow: " + t.ySize);
+        }
+        output.writeInt(t.xSize);
+        output.writeInt(t.ySize);
+        
+        int tmp = t.mode.ordinal() | (t.roundingMode.ordinal() << 4);
+        output.writeUnsignedByte(tmp);
     }
 
     @Override

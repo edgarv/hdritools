@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.PreviewImage;
 import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
 import java.io.IOException;
 
 // TODO: Add documentation
@@ -46,6 +47,26 @@ public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
         input.readFully(p.pixelData);
         
         setValue(p);
+    }
+
+    @Override
+    protected void writeValueTo(XdrOutput output) throws EXRIOException {
+        final PreviewImage p = new PreviewImage();
+        
+        if (p.width < 0) {
+            throw new EXRIOException("width overflow: " + p.width);
+        } else if (p.height < 0) {
+            throw new EXRIOException("height overflow: " + p.height);
+        }
+        output.writeInt(p.width);
+        output.writeInt(p.height);
+        
+        final int numPixels = p.width * p.height;
+        if (p.pixelData != null) {
+            output.writeByteArray(p.pixelData, 0, numPixels);            
+        } else {
+            output.pad(numPixels);
+        }
     }
 
     @Override
