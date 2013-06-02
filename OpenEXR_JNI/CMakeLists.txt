@@ -137,11 +137,11 @@ set(OPENEXRJNI_JAVADOC_JAR
   
 # The jni headers are generated with javah from the java sources
 set(JNI_HEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage.h
-  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_Channels.h
-  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_OpenEXRTo.h
-  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRInputFile.h
-  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXROutputFile.h
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRSimpleImage.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRSimpleImage_Channels.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRSimpleImage_OpenEXRTo.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRInputFile.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXROutputFile.h"
 )
   
 # Of course this module needs Java and JNI
@@ -216,13 +216,14 @@ add_custom_target(openexrjni_javadoc_jar ALL DEPENDS "${OPENEXRJNI_JAVADOC_JAR}"
 set_target_properties(openexrjni_javadoc_jar PROPERTIES FOLDER "Java-JNI")
  
 # Build the jni headers using the jar
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
 add_custom_command(OUTPUT ${JNI_HEADERS}
   COMMAND "${Java_JAVAH_EXECUTABLE}" -classpath "${OPENEXRJNI_JAR}"
     edu.cornell.graphics.exr.EXRSimpleImage
     edu.cornell.graphics.exr.EXRInputFile
     edu.cornell.graphics.exr.EXROutputFile
   DEPENDS openexrjni_jar
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include"
   COMMENT "Generating OpenEXR JNI headers..."
 )
 
@@ -232,7 +233,7 @@ if(OpenEXR_DEFINITIONS)
 endif()
 
 include_directories(
-  ${CMAKE_CURRENT_BINARY_DIR} 
+  "${CMAKE_CURRENT_BINARY_DIR}/include"
   ${OpenEXR_INCLUDE_DIR} ${JNI_INCLUDE_DIRS}
 )
 
