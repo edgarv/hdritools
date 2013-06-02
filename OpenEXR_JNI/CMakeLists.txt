@@ -24,6 +24,7 @@ unset(VERSION_TXT)
 set(SRCS
   EXRInputFile.cpp
   EXRJavaStream.h EXRJavaStream.cpp
+  EXROutputFile.cpp
   EXRSimpleImage.h EXRSimpleImage.cpp
   NativeFrameBuffer.cpp
   StdSStream.h StdSStream.cpp

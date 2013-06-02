@@ -51,6 +51,7 @@ package edu.cornell.graphics.exr;
 
 import edu.cornell.graphics.exr.attributes.PreviewImageAttribute;
 import edu.cornell.graphics.exr.attributes.TypedAttribute;
+import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
 import edu.cornell.graphics.exr.io.EXROutputStream;
 import edu.cornell.graphics.exr.io.XdrOutput;
@@ -66,7 +67,6 @@ public class EXROutputFile implements AutoCloseable {
     static {
         // TODO Unify native library loading
         System.loadLibrary("openexrjni");
-        initNativeCache();
     }
     
     public EXROutputFile(Path path, Header hdr) throws EXRIOException {
@@ -90,9 +90,10 @@ public class EXROutputFile implements AutoCloseable {
         
         header = new Header(hdr);
         headerHashCode = header.hashCode();
-        ByteBuffer hBuffer = serializeHeader(header);
+        EXRByteArrayOutputStream hStream = serializeHeader(header);
         String filename = path.toAbsolutePath().toString();
-        nativePtr = getNativeOutputFile(hBuffer, null, filename, numThreads);
+        nativePtr = getNativeOutputFile(hStream.array(),(int)hStream.position(),
+                null, filename, numThreads);
         assert nativePtr != 0L;
     }
     
@@ -129,8 +130,9 @@ public class EXROutputFile implements AutoCloseable {
         autoCloseStream = closeStream;
         header = new Header(hdr);
         headerHashCode = header.hashCode();
-        ByteBuffer hBuffer = serializeHeader(header);
-        nativePtr = getNativeOutputFile(hBuffer, os, null, numThreads);
+        EXRByteArrayOutputStream hStream = serializeHeader(header);
+        nativePtr = getNativeOutputFile(hStream.array(),(int)hStream.position(),
+                os, null, numThreads);
         assert nativePtr != 0L;
     }
     
@@ -138,7 +140,7 @@ public class EXROutputFile implements AutoCloseable {
      * Writes the magic number, version and serialized header into a newly
      * allocated direct buffer.
      */
-    private static ByteBuffer serializeHeader(Header header) 
+    private static EXRByteArrayOutputStream serializeHeader(Header header) 
             throws EXRIOException {
         EXRByteArrayOutputStream stream = new EXRByteArrayOutputStream();
         XdrOutput output = new XdrOutput(stream);
@@ -146,10 +148,7 @@ public class EXROutputFile implements AutoCloseable {
         output.writeInt(EXRVersion.MAGIC);
         output.writeInt(header.version());
         header.writeTo(output);
-        int numBytes = (int) output.position();
-        ByteBuffer buffer = ByteBuffer.allocateDirect(numBytes);
-        buffer.put(stream.array(), 0, numBytes).flip();
-        return buffer;
+        return stream;
     }
     
     /**
@@ -222,11 +221,28 @@ public class EXROutputFile implements AutoCloseable {
      *         modified externally
      */
     public void setFrameBuffer(FrameBuffer fBuffer) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (!isOpen()) {
+            throw new IllegalStateException("the file is already closed");
+        }
+        if (headerHashCode != header.hashCode()) {
+            throw new IllegalStateException("the header has been modified");
+        }
+        if (fBuffer == null) {
+            throw new IllegalArgumentException("null frame buffer");
+        } else if (fBuffer.isEmpty()) {
+            throw new IllegalArgumentException("empty frame buffer");
+        }
+        
+        nativeFrameBuffer = new NativeFrameBuffer(fBuffer,header.getChannels());
+        setNativeFrameBuffer(nativePtr, nativeFrameBuffer.getNativeHandle());
+        // setNativeFrameBuffer creates an internal copy of the frame buffer,
+        // so we can delete the current native copy
+        nativeFrameBuffer.deleteNativeHandle();
     }
     
     /**
-     * Returns a reference to the current frame buffer.
+     * Returns a reference to the current frame buffer, or {@code null} if it
+     * has not been set yet.
      * 
      * <p>For efficiency this function returns the actual frame buffer of this
      * output file, thus callers ought <em>not</em> to modify the returned
@@ -242,15 +258,17 @@ public class EXROutputFile implements AutoCloseable {
      * multiple operations should call {@code getFrameBuffer} only once and then
      * use the validated reference.</p>
      * 
-     * @return a reference to the current frame buffer
+     * @return a reference to the current frame buffer, or {@code null} if it
+     *         has not been set yet
      * @throws IllegalStateException if the frame buffer has been modified
      *         externally
      */
     public FrameBuffer getFrameBuffer() {
-        if (frameBuffer!=null && frameBufferHashCode!=frameBuffer.hashCode()) {
-            throw new IllegalStateException("frame buffer has been modified");
+        if (nativeFrameBuffer != null) {
+            return nativeFrameBuffer.getFrameBuffer();
+        } else {
+            return null;
         }
-        return frameBuffer;
     }
     
     /**
@@ -268,13 +286,40 @@ public class EXROutputFile implements AutoCloseable {
      * </p>
      * 
      * @param numScanlines number of the next consecutive scan lines to write
+     * @throws IllegalArgumentException if {@code numScanLines} is less than
+     *         {@literal 1}
+     * @throws IndexOutOfBoundsException
+     *        if {@code (currentScanline() + numScanlines - 1)} is outside 
+     *        {@code [header().dataWindow().min.y, header().dataWindow().max.y]}
+     * @throws IllegalStateException if the file is not open for reading,
+     *        or if the frame buffer has not been set, or if either the header
+     *        or the current frame buffer have been modified externally
+     * @see #setFrameBuffer(edu.cornell.graphics.exr.FrameBuffer) 
      */
-    public void writePixels(int numScanlines) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void writePixels(int numScanlines) throws IllegalArgumentException,
+            IndexOutOfBoundsException, IllegalStateException {
+        if (numScanlines < 1) {
+            throw new IllegalArgumentException(
+                    "invalid number of scan lines: " + numScanlines);
+        } else if (!isOpen()) {
+            throw new IllegalStateException("the file is already closed");
+        } else if (nativeFrameBuffer == null) {
+            throw new IllegalStateException("the input file does not have a " +
+                    "valid frame buffer yet");
+        } else if (headerHashCode != header.hashCode()) {
+            throw new IllegalStateException("the header has been modified");
+        }
+        
+        // Verify that reads will stay within each buffer valid range
+        final Box2<Integer> dw = header.getDataWindow();
+        final int scanLine1 = currentScanLine();
+        final int scanLine2 = scanLine1 + numScanlines - 1;
+        nativeFrameBuffer.validateForDataWindow(dw, scanLine1, scanLine2);
+        writeNativePixels(nativePtr, numScanlines);
     }
     
     /**
-     * Write the next scanline from the frame buffer.
+     * Write the next scan line from the frame buffer.
      * 
      * <p>This implementations simply calls {@code writePixels(1)}</p>
      * @see #writePixels(int) 
@@ -301,9 +346,14 @@ public class EXROutputFile implements AutoCloseable {
      * the current scan line is decremented by {@literal 1}.
      * 
      * @return the current scan line
+     * @throws IllegalStateException if the file is already closed
      */
     public int currentScanLine() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (isOpen()) {
+            return currentNativeScanLine(nativePtr);
+        } else {
+            throw new IllegalStateException("the file is already closed");
+        }
     }
     
     /**
@@ -345,26 +395,21 @@ public class EXROutputFile implements AutoCloseable {
     
     
     /**
-     * Initializes the required data structures on the native size. All other
-     * native methods assume that this one has been already called.
-     */
-    private static native void initNativeCache();
-    
-    /**
      * Return a native pointer, stored inside a long, of a new native 
      * {@code Imf::OutputFile} instance created from either a non-null
      * input stream or opening a file. Exactly one of the arguments has to be
      * non-null.
      * 
-     * @param headerBuffer direct {@code ByteBuffer} with the OpenEXR magic
+     * @param headerBuffer byte array with the OpenEXR magic
      *        number, the header's version number and the serialized header
+     * @param len number of valid bytes in {@code headerBuffer}
      * @param os output stream to use, or {@code null} if using a filename
      * @param fname filename to use, or {@code null} if using a stream
      * @param numThreads 
      * @return a native pointer as a long.
      */
-    private static native long getNativeOutputFile(ByteBuffer headerBuffer,
-            EXROutputStream is, String fname, int numThreads);
+    private static native long getNativeOutputFile(byte[] headerBuffer, int len,
+            EXROutputStream os, String fname, int numThreads);
     
     /**
      * Deletes a native output file previously created by
@@ -373,6 +418,35 @@ public class EXROutputFile implements AutoCloseable {
      * @param nativePointer handle to the underlying native code
      */
     private static native void deleteNativeOutputFile(long nativePointer);
+    
+    /**
+     * Sets the underlying frame buffer using a previously created native
+     * {@code Imf::FrameBuffer} instance.
+     * 
+     * <p>This method assumes that:
+     * <ul>
+     *   <li>{@code nativePointer} is the value returned by
+     *   {@code getNativeInputFile}</li>
+     *   <li>{@code nativeFrameBufferPointer} is the value returned by
+     *   {@link NativeFrameBuffer#getNativeHandle() }</li>
+     * </ul></p>
+     * @param nativePointer handle to the underlying native code
+     * @param nativeFrameBufferPointer handle to the {@code Imf::FrameBuffer}
+     *        instance
+     */
+    private static native void setNativeFrameBuffer(long nativePointer,
+            long nativeFrameBufferPointer);
+    
+    /**
+     * Returns the current scan line from the underlying native instance.
+     * 
+     * <p>This method assumes that {@code nativePointer} is the value returned
+     * by {@code getNativeInputFile}</p>
+     * 
+     * @param nativePointer handle to the underlying native code
+     * @return the current scan line from the underlying native instance
+     */
+    private static native int currentNativeScanLine(long nativePointer);
     
     /**
      * Writes the next group of consecutive scan lines from the current
@@ -411,8 +485,5 @@ public class EXROutputFile implements AutoCloseable {
     private final int headerHashCode;
     
     /** Local frame buffer */
-    private FrameBuffer frameBuffer = null;
-    
-    /** Cached hash code of the local frame buffer */
-    private int frameBufferHashCode = 0;
+    private NativeFrameBuffer nativeFrameBuffer = null;
 }
