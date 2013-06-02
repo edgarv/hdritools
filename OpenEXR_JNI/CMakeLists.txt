@@ -25,6 +25,7 @@ set(SRCS
   EXRInputFile.cpp
   EXRJavaStream.h EXRJavaStream.cpp
   EXRSimpleImage.h EXRSimpleImage.cpp
+  NativeFrameBuffer.cpp
   StdSStream.h StdSStream.cpp
   util.h util.cpp
   jniBinding.cpp
@@ -70,6 +71,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/Header.java
   java-src/edu/cornell/graphics/exr/KeyCode.java
   java-src/edu/cornell/graphics/exr/LineOrder.java
+  java-src/edu/cornell/graphics/exr/NativeFrameBuffer.java
   java-src/edu/cornell/graphics/exr/NoSuchChannelException.java
   java-src/edu/cornell/graphics/exr/PixelType.java
   java-src/edu/cornell/graphics/exr/PreviewImage.java
@@ -142,6 +144,7 @@ set(JNI_HEADERS
   "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRSimpleImage_OpenEXRTo.h"
   "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRInputFile.h"
   "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXROutputFile.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_NativeFrameBuffer.h"
 )
   
 # Of course this module needs Java and JNI
@@ -222,6 +225,7 @@ add_custom_command(OUTPUT ${JNI_HEADERS}
     edu.cornell.graphics.exr.EXRSimpleImage
     edu.cornell.graphics.exr.EXRInputFile
     edu.cornell.graphics.exr.EXROutputFile
+    edu.cornell.graphics.exr.NativeFrameBuffer
   DEPENDS openexrjni_jar
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include"
   COMMENT "Generating OpenEXR JNI headers..."

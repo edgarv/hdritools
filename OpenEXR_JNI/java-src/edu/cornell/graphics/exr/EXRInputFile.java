@@ -57,7 +57,6 @@ import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.util.Map.Entry;
 
 /**
  * {@code EXRInputFile} is scanline-based interface that can be used to read
@@ -68,7 +67,6 @@ public class EXRInputFile implements AutoCloseable {
     static {
         // TODO Unify native library loading
         System.loadLibrary("openexrjni");
-        initNativeCache();
     }
 
     /**
@@ -344,82 +342,42 @@ public class EXRInputFile implements AutoCloseable {
             throw new IllegalArgumentException("empty frame buffer");
         }
         
-        final ChannelList channels = header.getChannels();
-        assert channels != null;
-        frameBuffer = new FrameBuffer();
-        for (Entry<String, Slice> fbEntry : fBuffer) {
-            String name = fbEntry.getKey();
-            Slice slice = fbEntry.getValue();
-            
-            // Check the slice for invalid values
-            if (slice.type == null) {
-                throw new IllegalArgumentException("there is no pixel type " +
-                        "for slice \"" + name + "\"");
-            } else if (slice.type == PixelType.UINT) {
-                if (Double.isInfinite(slice.fillValue) || 
-                    Double.isNaN(slice.fillValue) ||
-                    slice.fillValue < -0xffffffffL ||
-                    slice.fillValue > 0xffffffffL) {
-                    throw new IllegalArgumentException("slice \""+name+"\": " +
-                            "invalid fill value: " + slice.fillValue);                   
-                }
-            }
-            
-            if (slice.buffer == null) {
-                throw new IllegalArgumentException("there is no frame buffer " +
-                        "for slice \"" + name + "\"");
-            } else if (!slice.buffer.isDirect()) {
-                throw new UnsupportedOperationException("slice \""+name+"\": " +
-                        "non-direct buffers support is not implemented yet");
-            }
-            
-            if (slice.xSampling < 1 || slice.ySampling < 1) {
-                throw new IllegalArgumentException("slice \""+name+"\": " +
-                        "invalid stride (" + slice.xSampling + ',' + 
-                        slice.ySampling + ')' );
-            }
-            Channel channel = channels.findChannel(name);
-            if (channel != null) {
-                if (channel.xSampling != slice.xSampling ||
-                    channel.ySampling != slice.ySampling) {
-                    throw new IllegalArgumentException(
-                            "x and/or y subsampling factors of channel \"" +
-                            name + "\" are not compatible with the " +
-                            "frame buffer's subsampling factors.");
-                }
-            }
-            
-            // Incorporate the buffer's position into the slice offset: in the
-            // native code we will get the buffer's address, which stays the
-            // same even if the Java-side current position changes.
-            Slice newSlice = new Slice(slice);
-            newSlice.baseOffset += newSlice.buffer.position();
-            frameBuffer.insert(name, newSlice);            
-        }
-        
-        // Once all slices survived the baseline checks, update the native part
-        frameBufferHashCode = frameBuffer.hashCode();
-        String[] names = new String[frameBuffer.size()];
-        Slice[] slices = new Slice [frameBuffer.size()];
-        int count = 0;
-        for (Entry<String, Slice> fbEntry : frameBuffer) {
-            names[count]  = fbEntry.getKey();
-            slices[count] = fbEntry.getValue();
-            ++count;
-        }
-        setNativeFrameBuffer(nativePtr, count, names, slices);
+        nativeFrameBuffer = new NativeFrameBuffer(fBuffer,header.getChannels());
+        setNativeFrameBuffer(nativePtr, nativeFrameBuffer.getNativeHandle());
+        // setNativeFrameBuffer creates an internal copy of the frame buffer,
+        // so we can delete the current native copy
+        nativeFrameBuffer.deleteNativeHandle();
     }
     
     /**
-     * Returns a reference to the current frame buffer.
+     * Returns a reference to the current frame buffer, or {@code null} if it
+     * has not been set yet.
      * 
-     * @return a reference to the current frame buffer
+     * <p>For efficiency this function returns the actual frame buffer of this
+     * input file, thus callers ought <em>not</em> to modify the returned
+     * instance. In contrast to C++, returning a completely read-only frame
+     * buffer would require a lot of changes, including supporting read-only
+     * slices with only-final accessible fields and/or read-only aware setters.
+     * As a safety feature the implementation caches the hash code of the 
+     * frame buffer after calling {@code setFrameBuffer} and compares it
+     * against the current frame buffer's hash code. It they
+     * do not match it throws an {@code IllegalStateException}.</p>
+     * 
+     * <p>Because of the validation, clients which will use the frame buffer for
+     * multiple operations should call {@code getFrameBuffer} only once and then
+     * use the validated reference.</p>
+     * 
+     * @return a reference to the current frame buffer, or {@code null} if it
+     * has not been set yet
+     * @throws IllegalStateException if the frame buffer has been modified
+     *         externally
      */
     public FrameBuffer getFrameBuffer() {
-        if (frameBuffer!=null && frameBufferHashCode!=frameBuffer.hashCode()) {
-            throw new IllegalStateException("the frame buffer has been modified");
+        if (nativeFrameBuffer != null) {
+            return nativeFrameBuffer.getFrameBuffer();
+        } else {
+            return null;
         }
-        return frameBuffer;
     }
     
     /**
@@ -464,49 +422,16 @@ public class EXRInputFile implements AutoCloseable {
             IndexOutOfBoundsException, IllegalStateException {
         if (!isOpen()) {
             throw new IllegalStateException("the file is already closed");
-        } else if (frameBuffer == null) {
+        } else if (nativeFrameBuffer == null) {
             throw new IllegalStateException("the input file does not have a " +
                     "valid frame buffer yet");
-        } else if (frameBufferHashCode != frameBuffer.hashCode()) {
-            throw new IllegalStateException("the frame buffer has been modified");
         } else if (headerHashCode != header.hashCode()) {
             throw new IllegalStateException("the header has been modified");
         }
         
-        final Box2<Integer> dw = header.getDataWindow();
-        final int scanLineMin = Math.min(scanLine1, scanLine2);
-        final int scanLineMax = Math.max(scanLine1, scanLine2);
-        if (scanLineMin < dw.yMin || scanLineMax > dw.yMax) {
-            throw new IndexOutOfBoundsException("invalid scanline range: (" +
-                    scanLineMin + ',' + scanLineMax + ')');
-        }
-        
         // Verify that writes will stay within each buffer valid range
-        for (Entry<String, Slice> fbEntry : frameBuffer) {
-            Slice slice = fbEntry.getValue();
-            assert slice.xSampling >= 1 && slice.ySampling >= 1;
-            double xFactor = (1.0/slice.xSampling) * slice.xStride;
-            double yFactor = (1.0/slice.ySampling) * slice.yStride;
-            int minPosition = (int)Math.floor(slice.baseOffset +
-                    Math.min(xFactor*dw.xMin, xFactor*dw.xMax) +
-                    Math.min(yFactor*scanLineMin, yFactor*scanLineMax));
-            int maxPosition = (int)Math.ceil(slice.baseOffset +
-                    Math.max(xFactor*dw.xMin, xFactor*dw.xMax) +
-                    Math.max(yFactor*scanLineMin, yFactor*scanLineMax)) +
-                    slice.type.byteSize();
-            
-            if (minPosition < slice.buffer.position()) {
-                throw new IndexOutOfBoundsException("reading data into the " +
-                        "slice for channel \"" + fbEntry.getKey() + "\" " +
-                        "would be behind its buffer position");
-            }
-            if (maxPosition > slice.buffer.limit()) {
-                throw new IndexOutOfBoundsException("reading data into the " +
-                        "slice for channel \"" + fbEntry.getKey() + "\" " +
-                        "would exceed its buffer limit");
-            }
-        }
-        
+        final Box2<Integer> dw = header.getDataWindow();
+        nativeFrameBuffer.validateForDataWindow(dw, scanLine1, scanLine2);
         readNativePixels(nativePtr, scanLine1, scanLine2);
     }
     
@@ -523,12 +448,6 @@ public class EXRInputFile implements AutoCloseable {
     }
     
     
-    
-    /**
-     * Initializes the required data structures on the native size. All other
-     * native methods assume that this one has been already called.
-     */
-    private static native void initNativeCache();
     
     /**
      * Return a native pointer, stored inside a long, of a new native 
@@ -580,25 +499,22 @@ public class EXRInputFile implements AutoCloseable {
     private static native void deleteNativeInputFile(long nativePointer);
     
     /**
-     * Sets the underlying frame buffer from a non-empty list of (name,slice)
-     * pairs.
+     * Sets the underlying frame buffer using a previously created native
+     * {@code Imf::FrameBuffer} instance.
      * 
-     * <p>The pairs to be added to the frame buffer are
-     * {@code (names[i],slices[i])}.This method assumes that:
+     * <p>This method assumes that:
      * <ul>
      *   <li>{@code nativePointer} is the value returned by
      *   {@code getNativeInputFile}</li>
-     *   <li>{@code count} is greater than zero</li>
-     *   <li>Both {@code names} and {@code slices} are non-null and have
-     *   {@code count} elements, all of them non-null</li>
+     *   <li>{@code nativeFrameBufferPointer} is the value returned by
+     *   {@link NativeFrameBuffer#getNativeHandle() }</li>
      * </ul></p>
      * @param nativePointer handle to the underlying native code
-     * @param count number of named slices
-     * @param names names of the slices
-     * @param slices description of the slices
+     * @param nativeFrameBufferPointer handle to the {@code Imf::FrameBuffer}
+     *        instance
      */
     private static native void setNativeFrameBuffer(long nativePointer,
-            int count, String[] names, Slice[] slices);
+            long nativeFrameBufferPointer);
     
     /**
      * Reads a group of consecutive scan lines from the underlying native input
@@ -644,8 +560,5 @@ public class EXRInputFile implements AutoCloseable {
     private final boolean complete;
     
     /** Local frame buffer */
-    private FrameBuffer frameBuffer = null;
-    
-    /** Cached hash code of the local frame buffer */
-    private int frameBufferHashCode = 0;
+    private NativeFrameBuffer nativeFrameBuffer = null;
 }

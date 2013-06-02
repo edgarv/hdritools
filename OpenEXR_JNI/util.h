@@ -187,4 +187,71 @@ private:
     JNIEnv* const m_env;
 };
 
+
+
+// C++11 Magic to write less code, for functions which return a value
+template <class MethodImpl, typename T>
+T safeCall(JNIEnv* env, const MethodImpl& method, const T& defaultValue)
+{
+    try {
+        T retVal = method(env);
+        return retVal;
+    } catch (JavaExc& ex0) {
+        if (env->ExceptionCheck() == JNI_FALSE) {
+            std::ostringstream os;
+            os << ex0.what();
+            if (!ex0.stackTrace().empty()) {
+                os << std::endl << "Stack trace:" 
+                   << std::endl << ex0.stackTrace();
+            }
+            JNU_ThrowRuntimeException(env, os.str());
+        }
+    } catch (Iex::BaseExc& ex1) {
+        std::ostringstream os;
+        os << ex1.what();
+        if (!ex1.stackTrace().empty()) {
+            os << std::endl << "Stack trace:" << std::endl << ex1.stackTrace();
+        }
+        JNU_ThrowRuntimeException(env, os.str());
+    } catch (std::exception& ex2) {
+        JNU_ThrowRuntimeException(env, ex2.what());
+    } catch (...) {
+        JNU_ThrowRuntimeException(env, "Unknown native error!");
+    }
+
+    return defaultValue;
+}
+
+
+
+// C++11 Magic to write less code, for void functions
+template <class MethodImpl>
+void safeCall(JNIEnv* env, const MethodImpl& method)
+{
+    try {
+        method(env);
+    } catch (JavaExc& ex0) {
+        if (env->ExceptionCheck() == JNI_FALSE) {
+            std::ostringstream os;
+            os << ex0.what();
+            if (!ex0.stackTrace().empty()) {
+                os << std::endl << "Stack trace:" 
+                   << std::endl << ex0.stackTrace();
+            }
+            JNU_ThrowRuntimeException(env, os.str());
+        }
+    } catch (Iex::BaseExc& ex1) {
+        std::ostringstream os;
+        os << ex1.what();
+        if (!ex1.stackTrace().empty()) {
+            os << std::endl << "Stack trace:" << std::endl << ex1.stackTrace();
+        }
+        JNU_ThrowRuntimeException(env, os.str());
+    } catch (std::exception& ex2) {
+        JNU_ThrowRuntimeException(env, ex2.what());
+    } catch (...) {
+        JNU_ThrowRuntimeException(env, "Unknown native error!");
+    }
+}
+
 #endif // UTIL_H
