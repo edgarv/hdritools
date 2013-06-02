@@ -60,6 +60,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/Compression.java
   java-src/edu/cornell/graphics/exr/EnvMap.java
   java-src/edu/cornell/graphics/exr/EXRInputFile.java
+  java-src/edu/cornell/graphics/exr/EXROutputFile.java
   java-src/edu/cornell/graphics/exr/EXRIOException.java
   java-src/edu/cornell/graphics/exr/EXRSimpleImage.java
   java-src/edu/cornell/graphics/exr/EXRTypeException.java
@@ -119,10 +120,13 @@ set(JAVA_SRCS
   
   java-src/edu/cornell/graphics/exr/io/ByteBufferInputStream.java
   java-src/edu/cornell/graphics/exr/io/ByteChannelInputStream.java
+  java-src/edu/cornell/graphics/exr/io/EXRByteArrayOutputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRFileInputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRInputStream.java
+  java-src/edu/cornell/graphics/exr/io/EXROutputStream.java
   java-src/edu/cornell/graphics/exr/io/InputFileInfo.java
   java-src/edu/cornell/graphics/exr/io/XdrInput.java
+  java-src/edu/cornell/graphics/exr/io/XdrOutput.java
 )
   
 # The jar which will contain the compiled java files
@@ -137,6 +141,7 @@ set(JNI_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_Channels.h
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRSimpleImage_OpenEXRTo.h
   ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXRInputFile.h
+  ${CMAKE_CURRENT_BINARY_DIR}/edu_cornell_graphics_exr_EXROutputFile.h
 )
   
 # Of course this module needs Java and JNI
@@ -215,6 +220,7 @@ add_custom_command(OUTPUT ${JNI_HEADERS}
   COMMAND "${Java_JAVAH_EXECUTABLE}" -classpath "${OPENEXRJNI_JAR}"
     edu.cornell.graphics.exr.EXRSimpleImage
     edu.cornell.graphics.exr.EXRInputFile
+    edu.cornell.graphics.exr.EXROutputFile
   DEPENDS openexrjni_jar
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating OpenEXR JNI headers..."
