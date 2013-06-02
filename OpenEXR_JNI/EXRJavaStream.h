@@ -23,21 +23,23 @@
 #include <ImfIO.h>
 #include <jni.h>
 
+#include <memory>
+
 class EXRJavaInputStream : public Imf::IStream
 {
 public:
-    /// stream is a non-null instance of edu.cornell.graphics.exr.io.EXRInputStream
+    // stream is a non-null instance of edu.cornell.graphics.exr.io.EXRInputStream
     EXRJavaInputStream(JNIEnv* env, jobject stream);
 
     virtual ~EXRJavaInputStream();
 
-    virtual bool read (char c[/*n*/], int n);
+    virtual bool read (char c[/*n*/], int n) override;
     
-    virtual Imath::Int64 tellg();
+    virtual Imath::Int64 tellg() override;
 
-    virtual void seekg(Imath::Int64 pos);
+    virtual void seekg(Imath::Int64 pos) override;
 
-    virtual void clear();
+    virtual void clear() override;
 
 private:
 
@@ -54,6 +56,41 @@ private:
     };
 
     static volatile JVMData* jvmData;
+    jobject m_stream;
+};
+
+
+
+class EXRJavaOutputStream : public Imf::OStream
+{
+public:
+    // stream is a non-null instance of edu.cornell.graphics.exr.io.EXROutputStream
+    EXRJavaOutputStream(JNIEnv* env, jobject stream);
+
+    virtual ~EXRJavaOutputStream();
+
+    virtual void write(const char c[/*n*/], int n) override;
+
+    virtual Imath::Int64 tellp() override;
+
+    virtual void seekp(Imath::Int64 pos) override;
+
+private:
+
+    static void initJVMData(JNIEnv* env);
+
+    struct JVMData {
+        JavaVM* jvm;
+        jclass clazz;
+        jmethodID write;
+        jmethodID getPosition;
+        jmethodID setPosition;
+        jmethodID asReadOnlyBuffer;
+
+        JVMData(JNIEnv* env);
+    };
+
+    static std::unique_ptr<volatile JVMData> jvmData;
     jobject m_stream;
 };
 
