@@ -373,6 +373,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * @throws IllegalArgumentException if no attribute with name
      *         {@code n} exists.
      */
+    @SuppressWarnings("unchecked")
     public <T> TypedAttribute<T> getTypedAttribute(String name,
             Class<? extends TypedAttribute<T>> cls) throws
             IllegalArgumentException, EXRTypeException {
@@ -414,6 +415,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * @return the typed attribute with name {@code n} and value type {@code T}
      *         or {@code null}.
      */
+    @SuppressWarnings("unchecked")
     public <T> TypedAttribute<T> findTypedAttribute(String name,
             Class<? extends TypedAttribute<T>> cls) {
         if (name == null || name.isEmpty()) {

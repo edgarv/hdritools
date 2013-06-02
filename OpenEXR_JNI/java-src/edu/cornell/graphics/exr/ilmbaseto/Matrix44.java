@@ -89,6 +89,7 @@ public class Matrix44<T extends Number> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;

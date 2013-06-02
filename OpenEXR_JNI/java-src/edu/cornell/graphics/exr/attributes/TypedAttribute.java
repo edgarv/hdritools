@@ -127,6 +127,7 @@ public abstract class TypedAttribute<T> implements Attribute {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
@@ -156,6 +157,7 @@ public abstract class TypedAttribute<T> implements Attribute {
     protected abstract T cloneValue();
 
     @Override
+    @SuppressWarnings("unchecked")
     public final TypedAttribute clone() {
         try {
             TypedAttribute<T> attr = (TypedAttribute<T>) super.clone();
