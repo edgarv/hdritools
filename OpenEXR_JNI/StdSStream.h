@@ -59,18 +59,39 @@
 
 
 //------------------------------------------------
+// class StdISStream -- an implementation of class
+// Imf::IStream, based on class std::istringstream
+//------------------------------------------------
+class StdISStream : public Imf::IStream
+{
+public:
+    StdISStream(const std::string& str);
+    virtual ~StdISStream() { }
+
+    virtual bool           read(char c[/*n*/], int n) override;
+    virtual Imath::Int64   tellg() override;
+    virtual void           seekg(Imath::Int64 pos) override;
+    virtual void           clear() override;
+
+private:
+    std::istringstream m_is;
+};
+
+
+
+//------------------------------------------------
 // class StdOSStream -- an implementation of class
 // Imf::OStream, based on class std::ostringstream
 //------------------------------------------------
 class StdOSStream : public Imf::OStream
 {
   public:
-
     StdOSStream ();
+    virtual ~StdOSStream() { }
 
-    virtual void           write (const char c[/*n*/], int n);
-    virtual Imath::Int64   tellp();
-    virtual void           seekp(Imath::Int64 pos);
+    virtual void           write(const char c[/*n*/], int n) override;
+    virtual Imath::Int64   tellp() override;
+    virtual void           seekp(Imath::Int64 pos) override;
 
     inline std::string str() const {
         return m_os.str();

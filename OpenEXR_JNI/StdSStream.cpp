@@ -89,6 +89,40 @@ inline void checkError (std::ostringstream &os) {
 
 
 
+StdISStream::StdISStream(const std::string& str) :
+Imf::IStream("(string)"), m_is(str)
+{
+    // empty
+}
+
+bool StdISStream::read(char c[/*n*/], int n)
+{
+    if (!m_is) {
+        throw Iex::InputExc("Unexpected end of stream.");
+    }
+    clearError();
+    m_is.read(c, n);
+    return checkError(m_is, n);
+}
+
+Imath::Int64 StdISStream::tellg()
+{
+    return std::streamoff(m_is.tellg());
+}
+
+void StdISStream::seekg(Imath::Int64 pos)
+{
+    m_is.seekg(pos);
+    checkError(m_is);
+}
+
+void StdISStream::clear()
+{
+    m_is.clear();
+}
+
+
+
 StdOSStream::StdOSStream() : Imf::OStream ("(string)")
 {
     // empty
