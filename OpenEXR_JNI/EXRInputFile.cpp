@@ -38,9 +38,6 @@ struct EXRInputFileTO
     std::unique_ptr<Imf::InputFile> m_inputFile;
 };
 
-
-
-
 } // namespace
 
 
@@ -53,11 +50,11 @@ jlong Java_edu_cornell_graphics_exr_EXRInputFile_getNativeInputFile(
     auto impl = [is, jfilename, numThreads] (JNIEnv* env) -> EXRInputFileTO* {
        EXRInputFileTO* to;
        if (!(!is ^ !jfilename)) {
-            throw JavaExc(is == nullptr ?
-                "both stream are filename were provided" :
-                "both stream are filename are null");
+            throw JavaExc(is != nullptr ?
+                "both stream and filename were provided" :
+                "both stream and filename are null");
             return nullptr;
-        } else  if (is != nullptr) {
+        } else if (is != nullptr) {
             to = new EXRInputFileTO;
             to->m_stream.reset(new EXRJavaInputStream(env, is));
             to->m_inputFile.reset(new InputFile(*to->m_stream, numThreads));
