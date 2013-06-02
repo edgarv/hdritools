@@ -177,6 +177,13 @@ public:
     jmethodID getMethodID(jclass clazz, const char* name, const char* sig);
 
     /// <summary>
+    /// Returns the method ID handle for a static method of a class.
+    /// The method is specified by its name and signature.
+    /// Throws JavaExc in case of error.
+    /// </summary>
+    jmethodID getStaticMethodID(jclass clazz, const char* name, const char* sig);
+
+    /// <summary>
     /// Returns the field ID handle for an instance (nonstatic) field of a 
     /// class. The field is specified by its name and signature.
     /// Throws JavaExc in case of error.

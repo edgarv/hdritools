@@ -96,6 +96,18 @@ jmethodID JNIEnvHelper::getMethodID(jclass clazz,
     return method;
 }
 
+jmethodID JNIEnvHelper::getStaticMethodID(jclass clazz,
+                                          const char* name, const char* sig)
+{
+    jmethodID method = m_env->GetStaticMethodID(clazz, name, sig);
+    if (!method) {
+        JavaExc ex("Could not get the JVM static method id for ");
+        ex.append(name);
+        throw ex;
+    }
+    return method;
+}
+
 jfieldID JNIEnvHelper::getFieldID(jclass clazz,
                                   const char* name, const char* signature)
 {
