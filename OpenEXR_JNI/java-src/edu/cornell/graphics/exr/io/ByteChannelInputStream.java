@@ -35,7 +35,7 @@ public class ByteChannelInputStream implements EXRInputStream {
     @Override
     public boolean read(ByteBuffer dst) throws EXRIOException {
         final int length = dst.remaining();
-        if (length < 1) {
+        if (length < 0) {
             throw new IllegalArgumentException("Invalid requested bytes");
         }
         
