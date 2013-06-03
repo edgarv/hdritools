@@ -189,7 +189,8 @@ EXRJavaOutputStream::JVMData::JVMData(JNIEnv* envPtr)
     clazz = env.findClassGlobalRef("edu/cornell/graphics/exr/io/EXROutputStream");
     write = env.getMethodID(clazz, "write","(Ljava/nio/ByteBuffer;)V");
     getPosition = env.getMethodID(clazz, "position", "()J");
-    setPosition = env.getMethodID(clazz, "position", "(J)V");
+    setPosition = env.getMethodID(clazz, "position",
+        "(J)Ledu/cornell/graphics/exr/io/EXROutputStream;");
 
     jclass byteBufferClazz = env.findClassLocalRef("java/nio/ByteBuffer");
     asReadOnlyBuffer = env.getMethodID(byteBufferClazz,
