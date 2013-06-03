@@ -32,6 +32,8 @@ package edu.cornell.graphics.exr;
  */
 public final class Half extends Number implements Comparable<Half> {
     
+    private static final long serialVersionUID = 4777709089414412809L;
+    
     /**
      * A constant holding the smallest positive normal value of type
      * {@code half}, 2<sup>-14</sup>.
