@@ -64,7 +64,7 @@ public class EXROutputFileBasicTest1 {
      * @return a new {@code EXROutputFile} using the native {@code Imf::OStream}
      * @throws IOException if there is an I/O error
      */
-    protected EXROutputFile createFile(File file, Header header) 
+    protected EXROutputFile createOutputFile(File file, Header header) 
             throws IOException {
         EXROutputFile out = new EXROutputFile(file.toPath(), header);
         return out;
@@ -88,7 +88,7 @@ public class EXROutputFileBasicTest1 {
         Header header = new Header(640, 480);
         insertDummyAttributes(header);
         File tmpFile = createTempFile();
-        try (EXROutputFile out = createFile(tmpFile, header)) {
+        try (EXROutputFile out = createOutputFile(tmpFile, header)) {
             System.out.printf("  Wrote header-only file %s%n", tmpFile);
             assertEquals(0L, out.currentScanLine());
         }
@@ -145,7 +145,7 @@ public class EXROutputFileBasicTest1 {
                 .xStride(pixelSize).yStride(yStride).get());
         
         final File tmpFile = createTempFile();
-        try (EXROutputFile out = createFile(tmpFile, header)) {
+        try (EXROutputFile out = createOutputFile(tmpFile, header)) {
             assertEquals(0L, out.currentScanLine());
             out.setFrameBuffer(frameBuffer);
             out.writePixels(height);
@@ -238,7 +238,7 @@ public class EXROutputFileBasicTest1 {
                 .xStride(pixelSize).yStride(yStride).get());
         
         final File tmpFile = createTempFile();
-        try (EXROutputFile out = createFile(tmpFile, header)) {
+        try (EXROutputFile out = createOutputFile(tmpFile, header)) {
             assertEquals(0L, out.currentScanLine());
             out.setFrameBuffer(frameBuffer);
             out.writePixels(height);
@@ -342,7 +342,7 @@ public class EXROutputFileBasicTest1 {
                 .xStride(pixelSize).yStride(yStride).get());
         
         final File tmpFile = createTempFile();
-        try (EXROutputFile out = createFile(tmpFile, header)) {
+        try (EXROutputFile out = createOutputFile(tmpFile, header)) {
             assertEquals(0L, out.currentScanLine());
             out.setFrameBuffer(frameBuffer);
             out.writePixels(height);
@@ -472,7 +472,7 @@ public class EXROutputFileBasicTest1 {
                 .xStride(pixelSize).yStride(yStride).get());
         
         final File tmpFile = createTempFile();
-        try (EXROutputFile out = createFile(tmpFile, header)) {
+        try (EXROutputFile out = createOutputFile(tmpFile, header)) {
             assertEquals(0L, out.currentScanLine());
             out.setFrameBuffer(frameBuffer);
             out.writePixels(height);
