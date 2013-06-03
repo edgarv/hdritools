@@ -192,6 +192,7 @@ public class XdrOutput {
             return;
         }
         int count = 0;
+        buffer.limit(buffer.capacity());
         while (count < n) {
             buffer.rewind();
             final int limit = Math.min(n - count, BUFFER_LEN);
