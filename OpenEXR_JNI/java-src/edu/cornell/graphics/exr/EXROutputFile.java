@@ -55,8 +55,8 @@ import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
 import edu.cornell.graphics.exr.io.EXROutputStream;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * {@code EXROutputFile} provides an interface for writing scan line OpenEXR
@@ -212,7 +212,12 @@ public class EXROutputFile implements AutoCloseable {
      * data written to the stream.  The current frame buffer must be
      * set at least once before {@code writeixels()} is called.
      * The current frame buffer can be changed after each call
-     * to {@code writePixels()}.
+     * to {@code writePixels()}.</p>
+     * 
+     * <p>Note that there is no automatic conversion of neither pixel types
+     * or sampling factors for output files: for each slice with a 
+     * matching channel in the header, their pixel types and x/y sampling
+     * factor must match.</p>
      * 
      * @param fBuffer the source frame buffer
      * @throws IllegalArgumentException if {@code fBuffer} does not
@@ -231,6 +236,16 @@ public class EXROutputFile implements AutoCloseable {
             throw new IllegalArgumentException("null frame buffer");
         } else if (fBuffer.isEmpty()) {
             throw new IllegalArgumentException("empty frame buffer");
+        }
+        
+        ChannelList channels = header.getChannels();
+        for (Map.Entry<String, Slice> fbEntry : fBuffer) {
+            Channel channel = channels.findChannel(fbEntry.getKey());
+            if (channel != null && channel.type != fbEntry.getValue().type) {
+                throw new IllegalArgumentException("Pixel type mismatch for " +
+                        "slice \"" + fbEntry.getKey() + "\": expected " +
+                        channel.type + ", actual " + fbEntry.getValue().type);
+            }
         }
         
         nativeFrameBuffer = new NativeFrameBuffer(fBuffer,header.getChannels());
