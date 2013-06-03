@@ -88,7 +88,37 @@ public class Channel {
      * @see #xSampling
      */
     public int ySampling = 1;
-
+    
+    /** Default constructor */
+    public Channel() {
+        // empty
+    }
+    
+    /**
+     * Constructor with an specific pixel type. Both sampling factors remain at
+     * their default value of {@literal 1} and {@code pLinear} is set to
+     * {@code false}.
+     * 
+     * @param type the non-null pixel type for the channel
+     */
+    public Channel(PixelType type) {
+        if (type == null) {
+            throw new IllegalArgumentException("null pixel type");
+        }
+        this.type = type;
+    }
+    
+    /** Copy constructor */
+    public Channel(Channel other) {
+        if (other == null) {
+            throw new IllegalArgumentException("null source channel");
+        }
+        type      = other.type;
+        pLinear   = other.pLinear;
+        xSampling = other.xSampling;
+        ySampling = other.ySampling;
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

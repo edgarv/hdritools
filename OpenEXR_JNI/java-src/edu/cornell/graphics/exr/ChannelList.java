@@ -138,6 +138,8 @@ public class ChannelList implements Iterable<ChannelList.ChannelListElement> {
      * Returns the previous channel description associated with that name,
      * or {@code null} if there was no mapping for the name.
      * 
+     * <p>This method inserts a deep-copy of the input channel.</p>
+     * 
      * @param name name for the channel
      * @param channel data description for the channel
      * @return the previous channel description associated with that name,
@@ -149,7 +151,7 @@ public class ChannelList implements Iterable<ChannelList.ChannelListElement> {
         } else if (channel == null) {
             throw new IllegalArgumentException("Invalid channel description.");
         }
-        return map.put(name, channel);
+        return map.put(name, new Channel(channel));
     }
     
     /**
