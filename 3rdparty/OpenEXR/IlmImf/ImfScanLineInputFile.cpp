@@ -1227,7 +1227,7 @@ ScanLineInputFile::setFrameBuffer (const FrameBuffer &frameBuffer)
 
     
     // TODO-pk this disables optimization
-    //_optimizationMode._destination._format = OptimizationMode::PIXEL_FORMAT_OTHER;
+    _optimizationMode._destination._format = OptimizationMode::PIXELFORMAT_OTHER;
 
     // For loop iterates through all the channels in the framebuffer
     // While loop iterates through all the channels in the file (header)
