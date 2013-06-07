@@ -26,7 +26,7 @@ public enum Compression {
     /**
      * No compression is applied at all.
      */
-    NONE(0),
+    NONE(0, 1),
     
     /**
      * Differences between horizontally adjacent pixels are run-length encoded. 
@@ -34,14 +34,14 @@ public enum Compression {
      * but for photographic images, the compressed file size is usually 
      * between 60 and 75 percent of the uncompressed size.
      */
-    RLE(1),
+    RLE(1, 1),
     
     /**
      * The same as <code>ZIP</code>, but just one scan line at a time.
      * 
      * @see #ZIP
      */
-    ZIPS(2),
+    ZIPS(2, 1),
     
     /**
      * <p>Differences between horizontally adjacent pixels are compressed using the
@@ -56,7 +56,7 @@ public enum Compression {
      * 
      * <p>This method encodes in blocks of 16 scan lines.</p>
      */
-    ZIP(3),
+    ZIP(3, 16),
     
     /**
      * A wavelet transform is applied to the pixel data, and the result is 
@@ -71,7 +71,7 @@ public enum Compression {
      * the compressor is short, adding the header tends to offset any size 
      * reduction of the input.)
      */
-    PIZ(4),
+    PIZ(4, 32),
     
     /**
      * After reducing 32-bit floating-point data to 24 bits by rounding, 
@@ -84,7 +84,7 @@ public enum Compression {
      * Rounding improves compression significantly by eliminating the pixels' 8 
      * least significant bits, which tend to be very noisy, and difficult to compress.
      */
-    PXR24(5, false),
+    PXR24(5, false, 16),
     
     /**
      * Channels of type HALF are split into blocks of four by four pixels or 32 
@@ -94,14 +94,14 @@ public enum Compression {
      * the size of the compressed pixels is about 22 percent of the size of the 
      * original RGB data. Channels of type UINT or FLOAT are not compressed.
      */
-    B44(6, false),
+    B44(6, false, 32),
     
     /**
      * The same as <code>B44</code>, but the flat fields are compressed more.
      * 
      * @see #B44
      */
-    B44A(7, false);
+    B44A(7, false, 32);
 
 
     /** The number used in the native enumeration to represent this
@@ -112,15 +112,22 @@ public enum Compression {
     /** To know whether the method is lossless or lossy */
     final private boolean lossless;
     
+    /**
+     * Maximum number of scan lines processed by a single call 
+     * to compress() and uncompress().
+     */
+    final private int numScanLines;
+    
     // The full specific constructor
-    Compression(int flag, boolean lossless) {
+    Compression(int flag, boolean lossless, int numScanLines) {
         this.flagVal = flag;
         this.lossless = lossless;
+        this.numScanLines = numScanLines;
     }
     
-    // Easy constructor for lossless methods
-    Compression(int flag) {
-        this(flag, true);
+    // Constructor for lossless methods
+    Compression(int flag, int numScanLines) {
+        this(flag, true, numScanLines);
     }
     
     /**
@@ -143,4 +150,12 @@ public enum Compression {
      *         if it is lossy.
      */
     public boolean isLossless() { return lossless; }
+    
+    /**
+     * Returns the maximum number of scan lines processed in a single
+     * compression or decompression run.
+     * @return the maximum number of scan lines processed in a single
+     * compression or decompression run.
+     */
+    public int numScanLines() { return numScanLines; }
 }
