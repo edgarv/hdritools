@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.io;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.Header;
+import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +33,8 @@ public class InputFileInfo {
     private int version;
     
     private String filename;
+    
+    private Boolean completeScanLine;
     
     private final Header header = new Header();
     
@@ -52,6 +55,27 @@ public class InputFileInfo {
         }
         
         header.readFrom(input, version);
+        if (!isTiled()) {
+            completeScanLine = checkLineOffsets(header, input);
+        }
+    }
+    
+    private static boolean checkLineOffsets(Header hdr, XdrInput input) {
+        try {
+            final Box2<Integer> dw  = hdr.getDataWindow();
+            final int linesInBuffer = hdr.getCompression().numScanLines();
+            final int numLineOffsets =
+                    (dw.yMax - dw.yMin + linesInBuffer) / linesInBuffer;
+            for (int i = 0; i < numLineOffsets; ++i) {
+                long offset = input.readLong();
+                if (offset < 0) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
     
     public InputFileInfo(XdrInput input) throws EXRIOException {
@@ -91,7 +115,11 @@ public class InputFileInfo {
     }
 
     public boolean isComplete() {
-        throw new UnsupportedOperationException("Not implemented yet.");
+        if (!isTiled()) {
+            return completeScanLine;
+        } else {
+            throw new UnsupportedOperationException("Not implemented yet.");
+        }
     }
     
 }
