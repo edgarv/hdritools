@@ -123,8 +123,10 @@ set(JAVA_SRCS
   
   java-src/edu/cornell/graphics/exr/io/ByteBufferInputStream.java
   java-src/edu/cornell/graphics/exr/io/ByteChannelInputStream.java
+  java-src/edu/cornell/graphics/exr/io/ByteChannelOutputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRByteArrayOutputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRFileInputStream.java
+  java-src/edu/cornell/graphics/exr/io/EXRFileOutputStream.java
   java-src/edu/cornell/graphics/exr/io/EXRInputStream.java
   java-src/edu/cornell/graphics/exr/io/EXROutputStream.java
   java-src/edu/cornell/graphics/exr/io/InputFileInfo.java
