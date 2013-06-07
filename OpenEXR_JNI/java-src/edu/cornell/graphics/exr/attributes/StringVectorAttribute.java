@@ -18,7 +18,6 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +32,7 @@ public class StringVectorAttribute extends TypedAttribute<List<String>> {
 
     @Override
     public void readValueFrom(XdrInput input, int size, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         int read = 0;
         ArrayList<String> lst = new ArrayList<>();
         while (read < size) {

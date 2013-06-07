@@ -18,7 +18,6 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class StringAttribute extends TypedAttribute<String> {
@@ -30,7 +29,7 @@ public class StringAttribute extends TypedAttribute<String> {
 
     @Override
     public void readValueFrom(XdrInput input, int size, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         String s = input.readUTF8(size);
         setValue(s);
     }

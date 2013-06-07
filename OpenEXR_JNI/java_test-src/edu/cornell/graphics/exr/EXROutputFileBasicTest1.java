@@ -62,10 +62,10 @@ public class EXROutputFileBasicTest1 {
      * Returns a new {@code EXROutputFile} using the native {@code Imf::OStream}
      * @param header full header of the new file to create
      * @return a new {@code EXROutputFile} using the native {@code Imf::OStream}
-     * @throws IOException if there is an I/O error
+     * @throws EXRIOException if there is an I/O error
      */
     protected EXROutputFile createOutputFile(File file, Header header) 
-            throws IOException {
+            throws EXRIOException {
         EXROutputFile out = new EXROutputFile(file.toPath(), header);
         return out;
     }
@@ -83,7 +83,7 @@ public class EXROutputFileBasicTest1 {
      * Test writing a header-only file
      */
     @Test
-    public void testHeaderOnly() throws Exception {
+    public void testHeaderOnly() throws IOException {
         System.out.println("headerOnly");
         Header header = new Header(640, 480);
         insertDummyAttributes(header);
@@ -102,7 +102,7 @@ public class EXROutputFileBasicTest1 {
      * Write RGB32F file, read back into RGB32F frame buffer
      */
     @Test
-    public void testRGB32F_RGB32F() throws Exception {
+    public void testRGB32F_RGB32F() throws IOException {
         System.out.println("RGB32F -> RGB32F");
         final int width  = 640;
         final int height = 480;
@@ -193,7 +193,7 @@ public class EXROutputFileBasicTest1 {
      * Write RGB32F file, read back into RGB16F frame buffer
      */
     @Test
-    public void testRGB32F_RGB16F() throws Exception {
+    public void testRGB32F_RGB16F() throws IOException {
         System.out.println("RGB32F -> RGB16F");
         final int width  = 1280;
         final int height = 720;
@@ -297,7 +297,7 @@ public class EXROutputFileBasicTest1 {
      * Write RGB32F file, read back into RGBA16F frame buffer
      */
     @Test
-    public void testRGB32F_RGBA16F() throws Exception {
+    public void testRGB32F_RGBA16F() throws IOException {
         System.out.println("RGB32F -> RGBA16F");
         final int width  = 1280;
         final int height = 720;
@@ -407,7 +407,7 @@ public class EXROutputFileBasicTest1 {
      * Write RGBAZ16F file, read back into RGBAZ16F frame buffer
      */
     @Test
-    public void testRGBAZ16F_RGBAZ16F() throws Exception {
+    public void testRGBAZ16F_RGBAZ16F() throws IOException {
         System.out.println("RGBAZ16F -> RGBAZ16F");
         final int width  = 1920;
         final int height = 1080;

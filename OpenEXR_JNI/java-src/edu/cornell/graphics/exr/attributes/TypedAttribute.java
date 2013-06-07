@@ -18,9 +18,13 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
-// TODO: Add documentation
+/**
+ * Base class for attributes holding a value of the parameterized
+ * class {@code T}.
+ * 
+ * @since 0.3
+ */
 public abstract class TypedAttribute<T> implements Attribute {
     
     protected T value;  
@@ -63,17 +67,17 @@ public abstract class TypedAttribute<T> implements Attribute {
      * 
      * @param input data input from which the value will be read.
      * @param version file version and flags as provided in the OpenEXR file.
-     * @throws EXRIOException if there is an error in the file format.
-     * @throws IOException if there is an I/O error.
+     * @throws EXRIOException if there is an error in the file format
+     *         or if there is an I/O error
      */
-    protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+    protected void readValueFrom(XdrInput input, int version) 
+            throws EXRIOException {
         throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
-    public void readValueFrom(XdrInput input, int size,
-            int version) throws EXRIOException, IOException {
+    public void readValueFrom(XdrInput input, int size, int version)
+            throws EXRIOException {
         final long p0  = input.position();
         readValueFrom(input, version);
         final int actualCount = (int) (input.position() - p0);

@@ -17,7 +17,6 @@ package edu.cornell.graphics.exr;
 
 import edu.cornell.graphics.exr.io.EXRFileOutputStream;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Initial test suite for EXROutputFile using Java {@code EXROutputStream}
@@ -27,7 +26,7 @@ public class EXROutputFileBasicTest2 extends EXROutputFileBasicTest1 {
 
     @Override
     protected EXROutputFile createOutputFile(File file, Header header) 
-            throws IOException {
+            throws EXRIOException {
         EXROutputFile output = new EXROutputFile(
                 new EXRFileOutputStream(file.toPath()), header, true);
         return output;

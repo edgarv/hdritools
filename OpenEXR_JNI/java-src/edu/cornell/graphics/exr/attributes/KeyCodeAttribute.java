@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.KeyCode;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
@@ -31,7 +30,7 @@ public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         KeyCode k = new KeyCode();
         k.filmMfcCode   = input.readInt();
         k.filmType      = input.readInt();

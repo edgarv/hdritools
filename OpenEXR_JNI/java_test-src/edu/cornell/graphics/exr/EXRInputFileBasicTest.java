@@ -55,7 +55,7 @@ public class EXRInputFileBasicTest {
     }
     
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void tearDownClass() throws EXRIOException {
         if (file != null) {
             file.close();
         }

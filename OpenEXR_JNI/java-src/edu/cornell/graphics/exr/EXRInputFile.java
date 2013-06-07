@@ -54,7 +54,6 @@ import edu.cornell.graphics.exr.io.ByteBufferInputStream;
 import edu.cornell.graphics.exr.io.EXRFileInputStream;
 import edu.cornell.graphics.exr.io.EXRInputStream;
 import edu.cornell.graphics.exr.io.XdrInput;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 
@@ -83,7 +82,7 @@ public class EXRInputFile implements AutoCloseable {
      * 
      * @param path the path to be opened for reading
      */
-    public EXRInputFile(Path path) throws EXRIOException, IOException {
+    public EXRInputFile(Path path) throws EXRIOException {
         this(path, 0);
     }
     
@@ -104,8 +103,7 @@ public class EXRInputFile implements AutoCloseable {
      * @param numThreads number of native threads to read and decompress the
      *        file, if zero all tasks run on the current thread.
      */
-    public EXRInputFile(Path path, int numThreads) throws 
-            EXRIOException, IOException {
+    public EXRInputFile(Path path, int numThreads) throws EXRIOException {
         if (path == null) {
             throw new IllegalArgumentException("null file path");
         }
@@ -140,8 +138,7 @@ public class EXRInputFile implements AutoCloseable {
      * 
      * @param is an already open input stream
      */
-    public EXRInputFile(EXRFileInputStream is) throws 
-            EXRIOException, IOException {
+    public EXRInputFile(EXRFileInputStream is) throws EXRIOException {
         this(is, 0);
     }
     
@@ -163,8 +160,8 @@ public class EXRInputFile implements AutoCloseable {
      * @param numThreads number of native threads to read and decompress the
      *        file, if zero all tasks run on the current thread.
      */
-    public EXRInputFile(EXRFileInputStream is, int numThreads) throws 
-            EXRIOException, IOException {
+    public EXRInputFile(EXRFileInputStream is, int numThreads)
+            throws EXRIOException {
        this(is, false, numThreads); 
     }
     
@@ -188,8 +185,8 @@ public class EXRInputFile implements AutoCloseable {
      * @param closeStream if {@code true} closing this input file will close
      *        the stream as well.
      */
-    public EXRInputFile(EXRFileInputStream is, boolean closeStream) throws
-            EXRIOException, IOException {
+    public EXRInputFile(EXRFileInputStream is, boolean closeStream)
+            throws EXRIOException {
         this(is, closeStream, 0);
     }
     
@@ -217,7 +214,7 @@ public class EXRInputFile implements AutoCloseable {
      *        file, if zero all tasks run on the current thread.
      */
     public EXRInputFile(EXRFileInputStream is, boolean closeStream,
-            int numThreads) throws EXRIOException, IOException {
+            int numThreads) throws EXRIOException {
         if (is == null) {
             throw new IllegalArgumentException("null input stream");
         }
@@ -239,7 +236,7 @@ public class EXRInputFile implements AutoCloseable {
     
     /** Create a new header from the native input file */
     private static Header initHeader(long nativePtr, int version) 
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         byte[] data = getNativeHeaderBuffer(nativePtr);
         if (data == null || data.length == 0) {
             throw new IllegalStateException("invalid header buffer");
@@ -257,16 +254,21 @@ public class EXRInputFile implements AutoCloseable {
      * constructed, and destroys the underlying native object. Calling this
      * method multiple times has no effect.
      * 
-     * @throws Exception 
+     * @throws EXRIOException if there is an error while closing either the
+     *         input file or the underlying stream
      */
     @Override
-    public void close() throws Exception {
+    public void close() throws EXRIOException {
         if (nativePtr != 0L) {
-            deleteNativeInputFile(nativePtr);
-            nativePtr = 0L;
-            if (stream != null && autoCloseStream) {
-                assert stream instanceof AutoCloseable;
-                ((AutoCloseable) stream).close();
+            try {
+                deleteNativeInputFile(nativePtr);
+                nativePtr = 0L;
+                if (stream != null && autoCloseStream) {
+                    assert stream instanceof AutoCloseable;
+                    ((AutoCloseable) stream).close();
+                }
+            } catch (Exception ex) {
+                throw new EXRIOException(ex.getMessage(), ex);
             }
         }
     }

@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.Compression;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class CompressionAttribute extends TypedAttribute<Compression> {
@@ -37,7 +36,7 @@ public class CompressionAttribute extends TypedAttribute<Compression> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         int ordinal = input.readUnsignedByte();
         Compression c = checkedValueOf(ordinal, Compression.values());
         setValue(c);

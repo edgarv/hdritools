@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.Header;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -36,8 +35,7 @@ public class InputFileInfo {
     
     private final Header header = new Header();
     
-    private void initialize(XdrInput input) throws EXRIOException,
-            IOException {
+    private void initialize(XdrInput input) throws EXRIOException {
         if (input == null) {
             throw new IllegalArgumentException("Null data input.");
         }
@@ -56,20 +54,19 @@ public class InputFileInfo {
         header.readFrom(input, version);
     }
     
-    public InputFileInfo(XdrInput input) throws EXRIOException,
-            IOException {
+    public InputFileInfo(XdrInput input) throws EXRIOException {
         initialize(input);
     }
     
-    public InputFileInfo(String filename) throws EXRIOException, IOException {
+    public InputFileInfo(String filename) throws EXRIOException {
         this(Paths.get(filename));
     }
     
-    public InputFileInfo(File file) throws EXRIOException, IOException {
+    public InputFileInfo(File file) throws EXRIOException {
         this(file.toPath());
     }
 
-    public InputFileInfo(Path path) throws EXRIOException, IOException {
+    public InputFileInfo(Path path) throws EXRIOException {
         try (EXRFileInputStream is = new EXRFileInputStream(path)) {
             XdrInput input = new XdrInput(is);
             initialize(input);
@@ -94,8 +91,7 @@ public class InputFileInfo {
     }
 
     public boolean isComplete() {
-        // TODO Actually implement isComplete()
-        return true;
+        throw new UnsupportedOperationException("Not implemented yet.");
     }
     
 }

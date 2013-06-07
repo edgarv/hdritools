@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Vector3;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
@@ -31,7 +30,7 @@ public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         Vector3<Integer> v = new Vector3<>();
         v.x = input.readInt();
         v.y = input.readInt();

@@ -18,7 +18,6 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 import java.util.Arrays;
 
 // TODO: Add documentation
@@ -80,7 +79,7 @@ public class OpaqueAttribute implements Attribute {
 
     @Override
     public void readValueFrom(XdrInput input, int size, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         data = new byte[size];
         input.readFully(data);
     }

@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.TileDescription;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
@@ -31,15 +30,15 @@ public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         TileDescription t = new TileDescription();
         t.xSize = input.readInt();
         if (t.xSize < 0) {
-            throw new IOException("xSize overflow: " + t.xSize);
+            throw new EXRIOException("xSize overflow: " + t.xSize);
         }
         t.ySize = input.readInt();
         if (t.ySize < 0) {
-            throw new IOException("ySize overflow: " + t.ySize);
+            throw new EXRIOException("ySize overflow: " + t.ySize);
         }
 
         int modeRaw = input.readUnsignedByte();

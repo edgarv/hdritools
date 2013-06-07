@@ -67,7 +67,6 @@ import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -796,11 +795,11 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * 
      * @param input data source which contains the header data
      * @param version OpenEXR version number as stored in the file
-     * @throws EXRIOException if there is an error in the file format
-     * @throws IOException if there is another I/O error
+     * @throws EXRIOException if there is an error in the file format or
+     *         if there is another I/O error
      */
     public void readFrom(XdrInput input, int version) throws 
-            EXRIOException, IOException {
+            EXRIOException {
         map.clear();
         final int maxNameLength = EXRVersion.getMaxNameLength(version);
         

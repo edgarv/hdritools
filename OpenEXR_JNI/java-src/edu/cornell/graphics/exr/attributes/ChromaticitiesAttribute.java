@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.Chromaticities;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO Add documentation
 public class ChromaticitiesAttribute extends TypedAttribute<Chromaticities> {
@@ -31,7 +30,7 @@ public class ChromaticitiesAttribute extends TypedAttribute<Chromaticities> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         Chromaticities c = new Chromaticities();
         c.redX   = input.readFloat();
         c.redY   = input.readFloat();

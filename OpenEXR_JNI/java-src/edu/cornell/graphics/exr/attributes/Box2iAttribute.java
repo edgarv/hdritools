@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
@@ -37,7 +36,7 @@ public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         Box2<Integer> box = new Box2<>();
         box.xMin = input.readInt();
         box.yMin = input.readInt();

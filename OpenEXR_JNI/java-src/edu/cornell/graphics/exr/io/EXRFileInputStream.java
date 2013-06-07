@@ -34,23 +34,33 @@ public class EXRFileInputStream implements EXRInputStream, AutoCloseable {
     private final FileLock lock;
     private final ByteChannelInputStream is;
     
-    public EXRFileInputStream(Path path) throws IOException {
+    public EXRFileInputStream(Path path) throws EXRIOException {
         if (path == null) {
             throw new IllegalArgumentException("null path");
         }
-        channel = FileChannel.open(path, StandardOpenOption.READ);
-        lock = channel.tryLock(0, Long.MAX_VALUE, true);
-        if (lock == null) {
-            throw new EXRIOException("Could not get a shared lock on " + path);
+        try {
+            channel = FileChannel.open(path, StandardOpenOption.READ);
+            lock = channel.tryLock(0, Long.MAX_VALUE, true);
+            if (lock == null) {
+                throw new EXRIOException("Could not get a shared lock on " + path);
+            }
+            is = new ByteChannelInputStream(channel);
+        } catch (EXRIOException ex1) {
+            throw ex1;
+        } catch (IOException ex2) {
+            throw new EXRIOException(ex2.getMessage(), ex2);
         }
-        is = new ByteChannelInputStream(channel);
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws EXRIOException {
         if (channel.isOpen()) {
-            lock.release();
-            channel.close();
+            try {
+                lock.release();
+                channel.close();
+            } catch (IOException ex) {
+                throw new EXRIOException(ex.getMessage(), ex);
+            }
         }
     }
 

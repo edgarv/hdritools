@@ -23,7 +23,6 @@ import edu.cornell.graphics.exr.EXRVersion;
 import edu.cornell.graphics.exr.PixelType;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class ChannelListAttribute extends TypedAttribute<ChannelList> {
@@ -50,7 +49,7 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
     }
     
     private static Pair readChannel(XdrInput input, int maxNameLength) 
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         final long p0 = input.position();
         String name = input.readNullTerminatedUTF8(maxNameLength);
         final long nameBytes = input.position() - p0;
@@ -78,7 +77,7 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-        throws EXRIOException, IOException {
+        throws EXRIOException {
         
         ChannelList chlist = getValue();
         if (chlist == null) {

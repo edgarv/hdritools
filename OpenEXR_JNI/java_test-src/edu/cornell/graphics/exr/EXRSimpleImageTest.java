@@ -90,11 +90,19 @@ public class EXRSimpleImageTest {
         EXRSimpleImage img = new EXRSimpleImage(10,10,Channels.RGB);
         img.setBuffer(null);
     }
+    
     @Test(expected=IllegalArgumentException.class)
     public void testSetBufferEx2() {
         EXRSimpleImage img = new EXRSimpleImage(10,10,Channels.RGB);
         img.setBuffer(new float[10*10*3-1]);
     }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetBufferEx3() {
+        EXRSimpleImage img = new EXRSimpleImage(10,10,Channels.Y);
+        img.setBuffer(new float[10*10-1]);
+    }
+    
     @Test
     public void testSetBuffer() {
         EXRSimpleImage img;
@@ -107,6 +115,11 @@ public class EXRSimpleImageTest {
         
         img = new EXRSimpleImage(640,480,Channels.RGBA);
         buffer = new float[640*480*4];
+        img.setBuffer(buffer);
+        assertSame(buffer, img.getBuffer());
+        
+        img = new EXRSimpleImage(640,480,Channels.Y);
+        buffer = new float[640*480];
         img.setBuffer(buffer);
         assertSame(buffer, img.getBuffer());
     }
@@ -124,6 +137,12 @@ public class EXRSimpleImageTest {
         img2.allocateBuffer();
         assertNotNull(img2.getBuffer());
         assertEquals(img2.getBuffer().length, 640*480*4);
+        
+        EXRSimpleImage img3 = new EXRSimpleImage(640,480,Channels.Y);
+        assertNull(img3.getBuffer());
+        img3.allocateBuffer();
+        assertNotNull(img3.getBuffer());
+        assertEquals(img3.getBuffer().length, 640*480);
     }
 
 
@@ -133,6 +152,8 @@ public class EXRSimpleImageTest {
         assertEquals(img1.getChannels(), Channels.RGB);
         EXRSimpleImage img2 = new EXRSimpleImage(640,480,Channels.RGBA);
         assertEquals(img2.getChannels(), Channels.RGBA);
+        EXRSimpleImage img3 = new EXRSimpleImage(640,480,Channels.Y);
+        assertEquals(img3.getChannels(), Channels.Y);
     }
 
     @Test
@@ -141,6 +162,8 @@ public class EXRSimpleImageTest {
         assertEquals(img1.getNumChannels(), 3);
         EXRSimpleImage img2 = new EXRSimpleImage(640,480,Channels.RGBA);
         assertEquals(img2.getNumChannels(), 4);
+        EXRSimpleImage img3 = new EXRSimpleImage(640,480,Channels.Y);
+        assertEquals(img3.getNumChannels(), 1);
     }
 
     @Test
@@ -206,7 +229,23 @@ public class EXRSimpleImageTest {
             img.getIndex(x, y);
             fail("The index (" + x +"," + y + ") was expected to be invalid.");            
         }
-        catch(IndexOutOfBoundsException | IllegalArgumentException e1) {}
+        catch(IndexOutOfBoundsException | IllegalArgumentException ex) {
+            assertNotNull(ex);
+        }
+    }
+    
+    // Test bad indices for a 640x480 image
+    private void testGetIndexBad_640x480(EXRSimpleImage img) {
+        assertEquals(640, img.getWidth());
+        assertEquals(480, img.getHeight());
+        testGetIndexBad(img, -1, 0);
+        testGetIndexBad(img, 0, -1);
+        testGetIndexBad(img, -1, -1);
+        testGetIndexBad(img, 640, 0);
+        testGetIndexBad(img, 0, 480);
+        testGetIndexBad(img, 30, 480);
+        testGetIndexBad(img, 640, 480);
+        testGetIndexBad(img, 0, 4000);
     }
 
     @Test
@@ -222,6 +261,7 @@ public class EXRSimpleImageTest {
         assertEquals((640*480-1)*nc, img.getIndex(639,479));
         assertEquals(13*nc, img.getIndex(13, 0));
         assertEquals((640*300+55)*nc, img.getIndex(55, 300));
+        testGetIndexBad_640x480(img);
         
         img = new EXRSimpleImage(640,480,Channels.RGBA);
         nc  = 4;
@@ -231,16 +271,33 @@ public class EXRSimpleImageTest {
         assertEquals((640*480-1)*nc, img.getIndex(639,479));
         assertEquals(13*nc, img.getIndex(13, 0));
         assertEquals((640*300+55)*nc, img.getIndex(55, 300));
+        testGetIndexBad_640x480(img);
         
-        // Tests bad indices
-        testGetIndexBad(img, -1, 0);
-        testGetIndexBad(img, 0, -1);
-        testGetIndexBad(img, -1, -1);
-        testGetIndexBad(img, 640, 0);
-        testGetIndexBad(img, 0, 480);
-        testGetIndexBad(img, 30, 480);
-        testGetIndexBad(img, 640, 480);
-        testGetIndexBad(img, 0, 4000);
+        img = new EXRSimpleImage(640,480,Channels.Y);
+        nc  = 1;
+        assertEquals(nc, img.getNumChannels());
+        assertEquals(img.getNumChannels(), img.getChannels().getNumChannels());
+        assertEquals(0, img.getIndex(0, 0));
+        assertEquals((640*480-1)*nc, img.getIndex(639,479));
+        assertEquals(13*nc, img.getIndex(13, 0));
+        assertEquals((640*300+55)*nc, img.getIndex(55, 300));
+        testGetIndexBad_640x480(img);
+    }
+    
+    // Invalid indices should not throw exceptions
+    private void testGetIndexFast_640x480(EXRSimpleImage img) {
+        try {
+            img.getIndexFast(-1, 0);
+            img.getIndexFast(0, -1);
+            img.getIndexFast(-1, -1);
+            img.getIndexFast(640, 0);
+            img.getIndexFast(0, 480);
+            img.getIndexFast(30, 480);
+            img.getIndexFast(640, 480);
+            img.getIndexFast(0, 4000);
+        } catch (IndexOutOfBoundsException | IllegalArgumentException ex) {
+            fail("Unexpected exception: " + ex.getMessage());
+        }
     }
     
 
@@ -257,6 +314,7 @@ public class EXRSimpleImageTest {
         assertEquals((640*480-1)*nc, img.getIndexFast(639,479));
         assertEquals(13*nc, img.getIndexFast(13, 0));
         assertEquals((640*300+55)*nc, img.getIndexFast(55, 300));
+        testGetIndexFast_640x480(img);
         
         img = new EXRSimpleImage(640,480,Channels.RGBA);
         nc  = 4;
@@ -266,16 +324,17 @@ public class EXRSimpleImageTest {
         assertEquals((640*480-1)*nc, img.getIndexFast(639,479));
         assertEquals(13*nc, img.getIndexFast(13, 0));
         assertEquals((640*300+55)*nc, img.getIndexFast(55, 300));
+        testGetIndexFast_640x480(img);
         
-        // Also the invalid ones work here
-        img.getIndexFast(-1, 0);
-        img.getIndexFast(0, -1);
-        img.getIndexFast(-1, -1);
-        img.getIndexFast(640, 0);
-        img.getIndexFast(0, 480);
-        img.getIndexFast(30, 480);
-        img.getIndexFast(640, 480);
-        img.getIndexFast(0, 4000);
+        img = new EXRSimpleImage(640,480,Channels.Y);
+        nc  = 1;
+        assertEquals(nc, img.getNumChannels());
+        assertEquals(img.getNumChannels(), img.getChannels().getNumChannels());
+        assertEquals(0, img.getIndexFast(0, 0));
+        assertEquals((640*480-1)*nc, img.getIndexFast(639,479));
+        assertEquals(13*nc, img.getIndexFast(13, 0));
+        assertEquals((640*300+55)*nc, img.getIndexFast(55, 300));
+        testGetIndexFast_640x480(img);
     }
 
     @Test
@@ -313,6 +372,26 @@ public class EXRSimpleImageTest {
         assertArrayEquals(pixelOrig, pixel, 0.0f);
         for (int i = 0; i < img.getBuffer().length; ++i) {
             if (i < base || i > base+3) {
+                assertEquals(0.0f, img.getBuffer()[i], 0.0f);
+            }
+        }
+    }
+    
+    @Test
+    public void testGetPixelIntIntY() {
+        EXRSimpleImage img = new EXRSimpleImage(10,10, Channels.Y);
+        img.allocateBuffer();
+        java.util.Arrays.fill(img.getBuffer(), 0.0f);
+        
+        final int base = img.getIndex(3, 8);
+        float[] pixelOrig = new float[]{1.125f};
+        System.arraycopy(pixelOrig, 0, 
+                img.getBuffer(), base, pixelOrig.length);
+        
+        float[] pixel = img.getPixel(3, 8);
+        assertArrayEquals(pixelOrig, pixel, 0.0f);
+        for (int i = 0; i < img.getBuffer().length; ++i) {
+            if (i != base) {
                 assertEquals(0.0f, img.getBuffer()[i], 0.0f);
             }
         }
@@ -480,14 +559,19 @@ public class EXRSimpleImageTest {
     public void testPixelSetGet() {
         testPixelSetGet(1, 1, Channels.RGB);
         testPixelSetGet(1, 1, Channels.RGBA);
+        testPixelSetGet(1, 1, Channels.Y);
         testPixelSetGet(512, 512, Channels.RGB);
         testPixelSetGet(512, 512, Channels.RGBA);
+        testPixelSetGet(512, 512, Channels.Y);
         testPixelSetGet(1, 1000, Channels.RGB);
         testPixelSetGet(1, 1000, Channels.RGBA);
+        testPixelSetGet(1, 1000, Channels.Y);
         testPixelSetGet(1000, 1, Channels.RGB);
         testPixelSetGet(1000, 1, Channels.RGBA);
+        testPixelSetGet(1000, 1, Channels.Y);
         testPixelSetGet(640, 480, Channels.RGB);
         testPixelSetGet(640, 480, Channels.RGBA);
+        testPixelSetGet(640, 480, Channels.Y);
     }
 
     
@@ -505,10 +589,10 @@ public class EXRSimpleImageTest {
         
         // Which is the opposite channel config?
         Channels otherChannelConfig;
-        if (channels.equals(Channels.RGB)) {
+        if (channels == Channels.RGB) {
             otherChannelConfig = Channels.RGBA;
         }
-        else if (channels.equals(Channels.RGBA)) {
+        else if (channels == Channels.RGBA) {
             otherChannelConfig = Channels.RGB;
         }
         else {

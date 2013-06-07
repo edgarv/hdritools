@@ -45,7 +45,7 @@ public class EXRSimpleImage implements Serializable {
 
     /**
      * As a simple image the only supported channel configurations
-     * are RGB and RGBA.
+     * are RGB, RGBA and Y (single channel luminance)
      */
     public static enum Channels {
         /**
@@ -56,7 +56,10 @@ public class EXRSimpleImage implements Serializable {
         /**
          * Interleaved RGBA (Red-Green-Blue-Alpha).
          */
-        RGBA(4);
+        RGBA(4),
+        
+        /** Single channel luminance */
+        Y(1);
         
         private final int numChannels;
         

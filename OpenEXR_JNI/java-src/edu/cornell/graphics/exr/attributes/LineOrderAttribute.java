@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.LineOrder;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class LineOrderAttribute extends TypedAttribute<LineOrder> {
@@ -37,7 +36,7 @@ public class LineOrderAttribute extends TypedAttribute<LineOrder> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         int ordinal = input.readUnsignedByte();
         LineOrder lo = checkedValueOf(ordinal, LineOrder.values());
         setValue(lo);

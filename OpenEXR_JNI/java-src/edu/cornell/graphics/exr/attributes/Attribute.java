@@ -18,9 +18,20 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
-// TODO: Add documentation
+/**
+ * Interface for the attributes which may be included in the header of OpenEXR
+ * files.
+ * 
+ * <p>Attributes provide a unique string identifying their concrete type via
+ * {@code typeName()}. They can create deep copies of themselves as specified
+ * in the contract of {@code Cloneable}. The functions 
+ * {@code writeValueTo(XdrOutput, int)} and
+ * {@code readValueFrom(XdrInput, int, int)} implement the serialization 
+ * routines for writing and reading and attribute from the OpenEXR file header.
+ * 
+ * @since 0.3
+ */
 public interface Attribute extends Cloneable {
     
     /** Interface for objects which are registered with the attribute system */
@@ -57,11 +68,11 @@ public interface Attribute extends Cloneable {
      * @param input data input from which the value will be read.
      * @param size amount of bytes to be read according to the header.
      * @param version file version and flags as provided in the OpenEXR file.
-     * @throws EXRIOException if there is an error in the file format.
-     * @throws IOException if there is an I/O error.
+     * @throws EXRIOException if there is an error in the file format or
+     *         an I/O error.
      */
     void readValueFrom(XdrInput input, int size, int version)
-            throws EXRIOException, IOException;
+            throws EXRIOException;
     
     /**
      * Writes the value of this attribute into the given output buffer.

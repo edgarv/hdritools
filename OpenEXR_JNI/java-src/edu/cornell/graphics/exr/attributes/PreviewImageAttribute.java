@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.PreviewImage;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
@@ -31,15 +30,15 @@ public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         PreviewImage p = new PreviewImage();
         p.width  = input.readInt();
         if (p.width < 0) {
-            throw new IOException("width overflow: " + p.width);
+            throw new EXRIOException("width overflow: " + p.width);
         }
         p.height = input.readInt();
         if (p.height < 0) {
-            throw new IOException("height overflow: " + p.height);
+            throw new EXRIOException("height overflow: " + p.height);
         }
         
         int pixelsLen = 4 * p.width * p.height;

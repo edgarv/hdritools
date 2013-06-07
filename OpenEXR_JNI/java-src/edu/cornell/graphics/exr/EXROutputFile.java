@@ -156,16 +156,21 @@ public class EXROutputFile implements AutoCloseable {
      * constructed, and destroys the underlying native object. Calling this
      * method multiple times has no effect.
      * 
-     * @throws Exception 
+     * @throws EXRIOException if there is an error while closing either the
+     *         output file or the underlying stream 
      */
     @Override
-    public void close() throws Exception {
+    public void close() throws EXRIOException {
         if (nativePtr != 0L) {
-            deleteNativeOutputFile(nativePtr);
-            nativePtr = 0L;
-            if (stream != null && autoCloseStream) {
-                assert stream instanceof AutoCloseable;
-                ((AutoCloseable) stream).close();
+            try {
+                deleteNativeOutputFile(nativePtr);
+                nativePtr = 0L;
+                if (stream != null && autoCloseStream) {
+                    assert stream instanceof AutoCloseable;
+                    ((AutoCloseable) stream).close();
+                }
+            } catch (Exception ex) {
+                throw new EXRIOException(ex.getMessage(), ex);
             }
         }
     }

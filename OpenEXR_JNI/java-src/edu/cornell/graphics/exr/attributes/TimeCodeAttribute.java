@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.TimeCode;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class TimeCodeAttribute extends TypedAttribute<TimeCode> {
@@ -31,7 +30,7 @@ public class TimeCodeAttribute extends TypedAttribute<TimeCode> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         TimeCode t = new TimeCode();
         t.timeAndFlags = input.readInt();
         t.userData     = input.readInt();

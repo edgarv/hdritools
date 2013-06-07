@@ -34,24 +34,34 @@ public class EXRFileOutputStream implements EXROutputStream, AutoCloseable {
     private final FileLock lock;
     private final ByteChannelOutputStream os;
     
-    public EXRFileOutputStream(Path path) throws IOException {
+    public EXRFileOutputStream(Path path) throws EXRIOException {
         if (path == null) {
             throw new IllegalArgumentException("null path");
         }
-        channel = FileChannel.open(path, StandardOpenOption.WRITE,
-                StandardOpenOption.TRUNCATE_EXISTING);
-        lock = channel.tryLock(0, Long.MAX_VALUE, false);
-        if (lock == null) {
-            throw new EXRIOException("Could not get an exclusive lock on " + path);
+        try {
+            channel = FileChannel.open(path, StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+            lock = channel.tryLock(0, Long.MAX_VALUE, false);
+            if (lock == null) {
+                throw new EXRIOException("Could not get an exclusive lock on " + path);
+            }
+            os = new ByteChannelOutputStream(channel);
+        } catch (EXRIOException ex1) {
+            throw ex1;
+        } catch (IOException ex2) {
+            throw new EXRIOException(ex2.getMessage(), ex2);
         }
-        os = new ByteChannelOutputStream(channel);
     }
     
     @Override
-    public void close() throws IOException {
+    public void close() throws EXRIOException {
         if (channel.isOpen()) {
-            lock.release();
-            channel.close();
+            try {
+                lock.release();
+                channel.close();
+            } catch (IOException ex) {
+                throw new EXRIOException(ex.getMessage(), ex);
+            }
         }
     }
 

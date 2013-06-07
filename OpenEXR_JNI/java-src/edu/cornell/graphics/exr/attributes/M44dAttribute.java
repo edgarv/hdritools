@@ -19,7 +19,6 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.io.IOException;
 
 // TODO: Add documentation
 public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
@@ -31,7 +30,7 @@ public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
 
     @Override
     protected void readValueFrom(XdrInput input, int version)
-            throws EXRIOException, IOException {
+            throws EXRIOException {
         Matrix44<Double> m = new Matrix44<>();
                 
         m.m00 = input.readDouble();
