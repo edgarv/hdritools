@@ -12,7 +12,8 @@ import org.junit.runners.Suite;
     edu.cornell.graphics.exr.PixelTypeTest.class,
     edu.cornell.graphics.exr.EXRInputFileBasicTest.class,
     edu.cornell.graphics.exr.EXROutputFileBasicTest1.class,
-    edu.cornell.graphics.exr.EXROutputFileBasicTest2.class
+    edu.cornell.graphics.exr.EXROutputFileBasicTest2.class,
+    edu.cornell.graphics.exr.ThreadingTest.class
 })
 public class AllTests {
     // Nothing to be done

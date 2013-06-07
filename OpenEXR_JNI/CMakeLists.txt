@@ -28,6 +28,7 @@ set(SRCS
   EXRSimpleImage.h EXRSimpleImage.cpp
   NativeFrameBuffer.cpp
   StdSStream.h StdSStream.cpp
+  Threading.cpp
   util.h util.cpp
   jniBinding.cpp
 )
@@ -78,6 +79,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/PreviewImage.java
   java-src/edu/cornell/graphics/exr/Rational.java
   java-src/edu/cornell/graphics/exr/Slice.java
+  java-src/edu/cornell/graphics/exr/Threading.java
   java-src/edu/cornell/graphics/exr/TileDescription.java
   java-src/edu/cornell/graphics/exr/TimeCode.java
   
@@ -148,6 +150,7 @@ set(JNI_HEADERS
   "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXRInputFile.h"
   "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_EXROutputFile.h"
   "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_NativeFrameBuffer.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/edu_cornell_graphics_exr_Threading.h"
 )
   
 # Of course this module needs Java and JNI
@@ -229,6 +232,7 @@ add_custom_command(OUTPUT ${JNI_HEADERS}
     edu.cornell.graphics.exr.EXRInputFile
     edu.cornell.graphics.exr.EXROutputFile
     edu.cornell.graphics.exr.NativeFrameBuffer
+    edu.cornell.graphics.exr.Threading
   DEPENDS openexrjni_jar
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include"
   COMMENT "Generating OpenEXR JNI headers..."
@@ -309,6 +313,7 @@ set(JAVA_TEST_SRCS
   java_test-src/edu/cornell/graphics/exr/HalfTest.java
   java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
   java_test-src/edu/cornell/graphics/exr/PixelTypeTest.java
+  java_test-src/edu/cornell/graphics/exr/ThreadingTest.java
   java_test-src/edu/cornell/graphics/exr/io/InputFileInfoBasicTest.java
 )
 
