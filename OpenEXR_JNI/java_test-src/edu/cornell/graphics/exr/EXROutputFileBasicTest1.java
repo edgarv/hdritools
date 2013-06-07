@@ -25,8 +25,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import jp.ac.hiroshima_u.sci.math.saito.tinymt.TinyMT32;
+import org.junit.AfterClass;
 import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -36,6 +38,21 @@ import org.junit.Test;
 public class EXROutputFileBasicTest1 {
     
     protected TinyMT32 rnd = TinyMT32.getDefault();
+    
+    private static int origNumThreads = 0;
+    
+    @BeforeClass
+    public static void setUpClass() {
+        origNumThreads = Threading.globalThreadCount();
+        int count = Runtime.getRuntime().availableProcessors();
+        Threading.setGlobalThreadCount(count);
+        System.out.printf("Using %d threads for EXR I/O%n", count);
+    }
+    
+    @AfterClass
+    public static void tearDownClass() {
+        Threading.setGlobalThreadCount(origNumThreads);
+    }
     
     /** Creates a temporary EXR file to be deleted on exit */
     protected static File createTempFile() throws IOException {

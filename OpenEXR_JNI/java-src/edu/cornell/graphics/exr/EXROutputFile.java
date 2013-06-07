@@ -61,6 +61,11 @@ import java.util.Map;
 /**
  * {@code EXROutputFile} provides an interface for writing scan line OpenEXR
  * images in a general way.
+ * 
+ * <p><b>Note that this implementation is not synchronized.</b> If multiple
+ * threads access an {@code EXROutputFile} instance and at least one thread
+ * changes the frame buffer of writes pixels, it <em>must</em> be
+ * synchronized externally.</p>
  */
 public class EXROutputFile implements AutoCloseable {
     
@@ -69,10 +74,48 @@ public class EXROutputFile implements AutoCloseable {
         System.loadLibrary("openexrjni");
     }
     
+    /**
+     * A constructor that opens the file denoted by the given path, writing
+     * the given header.
+     * 
+     * <p>Calling {@code close} will close the file and destroy the underlying
+     * native object. The image is written using the current number of threads
+     * in the global pool.</p>
+     * 
+     * <p>Note that even though constructing an output file this way instead of
+     * using an {@link EXROutputStream} may yield higher throughput, there is
+     * a limitation on the number of files that can be simultaneously open.
+     * On Windows 7 this limit is about 500.</p>
+     * 
+     * @param path the path to be opened for writing
+     * @param hdr the header of the file
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
+     */
     public EXROutputFile(Path path, Header hdr) throws EXRIOException {
-        this(path, hdr, 0);
+        this(path, hdr, Threading.globalThreadCount());
     }
     
+    /**
+     * A constructor that opens the file denoted by the given path, writing
+     * the given header, using a specific number of threads for I/O.
+     * 
+     * <p>Calling {@code close} will close the file and destroy the underlying
+     * native object. {@code numThreads} determines the number of threads that
+     * will be used to write and compress the file.</p>
+     * 
+     * <p>Note that even though constructing an output file this way instead of
+     * using an {@link EXROutputStream} may yield higher throughput, there is
+     * a limitation on the number of files that can be simultaneously open.
+     * On Windows 7 this limit is about 500.</p>
+     * 
+     * @param path the path to be opened for writing
+     * @param hdr the header of the file
+     * @param numThreads number of native threads to write and compress the
+     *        file, if zero all tasks run on the current thread.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
+     */
     public EXROutputFile(Path path, Header hdr, int numThreads) 
             throws EXRIOException {
         if (path == null) {
@@ -97,20 +140,108 @@ public class EXROutputFile implements AutoCloseable {
         assert nativePtr != 0L;
     }
     
+    /**
+     * A constructor that attaches the new {@code EXROutputStream} to a stream
+     * that has already been open, writing the given header.
+     * 
+     * <p>Closing this instance will not close the stream, it will only destroy
+     * the underlying native object. The image is written using the current
+     * number of threads in the global pool.</p>
+     * 
+     * <p>Note that by using this constructor the writing performance may be
+     * lower than that attained by the constructors which explicitly get a path
+     * to open. This is due to the current implementation which relies on JNI
+     * calls to the OpenEXR C++ library.</p>
+     * 
+     * @param os an already open output stream
+     * @param hdr the header of the file
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
+     */
     public EXROutputFile(EXROutputStream os, Header hdr) throws EXRIOException {
-        this(os, hdr, 0);
+        this(os, hdr, Threading.globalThreadCount());
     }
     
+    /**
+     * A constructor that attaches the new {@code EXROutputStream} to a stream
+     * that has already been open, writing the given header, using a specific
+     * number of threads for I/O.
+     * 
+     * <p>Closing this instance will not close the stream, it will only destroy
+     * the underlying native object. {@code numThreads} determines the number of
+     * threads that will be used to write and compress the file.</p>
+     * 
+     * <p>Note that by using this constructor the writing performance may be
+     * lower than that attained by the constructors which explicitly get a path
+     * to open. This is due to the current implementation which relies on JNI
+     * calls to the OpenEXR C++ library.</p>
+     * 
+     * @param os an already open output stream
+     * @param hdr the header of the file
+     * @param numThreads number of native threads to write and compress the
+     *        file, if zero all tasks run on the current thread.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
+     */
     public EXROutputFile(EXROutputStream os, Header hdr, int numThreads) 
             throws EXRIOException {
         this(os, hdr, false, numThreads);
     }
     
+    /**
+     * A constructor that attaches the new {@code EXROutputStream} to a stream
+     * that has already been open, writing the given header, and allows to close
+     * the output stream along with the output file.
+     * 
+     * <p>If {@code closeStream} is {@code true} closing this instance will
+     * close the out stream as well (if it implements {@link AutoCloseable}),
+     * otherwise the stream will remain open and it will only destroy the
+     * underlying native object. The image is written using the current
+     * number of threads in the global pool.</p>
+     * 
+     * <p>Note that by using this constructor the writing performance may be
+     * lower than that attained by the constructors which explicitly get a path
+     * to open. This is due to the current implementation which relies on JNI
+     * calls to the OpenEXR C++ library.</p>
+     * 
+     * @param os an already open output stream
+     * @param hdr the header of the file
+     * @param closeStream if {@code true} closing this output file will close
+     *        the stream as well.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
+     */
     public EXROutputFile(EXROutputStream os, Header hdr, boolean closeStream) 
             throws EXRIOException {
-        this(os, hdr, closeStream, 0);
+        this(os, hdr, closeStream, Threading.globalThreadCount());
     }
     
+    /**
+     * A constructor that attaches the new {@code EXROutputStream} to a stream
+     * that has already been open, writing the given header, using a specific
+     * number of threads for I/O and allows to close the output stream along
+     * with the output file.
+     * 
+     * <p>If {@code closeStream} is {@code true} closing this instance will
+     * close the out stream as well (if it implements {@link AutoCloseable}),
+     * otherwise the stream will remain open and it will only destroy the
+     * underlying native object. {@code numThreads} determines the number of
+     * threads that will be used to write and compress the file.</p>
+     * 
+     * <p>Note that by using this constructor the writing performance may be
+     * lower than that attained by the constructors which explicitly get a path
+     * to open. This is due to the current implementation which relies on JNI
+     * calls to the OpenEXR C++ library.</p>
+     * 
+     * @param os an already open output stream
+     * @param hdr the header of the file
+     * @param closeStream if {@code true} closing this output file will close
+     *        the stream as well.
+     * @param numThreads number of native threads to write and compress the
+     *        file, if zero all tasks run on the current thread.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
+     */
     public EXROutputFile(EXROutputStream os, Header hdr, boolean closeStream,
             int numThreads) throws EXRIOException {
         if (os == null) {

@@ -39,12 +39,19 @@ public class EXRInputFileBasicTest {
     
     private static EXRInputFile file;
     
+    private static int origNumThreads = 0;
+    
     public EXRInputFileBasicTest() {
         // empty
     }
     
     @BeforeClass
     public static void setUpClass() throws URISyntaxException, IOException {
+        origNumThreads = Threading.globalThreadCount();
+        int count = Runtime.getRuntime().availableProcessors();
+        Threading.setGlobalThreadCount(count);
+        System.out.printf("Using %d threads for EXR I/O%n", count);
+        
         // As a basic test, they all use the same instance
         java.net.URL url = ClassLoader.getSystemResource(RES_FILENMAME);
         if (url == null) {
@@ -59,6 +66,7 @@ public class EXRInputFileBasicTest {
         if (file != null) {
             file.close();
         }
+        Threading.setGlobalThreadCount(origNumThreads);
     }
     
     @Before

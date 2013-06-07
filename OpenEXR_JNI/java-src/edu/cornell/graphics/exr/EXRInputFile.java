@@ -60,6 +60,11 @@ import java.nio.file.Path;
 /**
  * {@code EXRInputFile} is scanline-based interface that can be used to read
  * both scanline-based and tiled OpenEXR image files.
+ * 
+ * <p><b>Note that this implementation is not synchronized.</b> If multiple
+ * threads access an {@code EXRInputFile} instance and at least one thread
+ * changes the frame buffer of reads pixels, it <em>must</em> be
+ * synchronized externally.</p>
  */
 public class EXRInputFile implements AutoCloseable {
     
@@ -72,8 +77,8 @@ public class EXRInputFile implements AutoCloseable {
      * A constructor that opens the file denoted by the given path.
      * 
      * <p>Calling {@code close} will close the file and destroy the underlying
-     * native object. Both the image IO and decompression run on the 
-     * current thread.</p>
+     * native object. The image is read using the current number of threads
+     * in the global pool.</p>
      * 
      * <p>Note that even though constructing an input file this way instead of
      * using an {@link EXRInputStream} may yield higher throughput, there is
@@ -81,9 +86,11 @@ public class EXRInputFile implements AutoCloseable {
      * On Windows 7 this limit is about 500.</p>
      * 
      * @param path the path to be opened for reading
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading 
      */
     public EXRInputFile(Path path) throws EXRIOException {
-        this(path, 0);
+        this(path, Threading.globalThreadCount());
     }
     
     /**
@@ -102,6 +109,8 @@ public class EXRInputFile implements AutoCloseable {
      * @param path the path to be opened for reading
      * @param numThreads number of native threads to read and decompress the
      *        file, if zero all tasks run on the current thread.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading
      */
     public EXRInputFile(Path path, int numThreads) throws EXRIOException {
         if (path == null) {
@@ -129,17 +138,20 @@ public class EXRInputFile implements AutoCloseable {
      * 
      * <p>Closing this instance will not close the
      * stream, it will only destroy the underlying native object.
-     * Both the image IO and decompression run on the current thread.</p>
+     * The image is read using the current number of threads in the global pool.
+     * </p>
      * 
-     * <p>Note that by using this constructor the reading performance will be
-     * lower than that attained by the constructors which explicitly get a file
+     * <p>Note that by using this constructor the reading performance may be
+     * lower than that attained by the constructors which explicitly get a pah
      * to open. This is due to the current implementation which relies on JNI
      * calls to the OpenEXR C++ library.</p>
      * 
      * @param is an already open input stream
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading
      */
     public EXRInputFile(EXRFileInputStream is) throws EXRIOException {
-        this(is, 0);
+        this(is, Threading.globalThreadCount());
     }
     
     /**
@@ -151,14 +163,16 @@ public class EXRInputFile implements AutoCloseable {
      * {@code numThreads} determines the number of threads that will be used to
      * read and decompress the file.</p>
      * 
-     * <p>Note that by using this constructor the reading performance will be
-     * lower than that attained by the constructors which explicitly get a file
+     * <p>Note that by using this constructor the reading performance may be
+     * lower than that attained by the constructors which explicitly get a path
      * to open. This is due to the current implementation which relies on JNI
      * calls to the OpenEXR C++ library.</p>
      * 
      * @param is an already open input stream
      * @param numThreads number of native threads to read and decompress the
      *        file, if zero all tasks run on the current thread.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading
      */
     public EXRInputFile(EXRFileInputStream is, int numThreads)
             throws EXRIOException {
@@ -173,21 +187,23 @@ public class EXRInputFile implements AutoCloseable {
      * <p>If {@code closeStream} is {@code true} closing this instance will
      * close the input stream as well (if it implements {@link AutoCloseable}),
      * otherwise the stream will remain open and it will only destroy the
-     * underlying native object.
-     * Both the image IO and decompression run on the current thread.</p>
+     * underlying native object. The image is read using the current number of
+     * threads in the global pool.</p>
      * 
-     * <p>Note that by using this constructor the reading performance will be
-     * lower than that attained by the constructors which explicitly get a file
+     * <p>Note that by using this constructor the reading performance may be
+     * lower than that attained by the constructors which explicitly get a path
      * to open. This is due to the current implementation which relies on JNI
      * calls to the OpenEXR C++ library.</p>
      * 
      * @param is an already open input stream
      * @param closeStream if {@code true} closing this input file will close
      *        the stream as well.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading
      */
     public EXRInputFile(EXRFileInputStream is, boolean closeStream)
             throws EXRIOException {
-        this(is, closeStream, 0);
+        this(is, closeStream, Threading.globalThreadCount());
     }
     
     /**
@@ -202,8 +218,8 @@ public class EXRInputFile implements AutoCloseable {
      * {@code numThreads} determines the number of threads that will be used to
      * read and decompress the file.</p>
      * 
-     * <p>Note that by using this constructor the reading performance will be
-     * lower than that attained by the constructors which explicitly get a file
+     * <p>Note that by using this constructor the reading performance may be
+     * lower than that attained by the constructors which explicitly get a path
      * to open. This is due to the current implementation which relies on JNI
      * calls to the OpenEXR C++ library.</p>
      * 
@@ -212,6 +228,8 @@ public class EXRInputFile implements AutoCloseable {
      *        the stream as well.
      * @param numThreads number of native threads to read and decompress the
      *        file, if zero all tasks run on the current thread.
+     * @throws EXRIOException if an I/O error occurs
+     * @see Threading
      */
     public EXRInputFile(EXRFileInputStream is, boolean closeStream,
             int numThreads) throws EXRIOException {
