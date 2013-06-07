@@ -68,7 +68,7 @@ public class InputFileInfo {
                     (dw.yMax - dw.yMin + linesInBuffer) / linesInBuffer;
             for (int i = 0; i < numLineOffsets; ++i) {
                 long offset = input.readLong();
-                if (offset < 0) {
+                if (offset <= 0) {
                     return false;
                 }
             }
