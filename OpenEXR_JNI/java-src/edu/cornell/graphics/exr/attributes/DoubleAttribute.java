@@ -50,7 +50,8 @@ public class DoubleAttribute extends TypedAttribute<Double> {
 
     @Override
     protected Double cloneValue() {
-        return new Double(value);
+        // Double objects are immutable
+        return value;
     }
     
 }

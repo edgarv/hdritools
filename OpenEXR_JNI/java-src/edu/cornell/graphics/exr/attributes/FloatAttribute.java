@@ -50,7 +50,8 @@ public class FloatAttribute extends TypedAttribute<Float> {
 
     @Override
     protected Float cloneValue() {
-        return new Float(value);
+        // Float objects are immutable
+        return value;
     }
     
 }

@@ -50,7 +50,8 @@ public class IntegerAttribute extends TypedAttribute<Integer> {
 
     @Override
     protected Integer cloneValue() {
-        return new Integer(value);
+        // Integer objects are immutable
+        return value;
     }
     
 }
