@@ -96,5 +96,14 @@ public class Chromaticities {
         hash = 23 * hash + Float.floatToIntBits(this.whiteY);
         return hash;
     }
+
+    @Override
+    public String toString() {
+        return "Chromaticities{" +
+                "red=("      + redX   + ',' + redY +
+                ") green=(" + greenX + ',' + greenY + 
+                ") blue=("  + blueX  + ',' + blueY + 
+                ") white=(" + whiteX + ',' + whiteY + ")}";
+    }
     
 }
