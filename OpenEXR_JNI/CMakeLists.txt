@@ -215,7 +215,8 @@ add_custom_command(OUTPUT "${OPENEXRJNI_JAVADOC_JAR}"
   COMMAND "${Java_JAVADOC_EXECUTABLE}" -d "${JAVADOC_DIR}/doc"
     -doctitle "Java bindings for OpenEXR ${OPENEXRJNI_VERSION}"
     -overview "${JAVADOC_DIR}/overview.html"
-    -link "http://docs.oracle.com/javase/6/docs/api/" ${JAVA_SRCS}
+    -charset "UTF-8"
+    -link "http://docs.oracle.com/javase/7/docs/api/" ${JAVA_SRCS}
   COMMAND "${Java_JAR_EXECUTABLE}" cMf "${OPENEXRJNI_JAVADOC_JAR}"
     -C "${JAVADOC_DIR}" doc
   DEPENDS ${JAVA_SRCS}
