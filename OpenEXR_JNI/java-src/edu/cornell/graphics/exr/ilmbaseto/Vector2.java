@@ -23,13 +23,30 @@ public class Vector2<T extends Number> {
     public T x;
     public T y;
     
-    public Vector2() {}
+    /**
+     * Default constructor. Creates an uninitialized vector.
+     */
+    public Vector2() {
+        // empty
+    }
     
+    /**
+     * Copy constructor. Initializes each element from the corresponding ones
+     * in {@code other}.
+     * @param other a vector
+     */
     public Vector2(Vector2<T> other) {
         this.x = other.x;
         this.y = other.y;
     }
     
+    /**
+     * Initializes each element of a newly created {@code Vector2} with specific
+     * values.
+     * 
+     * @param x initial value for {@code this.x}
+     * @param y initial value for {@code this.y}
+     */
     public Vector2(T x, T y) {
         this.x = x;
         this.y = y;

@@ -24,14 +24,32 @@ public class Vector3<T extends Number> {
     public T y;
     public T z;
     
-    public Vector3() {}
+    /**
+     * Default constructor. Creates an uninitialized vector.
+     */
+    public Vector3() {
+        // empty
+    }
     
+    /**
+     * Copy constructor. Initializes each element from the corresponding ones
+     * in {@code other}.
+     * @param other a vector
+     */
     public Vector3(Vector3<T> other) {
         this.x = other.x;
         this.y = other.y;
         this.z = other.z;
     }
     
+    /**
+     * Initializes each element of a newly created {@code Vector3} with specific
+     * values.
+     * 
+     * @param x initial value for {@code this.x}
+     * @param y initial value for {@code this.y}
+     * @param z initial value for {@code this.z}
+     */
     public Vector3(T x, T y, T z) {
         this.x = x;
         this.y = y;

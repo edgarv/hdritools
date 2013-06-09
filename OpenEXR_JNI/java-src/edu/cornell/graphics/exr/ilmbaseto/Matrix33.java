@@ -30,14 +30,28 @@ public class Matrix33<T extends Number> {
     public T m10, m11, m12;
     public T m20, m21, m22;
     
-    public Matrix33() {}
+    /**
+     * Default constructor. Creates an uninitialized matrix.
+     */
+    public Matrix33() {
+        // empty
+    }
     
+    /**
+     * Constructor which sets all the matrix elements to {@code a}.
+     * @param a the value for each entry of the new matrix.
+     */
     public Matrix33(T a) {
         m00 = m01 = m02 = a;
         m10 = m11 = m12 = a;
         m20 = m21 = m22 = a;
     }
     
+    /**
+     * Copy constructor. Copies each element from {@code other} into the new
+     * instance.
+     * @param other the other 3x3 matrix.
+     */
     public Matrix33(Matrix33<T> other) {
         this.m00 = other.m00;
         this.m01 = other.m01;
@@ -51,7 +65,21 @@ public class Matrix33<T extends Number> {
         this.m21 = other.m21;
         this.m22 = other.m22;
     }
-    
+       
+    /**
+     * Explicit per element constructor. Initializes the matrix with  specific
+     * values; the arguments are in row-major order.
+     *     
+     * @param m00 value for entry <tt>m<sub>0,0</sub></tt> (row 0, column 0)
+     * @param m01 value for entry <tt>m<sub>0,1</sub></tt> (row 0, column 1)
+     * @param m02 value for entry <tt>m<sub>0,2</sub></tt> (row 0, column 2)
+     * @param m10 value for entry <tt>m<sub>1,0</sub></tt> (row 1, column 0)
+     * @param m11 value for entry <tt>m<sub>1,1</sub></tt> (row 1, column 1)
+     * @param m12 value for entry <tt>m<sub>1,2</sub></tt> (row 1, column 2)
+     * @param m20 value for entry <tt>m<sub>2,0</sub></tt> (row 2, column 0)
+     * @param m21 value for entry <tt>m<sub>2,1</sub></tt> (row 2, column 1)
+     * @param m22 value for entry <tt>m<sub>2,2</sub></tt> (row 2, column 2)
+     */
     public Matrix33(T m00, T m01, T m02,
         T m10, T m11, T m12,
         T m20, T m21, T m22) {
