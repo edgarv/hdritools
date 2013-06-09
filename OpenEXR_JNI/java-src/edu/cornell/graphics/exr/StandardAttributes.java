@@ -207,6 +207,10 @@ import java.util.List;
  */
 public final class StandardAttributes {
     
+    private StandardAttributes() {
+        // empty
+    }
+    
     //=========================================================================
     // Chromaticities
     //=========================================================================

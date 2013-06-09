@@ -52,7 +52,11 @@ package edu.cornell.graphics.exr;
 /**
  * Magic and version number constants
  */
-public class EXRVersion {
+public final class EXRVersion {
+    
+    private EXRVersion() {
+        // empty
+    }
     
     /**
      * The MAGIC number is stored in the first four bytes of every OpenEXR image

@@ -88,6 +88,10 @@ public final class Threading {
         System.loadLibrary("openexrjni");
     }
     
+    private Threading() {
+        // empty
+    }
+    
     /**
      * Return the number of global worker threads used for parallel
      * compression and decompression of OpenEXR files.

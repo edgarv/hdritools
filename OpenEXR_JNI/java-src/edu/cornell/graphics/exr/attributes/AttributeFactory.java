@@ -34,6 +34,10 @@ public class AttributeFactory {
     
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     
+    private AttributeFactory() {
+        // empty
+    }
+    
     /**
      * Creates a new attribute for which {@link Attribute#typeName()} matches
      * the {@code typeName} argument, using one of the registered instances of
