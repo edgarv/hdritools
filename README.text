@@ -1,12 +1,12 @@
 PCG HDRITools
 =============
 
-HDR Image Tools 0.3.1
+HDR Image Tools 0.4.0
 ---------------------
-(C) 2008-2012
+(C) 2008-2013
 [Program of Computer Graphics](http://www.graphics.cornell.edu),
 [Cornell University](http://www.cornell.edu).
-Distributed under the OSI-approved MIT License.
+Distributed under the OSI-approved [MIT License](http://opensource.org/licenses/MIT).
 
 Primary author: [Edgar Velázquez-Armendáriz](http://www.cs.cornell.edu/~eva5/) -
 eva5 _at_ cs~cornell~edu
@@ -41,13 +41,13 @@ Package contents
 
 The HDRITools package provides the following:
 
-- *OpenEXR_JNI* - The Java JNI bindings for OpenEXR.
+- *OpenEXR-JNI* - The Java JNI bindings for OpenEXR.
 
-- *OpenEXR_Matlab* - Matlab MEX extensions to read and save OpenEXR files.
+- *OpenEXR-Matlab* - Matlab MEX extensions to read and save OpenEXR files.
 
 - *ImageIO* - Parallel C++ library to manipulate HDR files in the Radiance,
 OpenEXR and Portable Float Map files. It is (allegedly) tuned for speed, using
-templates and SSE/SSE2/SSE3 intrinsics. It can also write PNGs of integral-type
+templates and SSE/SSE2/SSE3/AVX intrinsics. It can also write PNGs of integral-type
 pixels at 8 and 16 bits per pixel.
 
 - *batchToneMapper* - a parallel command line utility to tone map HDR 
@@ -64,17 +64,15 @@ Required external components
 ----------------------------
 
 - [CMake](http://www.cmake.org) >=2.6 - to create the build files. 
-- [Threading Building Blocks](http://www.threadingbuildingblocks.org) >=2.0 -
+- [Threading Building Blocks](http://www.threadingbuildingblocks.org) >= 2.2 -
   used for the parallelization. 
-- [Qt](http://qt.nokia.com) >=4.4 - for batchToneMapper and qt4Image.
-- [Google Test](http://code.google.com/p/googletest/) >= 1.5 -
-  used for the optional native unit tests.
+- [Qt](http://qt.nokia.com) >= 4.4 - for batchToneMapper and qt4Image.
 - [JUnit](http://www.junit.org/) >= 4 - used for the optional Java unit tests.
 
 
 Build options
 -------------
-The options are documented in cmake, use the GUI or ncurses version to see 
+The options are documented in CMake, use the GUI or ncurses version to see 
 their description. However the defaults should be decent enough. 
 
 
@@ -122,3 +120,5 @@ The HDRITools package uses and includes free software:
 - The [SIMD oriented Fast Mersenne Twister](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/)
   random number library
   (Mutsuo Saito, Makoto Matsumoto and Hiroshima University)
+- The [Google Test](http://code.google.com/p/googletest/)
+  C++ Testing Framework (Google Inc.)
