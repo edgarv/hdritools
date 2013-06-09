@@ -89,6 +89,8 @@ import java.util.TreeMap;
  * 
  * <p>This class is modeled after {@code ImfHeader} in the original C++ OpenEXR
  * library.</p>
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public final class Header implements Iterable<Entry<String, Attribute>> {
     

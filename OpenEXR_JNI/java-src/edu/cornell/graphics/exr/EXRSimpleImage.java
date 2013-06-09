@@ -29,8 +29,7 @@ import java.io.Serializable;
  * underlying structure so that it can easily adapt to various
  * circumstances where other class will actually interact with the user.</p>
  * 
- * @author edgar
- *
+ * @since OpenEXR-JNI 2.0
  */
 public class EXRSimpleImage implements Serializable {
 

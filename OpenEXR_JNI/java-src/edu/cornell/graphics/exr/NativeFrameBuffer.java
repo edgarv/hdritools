@@ -33,7 +33,7 @@ import java.util.Map;
  *   access the Java-sided frame buffer data.</li>
  * </ol>
  * 
- * @since 0.3
+ * @since OpenEXR-JNI 3.0
  */
 class NativeFrameBuffer {
     

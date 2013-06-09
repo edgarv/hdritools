@@ -17,9 +17,9 @@ package edu.cornell.graphics.exr;
 
 /**
  * Enumeration which represents the different compression methods
- * available for saving files in OpenEXR 1.6
+ * available for saving files in OpenEXR.
  * 
- * @author edgar
+ * @since OpenEXR-JNI 2.0
  */
 public enum Compression {
     

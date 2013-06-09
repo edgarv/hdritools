@@ -30,7 +30,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * {@code readValueFrom(XdrInput, int, int)} implement the serialization 
  * routines for writing and reading and attribute from the OpenEXR file header.
  * 
- * @since 0.3
+ * @since OpenEXR-JNI 2.1
  */
 public interface Attribute extends Cloneable {
     

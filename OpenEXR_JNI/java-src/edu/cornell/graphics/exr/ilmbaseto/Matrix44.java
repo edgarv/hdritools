@@ -25,6 +25,8 @@ package edu.cornell.graphics.exr.ilmbaseto;
  *     m20 m21 m22 m23
  *     m30 m31 m32 m33
  * </pre>
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class Matrix44<T extends Number> {
     public T m00, m01, m02, m03;

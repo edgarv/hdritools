@@ -203,7 +203,7 @@ import java.util.List;
  * </ul>
  * </p>
  * 
- * @since 2.2
+ * @since OpenEXR-JNI 3.0
  */
 public final class StandardAttributes {
     

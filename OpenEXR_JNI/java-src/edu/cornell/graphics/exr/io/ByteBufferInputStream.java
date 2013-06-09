@@ -22,6 +22,8 @@ import java.nio.ReadOnlyBufferException;
 
 /**
  * Input stream implementation using an existing byte buffer
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class ByteBufferInputStream implements EXRInputStream {
     

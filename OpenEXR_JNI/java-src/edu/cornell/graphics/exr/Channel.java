@@ -52,6 +52,8 @@ package edu.cornell.graphics.exr;
 /**
  * Description of the data contained in a single given channel of an OpenEXR
  * file, including its storage data type, sampling factors and perception hints.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class Channel {
     

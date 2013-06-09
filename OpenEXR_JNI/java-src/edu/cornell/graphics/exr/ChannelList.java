@@ -59,6 +59,8 @@ import java.util.TreeMap;
 /**
  * List of channels present in a file. Each channel has a uniquely associated
  * non-empty name.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class ChannelList implements Iterable<ChannelList.ChannelListElement> {
     

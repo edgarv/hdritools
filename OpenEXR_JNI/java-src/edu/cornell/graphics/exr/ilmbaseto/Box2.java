@@ -19,6 +19,8 @@ package edu.cornell.graphics.exr.ilmbaseto;
  * Transfer object for specifying a two dimensional range of values. It
  * corresponds to the class {@code Imath::Box<Imath::Vec2<class T>>} of the
  * original IlmBase C++ library.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class Box2<T extends Number> {
     public T xMin;

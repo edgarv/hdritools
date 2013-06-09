@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
  * This class implements an EXR output stream in which the data is written into
  * a byte array. The buffer automatically grows as data is written to it.
  * The backing array can be retrieved using {@code array()}
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class EXRByteArrayOutputStream implements EXROutputStream {
     

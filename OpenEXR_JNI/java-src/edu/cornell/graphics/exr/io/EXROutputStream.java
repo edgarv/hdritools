@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 /**
  * Low-level EXR output stream interface.
  * 
- * @since 0.3
+ * @since OpenEXR-JNI 3.0
  */
 public interface EXROutputStream {
     

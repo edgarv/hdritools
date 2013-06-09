@@ -27,7 +27,7 @@ import java.util.TimeZone;
  * An attribute not present in the EXR file will be <code>null</code>
  * or <code>NaN</code> for floating point types.
  *
- * @author edgar
+ * @since OpenEXR-JNI 2.0
  */
 public class Attributes {
 

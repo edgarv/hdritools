@@ -20,6 +20,8 @@ package edu.cornell.graphics.exr;
  * ({@code d}). Note that the denominator is considered to hold the bit pattern
  * of an <tt>unsigned integer</tt>, thus if <code>d &lt; 0</code> its actual
  * value is {@code (0x100000000L + d)}.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class Rational {
     

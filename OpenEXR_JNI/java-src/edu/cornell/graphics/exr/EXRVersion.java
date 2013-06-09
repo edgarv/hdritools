@@ -51,6 +51,8 @@ package edu.cornell.graphics.exr;
 
 /**
  * Magic and version number constants
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public final class EXRVersion {
     

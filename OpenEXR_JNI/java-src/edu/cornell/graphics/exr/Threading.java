@@ -80,6 +80,8 @@ package edu.cornell.graphics.exr;
  *     each file to try to occupy all worker threads in the library's
  *     thread pool.</li>
  * </ul></p>
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public final class Threading {
     

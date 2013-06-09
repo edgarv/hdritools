@@ -27,6 +27,8 @@ import java.nio.file.StandardOpenOption;
  * Helper class which simplifies creating an {@code EXRInputStream} from a
  * file. This class acquires a shared lock on the file and implements
  * {@code AutoCloseable} so that it may be used in {@code try}-with-resources.
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class EXRFileInputStream implements EXRInputStream, AutoCloseable {
     

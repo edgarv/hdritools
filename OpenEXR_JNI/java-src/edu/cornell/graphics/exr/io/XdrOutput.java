@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
  * <p>Modeled after the functions in ImfXdr.h from the C++ OpenEXR library.</p>
  * 
  * @see EXROutputStream
- * @since 0.3
+ * @since OpenEXR-JNI 3.0
  */
 public class XdrOutput {
     

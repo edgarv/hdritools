@@ -51,6 +51,8 @@ package edu.cornell.graphics.exr;
 
 /**
  * Defines the possible data types for a pixel.
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public enum PixelType {
     /** Unsigned 32-bit integers */
@@ -63,7 +65,7 @@ public enum PixelType {
     FLOAT(4);
     
     
-    protected final int bytes;
+    private final int bytes;
     
     PixelType(int bytes) {
         this.bytes = bytes;

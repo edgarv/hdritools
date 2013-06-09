@@ -26,6 +26,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * creators have been specified. The methods of this class are thread safe,
  * however it does not enforce that each creator is reentrant as well
  * (they should be).
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class AttributeFactory {
     

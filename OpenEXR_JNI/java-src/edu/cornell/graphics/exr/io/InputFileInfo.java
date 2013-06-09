@@ -27,6 +27,8 @@ import java.nio.file.Paths;
  * A simpler version of a full input file: this class only reads the header
  * to get information about the file, closing the input once the data has been
  * read.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class InputFileInfo {
     

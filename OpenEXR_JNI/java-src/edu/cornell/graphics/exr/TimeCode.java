@@ -50,9 +50,10 @@
 package edu.cornell.graphics.exr;
 
 /**
- * <p>A {@code TimeCode} object stores time and control codes as described in
- * SMPTE standard 12M-1999. A {@code TimeCode} object contains the following
- * fields:
+ * A {@code TimeCode} object stores time and control codes as described in
+ * SMPTE standard 12M-1999.
+ * 
+ * <p>A {@code TimeCode} object contains the following fields:
  * 
  * <table border="1">
  * <tr>
@@ -263,6 +264,8 @@ package edu.cornell.graphics.exr;
  *   <td>binary group 8</td>
  * </tr>
  * </table>
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class TimeCode implements Cloneable {
     

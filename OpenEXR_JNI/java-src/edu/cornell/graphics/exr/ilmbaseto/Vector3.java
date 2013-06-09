@@ -18,6 +18,8 @@ package edu.cornell.graphics.exr.ilmbaseto;
 /**
  * Transfer object corresponding to the class {@code Imath::Vector3<class T>} of
  * the IlmBase C++ library.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class Vector3<T extends Number> {
     public T x;

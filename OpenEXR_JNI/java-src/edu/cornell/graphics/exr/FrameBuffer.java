@@ -61,6 +61,7 @@ import java.util.TreeMap;
  * describe the data layout when reading or writing a file.
  * 
  * @see Slice
+ * @since OpenEXR-JNI 3.0
  */
 public class FrameBuffer implements Iterable<Entry<String, Slice>> {
     

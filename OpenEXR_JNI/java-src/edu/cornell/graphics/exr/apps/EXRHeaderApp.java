@@ -94,6 +94,8 @@ import java.util.Map.Entry;
 /**
  * Utility program to print an image file's header. Based on the original
  * {@code exrheader} program included in the standard OpenEXR distribution.
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public class EXRHeaderApp {
     

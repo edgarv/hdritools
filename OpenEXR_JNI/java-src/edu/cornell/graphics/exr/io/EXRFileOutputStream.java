@@ -27,6 +27,8 @@ import java.nio.file.StandardOpenOption;
  * Helper class which simplifies creating an {@code EXROutputStream} from a
  * file. This class acquires an exclusive write lock on the file and implements
  * {@code AutoCloseable} so that it may be used in {@code try}-with-resources.
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class EXRFileOutputStream implements EXROutputStream, AutoCloseable {
     

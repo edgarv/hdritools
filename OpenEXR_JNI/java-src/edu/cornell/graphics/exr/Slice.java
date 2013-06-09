@@ -88,6 +88,8 @@ import java.nio.ByteBuffer;
  * <p>Note on terminology: as a part of a file, a component of an image (e.g.
  * red, green, blue, depth, etc.) is called a <em>channel</em>. As part of a
  * frame buffer is called a <em>slice</em>.
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class Slice {
   
@@ -234,10 +236,9 @@ public class Slice {
     public boolean yTileCoords = false;
     
     /**
-     * Syntactic-sugar method which return a {@code SliceBuilder} to 
-     * configure a new {@code Slice} instance.
+     * Returns a {@code SliceBuilder} to configure a new {@code Slice} instance.
      * 
-     * @return a {@code SliceBuilder} for configuring a new {@code Slice}.
+     * @return a {@code SliceBuilder} to configure a new {@code Slice} instance.
      */
     public static SliceBuilder build() {
         return new SliceBuilder();

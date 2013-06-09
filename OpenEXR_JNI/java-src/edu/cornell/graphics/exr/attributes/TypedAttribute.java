@@ -24,7 +24,7 @@ import java.util.Objects;
  * Base class for attributes holding a value of the parameterized
  * class {@code T}.
  * 
- * @since 0.3
+ * @since OpenEXR-JNI 2.1
  */
 public abstract class TypedAttribute<T> implements Attribute {
     

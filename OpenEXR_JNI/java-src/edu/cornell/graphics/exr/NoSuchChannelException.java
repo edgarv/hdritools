@@ -17,9 +17,10 @@ package edu.cornell.graphics.exr;
 /**
  * Signals that an OpenEXR file does not contain the requested channel.
  * 
- * @author edgar
+ * @since OpenEXR-JNI 2.0
  */
 class NoSuchChannelException extends RuntimeException {
+    private static final long serialVersionUID = -7878358869230043028L;
 
     public NoSuchChannelException(Throwable cause) {
         super(cause);

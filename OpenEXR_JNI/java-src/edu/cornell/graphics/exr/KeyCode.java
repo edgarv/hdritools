@@ -125,7 +125,7 @@ package edu.cornell.graphics.exr;
  *   Latent Image Identification Information</td>
  * </tr></table></blockquote></p>
  * 
- * @since 2.2
+ * @since OpenEXR-JNI 2.1
  */
 public class KeyCode {
     /** Film manufacturer code */

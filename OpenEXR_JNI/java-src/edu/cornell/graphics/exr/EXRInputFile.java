@@ -65,6 +65,8 @@ import java.nio.file.Path;
  * threads access an {@code EXRInputFile} instance and at least one thread
  * changes the frame buffer of reads pixels, it <em>must</em> be
  * synchronized externally.</p>
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class EXRInputFile implements AutoCloseable {
     

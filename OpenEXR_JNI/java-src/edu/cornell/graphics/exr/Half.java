@@ -29,6 +29,8 @@ package edu.cornell.graphics.exr;
  * <p>It also provides methods for conversions between a {@code short}
  * containing the bit pattern of a half-precision floating point value and the
  * native {@code float} type.</p>
+ * 
+ * @since OpenEXR-JNI 2.1
  */
 public final class Half extends Number implements Comparable<Half> {
     

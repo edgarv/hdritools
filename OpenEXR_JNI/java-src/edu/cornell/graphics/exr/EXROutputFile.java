@@ -66,6 +66,8 @@ import java.util.Map;
  * threads access an {@code EXROutputFile} instance and at least one thread
  * changes the frame buffer of writes pixels, it <em>must</em> be
  * synchronized externally.</p>
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 public class EXROutputFile implements AutoCloseable {
     
