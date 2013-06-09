@@ -78,6 +78,35 @@ public class Matrix44<T extends Number> {
     }
     
     /**
+     * Diagonal matrix constructor. Sets each value in the diagonal
+     * to {@code diag} and the off-diagonal values to {@code offDiag}.
+     * 
+     * @param diag value for the diagonal elements
+     * @param offDiag value for the off-diagonal elements
+     */
+    public Matrix44(T diag, T offDiag) {
+        m00 = diag;
+        m01 = offDiag;
+        m02 = offDiag;
+        m03 = offDiag;
+        
+        m10 = offDiag;
+        m11 = diag;
+        m12 = offDiag;
+        m13 = offDiag;
+        
+        m20 = offDiag;
+        m21 = offDiag;
+        m22 = diag;
+        m23 = offDiag;
+        
+        m30 = offDiag;
+        m31 = offDiag;
+        m32 = offDiag;
+        m33 = diag;
+    }
+    
+    /**
      * Explicit per element constructor. Initializes the matrix with
      * specific values; the arguments are in row-major order.
      * 

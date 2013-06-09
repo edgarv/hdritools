@@ -65,6 +65,27 @@ public class Matrix33<T extends Number> {
         this.m21 = other.m21;
         this.m22 = other.m22;
     }
+    
+    /**
+     * Diagonal matrix constructor. Sets each value in the diagonal
+     * to {@code diag} and the off-diagonal values to {@code offDiag}.
+     * 
+     * @param diag value for the diagonal elements
+     * @param offDiag value for the off-diagonal elements
+     */
+    public Matrix33(T diag, T offDiag) {
+        m00 = diag;
+        m01 = offDiag;
+        m02 = offDiag;
+        
+        m10 = offDiag;
+        m11 = diag;
+        m12 = offDiag;
+        
+        m20 = offDiag;
+        m21 = offDiag;
+        m22 = diag;
+    }
        
     /**
      * Explicit per element constructor. Initializes the matrix with  specific
