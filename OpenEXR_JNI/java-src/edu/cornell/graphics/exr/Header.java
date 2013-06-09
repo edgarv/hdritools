@@ -272,10 +272,10 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
-     * <p>Add an attribute to the header. If no attribute with name {@code n}
+     * Add an attribute to the header. If no attribute with name {@code n}
      * exists, a new attribute with name {@code n} and the same type as
      * {@code attr}, is added, and the value of {@code attr} is copied into
-     * the new attribute.</p>
+     * the new attribute.
      * 
      * <p>If an attribute with name {@code n} exists, and its type is the same
      * as {@code attr}, the value of {@code attr} is copied into this attribute.

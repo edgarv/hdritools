@@ -133,7 +133,7 @@ public abstract class TypedAttribute<T> implements Attribute {
     }
     
     /**
-     * Replaces the value of an attribute instance  by copying a reference to
+     * Replaces the value of an attribute instance by copying a reference to
      * the parameter {@code value}.
      * 
      * @param value reference to the new value of this attribute
