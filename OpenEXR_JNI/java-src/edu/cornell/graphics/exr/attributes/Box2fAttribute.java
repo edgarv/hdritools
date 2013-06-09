@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
+    
+    public Box2fAttribute() {
+        // empty
+    }
+    
+    public Box2fAttribute(Box2<Float> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

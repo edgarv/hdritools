@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
+    
+    public PreviewImageAttribute() {
+        // empty
+    }
+    
+    public PreviewImageAttribute(PreviewImage value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

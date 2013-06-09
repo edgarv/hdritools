@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class V2dAttribute extends TypedAttribute<Vector2<Double>> {
+    
+    public V2dAttribute() {
+        // empty
+    }
+    
+    public V2dAttribute(Vector2<Double> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

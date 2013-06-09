@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class V3fAttribute extends TypedAttribute<Vector3<Float>> {
+    
+    public V3fAttribute() {
+        // empty
+    }
+    
+    public V3fAttribute(Vector3<Float> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

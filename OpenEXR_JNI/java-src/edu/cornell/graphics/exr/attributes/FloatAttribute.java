@@ -21,11 +21,13 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class FloatAttribute extends TypedAttribute<Float> {
-
-    public FloatAttribute() {}
+    
+    public FloatAttribute() {
+        // empty
+    }
     
     public FloatAttribute(float f) {
-        setValue(f);
+        super(f);
     }
 
     @Override

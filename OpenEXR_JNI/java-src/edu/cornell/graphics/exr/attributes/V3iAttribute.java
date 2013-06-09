@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
+    
+    public V3iAttribute() {
+        // empty
+    }
+    
+    public V3iAttribute(Vector3<Integer> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

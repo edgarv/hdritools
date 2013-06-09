@@ -37,10 +37,12 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
         }
     }
 
-    public ChannelListAttribute() {}
+    public ChannelListAttribute() {
+        // empty
+    }
     
     public ChannelListAttribute(ChannelList chlist) {
-        setValue(chlist);
+        super(chlist);
     }
 
     @Override

@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class EnvMapAttribute extends TypedAttribute<EnvMap> {
+    
+    public EnvMapAttribute() {
+        // empty
+    }
+    
+    public EnvMapAttribute(EnvMap value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

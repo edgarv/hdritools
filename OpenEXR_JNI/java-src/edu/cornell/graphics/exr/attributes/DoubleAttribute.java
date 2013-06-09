@@ -21,6 +21,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class DoubleAttribute extends TypedAttribute<Double> {
+    
+    public DoubleAttribute() {
+        // empty
+    }
+    
+    public DoubleAttribute(double value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

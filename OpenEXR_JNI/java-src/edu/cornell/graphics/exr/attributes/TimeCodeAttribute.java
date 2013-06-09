@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class TimeCodeAttribute extends TypedAttribute<TimeCode> {
+    
+    public TimeCodeAttribute() {
+        // empty
+    }
+    
+    public TimeCodeAttribute(TimeCode value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

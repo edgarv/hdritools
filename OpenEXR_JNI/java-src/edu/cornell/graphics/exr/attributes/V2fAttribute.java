@@ -23,10 +23,12 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 // TODO: Add documentation
 public class V2fAttribute extends TypedAttribute<Vector2<Float>> {
 
-    public V2fAttribute() {}
+    public V2fAttribute() {
+        // empty
+    }
     
-    public V2fAttribute(Vector2<Float> v2) {
-        setValue(v2);
+    public V2fAttribute(Vector2<Float> value) {
+        super(value);
     }
 
     @Override

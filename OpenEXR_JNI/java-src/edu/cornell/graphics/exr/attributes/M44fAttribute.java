@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class M44fAttribute extends TypedAttribute<Matrix44<Float>> {
+    
+    public M44fAttribute() {
+        // empty
+    }
+    
+    public M44fAttribute(Matrix44<Float> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

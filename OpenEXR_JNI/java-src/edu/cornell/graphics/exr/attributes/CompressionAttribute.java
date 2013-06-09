@@ -23,10 +23,12 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 // TODO: Add documentation
 public class CompressionAttribute extends TypedAttribute<Compression> {
 
-    public CompressionAttribute() {}
+    public CompressionAttribute() {
+        // empty
+    }
     
     public CompressionAttribute(Compression compression) {
-        setValue(compression);
+        super(compression);
     }
 
     @Override

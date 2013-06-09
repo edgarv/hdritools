@@ -24,6 +24,14 @@ import java.util.List;
 
 // TODO: Add documentation
 public class StringVectorAttribute extends TypedAttribute<List<String>> {
+    
+    public StringVectorAttribute() {
+        // empty
+    }
+    
+    public StringVectorAttribute(List<String> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

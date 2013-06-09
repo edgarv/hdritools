@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class M33dAttribute extends TypedAttribute<Matrix33<Double>> {
+    
+    public M33dAttribute() {
+        // empty
+    }
+    
+    public M33dAttribute(Matrix33<Double> value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

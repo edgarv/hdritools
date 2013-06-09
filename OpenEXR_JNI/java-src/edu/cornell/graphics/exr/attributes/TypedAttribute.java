@@ -18,6 +18,7 @@ package edu.cornell.graphics.exr.attributes;
 import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
+import java.util.Objects;
 
 /**
  * Base class for attributes holding a value of the parameterized
@@ -54,6 +55,24 @@ public abstract class TypedAttribute<T> implements Attribute {
             throw new EXRIOException(String.format(
                     "Expected size %d, actual %d", expected, actual));
         }
+    }
+    
+    /**
+     * Default constructor which initializes {@code value} to {@code null}.
+     */
+    protected TypedAttribute() {
+        // empty
+    }
+    
+    /**
+     * Initializes {@code this.value} by copying a reference to the parameter
+     * {@code value}.
+     * 
+     * @param value reference to the initial value of this attribute
+     * @throws NullPointerException if {@code value} is {@code null}.
+     */
+    protected TypedAttribute(T value) {
+        this.value = Objects.requireNonNull(value, "value must not be null");
     }
     
     /**
@@ -105,19 +124,42 @@ public abstract class TypedAttribute<T> implements Attribute {
         writeValueTo(output);
     }
     
+    /**
+     * Returns a reference to the current value of this attribute instance.
+     * @return a reference to the current value of this attribute instance
+     */
     public T getValue() {
         return value;
     }
     
+    /**
+     * Replaces the value of an attribute instance  by copying a reference to
+     * the parameter {@code value}.
+     * 
+     * @param value reference to the new value of this attribute
+     * @throws NullPointerException if {@code value} is {@code null}.
+     */
     public void setValue(T value) {
-        if (value == null) {
-            throw new IllegalArgumentException("The value cannot be null");
-        }
-        this.value = value;
+        this.value = Objects.requireNonNull(value, "value must not be null");
     }
 
+    /**
+     * Returns a string representation of the typed attribute.
+     * 
+     * The {@code toString} method for class {@code TypedAttribute}
+     * returns a string consisting of the attribute's type name, the opening
+     * brace character `<tt>{</tt>', the string representation of the current
+     * attribute's value, and the closing brace character `<tt>}</tt>'.
+     * In other words, this method returns a string equal to the value of:
+     * <blockquote>
+     * <pre>
+     * typeName() + '{' + value + '}'
+     * </pre></blockquote>
+     * @return a string representation of the typed attribute
+     */
     @Override
     public String toString() {
+        super.toString();
         return typeName() + '{' + value + '}';
     }
 
@@ -168,7 +210,7 @@ public abstract class TypedAttribute<T> implements Attribute {
             attr.value = this.cloneValue();
             return attr;
         } catch (CloneNotSupportedException ex) {
-            throw new IllegalStateException("Clone failed", ex);
+            throw new UnsupportedOperationException("Clone failed", ex);
         }
     }
     

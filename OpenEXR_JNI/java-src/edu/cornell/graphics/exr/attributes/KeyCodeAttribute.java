@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
+    
+    public KeyCodeAttribute() {
+        // empty
+    }
+    
+    public KeyCodeAttribute(KeyCode value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class RationalAttribute extends TypedAttribute<Rational> {
+    
+    public RationalAttribute() {
+        // empty
+    }
+    
+    public RationalAttribute(Rational value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

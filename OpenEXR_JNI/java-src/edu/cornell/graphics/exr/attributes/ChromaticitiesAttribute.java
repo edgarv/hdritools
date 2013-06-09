@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO Add documentation
 public class ChromaticitiesAttribute extends TypedAttribute<Chromaticities> {
+    
+    public ChromaticitiesAttribute() {
+        // empty
+    }
+    
+    public ChromaticitiesAttribute(Chromaticities value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

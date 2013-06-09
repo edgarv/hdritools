@@ -21,6 +21,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class StringAttribute extends TypedAttribute<String> {
+    
+    public StringAttribute() {
+        // empty
+    }
+    
+    public StringAttribute(String value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

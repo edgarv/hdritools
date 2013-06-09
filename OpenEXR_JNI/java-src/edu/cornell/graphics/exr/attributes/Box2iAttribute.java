@@ -23,10 +23,12 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 // TODO: Add documentation
 public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
 
-    public Box2iAttribute() {}
+    public Box2iAttribute() {
+        // empty
+    }
     
     public Box2iAttribute(Box2<Integer> box2) {
-        setValue(box2);
+        super(box2);
     }
 
     @Override

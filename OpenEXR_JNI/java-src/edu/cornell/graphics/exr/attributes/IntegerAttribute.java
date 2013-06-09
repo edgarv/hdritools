@@ -21,6 +21,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO Add documentation.
 public class IntegerAttribute extends TypedAttribute<Integer> {
+    
+    public IntegerAttribute() {
+        // empty
+    }
+    
+    public IntegerAttribute(int value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

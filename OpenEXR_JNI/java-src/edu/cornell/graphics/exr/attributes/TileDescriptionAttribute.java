@@ -22,6 +22,14 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 
 // TODO: Add documentation
 public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
+    
+    public TileDescriptionAttribute() {
+        // empty
+    }
+    
+    public TileDescriptionAttribute(TileDescription value) {
+        super(value);
+    }
 
     @Override
     public String typeName() {

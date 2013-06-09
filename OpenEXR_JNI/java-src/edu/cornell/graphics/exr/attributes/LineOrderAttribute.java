@@ -23,10 +23,12 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 // TODO: Add documentation
 public class LineOrderAttribute extends TypedAttribute<LineOrder> {
 
-    public LineOrderAttribute() {}
+    public LineOrderAttribute() {
+        // empty
+    }
     
     public LineOrderAttribute(LineOrder lineOrder) {
-        setValue(lineOrder);
+        super(lineOrder);
     }
 
     @Override
