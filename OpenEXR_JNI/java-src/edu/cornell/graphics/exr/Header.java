@@ -452,6 +452,38 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
+     * Sets the value of the <tt>displayWindow</tt> predefined attribute
+     * to {@code value}. This setter method does a deep copy of {@code value},
+     * it does <em>not</em> copy a reference to it.
+     * 
+     * @param value a non-null {@code Box<Integer>}
+     */
+    public void setDisplayWindow(Box2<Integer> value) {
+        final Box2<Integer> dw = getDisplayWindow();
+        dw.xMin = value.xMin;
+        dw.yMin = value.yMin;
+        dw.xMax = value.xMax;
+        dw.yMax = value.yMax;
+    }
+    
+    /**
+     * Sets the value of the <tt>displayWindow</tt> predefined attribute
+     * to the box {@code [xMin,yMin]x[xMax,yMax]}.
+     * 
+     * @param xMin minimum {@literal x} value of the box
+     * @param yMin minimum {@literal y} value of the box
+     * @param xMax maximum {@literal x} value of the box
+     * @param yMax maximum {@literal y} value of the box
+     */
+    public void setDisplayWindow(int xMin, int yMin, int xMax, int yMax) {
+        final Box2<Integer> dw = getDisplayWindow();
+        dw.xMin = xMin;
+        dw.yMin = yMin;
+        dw.xMax = xMax;
+        dw.yMax = yMax;
+    }
+    
+    /**
      * Returns a reference to the value of the <tt>dataWindow</tt>
      * predefined attribute.
      * 
@@ -460,6 +492,38 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     public Box2<Integer> getDataWindow() {
         return getTypedAttribute("dataWindow",
                 Box2iAttribute.class).getValue();
+    }
+    
+    /**
+     * Sets the value of the <tt>dataWindow</tt> predefined attribute
+     * to {@code value}. This setter method does a deep copy of {@code value},
+     * it does <em>not</em> copy a reference to it.
+     * 
+     * @param value a non-null {@code Box<Integer>}
+     */
+    public void setDataWindow(Box2<Integer> value) {
+        final Box2<Integer> dw = getDataWindow();
+        dw.xMin = value.xMin;
+        dw.yMin = value.yMin;
+        dw.xMax = value.xMax;
+        dw.yMax = value.yMax;
+    }
+    
+    /**
+     * Sets the value of the <tt>dataWindow</tt> predefined attribute
+     * to the box {@code [xMin,yMin]x[xMax,yMax]}.
+     * 
+     * @param xMin minimum {@literal x} value of the box
+     * @param yMin minimum {@literal y} value of the box
+     * @param xMax maximum {@literal x} value of the box
+     * @param yMax maximum {@literal y} value of the box
+     */
+    public void setDataWindow(int xMin, int yMin, int xMax, int yMax) {
+        final Box2<Integer> dw = getDataWindow();
+        dw.xMin = xMin;
+        dw.yMin = yMin;
+        dw.xMax = xMax;
+        dw.yMax = yMax;
     }
     
     /**
@@ -475,6 +539,17 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
+     * Sets the value of the <tt>pixelAspectRatio</tt> predefined attribute
+     * to {@code value}.
+     * 
+     * @param value a float greater than zero.
+     */
+    public void setPixelAspectRatio(float value) {
+        getTypedAttribute("pixelAspectRatio",
+                FloatAttribute.class).setValue(value);
+    }
+    
+    /**
      * Returns a reference to the value of the <tt>screenWindowCenter</tt>
      * predefined attribute.
      * 
@@ -487,6 +562,32 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
+     * Sets the value of the <tt>screenWindowCenter</tt> predefined attribute
+     * to {@code value}. This setter method does a deep copy of {@code value},
+     * it does <em>not</em> copy a reference to it.
+     * 
+     * @param value a non-null {@code Vector2<Float>}
+     */
+    public void setScreenWindowCenter(Vector2<Float> value) {
+        final Vector2<Float> swc = getScreenWindowCenter();
+        swc.x = value.x;
+        swc.y = value.y;
+    }
+    
+    /**
+     * Sets the value of the <tt>screenWindowCenter</tt> predefined attribute
+     * to the point {@code (x,y)}.
+     * 
+     * @param x the {@literal x} component of the point
+     * @param y the {@literal y} component of the point
+     */
+    public void setScreenWindowCenter(float x, float y) {
+        final Vector2<Float> swc = getScreenWindowCenter();
+        swc.x = x;
+        swc.y = y;
+    }
+    
+    /**
      * Returns a reference to the value of the <tt>screenWindowWidth</tt>
      * predefined attribute.
      * 
@@ -496,6 +597,17 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     public Float getScreenWindowWidth() {
         return getTypedAttribute("screenWindowWidth",
                 FloatAttribute.class).getValue();
+    }
+    
+    /**
+     * Sets the value of the <tt>screenWindowWidth</tt> predefined attribute
+     * to {@code value}.
+     * 
+     * @param value a float greater than zero.
+     */
+    public void setScreenWindowWidth(float value) {
+        getTypedAttribute("screenWindowWidth",
+                FloatAttribute.class).setValue(value);
     }
     
     /**
@@ -521,6 +633,17 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
+     * Sets the value of the <tt>lineOrder</tt> predefined attribute
+     * to {@code value}.
+     * 
+     * @param value a non-null {@code LineOrder}.
+     */
+    public void setLineOrder(LineOrder value) {
+        getTypedAttribute("lineOrder",
+                LineOrderAttribute.class).setValue(value);
+    }
+    
+    /**
      * Returns a reference to the value of the <tt>compression</tt>
      * predefined attribute.
      * 
@@ -529,6 +652,17 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     public Compression getCompression() {
         return getTypedAttribute("compression",
                 CompressionAttribute.class).getValue();
+    }
+    
+    /**
+     * Sets the value of the <tt>compression</tt> predefined attribute
+     * to {@code value}.
+     * 
+     * @param value a non-null {@code Compression}.
+     */
+    public void setCompression(Compression value) {
+        getTypedAttribute("compression",
+                CompressionAttribute.class).setValue(value);
     }
     
     /**
