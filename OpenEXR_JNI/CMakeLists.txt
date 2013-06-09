@@ -56,7 +56,6 @@ endif()
 # Java sources relative to the "java-src" directory
 set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/Attributes.java
-  java-src/edu/cornell/graphics/exr/BasicInputFile.java
   java-src/edu/cornell/graphics/exr/Channel.java
   java-src/edu/cornell/graphics/exr/ChannelList.java
   java-src/edu/cornell/graphics/exr/Chromaticities.java
