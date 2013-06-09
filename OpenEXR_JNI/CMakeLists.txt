@@ -79,6 +79,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/PreviewImage.java
   java-src/edu/cornell/graphics/exr/Rational.java
   java-src/edu/cornell/graphics/exr/Slice.java
+  java-src/edu/cornell/graphics/exr/StandardAttributes.java
   java-src/edu/cornell/graphics/exr/Threading.java
   java-src/edu/cornell/graphics/exr/TileDescription.java
   java-src/edu/cornell/graphics/exr/TimeCode.java
@@ -313,6 +314,7 @@ set(JAVA_TEST_SRCS
   java_test-src/edu/cornell/graphics/exr/HalfTest.java
   java_test-src/edu/cornell/graphics/exr/HeaderBasicTest.java
   java_test-src/edu/cornell/graphics/exr/PixelTypeTest.java
+  java_test-src/edu/cornell/graphics/exr/StandardAttributesTest.java
   java_test-src/edu/cornell/graphics/exr/ThreadingTest.java
   java_test-src/edu/cornell/graphics/exr/io/InputFileInfoBasicTest.java
 )
