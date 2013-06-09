@@ -27,6 +27,11 @@ import edu.cornell.graphics.exr.attributes.TimeCodeAttribute;
 import edu.cornell.graphics.exr.attributes.V2fAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
+import edu.cornell.graphics.exr.io.ByteBufferInputStream;
+import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
+import edu.cornell.graphics.exr.io.XdrInput;
+import edu.cornell.graphics.exr.io.XdrOutput;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.*;
@@ -44,7 +49,26 @@ public class StandardAttributesTest {
     }
     
     private void checkSerialization() {
-        // TODO Implement checkSerialization
+        EXRByteArrayOutputStream outStream = new EXRByteArrayOutputStream();
+        try {
+            final int hash = header.hashCode();
+            XdrOutput out = new XdrOutput(outStream);
+            header.writeTo(out);
+            assertEquals(hash, header.hashCode());
+            
+            final byte[] buffer = outStream.array();
+            ByteBufferInputStream inputStream = new ByteBufferInputStream(
+                    ByteBuffer.wrap(buffer, 0, (int) outStream.position()));
+            XdrInput in = new XdrInput(inputStream);
+            Header h = new Header();
+            assertFalse(header.equals(h));
+            final int version = header.version();
+            h.readFrom(in, version);
+            assertEquals(header, h);
+            assertEquals(hash, h.hashCode());
+        } catch (Exception ex) {
+            throw new RuntimeException(ex.getMessage(), ex);
+        }
     }
     
     
