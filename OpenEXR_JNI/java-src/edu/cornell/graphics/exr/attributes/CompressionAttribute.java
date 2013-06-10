@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class CompressionAttribute extends TypedAttribute<Compression> {
+public final class CompressionAttribute extends TypedAttribute<Compression> {
 
     public CompressionAttribute() {
         // empty

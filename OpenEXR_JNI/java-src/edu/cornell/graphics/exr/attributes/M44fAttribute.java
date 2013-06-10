@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class M44fAttribute extends TypedAttribute<Matrix44<Float>> {
+public final class M44fAttribute extends TypedAttribute<Matrix44<Float>> {
     
     public M44fAttribute() {
         // empty

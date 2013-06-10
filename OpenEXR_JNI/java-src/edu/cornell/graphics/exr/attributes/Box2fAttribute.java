@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
+public final class Box2fAttribute extends TypedAttribute<Box2<Float>> {
     
     public Box2fAttribute() {
         // empty

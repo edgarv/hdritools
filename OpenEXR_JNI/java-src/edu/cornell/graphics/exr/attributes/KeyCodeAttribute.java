@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
+public final class KeyCodeAttribute extends TypedAttribute<KeyCode> {
     
     public KeyCodeAttribute() {
         // empty

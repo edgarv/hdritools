@@ -24,7 +24,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class StringAttribute extends TypedAttribute<String> {
+public final class StringAttribute extends TypedAttribute<String> {
     
     public StringAttribute() {
         // empty

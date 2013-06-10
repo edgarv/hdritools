@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class EnvMapAttribute extends TypedAttribute<EnvMap> {
+public final class EnvMapAttribute extends TypedAttribute<EnvMap> {
     
     public EnvMapAttribute() {
         // empty

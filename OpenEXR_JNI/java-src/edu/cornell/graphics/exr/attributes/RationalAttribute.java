@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class RationalAttribute extends TypedAttribute<Rational> {
+public final class RationalAttribute extends TypedAttribute<Rational> {
     
     public RationalAttribute() {
         // empty

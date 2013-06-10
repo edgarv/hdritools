@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
+public final class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
     
     public PreviewImageAttribute() {
         // empty

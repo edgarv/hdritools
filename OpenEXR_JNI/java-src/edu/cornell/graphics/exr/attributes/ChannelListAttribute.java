@@ -29,7 +29,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class ChannelListAttribute extends TypedAttribute<ChannelList> {
+public final class ChannelListAttribute extends TypedAttribute<ChannelList> {
     
     private static class Pair {
         final String name;

@@ -24,7 +24,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class FloatAttribute extends TypedAttribute<Float> {
+public final class FloatAttribute extends TypedAttribute<Float> {
     
     public FloatAttribute() {
         // empty

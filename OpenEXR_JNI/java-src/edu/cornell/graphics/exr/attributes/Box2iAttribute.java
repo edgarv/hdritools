@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
+public final class Box2iAttribute extends TypedAttribute<Box2<Integer>> {
 
     public Box2iAttribute() {
         // empty

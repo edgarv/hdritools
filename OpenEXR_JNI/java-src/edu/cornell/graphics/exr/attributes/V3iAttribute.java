@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
+public final class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
     
     public V3iAttribute() {
         // empty

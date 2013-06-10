@@ -32,7 +32,7 @@ import java.util.List;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class StringVectorAttribute extends TypedAttribute<List<String>> {
+public final class StringVectorAttribute extends TypedAttribute<List<String>> {
     
     public StringVectorAttribute() {
         // empty

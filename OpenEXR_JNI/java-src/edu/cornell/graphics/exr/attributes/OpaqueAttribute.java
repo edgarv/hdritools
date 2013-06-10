@@ -28,7 +28,7 @@ import java.util.Arrays;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class OpaqueAttribute implements Attribute {
+public final class OpaqueAttribute implements Attribute {
     
     private final String name;
     private byte[] data;

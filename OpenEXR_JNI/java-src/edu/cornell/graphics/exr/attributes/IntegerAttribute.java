@@ -24,7 +24,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class IntegerAttribute extends TypedAttribute<Integer> {
+public final class IntegerAttribute extends TypedAttribute<Integer> {
     
     public IntegerAttribute() {
         // empty

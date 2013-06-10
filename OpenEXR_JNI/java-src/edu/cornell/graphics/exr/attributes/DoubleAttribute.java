@@ -24,7 +24,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class DoubleAttribute extends TypedAttribute<Double> {
+public final class DoubleAttribute extends TypedAttribute<Double> {
     
     public DoubleAttribute() {
         // empty

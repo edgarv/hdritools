@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class M33dAttribute extends TypedAttribute<Matrix33<Double>> {
+public final class M33dAttribute extends TypedAttribute<Matrix33<Double>> {
     
     public M33dAttribute() {
         // empty

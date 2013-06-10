@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class V2dAttribute extends TypedAttribute<Vector2<Double>> {
+public final class V2dAttribute extends TypedAttribute<Vector2<Double>> {
     
     public V2dAttribute() {
         // empty

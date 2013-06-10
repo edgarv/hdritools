@@ -25,7 +25,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
  * 
  * @since OpenEXR-JNI 2.1
  */
-public class LineOrderAttribute extends TypedAttribute<LineOrder> {
+public final class LineOrderAttribute extends TypedAttribute<LineOrder> {
 
     public LineOrderAttribute() {
         // empty
