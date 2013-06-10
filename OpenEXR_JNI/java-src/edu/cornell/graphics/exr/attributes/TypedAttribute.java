@@ -28,6 +28,7 @@ import java.util.Objects;
  */
 public abstract class TypedAttribute<T> implements Attribute {
     
+    /** Reference to the value of this attribute. */
     protected T value;  
         
     /**
@@ -80,6 +81,13 @@ public abstract class TypedAttribute<T> implements Attribute {
         }
     }
     
+    /**
+     * Helper method that throws an {@code EXRIOException} if
+     * {@code (expected != actual)}.
+     * @param expected number of bytes expected
+     * @param actual   number of bytes of the actual I/O operation
+     * @throws EXRIOException if {@code (expected != actual)}
+     */
     protected static void checkSize(int expected, int actual)
             throws EXRIOException {
         if (expected != actual) {
@@ -113,7 +121,7 @@ public abstract class TypedAttribute<T> implements Attribute {
      * file version and feature flags.
      * 
      * <p>The default implementation throws an
-     * {@code UnsupportedOperationException}</p>
+     * {@code UnsupportedOperationException}.</p>
      * 
      * @param input data input from which the value will be read.
      * @param version file version and flags as provided in the OpenEXR file.
@@ -125,6 +133,24 @@ public abstract class TypedAttribute<T> implements Attribute {
         throw new UnsupportedOperationException("Not implemented");
     }
 
+    /**
+     * Set the value of this attribute by reading from the given input buffer.
+     * The {@code size} parameter contains the size in bytes specified in the
+     * header for the attribute's value; {@code version} is the 4-byte integer
+     * following the magic number at the beginning of an OpenEXR file with the
+     * file version and feature flags.
+     * 
+     * <p>The default implementation calls {@link #readValueFrom(XdrInput, int)}
+     * and checks that the actual bytes consumed from {@code input} match those
+     * specified by {@code size}, throwing an {@code EXRIOException} if that
+     * is not the case.
+     * 
+     * @param input data input from which the value will be read.
+     * @param size amount of bytes to be read according to the header.
+     * @param version file version and flags as provided in the OpenEXR file.
+     * @throws EXRIOException if there is an error in the file format or
+     *         an I/O error.
+     */
     @Override
     public void readValueFrom(XdrInput input, int size, int version)
             throws EXRIOException {
@@ -140,7 +166,7 @@ public abstract class TypedAttribute<T> implements Attribute {
      * {@link #writeValueTo(XdrOutput, int) }.
      * 
      * <p>The default implementation throws an
-     * {@code UnsupportedOperationException}</p>
+     * {@code UnsupportedOperationException}.</p>
      * 
      * @param output data output into which the value will be written.
      * @throws EXRIOException if there is an I/O error.
@@ -149,6 +175,19 @@ public abstract class TypedAttribute<T> implements Attribute {
         throw new UnsupportedOperationException("Not implemented");
     }
     
+    /**
+     * Writes the value of this attribute into the given output buffer.
+     * The {@code version} parameter is the 4-byte integer following the
+     * magic number at the beginning of an OpenEXR file with the
+     * file version and feature flags.
+     * 
+     * <p>The default implementation simply calls
+     * {@link #writeValueTo(XdrOutput) }.</p>
+     * 
+     * @param output data output into which the value will be written.
+     * @param version file version and flags as provided in the OpenEXR file.
+     * @throws EXRIOException if there is an I/O error.
+     */
     @Override
     public void writeValueTo(XdrOutput output, int version)
             throws EXRIOException {
@@ -194,6 +233,13 @@ public abstract class TypedAttribute<T> implements Attribute {
         return typeName() + '{' + value + '}';
     }
 
+    /**
+     * Returns a hash code for this typed attribute. The hash code for a 
+     * {@code TypedAttribute<T>} object is computed as the aggregate of the 
+     * hash values of {@link #typeName() } and {@link #value}.
+     * 
+     * @return a hash code for this typed attribute
+     */
     @Override
     public int hashCode() {
         final String name = typeName();
@@ -203,6 +249,18 @@ public abstract class TypedAttribute<T> implements Attribute {
         return hash;
     }
 
+    /**
+     * Compares this typed attribute to the specified object.  The result is
+     * {@code true} if and only if the argument is not {@code null}, is a
+     * {@code TypedAttribute} of the same class as this object, their
+     * {@link #typeName() } method returns the same string and their values
+     * are equal.
+     *
+     * @param obj The object to compare this {@code TypedAttribute} against
+     * @return {@code true} if the given object represents a
+     *         {@code TypedAttribute} equivalent to this attribute,
+     *         {@code false} otherwise
+     */
     @Override
     @SuppressWarnings("unchecked")
     public boolean equals(Object obj) {
