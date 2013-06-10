@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.KeyCode;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code KeyCode} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class KeyCodeAttribute extends TypedAttribute<KeyCode> {
     
     public KeyCodeAttribute() {

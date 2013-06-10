@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.LineOrder;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code LineOrder} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class LineOrderAttribute extends TypedAttribute<LineOrder> {
 
     public LineOrderAttribute() {

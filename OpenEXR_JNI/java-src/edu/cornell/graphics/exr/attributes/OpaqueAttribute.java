@@ -20,7 +20,14 @@ import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 import java.util.Arrays;
 
-// TODO: Add documentation
+/**
+ * Holds the value of an attribute whose type name was not recognized by
+ * the reading program. {@code OpaqueAttribute} objects can be read from an
+ * image file, copied and written back to another image file, but their values
+ * are inaccessible.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class OpaqueAttribute implements Attribute {
     
     private String name;

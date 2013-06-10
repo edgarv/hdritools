@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.ilmbaseto.Vector3;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Vector3<Float>} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class V3fAttribute extends TypedAttribute<Vector3<Float>> {
     
     public V3fAttribute() {

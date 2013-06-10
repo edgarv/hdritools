@@ -22,7 +22,16 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code List<String>} value.
+ * 
+ * <p>This attribute is named after the one in the original C++ OpenEXR library
+ * thus "vector" refers to its original implementation using
+ * {@code std::vector<std::string>}, it does <em>not</em> have anything to do
+ * with {@code java.util.Vector<E>}.</p>
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class StringVectorAttribute extends TypedAttribute<List<String>> {
     
     public StringVectorAttribute() {

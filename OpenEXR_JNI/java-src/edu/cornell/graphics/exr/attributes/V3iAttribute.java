@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.ilmbaseto.Vector3;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Vector3<Integer>} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class V3iAttribute extends TypedAttribute<Vector3<Integer>> {
     
     public V3iAttribute() {

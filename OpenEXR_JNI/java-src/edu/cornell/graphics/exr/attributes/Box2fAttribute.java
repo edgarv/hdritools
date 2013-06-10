@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.ilmbaseto.Box2;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Box2<Float>} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class Box2fAttribute extends TypedAttribute<Box2<Float>> {
     
     public Box2fAttribute() {

@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.TimeCode;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code TimeCode} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class TimeCodeAttribute extends TypedAttribute<TimeCode> {
     
     public TimeCodeAttribute() {

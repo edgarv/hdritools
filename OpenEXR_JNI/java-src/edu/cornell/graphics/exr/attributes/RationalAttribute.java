@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.Rational;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Rational} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class RationalAttribute extends TypedAttribute<Rational> {
     
     public RationalAttribute() {

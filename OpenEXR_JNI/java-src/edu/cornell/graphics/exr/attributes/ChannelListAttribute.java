@@ -24,7 +24,11 @@ import edu.cornell.graphics.exr.PixelType;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code ChannelList} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class ChannelListAttribute extends TypedAttribute<ChannelList> {
     
     private static class Pair {

@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Vector2<Integer>} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class V2iAttribute extends TypedAttribute<Vector2<Integer>> {
     
     public V2iAttribute() {

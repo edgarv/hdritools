@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.ilmbaseto.Matrix33;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Matrix33<Double>} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class M33dAttribute extends TypedAttribute<Matrix33<Double>> {
     
     public M33dAttribute() {

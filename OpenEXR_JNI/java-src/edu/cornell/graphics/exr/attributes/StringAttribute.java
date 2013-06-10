@@ -19,7 +19,11 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Rational} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class StringAttribute extends TypedAttribute<String> {
     
     public StringAttribute() {

@@ -20,7 +20,11 @@ import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 
-// TODO: Add documentation
+/**
+ * A {@code TypedAttribute} subclass holding a {@code Matrix44<Double>} value.
+ * 
+ * @since OpenEXR-JNI 2.1
+ */
 public class M44dAttribute extends TypedAttribute<Matrix44<Double>> {
     
     public M44dAttribute() {
