@@ -307,6 +307,7 @@ set(JAVA_TEST_SRCS
   java_test-src/jp/ac/hiroshima_u/sci/math/saito/tinymt/TinyMT32Parameter.java
   
   java_test-src/edu/cornell/graphics/exr/AllTests.java
+  java_test-src/edu/cornell/graphics/exr/CompressionTest.java
   java_test-src/edu/cornell/graphics/exr/EXRSimpleImageTest.java
   java_test-src/edu/cornell/graphics/exr/EXRInputFileBasicTest.java
   java_test-src/edu/cornell/graphics/exr/EXROutputFileBasicTest1.java

@@ -5,6 +5,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    edu.cornell.graphics.exr.CompressionTest.class,
     edu.cornell.graphics.exr.EXRSimpleImageTest.class,
     edu.cornell.graphics.exr.HalfTest.class,
     edu.cornell.graphics.exr.io.InputFileInfoBasicTest.class,

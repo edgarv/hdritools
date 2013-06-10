@@ -477,7 +477,7 @@ public class EXRSimpleImage implements Serializable {
         
         // To to C++ to get this done
         write(filename, this.buffer, this.width, this.height,
-                numChannels, this.attrib, compression.getFlag());
+                numChannels, this.attrib, compression.ordinal());
         
     }
     
