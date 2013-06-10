@@ -19,17 +19,34 @@ import edu.cornell.graphics.exr.EXRIOException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.util.Objects;
 
-// TODO Add documentation
+/**
+ * An EXR output stream relying on an existing {@link SeekableByteChannel}.
+ * 
+ * <p>This class assumes that the {@code SeekableByteChannel} specified during
+ * its construction will remain open through the lifetime of an instance.</p>
+ * 
+ * @since OpenEXR-JNI 3.0
+ */
 public class ByteChannelOutputStream implements EXROutputStream {
     
     private final SeekableByteChannel channel;
 
+    /**
+     * Constructs a {@code ByteChannelOutputStream} which relies on a non-null,
+     * already open {@code SeekableByteChannel}.
+     * 
+     * @param channel the {@code SeekableByteChannel} to be used by the
+     *        newly constructed instance
+     * @throws NullPointerException is {@code channel} is null
+     * @throws IllegalArgumentException is {@code channel} is not open
+     */
     public ByteChannelOutputStream(SeekableByteChannel channel) {
-        if (channel == null) {
-            throw new IllegalArgumentException("null channel");
+        this.channel = Objects.requireNonNull(channel);
+        if (!channel.isOpen()) {
+            throw new IllegalArgumentException("channel is not open");
         }
-        this.channel = channel;
     }
 
     @Override
