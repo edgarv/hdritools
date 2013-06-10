@@ -22,8 +22,9 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * Small class which holds a handful of standard EXR
+ * Class which holds a handful of standard EXR
  * attributes from <code>ImfStandardAttributes.h</code>
+ * for usage with {@link EXRSimpleImage}.
  * An attribute not present in the EXR file will be <code>null</code>
  * or <code>NaN</code> for floating point types.
  *
@@ -82,24 +83,26 @@ public class Attributes {
     }
 
     /**
-     * Internal constructor: when its parameter is true
+     * Internal constructor: when {@code hasAutoDefaults} is {@code true}
      * it sets the owner and date fields automatically
      * as described in {@link #Attributes()}, otherwise
      * it leaves the default values without change.
-     * This method is used by the JNI.
+     * This method is used by JNI.
      */
     private Attributes(boolean hasAutoDefaults) {
         if (hasAutoDefaults) {
-            setOwner( System.getProperty("user.name") );
-            setDate( Calendar.getInstance() );
+            setOwner(System.getProperty("user.name"));
+            setDate(Calendar.getInstance());
         }
     }
 
     /**
-     * The default constructor sets automatically the owner and the
-     * date fields. The owner will be the value of the System
-     * property <code>user.name</code> as defined in
-     * {@link System#getProperties()}. All other fields are left empty.
+     * Constructs a new {@code Attributes} instance setting automatically the
+     * owner and the date fields. The owner will be the value of the System
+     * property {@code user.name} as defined in
+     * {@link System#getProperties()}. The date fields {@code capDate} and
+     * {@code utcOffset} are set to the current time in the local time zone.
+     * All other fields are left empty.
      */
     public Attributes() {
         this(true);
@@ -108,7 +111,7 @@ public class Attributes {
     /**
      * Sets the creation time attribute according to the given
      * calendar, respecting time zones.
-     * If it is <code>null</code> it clears the attribute;
+     * If the argument is {@code null} it clears the attribute.
      *
      * @param cal Calendar set up with the desired creation date
      *                     or <code>null</code>.
@@ -118,8 +121,7 @@ public class Attributes {
         if (cal == null) {
             capDate = null;
             utcOffset = Float.NaN;
-        }
-        else {
+        } else {
             // For Java the offset is with respect to UTC, eg:
             // offset(EDT) = -5 hr + 1 hr
             // but for EXR the offset is with respect to the local time, so that
@@ -137,17 +139,16 @@ public class Attributes {
      * Sets the creation time attribute with the given UTC time. Using
      * this method will record the date as UTC and the time zone information
      * will be lost. To keep the time zone data use {@link #setDate(Calendar)}.
-     * If it is <code>null</code> it clears the attribute;
+     * If it is {@code null} it clears the attribute;
      *
-     * @param date the desired creation date or <code>null</code>.
+     * @param date the desired creation date or {@code null}.
      */
     public final void setDate(Date date) {
 
         if (date == null) {
             capDate = null;
             utcOffset = Float.NaN;
-        }
-        else {
+        } else {
             utcOffset = 0.0f;
             SimpleDateFormat formatter = new SimpleDateFormat(DATE_FORMAT);
             formatter.setTimeZone(UTC);
@@ -176,13 +177,12 @@ public class Attributes {
     }
 
     /**
-     * Returns the creation date (in UTC time) or <code>null</code>
+     * Returns the creation date (in UTC time) or {@code null}
      * if the attribute is not present.
      *
-     * @return the UTC creation date of the file or <code>null</code>.
+     * @return the UTC creation date of the file or {@code null}.
      */
     public Date getDate() {
-
         if (capDate == null ||
                 Float.isInfinite(utcOffset) || Float.isNaN(utcOffset)) {
             return null;
@@ -195,7 +195,6 @@ public class Attributes {
             date.setTime(date.getTime() + (long)(utcOffset*1000.0f));
 
             return date;
-
         } catch (ParseException e) {
             return null;
         }
@@ -209,10 +208,9 @@ public class Attributes {
      *
      * @param dateStr local time in the format "yyyy:MM:dd HH:mm:ss"
      * @param offset seconds from the the local time to UTC time
-     *               such that <code>UTC == local time + utcOffset</code>.
+     *               such that {@code UTC == local time + utcOffset}
      */
-    protected void setCapDate(String dateStr, float offset) {
-
+    void setCapDate(String dateStr, float offset) {
         if (dateStr == null || dateStr.length() == 0 ||
                 Float.isInfinite(offset) || Float.isNaN(offset)
                 ) {
@@ -239,7 +237,7 @@ public class Attributes {
      * this method reconstructs the string representation every time it
      * is called, thus it is slow to use it repeatedly.
      *
-     * @return the string representation of the attributes.
+     * @return a string representation of the attributes.
      */
     @Override
     public String toString() {
