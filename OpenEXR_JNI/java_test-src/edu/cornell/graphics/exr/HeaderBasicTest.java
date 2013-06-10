@@ -16,6 +16,7 @@
 package edu.cornell.graphics.exr;
 
 import edu.cornell.graphics.exr.attributes.Attribute;
+import edu.cornell.graphics.exr.attributes.Box2fAttribute;
 import edu.cornell.graphics.exr.attributes.ChannelListAttribute;
 import edu.cornell.graphics.exr.attributes.CompressionAttribute;
 import edu.cornell.graphics.exr.attributes.M33fAttribute;
@@ -162,6 +163,13 @@ public class HeaderBasicTest {
         testInsertBadType(header, "compression",        m33Attrib);
         testInsertBadType(header, "channels",           m33Attrib);
         
+        // Box2<Integer> is different than Box2<Float>
+        final Box2fAttribute box2fAttrib =
+                new Box2fAttribute(new Box2<>(-1.f, -1.f, 1.f, 1.f));
+        testInsertBadType(header, "dataWindow",    box2fAttrib);
+        testInsertBadType(header, "displayWindow", box2fAttrib);
+        
+        
         // Fresh, non null attribute has to succeed
         assertNull(header.findTypedAttribute("matrix", M33fAttribute.class));
         header.insert("matrix", m33Attrib);
@@ -209,12 +217,20 @@ public class HeaderBasicTest {
         instance.getTypedAttribute("channels", CompressionAttribute.class);
     }
     
+    @Test
     public void testGetTypedAttribute3() {
         System.out.println("getTypedAttribute3");
         TypedAttribute<Compression> result = instance.getTypedAttribute(
                 "compression", CompressionAttribute.class);
         assertNotNull(result);
         assertEquals(Compression.PIZ, result.getValue());
+    }
+    
+    @Test(expected=EXRTypeException.class)
+    public void testGetTypedAttribute4() {
+        System.out.println("getTypedAttribute4");
+        // Box2<Integer> is different than Box2<Float>
+        instance.getTypedAttribute("dataWindow", Box2fAttribute.class);
     }
 
     /**

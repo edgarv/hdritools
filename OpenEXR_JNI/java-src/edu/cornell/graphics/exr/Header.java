@@ -67,8 +67,6 @@ import edu.cornell.graphics.exr.ilmbaseto.Vector2;
 import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -334,51 +332,40 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
     }
     
     /**
-     * Get the parameter class at runtime through reflection. See:
-     * http://blog.xebia.com/2009/02/07/acessing-generic-types-at-runtime-in-java/
-     */
-    private static Class<?> getParamClass(Class<? extends TypedAttribute<?>> c){
-        Class<?> clazz = c;
-        while (clazz.getSuperclass() != null &&
-              !clazz.getSuperclass().equals(TypedAttribute.class)) {
-            clazz = clazz.getSuperclass();
-        }
-        if (clazz.getSuperclass() == null) {
-            throw new IllegalStateException("Not instance of TypedAttribute");
-        }
-        ParameterizedType type=(ParameterizedType) clazz.getGenericSuperclass();
-        final Type argType = type.getActualTypeArguments()[0];
-        final Class<?> argClass;
-        if (argType instanceof Class) {
-            argClass = (Class<?>) argType;
-        } else if (argType instanceof ParameterizedType) {
-            argClass = (Class<?>) ((ParameterizedType) argType).getRawType();
-        } else {
-            throw new IllegalStateException("Invalid type: " + argType);
-        }
-        return argClass;
-    }
-    
-    /**
      * Returns a reference to the typed attribute with name {@code n} and value
      * type {@code T}. If no attribute with name {@code n} exists, an
      * {@code IllegalArgumentException} is thrown. If an attribute with name
      * {@code n} exists, but its value type is not {@code T}, an
      * {@code EXRTypeException} is thrown.
      * 
+     * <p><b>Type limitations:</b> because Java implements generics via type
+     * erasure, {@code Foo<T1>} and {@code Foo<T2>} have the same type; the
+     * parameter types {@code T1} and {@code T2} may only be retrieved for
+     * concrete instances. To avoid very convoluted type checking via reflection
+     * this implementation actually checks that the <em>typed attribute</em>
+     * class itself matches that of the existing attribute. Although this
+     * technically violates the method description, in practice concrete
+     * {@code TypedAttribute} instances are not parameterized and there is 
+     * exactly one {@code TypedAttribute} class with value type {@code T}.</p>
+     * 
      * @param name non-empty name of the desired attribute.
-     * @param cls the class of the value in the attribute.
+     * @param cls the class of the concrete {@code TypedAttribute<T>}
+     *         implementation.
      * @return the typed attribute with name {@code n} and value type {@code T}.
      * @throws EXRTypeException if an attribute with name {@code n} exists, but
      *         its value type is not {@code T}.
      * @throws IllegalArgumentException if no attribute with name
      *         {@code n} exists.
+     * @throws NullPointerException if either {@code name} or {@code cls}
+     *         is {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> TypedAttribute<T> getTypedAttribute(String name,
             Class<? extends TypedAttribute<T>> cls) throws
             IllegalArgumentException, EXRTypeException {
-        if (name == null || name.isEmpty()) {
+        name = Objects.requireNonNull(name);
+        cls  = Objects.requireNonNull(cls);
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("Image attribute name cannot be "
                     + " an empty string.");
         }
@@ -391,51 +378,53 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
         }
         
         TypedAttribute<?> typedAttr = (TypedAttribute<?>) attr;
-        Object value = typedAttr.getValue();
-        if (value == null) {
-            throw new IllegalStateException("null attribute value!");
-        }
-        
-        final Class<?> argClass = getParamClass(cls);
-        if (argClass.isInstance(value)) {
-            return (TypedAttribute<T>) typedAttr;
-        } else {
+        if (cls != typedAttr.getClass()) {
             throw new EXRTypeException("The attribute does not match the " +
-                    "requested type: expected: " + argClass.getCanonicalName() +
-                    ", actual: " + value.getClass().getCanonicalName());
+                    "requested type: expected: " +
+                    cls.getCanonicalName() + ", actual: " +
+                    typedAttr.getClass().getCanonicalName());
         }
+        return (TypedAttribute<T>) typedAttr;
     }
     
     /**
      * Returns a reference to the typed attribute with name {@code n} and value
      * type {@code T}, or {@code null} if no attribute with name {@code n}
-     * <tt>and</tt> type {@code T} exists.
+     * <em>and</em> type {@code T} exists.
+     * 
+     * <p><b>Type limitations:</b> because Java implements generics via type
+     * erasure, {@code Foo<T1>} and {@code Foo<T2>} have the same type; the
+     * parameter types {@code T1} and {@code T2} may only be retrieved for
+     * concrete instances. To avoid very convoluted type checking via reflection
+     * this implementation actually checks that the <em>typed attribute</em>
+     * class itself matches that of the existing attribute. Although this
+     * technically violates the method description, in practice concrete
+     * {@code TypedAttribute} instances are not parameterized and there is 
+     * exactly one {@code TypedAttribute} class with value type {@code T}.</p>
      * 
      * @param name non-empty name of the desired attribute.
-     * @param cls the class of the value in the attribute.
+     * @param cls the class of the concrete {@code TypedAttribute<T>}
+     *         implementation.
      * @return the typed attribute with name {@code n} and value type {@code T}
      *         or {@code null}.
+     * @throws NullPointerException if either {@code name} or {@code cls}
+     *         is {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> TypedAttribute<T> findTypedAttribute(String name,
             Class<? extends TypedAttribute<T>> cls) {
-        if (name == null || name.isEmpty()) {
+        name = Objects.requireNonNull(name);
+        cls  = Objects.requireNonNull(cls);
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("Image attribute name cannot be "
                     + " an empty string.");
         }
         Attribute attr = map.get(name);
-        if (attr == null || !(attr instanceof TypedAttribute)) {
+        if ((attr == null) || (cls != attr.getClass())) {
             return null;
+        } else {
+            return (TypedAttribute<T>) attr;
         }
-        
-        TypedAttribute<?> typedAttr = (TypedAttribute<?>) attr;
-        Object value = typedAttr.getValue();
-        if (value == null) {
-            throw new IllegalStateException("null attribute value!");
-        }
-        
-        final Class<?> aClass = getParamClass(cls);
-        return (TypedAttribute<T>)(aClass.isInstance(value) ? typedAttr : null);
     }
 
     //--------------------------------
