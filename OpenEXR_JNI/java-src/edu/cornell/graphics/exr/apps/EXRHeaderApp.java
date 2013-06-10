@@ -384,7 +384,8 @@ public class EXRHeaderApp {
                 out.printf(": %s", ((TypedAttribute<?>)a).getValue());
             }
             else if (a instanceof OpaqueAttribute) {
-                out.printf(": <opaque> [%d]", ((OpaqueAttribute)a).data.length);
+                out.printf(": <opaque> [%d]",
+                        ((OpaqueAttribute)a).getSize());
             }
             
             out.println();

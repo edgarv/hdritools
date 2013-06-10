@@ -30,8 +30,8 @@ import java.util.Arrays;
  */
 public class OpaqueAttribute implements Attribute {
     
-    private String name;
-    public byte[] data;
+    private final String name;
+    private byte[] data;
     
     public OpaqueAttribute(String name) {
         if (name == null || name.isEmpty()) {
@@ -44,13 +44,17 @@ public class OpaqueAttribute implements Attribute {
     public String typeName() {
         return name;
     }
-
-    public byte[] getData() {
-        return data;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
+    
+    /**
+     * Returns the size in bytes of the data held by this opaque attribute.
+     * @return the size in bytes of the data held by this opaque attribute
+     */
+    public int getSize() {
+        if (data != null) {
+            return data.length;
+        } else {
+            return 0;
+        }
     }
 
     @Override
