@@ -40,7 +40,7 @@ public class CompressionAttribute extends TypedAttribute<Compression> {
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException {
         int ordinal = input.readUnsignedByte();
-        Compression c = checkedValueOf(ordinal, Compression.values());
+        Compression c = checkedValueOf(ordinal, Compression.class);
         setValue(c);
     }
 

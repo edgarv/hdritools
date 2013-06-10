@@ -40,7 +40,7 @@ public class LineOrderAttribute extends TypedAttribute<LineOrder> {
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException {
         int ordinal = input.readUnsignedByte();
-        LineOrder lo = checkedValueOf(ordinal, LineOrder.values());
+        LineOrder lo = checkedValueOf(ordinal, LineOrder.class);
         setValue(lo);
     }
 

@@ -61,7 +61,7 @@ public class ChannelListAttribute extends TypedAttribute<ChannelList> {
 
         final Pair pair = new Pair(name);
         int typeOrdinal = input.readInt();
-        pair.c.type = checkedValueOf(typeOrdinal, PixelType.values());
+        pair.c.type = checkedValueOf(typeOrdinal, PixelType.class);
 
         pair.c.pLinear = input.readBoolean();
         byte[] reserved = new byte[3];

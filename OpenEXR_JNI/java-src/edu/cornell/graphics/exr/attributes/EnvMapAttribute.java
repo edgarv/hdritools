@@ -40,7 +40,7 @@ public class EnvMapAttribute extends TypedAttribute<EnvMap> {
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException {
         int ordinal = input.readUnsignedByte();
-        EnvMap v = checkedValueOf(ordinal, EnvMap.values());
+        EnvMap v = checkedValueOf(ordinal, EnvMap.class);
         setValue(v);
     }
 

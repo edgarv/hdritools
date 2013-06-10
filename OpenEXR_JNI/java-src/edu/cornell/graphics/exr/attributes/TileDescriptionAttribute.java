@@ -53,9 +53,9 @@ public class TileDescriptionAttribute extends TypedAttribute<TileDescription> {
         int levelModeOrd    = modeRaw & 0xf;
         int roundingModeOrd = modeRaw >>> 4;
         t.mode    = checkedValueOf(levelModeOrd,
-                TileDescription.LevelMode.values());
+                TileDescription.LevelMode.class);
         t.roundingMode = checkedValueOf(roundingModeOrd,
-                TileDescription.RoundingMode.values());
+                TileDescription.RoundingMode.class);
         
         setValue(t);
     }

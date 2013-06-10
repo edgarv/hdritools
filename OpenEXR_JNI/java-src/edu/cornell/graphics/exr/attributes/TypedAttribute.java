@@ -29,8 +29,23 @@ import java.util.Objects;
 public abstract class TypedAttribute<T> implements Attribute {
     
     protected T value;  
-    
-    protected static <E extends Enum<E>> E valueOf(int ordinal, E[] values) {
+        
+    /**
+     * Returns the enumeration constant {@code e} such that
+     * {@code (e.ordinal() == ordinal)} or {@code null} if a match is not found.
+     * 
+     * <p>For simplicity this implementation does a linear search in the values
+     * returned by {@code cls.getEnumConstants()}.</p>
+     * 
+     * @param <E> an enumeration class
+     * @param ordinal desired ordinal to match
+     * @param cls class of the desired enumeration
+     * @return the enumeration constant {@code e} such that
+     *         {@code (e.ordinal() == ordinal)} or {@code null}
+     * @see Class#getEnumConstants() 
+     */
+    protected static <E extends Enum<E>> E valueOf(int ordinal, Class<E> cls) {
+        E[] values = cls.getEnumConstants();
         for (E e : values) {
             if (e.ordinal() == ordinal) {
                 return e;
@@ -39,9 +54,25 @@ public abstract class TypedAttribute<T> implements Attribute {
         return null;
     }
     
+    /**
+     * Returns the enumeration constant {@code e} such that
+     * {@code (e.ordinal() == ordinal)} or throws {@code EXRIOException} 
+     * if a match is not found.
+     * 
+     * <p>For simplicity this implementation does a linear search in the values
+     * returned by {@code cls.getEnumConstants()}.</p>
+     * 
+     * @param <E> an enumeration class
+     * @param ordinal desired ordinal to match
+     * @param cls class of the desired enumeration
+     * @return the enumeration constant {@code e} such that
+     *         {@code (e.ordinal() == ordinal)}
+     * @throws EXRIOException if a matching enumeration constant is not found
+     * @see Class#getEnumConstants() 
+     */
     protected static <E extends Enum<E>> E checkedValueOf(int ordinal,
-            E[] values) throws EXRIOException {
-        E e = valueOf(ordinal, values);
+            Class<E> cls) throws EXRIOException {
+        E e = valueOf(ordinal, cls);
         if (e != null) {
             return e;
         } else {
