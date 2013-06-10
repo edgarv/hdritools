@@ -23,9 +23,6 @@
 #include <ImfRgbaFile.h>
 #include <ImfStandardAttributes.h>
 
-#include <IlmThread.h>
-#include <IlmThreadPool.h>
-
 #include <fstream>
 #include <cassert>
 
@@ -358,24 +355,6 @@ jlong Java_edu_cornell_graphics_exr_EXRSimpleImage_getNativeVersion
 #else
     return edu_cornell_graphics_exr_EXRSimpleImage_serialVersionUID;
 #endif
-}
-
-
-
-// Sets the number of global working threads, or throws a nasty exception
-void Java_edu_cornell_graphics_exr_EXRSimpleImage_setNumWorkingThreads
-    (JNIEnv *env, jclass, jint numThreads)
-{
-    assert(numThreads >= 0);
-    if (IlmThread::supportsThreads()) {
-
-        IlmThread::ThreadPool::globalThreadPool().setNumThreads(numThreads);
-    } else {
-
-        JNU_ThrowByName(env,
-            "java/lang/UnsupportedOperationException",
-            "The IlmThread library doesn't support threads.");
-    }
 }
 
 

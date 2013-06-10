@@ -99,11 +99,8 @@ public class EXRSimpleImage implements Serializable {
             }
         }
         
-        // At this point the library must be loaded and marked as
-        // compatible; init the cache & set the multi-threading options
+        // At this point the library must be loaded and marked as compatible
         initCache();
-        final int numProcs = Runtime.getRuntime().availableProcessors();
-        setNumWorkingThreads(numProcs);
     }
     
     /** Additional attributes of the file */
@@ -530,12 +527,6 @@ public class EXRSimpleImage implements Serializable {
      * Returns the serialVersionID of the class as stored in the native library.
      */
     private native static long getNativeVersion();
-    
-    /*
-     * Sets the number of threads for reading/writing files. It only
-     * makes sense to call this with 2 or more threads.
-     */
-    private native static void setNumWorkingThreads(int numThreads);
     
     /*
      * Initializes the native method,field and classes IDs 
