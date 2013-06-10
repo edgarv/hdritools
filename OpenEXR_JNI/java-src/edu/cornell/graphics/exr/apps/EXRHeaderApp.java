@@ -350,7 +350,7 @@ public class EXRHeaderApp {
             }
             else if (a instanceof PreviewImageAttribute) {
                 PreviewImage p = ((PreviewImageAttribute)a).getValue();
-                out.printf(": %d by %d pixels", p.width, p.height);
+                out.printf(": %d by %d pixels", p.getWidth(), p.getHeight());
             }
             else if (a instanceof StringAttribute) {
                 String s = ((StringAttribute)a).getValue();

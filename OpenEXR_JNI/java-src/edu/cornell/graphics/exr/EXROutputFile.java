@@ -537,8 +537,8 @@ public class EXROutputFile implements AutoCloseable {
             throw new IllegalArgumentException("missing preview attribute");
         }
         final PreviewImage preview = previewAttr.getValue();
-        final int numPixels = preview.width * preview.height;
-        if (newPixels == null || newPixels.length < numPixels) {
+        final int numPixels = preview.getWidth() * preview.getHeight();
+        if (newPixels == null || newPixels.length < 4*numPixels) {
             throw new IllegalArgumentException("invalid newPixels buffer");            
         }
         

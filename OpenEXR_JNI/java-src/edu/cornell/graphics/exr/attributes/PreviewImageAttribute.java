@@ -19,6 +19,7 @@ import edu.cornell.graphics.exr.EXRIOException;
 import edu.cornell.graphics.exr.PreviewImage;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
+import java.util.Objects;
 
 /**
  * A {@code TypedAttribute} subclass holding a {@code PreviewImage} value.
@@ -28,7 +29,7 @@ import edu.cornell.graphics.exr.io.XdrOutput;
 public final class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
     
     public PreviewImageAttribute() {
-        // empty
+        super();
     }
     
     public PreviewImageAttribute(PreviewImage value) {
@@ -43,41 +44,27 @@ public final class PreviewImageAttribute extends TypedAttribute<PreviewImage> {
     @Override
     protected void readValueFrom(XdrInput input, int version)
             throws EXRIOException {
-        PreviewImage p = new PreviewImage();
-        p.width  = input.readInt();
-        if (p.width < 0) {
-            throw new EXRIOException("width overflow: " + p.width);
+        final int width  = input.readInt();
+        if (width < 0) {
+            throw new EXRIOException("width overflow: " + width);
         }
-        p.height = input.readInt();
-        if (p.height < 0) {
-            throw new EXRIOException("height overflow: " + p.height);
+        final int height = input.readInt();
+        if (height < 0) {
+            throw new EXRIOException("height overflow: " + height);
         }
-        
-        int pixelsLen = 4 * p.width * p.height;
-        p.pixelData = new byte[pixelsLen];
-        input.readFully(p.pixelData);
-        
+        PreviewImage p = new PreviewImage(width, height);
+        assert p.getPixelData().length == (4 * width * height);
+        input.readFully(p.getPixelData());
         setValue(p);
     }
 
     @Override
     protected void writeValueTo(XdrOutput output) throws EXRIOException {
-        final PreviewImage p = new PreviewImage();
-        
-        if (p.width < 0) {
-            throw new EXRIOException("width overflow: " + p.width);
-        } else if (p.height < 0) {
-            throw new EXRIOException("height overflow: " + p.height);
-        }
-        output.writeInt(p.width);
-        output.writeInt(p.height);
-        
-        final int numPixels = p.width * p.height;
-        if (p.pixelData != null) {
-            output.writeByteArray(p.pixelData, 0, numPixels);            
-        } else {
-            output.pad(numPixels);
-        }
+        final PreviewImage p = Objects.requireNonNull(getValue());
+        assert p.getPixelData().length == (4 * p.getWidth() * p.getHeight());
+        output.writeInt(p.getWidth());
+        output.writeInt(p.getHeight());
+        output.writeByteArray(p.getPixelData());
     }
 
     @Override
