@@ -50,18 +50,28 @@
 package edu.cornell.graphics.exr;
 
 /**
- * Defines the possible data types for a pixel.
+ * Defines the possible data types for an image channel.
  * 
  * @since OpenEXR-JNI 3.0
  */
 public enum PixelType {
-    /** Unsigned 32-bit integers */
+    /** 
+     * 32-bit unsigned integers. For discrete per-pixel data such as 
+     * object identifiers.
+     */
     UINT(4),
     
-    /** 16-bit half precision floating point */
+    /** 
+     * 16-bit IEEE 754-2008 floating-point numbers. For regular image data.
+     * @see Half
+     */
     HALF(2),
     
-    /** 32-bit single precision floating point */
+    /** 
+     * 32-bit IEEE 754 floating-point numbers. Used where the range or 
+     * precision of 16-bit number is not sufficient, for example,
+     * depth channels.
+     */
     FLOAT(4);
     
     
