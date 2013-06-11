@@ -7,23 +7,23 @@
   <Fragment>
 
     <DirectoryRef Id="java.dir">
-      <Component Id="openexrjni.openexrjni.dll" Guid="$(var.openexrjni.openexrjni.dll)" Win64="$(var.IsX64)">
-        <File Name="openexrjni.dll" KeyPath="yes" Source="java\openexrjni.dll" />
+      <Component Id="openexrjni.openexrjni3.dll" Guid="$(var.openexrjni.openexrjni3.dll)" Win64="$(var.IsX64)">
+        <File Name="openexrjni3.dll" KeyPath="yes" Source="java\openexrjni3.dll" />
       </Component>
-      <Component Id="openexrjni.openexrjni.2.1.0.jar" Guid="$(var.openexrjni.openexrjni.2.1.0.jar)" Win64="$(var.IsX64)">
-        <File Name="openexrjni-2.1.0.jar" KeyPath="yes" Source="java\openexrjni-2.1.0.jar" />
+      <Component Id="openexrjni.openexrjni.3.0.0.jar" Guid="$(var.openexrjni.openexrjni.3.0.0.jar)" Win64="$(var.IsX64)">
+        <File Name="openexrjni-3.0.0.jar" KeyPath="yes" Source="java\openexrjni-3.0.0.jar" />
       </Component>
-      <Component Id="openexrjni.openexrjni.2.1.0.javadoc.jar" Guid="$(var.openexrjni.openexrjni.2.1.0.javadoc.jar)" Win64="$(var.IsX64)">
-        <File Name="openexrjni-2.1.0-javadoc.jar" KeyPath="yes" Source="java\openexrjni-2.1.0-javadoc.jar" />
+      <Component Id="openexrjni.openexrjni.3.0.0.javadoc.jar" Guid="$(var.openexrjni.openexrjni.3.0.0.javadoc.jar)" Win64="$(var.IsX64)">
+        <File Name="openexrjni-3.0.0-javadoc.jar" KeyPath="yes" Source="java\openexrjni-3.0.0-javadoc.jar" />
       </Component>
     </DirectoryRef>
 
     <Feature Id="openexjava" Title="OpenEXR-Java" Level="1000"
              AllowAdvertise="no"
              Description="Java JNI bindings to do basic operations with OpenEXR files.">
-      <ComponentRef Id="openexrjni.openexrjni.dll"/>
-      <ComponentRef Id="openexrjni.openexrjni.2.1.0.jar"/>
-      <ComponentRef Id="openexrjni.openexrjni.2.1.0.javadoc.jar"/>
+      <ComponentRef Id="openexrjni.openexrjni3.dll"/>
+      <ComponentRef Id="openexrjni.openexrjni.3.0.0.jar"/>
+      <ComponentRef Id="openexrjni.openexrjni.3.0.0.javadoc.jar"/>
     </Feature>
   
   </Fragment>

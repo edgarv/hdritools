@@ -23,9 +23,9 @@
   <?define batchtonemapper.batchToneMapper.exe="4380eb31-35d8-499f-8759-aeb242f0936c" ?>
 
   <!-- OpenEXR Java bindings -->
-  <?define openexrjni.openexrjni.dll="43987520-a3e0-4f09-b51f-e637b2bb32cb" ?>
-  <?define openexrjni.openexrjni.2.1.0.jar="c731813f-c573-4fe2-a75b-56e15c35c08b" ?>
-  <?define openexrjni.openexrjni.2.1.0.javadoc.jar="3da4d53c-4f17-4f44-a372-b3c15fb753bc" ?>
+  <?define openexrjni.openexrjni3.dll="542b7b51-fdc2-44a6-920a-421117418060" ?>
+  <?define openexrjni.openexrjni.3.0.0.jar="5259d062-4854-474c-a039-6e0f0b74bcc8" ?>
+  <?define openexrjni.openexrjni.3.0.0.javadoc.jar="96ac7103-80a3-4af3-84e1-36055a0c94ca" ?>
   
   <!-- OpenEXR Matlab bindings -->
   <?define openexrmex.exrinfo.mexw="79add3df-7ec1-40bd-9aaa-efebbe226dd9" ?>
