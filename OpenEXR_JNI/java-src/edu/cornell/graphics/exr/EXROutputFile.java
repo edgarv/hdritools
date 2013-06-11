@@ -72,8 +72,7 @@ import java.util.Map;
 public class EXROutputFile implements AutoCloseable {
     
     static {
-        // TODO Unify native library loading
-        System.loadLibrary("openexrjni");
+        NativeLibraryLoader.loadLibrary();
     }
     
     /**

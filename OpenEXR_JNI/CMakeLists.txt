@@ -73,6 +73,7 @@ set(JAVA_SRCS
   java-src/edu/cornell/graphics/exr/KeyCode.java
   java-src/edu/cornell/graphics/exr/LineOrder.java
   java-src/edu/cornell/graphics/exr/NativeFrameBuffer.java
+  java-src/edu/cornell/graphics/exr/NativeLibraryLoader.java
   java-src/edu/cornell/graphics/exr/NoSuchChannelException.java
   java-src/edu/cornell/graphics/exr/PixelType.java
   java-src/edu/cornell/graphics/exr/PreviewImage.java

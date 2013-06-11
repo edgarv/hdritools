@@ -38,8 +38,7 @@ import java.util.Map;
 class NativeFrameBuffer {
     
     static {
-        // TODO Unify native library loading
-        System.loadLibrary("openexrjni");
+        NativeLibraryLoader.loadLibrary();
         initNativeCache();
     }
     

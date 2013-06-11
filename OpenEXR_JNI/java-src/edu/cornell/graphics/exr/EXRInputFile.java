@@ -71,8 +71,7 @@ import java.nio.file.Path;
 public class EXRInputFile implements AutoCloseable {
     
     static {
-        // TODO Unify native library loading
-        System.loadLibrary("openexrjni");
+        NativeLibraryLoader.loadLibrary();
     }
 
     /**

@@ -86,8 +86,7 @@ package edu.cornell.graphics.exr;
 public final class Threading {
     
     static {
-        // TODO Unify native library loading
-        System.loadLibrary("openexrjni");
+        NativeLibraryLoader.loadLibrary();
     }
     
     private Threading() {

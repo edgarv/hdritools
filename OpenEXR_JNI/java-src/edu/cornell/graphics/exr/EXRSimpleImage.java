@@ -32,15 +32,7 @@ import java.io.Serializable;
  * @since OpenEXR-JNI 2.0
  */
 public class EXRSimpleImage implements Serializable {
-
-
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -6156770241349949295L;
-
-    /** Default name of the native library */
-    private final static String JNI_LIBNAME = "openexrjni"; 
+    private static final long serialVersionUID = 7237582431388273985L;
 
     /**
      * As a simple image the only supported channel configurations
@@ -83,22 +75,12 @@ public class EXRSimpleImage implements Serializable {
         float[] buffer;
     }
     
-    // Loads the native JNI bindings if they are not already loaded 
+    // Loads and validates the native library
     static {
-        // The first time it might fail because the library is not loaded
-        try {
-            if (getNativeVersion() != serialVersionUID) {
-                throw new IllegalStateException("Incompatible versions.");
-            }
+        NativeLibraryLoader.loadLibrary();
+        if (getNativeVersion() != serialVersionUID) {
+            throw new IllegalStateException("Incompatible JNI versions.");
         }
-        catch (UnsatisfiedLinkError e) {
-            // If it's not loaded, load it and try again
-            System.loadLibrary(JNI_LIBNAME);
-            if (getNativeVersion() != serialVersionUID) {
-                throw new IllegalStateException("Incompatible versions.");
-            }
-        }
-        
         // At this point the library must be loaded and marked as compatible
         initCache();
     }
