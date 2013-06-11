@@ -30,7 +30,6 @@ import edu.cornell.graphics.exr.io.XdrInput;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -56,11 +55,7 @@ public class HeaderBasicTest {
     @BeforeClass
     public static void setUpClass() throws IOException, URISyntaxException {
         // As a basic test, they all use the same instance
-        java.net.URL url = ClassLoader.getSystemResource(RES_FILENMAME);
-        if (url == null) {
-            fail("Could not open source resource: " + RES_FILENMAME);
-        }
-        final Path path = Paths.get(url.toURI());
+        final Path path = TestUtil.getResourcePath(RES_FILENMAME);
         try (EXRFileInputStream is = new EXRFileInputStream(path)) {
             XdrInput input = new XdrInput(is);
             InputFileInfo info = new InputFileInfo(input);

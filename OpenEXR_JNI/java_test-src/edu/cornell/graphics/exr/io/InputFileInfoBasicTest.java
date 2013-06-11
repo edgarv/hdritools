@@ -15,9 +15,10 @@
 package edu.cornell.graphics.exr.io;
 
 import edu.cornell.graphics.exr.Header;
+import edu.cornell.graphics.exr.TestUtil;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -40,11 +41,8 @@ public class InputFileInfoBasicTest {
     @BeforeClass
     public static void setUpClass() throws IOException, URISyntaxException {
         // As a basic test, they all use the same instance
-        java.net.URL url = ClassLoader.getSystemResource(RES_FILENMAME);
-        if (url == null) {
-            fail("Could not open source resource: " + RES_FILENMAME);
-        }
-        instance = new InputFileInfo(Paths.get(url.toURI()));
+        Path path = TestUtil.getResourcePath(RES_FILENMAME);
+        instance = new InputFileInfo(path);
     }
     
     @Before

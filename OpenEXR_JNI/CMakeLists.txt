@@ -321,6 +321,8 @@ set(JAVA_TEST_SRCS
   java_test-src/edu/cornell/graphics/exr/StandardAttributesTest.java
   java_test-src/edu/cornell/graphics/exr/ThreadingTest.java
   java_test-src/edu/cornell/graphics/exr/io/InputFileInfoBasicTest.java
+  
+  java_test-src/edu/cornell/graphics/exr/TestUtil.java
 )
 
 # Tests resources to be included in the jar, relative to "java_test-src"
