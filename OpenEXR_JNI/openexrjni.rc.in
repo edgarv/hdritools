@@ -45,9 +45,9 @@ BEGIN
       VALUE "CompanyName",      "Program of Computer Graphics, Cornell University\0"
       VALUE "FileDescription",	"OpenEXR native library bindings for Java\0"
       VALUE "FileVersion",      "@RC_FILEVERSION@\0"
-      VALUE "InternalName",     "openexrjni\0"
-      VALUE "LegalCopyright",   "Copyright (c) 2007-2012 Program of Computer Graphics, Cornell University; 2002-2007, Industrial Light & Magic, a division of Lucas Digital Ltd. LLC\0"
-      VALUE "OriginalFilename", "openexrjni.dll\0"
+      VALUE "InternalName",     "openexrjni@OPENEXRJNI_VERSION_MAJOR@\0"
+      VALUE "LegalCopyright",   "Copyright (c) 2007-2013 Program of Computer Graphics, Cornell University; 2002-2007, Industrial Light & Magic, a division of Lucas Digital Ltd. LLC\0"
+      VALUE "OriginalFilename", "openexrjni@OPENEXRJNI_VERSION_MAJOR@.dll\0"
       VALUE "ProductName",      "HDRITools\0"
       VALUE "ProductVersion",	"@RC_PRODUCTVERSION@\0"
     END

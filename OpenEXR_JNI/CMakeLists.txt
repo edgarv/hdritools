@@ -13,12 +13,15 @@
 #      Edgar Velazquez-Armendariz <cs#cornell#edu - eva5>
 # ============================================================================
 
-# CMake file for the OpenEXR JNI binding version 2
+# CMake file for the OpenEXR JNI binding version 3
 
 # Read the version info from the version file at the root directory
 file(READ "${PROJECT_SOURCE_DIR}/VERSION.txt" VERSION_TXT)
-string(REGEX REPLACE ".*openexrjni - ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
+string(REGEX REPLACE ".*openexrjni - ([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1.\\2.\\3"
   OPENEXRJNI_VERSION "${VERSION_TXT}")
+set(OPENEXRJNI_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(OPENEXRJNI_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(OPENEXRJNI_VERSION_PATCH "${CMAKE_MATCH_3}")
 unset(VERSION_TXT)
 
 set(SRCS
@@ -213,7 +216,7 @@ endif()
 configure_file("java-src/overview.html" "${JAVADOC_DIR}/overview.html" @ONLY)
 add_custom_command(OUTPUT "${OPENEXRJNI_JAVADOC_JAR}"
   COMMAND "${Java_JAVADOC_EXECUTABLE}" -d "${JAVADOC_DIR}/doc"
-    -doctitle "Java bindings for OpenEXR ${OPENEXRJNI_VERSION}"
+    -doctitle "OpenEXR-JNI ${OPENEXRJNI_VERSION} - Java bindings for OpenEXR"
     -overview "${JAVADOC_DIR}/overview.html"
     -charset "UTF-8"
     -link "http://docs.oracle.com/javase/7/docs/api/" ${JAVA_SRCS}
@@ -256,17 +259,16 @@ HDRITOOLS_LTCG(openexrjni)
 target_link_libraries(openexrjni ${OpenEXR_LIBRARIES})
 add_dependencies(openexrjni openexrjni_jar)
 
-# This is version 2 of the OpenEXR JNI addin
+# Append the major version to the file name to avoid loading old versions
 set_target_properties(openexrjni PROPERTIES
   VERSION "${OPENEXRJNI_VERSION}"
+  OUTPUT_NAME "openexrjni${OPENEXRJNI_VERSION_MAJOR}"
   FOLDER "Java-JNI"
 )
 
 # On Mac OS X the jni libs need an especial suffix
 if(APPLE)
-  set_target_properties(openexrjni PROPERTIES
-    SUFFIX ".jnilib"
-  )
+  set_target_properties(openexrjni PROPERTIES SUFFIX ".jnilib")
 endif()
 
 

@@ -17,11 +17,13 @@ package edu.cornell.graphics.exr;
 
 /**
  * Package-internal class to consolidate loading the native library.
+ * 
+ * @since OpenEXR-JNI 3.0
  */
 final class NativeLibraryLoader {
     
     /** Default name of the native library */
-    private final static String JNI_LIBNAME = "openexrjni";
+    private final static String JNI_LIBNAME = "openexrjni3";
     
     /** Flag to know if the library has already been loaded */
     private static volatile boolean loaded = false;
