@@ -32,8 +32,12 @@ import edu.cornell.graphics.exr.io.EXRByteArrayOutputStream;
 import edu.cornell.graphics.exr.io.XdrInput;
 import edu.cornell.graphics.exr.io.XdrOutput;
 import java.nio.ByteBuffer;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -486,8 +490,7 @@ public class StandardAttributesTest {
         assertNotNull(attr);
         assertEquals(value, attr.getValue(), 0.0);
         
-        final Float hValue = StandardAttributes.getUtcOffset(header);
-        assertNotNull(hValue);
+        final float hValue = StandardAttributes.getUtcOffset(header);
         assertEquals(value, hValue, 0.0);
         
         checkSerialization();
@@ -504,6 +507,52 @@ public class StandardAttributesTest {
     public void testUtcOffsetBadValue() {
         float value = StandardAttributes.getUtcOffset(header);
         fail("Got a non-existent value: " + value);
+    }
+    
+    
+    //=========================================================================
+    // CapData and UtcOffset, from Java Date/TimeZone classes
+    //=========================================================================
+    
+    @Test
+    public void testCapDateAndUtcOffset() throws ParseException {
+        System.out.println("capDate/utcOffset");        
+
+        // RFC 822 time zone
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss Z");
+        final Date srcDate = fmt.parse("2013:06:10 23:31:40 -0400");
+        final double timeEpsilon = 1e-6 * srcDate.getTime();
+        final TimeZone zoneNYC = TimeZone.getTimeZone("America/New_York");
+        final TimeZone zoneCHE = TimeZone.getTimeZone("Europe/Zurich");
+        
+        assertFalse(StandardAttributes.hasCapDate(header));
+        assertFalse(StandardAttributes.hasUtcOffset(header));        
+        StandardAttributes.addCapDateAndUtcOffset(header, srcDate, zoneNYC);
+        assertTrue(StandardAttributes.hasCapDate(header));
+        assertTrue(StandardAttributes.hasUtcOffset(header));
+        
+        String capDate  = StandardAttributes.getCapDate(header);
+        float utcOffset = StandardAttributes.getUtcOffset(header);
+        assertEquals("2013:06:10 23:31:40", capDate);
+        assertEquals(4*3600, utcOffset, 0.001);
+        Date date = StandardAttributes.getCapDateTime(header);
+        assertEquals(srcDate.getTime(), date.getTime(), timeEpsilon);
+        
+        StandardAttributes.addCapDateAndUtcOffset(header, srcDate, zoneCHE);
+        assertTrue(StandardAttributes.hasCapDate(header));
+        assertTrue(StandardAttributes.hasUtcOffset(header));
+        capDate   = StandardAttributes.getCapDate(header);
+        utcOffset = StandardAttributes.getUtcOffset(header);
+        assertEquals("2013:06:11 05:31:40", capDate);
+        assertEquals(-2*3600, utcOffset, 0.001);
+        date = StandardAttributes.getCapDateTime(header);
+        assertEquals(srcDate.getTime(), date.getTime(), timeEpsilon);
+    }
+    
+    @Test(expected=ParseException.class)
+    public void testCapDateAndUtcOffsetBad() throws ParseException {
+        StandardAttributes.addCapDate(header, "Mon Jun 10 23:31:40 EDT 2013");
+        StandardAttributes.getCapDateTime(header);
     }
     
     

@@ -62,7 +62,12 @@ import edu.cornell.graphics.exr.attributes.TimeCodeAttribute;
 import edu.cornell.graphics.exr.attributes.V2fAttribute;
 import edu.cornell.graphics.exr.ilmbaseto.Matrix44;
 import edu.cornell.graphics.exr.ilmbaseto.Vector2;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.TimeZone;
 
 /**
  * Optional Standard Attributes - these attributes are "optional"
@@ -97,12 +102,12 @@ import java.util.List;
  * <li><b>comments:</b> additional image information in human-readable
  * form, for example a verbal description of the image.</li>
  * 
- * <li><b>capData:</b> the date when the image was created or captured,
+ * <li><b>capDate:</b> the date when the image was created or captured,
  * in local time, and formatted as
- * <blockquote><pre>YYYY:MM:DD hh:mm:ss</pre></blockquote>
- * where {@code YYYY} is the year (4 digits, e.g. 2003), {@code MM} is the month
- * (2 digits, 01, 02, ... 12), {@code DD} is the day of the month (2 digits,
- * 01, 02, ... 31), {@code hh} is the hour (2 digits, 00, 01, ... 23) {@code mm}
+ * <blockquote><pre>yyyy:MM:dd HH:mm:ss</pre></blockquote>
+ * where {@code yyyy} is the year (4 digits, e.g. 2003), {@code MM} is the month
+ * (2 digits, 01, 02, ... 12), {@code dd} is the day of the month (2 digits,
+ * 01, 02, ... 31), {@code HH} is the hour (2 digits, 00, 01, ... 23) {@code mm}
  * is the minute, and {@code ss} is the second (2 digits, 00, 01, ... 59).</li>
  * 
  * <li><b>utcOffset:</b> offset of local time at {@code capDate} from
@@ -206,6 +211,8 @@ import java.util.List;
  * @since OpenEXR-JNI 3.0
  */
 public final class StandardAttributes {
+    
+    private static final String CAPDATE_FORMAT = "yyyy:MM:dd HH:mm:ss";
     
     private StandardAttributes() {
         // empty
@@ -918,6 +925,98 @@ public final class StandardAttributes {
     public static float getUtcOffset(Header header) {
         return header.getTypedAttribute("utcOffset",
                 FloatAttribute.class).getValue();
+    }
+    
+    
+    //=========================================================================
+    // CapData and UtcOffset, from Java Date/TimeZone classes
+    //=========================================================================
+    
+    /**
+     * Add or update both the {@code capDate} and {@code utcOffset} standard
+     * attributes to represent the given date (UTC milliseconds since 
+     * the Epoch.) in the default time zone for this host. This method is
+     * equivalent to calling:
+     * <blockquote>
+     * {@code addCapDateAndUtcOffset(header, date, TimeZone.getDefault())}
+     * </blockquote>
+     * 
+     * @param header a non-null {@code header}
+     * @param date a given date
+     * @throws NullPointerException if either {@code header} or {@code zone}
+     *        is {@code null}
+     * @see #addCapDate(Header, String) 
+     * @see #addUtcOffset(Header, float) 
+     */
+    public static void addCapDateAndUtcOffset(Header header, Date date) {
+        addCapDateAndUtcOffset(header, date, TimeZone.getDefault());
+    }
+    
+    /**
+     * Add or update both the {@code capDate} and {@code utcOffset} standard
+     * attributes to represent the given date (UTC milliseconds since 
+     * the Epoch.) in a certain time zone.
+     * 
+     * @param header a non-null {@code header}
+     * @param date a given date
+     * @param zone a given time zone
+     * @throws NullPointerException if either {@code header}, {@code date}
+     *        or {@code zone} is {@code null}
+     * @see #addCapDate(Header, String) 
+     * @see #addUtcOffset(Header, float) 
+     */
+    public static void addCapDateAndUtcOffset(Header header,
+            Date date, TimeZone zone) {
+        header = Objects.requireNonNull(header, "null header");
+        date   = Objects.requireNonNull(date,   "null date");
+        zone   = Objects.requireNonNull(zone,   "null time zone");
+        
+        // getOffset(time) returns milliseconds to add to UTC to get local time
+        float utcOffset = -1e-3f * zone.getOffset(date.getTime());
+        SimpleDateFormat formatter = new SimpleDateFormat(CAPDATE_FORMAT);
+        formatter.setTimeZone(zone);
+        final String capDate = formatter.format(date);
+        
+        addCapDate(header,   capDate);
+        addUtcOffset(header, utcOffset);
+    }
+    
+    /**
+     * Returns a {@link Date} instance representing the current value of the
+     * {@code capDate} and {@code utcOffset} standard attributes. 
+     * 
+     * <p>If the header does not have a {@code capDate} attribute,
+     * that is if {@code header.hasCapDate()} is {@code false},
+     * the method throws {@code IllegalArgumentException}.
+     * If the header does not have a {@code utcOffset} attribute assumes that
+     * {@code capDate} is in the default time zone for this host.</p>
+     * 
+     * @param header a non-null {@code Header}
+     * @return a {@code Date} representing the current value of the
+     *         {@code capDate} and {@code utcOffset} standard attributes
+     * @throws IllegalArgumentException if {@code header} does not have a
+     *         {@code capDate} standard attribute
+     * @throws ParseException if {@code capDate} is not in the format
+     *         {@code yyyy:MM:dd HH:mm:ss}
+     * @throws NullPointerException if {@code header} is {@code null}
+     * @see #getCapDate(Header) 
+     * @see #getUtcOffset(Header) 
+     */
+    public static Date getCapDateTime(Header header) throws ParseException {
+        header = Objects.requireNonNull(header, "null header");
+        String capDate = getCapDate(header);
+        SimpleDateFormat formatter = new SimpleDateFormat(CAPDATE_FORMAT);
+        Date date;
+        if (hasUtcOffset(header)) {
+            float utcOffset = getUtcOffset(header);
+            final TimeZone utc = TimeZone.getTimeZone("Etc/UTC");
+            formatter.setTimeZone(utc);
+            date = formatter.parse(capDate);
+            date.setTime(date.getTime() + (long) (utcOffset*1000.0));
+        } else {
+            date = formatter.parse(capDate);
+        }
+        return date;
     }
     
     
