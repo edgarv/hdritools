@@ -42,6 +42,7 @@ public class EXRFileOutputStream implements EXROutputStream, AutoCloseable {
         }
         try {
             channel = FileChannel.open(path, StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
             lock = channel.tryLock(0, Long.MAX_VALUE, false);
             if (lock == null) {
