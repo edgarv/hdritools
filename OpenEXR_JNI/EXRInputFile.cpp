@@ -38,18 +38,21 @@ struct EXRInputFileTO
     std::unique_ptr<Imf::InputFile> m_inputFile;
 };
 
-} // namespace
 
 
-
-jlong Java_edu_cornell_graphics_exr_EXRInputFile_getNativeInputFile(
-    JNIEnv* env, jclass, jobject is, jstring jfilename, jint numThreads)
+// Functor for EXRInputFile_getNativeInputFile
+class Functor_getNativeInputFile
 {
-    using Imf::InputFile;
+public:
+    Functor_getNativeInputFile(jobject _is, jstring _jfilename,
+        jint _numThreads) :
+    is(_is), jfilename(_jfilename), numThreads(_numThreads) {}
 
-    auto impl = [is, jfilename, numThreads] (JNIEnv* env) -> EXRInputFileTO* {
-       EXRInputFileTO* to;
-       if (!(!is ^ !jfilename)) {
+    EXRInputFileTO* operator() (JNIEnv* env) const
+    {
+        using Imf::InputFile;
+        EXRInputFileTO* to;
+        if (!(!is ^ !jfilename)) {
             throw JavaExc(is != nullptr ?
                 "both stream and filename were provided" :
                 "both stream and filename are null");
@@ -61,28 +64,34 @@ jlong Java_edu_cornell_graphics_exr_EXRInputFile_getNativeInputFile(
         } else {
             assert(jfilename != nullptr);
             to = new EXRInputFileTO;
-#if USE_JAVA_UTF8
+    #if USE_JAVA_UTF8
             JNIUTFString filename(env, jfilename);
             to->m_inputFile.reset(new InputFile(filename, numThreads));
-#else
+    #else
             JNIString filename(env, jfilename);
             to->m_stream.reset(new UnicodeIFStream(filename, filename.len()));
             to->m_inputFile.reset(new InputFile(*to->m_stream, numThreads));
-#endif
+    #endif
         }
         return to;
-    };
+    }
 
-    auto retVal = safeCall(env, impl, static_cast<EXRInputFileTO*>(nullptr));
-    return reinterpret_cast<jlong>(retVal);
-}
+private:
+    const jobject is;
+    const jstring jfilename;
+    const jint    numThreads;
+};
 
 
 
-void Java_edu_cornell_graphics_exr_EXRInputFile_deleteNativeInputFile
-    (JNIEnv *env, jclass, jlong nativePtr)
+// Functor for EXRInputFile_deleteNativeInputFile
+class Functor_deleteNativeInputFile
 {
-    safeCall(env, [nativePtr] (JNIEnv* env) {
+public:
+    Functor_deleteNativeInputFile(jlong _nativePtr) : nativePtr(_nativePtr) {}
+
+    void operator() (JNIEnv* env) const
+    {
         if (nativePtr == 0) {
             throw Iex::ArgExc("null EXRInputFileTO pointer");
         }
@@ -90,15 +99,21 @@ void Java_edu_cornell_graphics_exr_EXRInputFile_deleteNativeInputFile
         // instance, otherwise there will be an access violation exception
         EXRInputFileTO* to = reinterpret_cast<EXRInputFileTO*>(nativePtr);
         delete to;
-    });
-}
+    }
+private:
+    const jlong nativePtr;
+};
 
 
 
-jint Java_edu_cornell_graphics_exr_EXRInputFile_getNativeVersion(
-    JNIEnv* env, jclass, jlong nativePtr)
+// Functor for EXRInputFile_getNativeVersion
+class Functor_getNativeVersion
 {
-    int version = safeCall(env, [nativePtr] (JNIEnv* env) -> int {
+public:
+    Functor_getNativeVersion(jlong _nativePtr) : nativePtr(_nativePtr) {}
+
+    int operator() (JNIEnv* env) const
+    {
         if (nativePtr == 0) {
             throw Iex::ArgExc("null EXRInputFileTO pointer");
         }
@@ -107,16 +122,22 @@ jint Java_edu_cornell_graphics_exr_EXRInputFile_getNativeVersion(
             throw Iex::LogicExc("null input file");
         }
         return to->m_inputFile->version();
-    }, static_cast<int>(-1));
-    return version;
-}
+    }
+
+private:
+    const jlong nativePtr;
+};
 
 
 
-jboolean Java_edu_cornell_graphics_exr_EXRInputFile_isNativeComplete(
-    JNIEnv* env, jclass, jlong nativePtr)
+// Functor for EXRInputFile_isNativeComplete
+class Functor_isNativeComplete
 {
-    bool complete = safeCall(env, [nativePtr] (JNIEnv* env) -> bool {
+public:
+    Functor_isNativeComplete(jlong _nativePtr) : nativePtr(_nativePtr) {}
+
+    bool operator() (JNIEnv* env) const
+    {
         if (nativePtr == 0) {
             throw Iex::ArgExc("null EXRInputFileTO pointer");
         }
@@ -125,16 +146,22 @@ jboolean Java_edu_cornell_graphics_exr_EXRInputFile_isNativeComplete(
             throw Iex::LogicExc("null input file");
         }
         return to->m_inputFile->isComplete();
-    }, false);
-    return complete;
-}
+    }
+
+private:
+    const jlong nativePtr;
+};
 
 
 
-jbyteArray Java_edu_cornell_graphics_exr_EXRInputFile_getNativeHeaderBuffer(
-    JNIEnv* env, jclass, jlong nativePtr)
+// Functor for EXRInputFile_getNativeHeaderBuffer
+class Functor_getNativeHeaderBuffer
 {
-    jbyteArray arr = safeCall(env, [nativePtr] (JNIEnv* env) -> jbyteArray {
+public:
+    Functor_getNativeHeaderBuffer(jlong _nativePtr) : nativePtr(_nativePtr) {}
+
+    jbyteArray operator() (JNIEnv* env) const
+    {
         if (nativePtr == 0) {
             throw Iex::ArgExc("null EXRInputFileTO pointer");
         }
@@ -165,17 +192,27 @@ jbyteArray Java_edu_cornell_graphics_exr_EXRInputFile_getNativeHeaderBuffer(
         env->SetByteArrayRegion(jheaderArray, 0, len,
             reinterpret_cast<const jbyte*>(&headerData[8]));
         return jheaderArray;
-    }, static_cast<jbyteArray>(NULL));
-    return arr;
-}
+    }
+
+private:
+    const jlong nativePtr;
+};
 
 
 
-void Java_edu_cornell_graphics_exr_EXRInputFile_setNativeFrameBuffer(
-    JNIEnv* env, jclass, jlong nativePtr, jlong nativeFrameBufferPtr)
+// Functor for EXRInputFile_setNativeFrameBuffer
+class Functor_setNativeFrameBuffer
 {
-    using Imf::FrameBuffer;
-    safeCall(env, [nativePtr, nativeFrameBufferPtr](JNIEnv* env) {
+public:
+    Functor_setNativeFrameBuffer(jlong _nativePtr, jlong _nativeFrameBufferPtr):
+    nativePtr(_nativePtr), nativeFrameBufferPtr(_nativeFrameBufferPtr)
+    {
+        // empty
+    }
+
+    void operator() (JNIEnv* env) const
+    {
+        using Imf::FrameBuffer;
         if (nativePtr == 0) {
             throw Iex::ArgExc("null EXRInputFileTO pointer");
         } else if (nativeFrameBufferPtr == 0) {
@@ -187,15 +224,24 @@ void Java_edu_cornell_graphics_exr_EXRInputFile_setNativeFrameBuffer(
         }
         FrameBuffer* fb = reinterpret_cast<FrameBuffer*>(nativeFrameBufferPtr);
         to->m_inputFile->setFrameBuffer(*fb);
-    });
-}
+    }
+
+private:
+    const jlong nativePtr;
+    const jlong nativeFrameBufferPtr;
+};
 
 
 
-void Java_edu_cornell_graphics_exr_EXRInputFile_readNativePixels(
-    JNIEnv* env, jclass, jlong nativePtr, jint scanLine1, jint scanLine2)
+// Functor for EXRInputFile_readNativePixels
+class Functor_readNativePixels
 {
-    safeCall(env, [nativePtr, scanLine1, scanLine2](JNIEnv* env) {
+public:
+    Functor_readNativePixels(jlong _nativePtr,jint _scanLine1,jint _scanLine2) :
+    nativePtr(_nativePtr), scanLine1(_scanLine1), scanLine2(_scanLine2) {}
+
+    void operator() (JNIEnv* env) const
+    {
         if (nativePtr == 0) {
             throw Iex::ArgExc("null EXRInputFileTO pointer");
         }
@@ -204,5 +250,80 @@ void Java_edu_cornell_graphics_exr_EXRInputFile_readNativePixels(
             throw Iex::LogicExc("null input file");
         }
         to->m_inputFile->readPixels(scanLine1, scanLine2);
-    });
+    }
+
+private:
+    const jlong nativePtr;
+    const jint scanLine1;
+    const jint scanLine2;
+};
+
+} // namespace
+
+
+
+jlong JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_getNativeInputFile(
+    JNIEnv* env, jclass, jobject is, jstring jfilename, jint numThreads)
+{
+    Functor_getNativeInputFile impl(is, jfilename, numThreads);
+    auto retVal = safeCall(env, impl, static_cast<EXRInputFileTO*>(nullptr));
+    return reinterpret_cast<jlong>(retVal);
+}
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_deleteNativeInputFile
+    (JNIEnv *env, jclass, jlong nativePtr)
+{
+    Functor_deleteNativeInputFile impl(nativePtr);
+    safeCall(env, impl);
+}
+
+
+
+jint JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_getNativeVersion(
+    JNIEnv* env, jclass, jlong nativePtr)
+{
+    Functor_getNativeVersion impl(nativePtr);
+    int version = safeCall(env, impl, static_cast<int>(-1));
+    return version;
+}
+
+
+
+jboolean JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_isNativeComplete(
+    JNIEnv* env, jclass, jlong nativePtr)
+{
+    Functor_isNativeComplete impl(nativePtr);
+    bool complete = safeCall(env, impl, false);
+    return complete;
+}
+
+
+
+jbyteArray
+JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_getNativeHeaderBuffer(
+    JNIEnv* env, jclass, jlong nativePtr)
+{
+    Functor_getNativeHeaderBuffer impl(nativePtr);
+    jbyteArray arr = safeCall(env, impl, static_cast<jbyteArray>(NULL));
+    return arr;
+}
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_setNativeFrameBuffer(
+    JNIEnv* env, jclass, jlong nativePtr, jlong nativeFrameBufferPtr)
+{
+    Functor_setNativeFrameBuffer impl(nativePtr, nativeFrameBufferPtr);
+    safeCall(env, impl);
+}
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_EXRInputFile_readNativePixels(
+    JNIEnv* env, jclass, jlong nativePtr, jint scanLine1, jint scanLine2)
+{
+    Functor_readNativePixels impl(nativePtr, scanLine1, scanLine2);
+    safeCall(env, impl);
 }
