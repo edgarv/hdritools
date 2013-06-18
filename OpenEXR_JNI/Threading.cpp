@@ -19,7 +19,7 @@
 #include <ImfThreading.h>
 
 
-jint Java_edu_cornell_graphics_exr_Threading_globalThreadCount(
+jint JNICALL Java_edu_cornell_graphics_exr_Threading_globalThreadCount(
     JNIEnv* env, jclass)
 {
     int count = safeCall(env, [](JNIEnv* env) {
@@ -28,7 +28,7 @@ jint Java_edu_cornell_graphics_exr_Threading_globalThreadCount(
     return count;
 }
 
-void Java_edu_cornell_graphics_exr_Threading_setGlobalThreadCount(
+void JNICALL Java_edu_cornell_graphics_exr_Threading_setGlobalThreadCount(
     JNIEnv* env, jclass, jint count)
 {
     safeCall(env, [count](JNIEnv* env) {

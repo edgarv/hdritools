@@ -347,7 +347,7 @@ void OpenEXRTo::initCache(JNIEnv *env)
 
 
 // Such a simple method, but will save painful debugging
-jlong Java_edu_cornell_graphics_exr_EXRSimpleImage_getNativeVersion
+jlong JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_getNativeVersion
     (JNIEnv *, jclass)
 {
 #if defined(__GNUC__) || defined(__clang__)
@@ -419,7 +419,7 @@ void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_read
 
 
 
-void Java_edu_cornell_graphics_exr_EXRSimpleImage_write
+void JNICALL Java_edu_cornell_graphics_exr_EXRSimpleImage_write
     (JNIEnv *env, jclass, jstring jfilename, jfloatArray jpixelBuffer, 
      jint width, jint height,
      jint numChannels, jobject jattrib, jint compressionFlag)
