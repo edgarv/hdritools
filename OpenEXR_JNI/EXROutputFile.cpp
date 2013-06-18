@@ -46,20 +46,21 @@ struct EXROutputFileTO
     }
 };
 
-} // namespace
 
 
-
-jlong Java_edu_cornell_graphics_exr_EXROutputFile_getNativeOutputFile(
-    JNIEnv* env, jclass, jbyteArray jHeaderBuffer, jint jHeaderBufferLen,
-    jobject os, jstring jfilename, jint nThreads)
+// Functor for EXROutputFile_getNativeOutputFile
+class Functor_getNativeOutputFile
 {
-    using Imf::OutputFile;
-    using Imf::Header;
-    EXROutputFileTO* retVal = safeCall(env,
-        [jHeaderBuffer, jHeaderBufferLen, os, jfilename, nThreads] 
-    (JNIEnv* env) -> EXROutputFileTO*
+public:
+    Functor_getNativeOutputFile(jbyteArray _jHeaderBuffer,
+        jint _jHeaderBufferLen,jobject _os,jstring _jfilename,jint _nThreads) :
+    jHeaderBuffer(_jHeaderBuffer), jHeaderBufferLen(_jHeaderBufferLen),
+    os(_os), jfilename(_jfilename), nThreads(_nThreads) {}
+
+    EXROutputFileTO* operator() (JNIEnv* env) const
     {
+        using Imf::OutputFile;
+        using Imf::Header;
         if (!(!os ^ !jfilename)) {
             throw JavaExc(os != nullptr ?
                 "both stream and filename were provided" :
@@ -95,29 +96,45 @@ jlong Java_edu_cornell_graphics_exr_EXROutputFile_getNativeOutputFile(
         }
         assert(to->m_outputFile);
         return to;
+    }
 
-    }, static_cast<EXROutputFileTO*>(nullptr));
-    return reinterpret_cast<jlong>(retVal);
-}
+private:
+    const jbyteArray jHeaderBuffer;
+    const jint jHeaderBufferLen;
+    const jobject os;
+    const jstring jfilename;
+    const jint nThreads;
+};
 
 
 
-void Java_edu_cornell_graphics_exr_EXROutputFile_deleteNativeOutputFile(
-    JNIEnv* env, jclass, jlong nativePtr)
+// Functor for EXROutputFile_deleteNativeOutputFile
+class Functor_deleteNativeOutputFile
 {
-    safeCall(env, [nativePtr] (JNIEnv* env) {
+public:
+    Functor_deleteNativeOutputFile(jlong _nativePtr) : nativePtr(_nativePtr) {}
+
+    void operator() (JNIEnv* env) const {
         EXROutputFileTO* to = EXROutputFileTO::get(nativePtr);
         delete to;
-    });
-}
+    }
+
+private:
+    const jlong nativePtr;
+};
 
 
 
-void Java_edu_cornell_graphics_exr_EXROutputFile_setNativeFrameBuffer(
-    JNIEnv* env, jclass, jlong nativePtr, jlong nativeFrameBufferPtr)
+// Functor for EXROutputFile_setNativeFrameBuffer
+class Functor_setNativeFrameBuffer
 {
-    using Imf::FrameBuffer;
-    safeCall(env, [nativePtr, nativeFrameBufferPtr](JNIEnv* env) {
+public:
+    Functor_setNativeFrameBuffer(jlong _nativePtr, jlong _nativeFrameBufferPtr):
+    nativePtr(_nativePtr), nativeFrameBufferPtr(_nativeFrameBufferPtr) {}
+
+    void operator() (JNIEnv* env) const
+    {
+        using Imf::FrameBuffer;
         if (nativeFrameBufferPtr == 0) {
             throw Iex::ArgExc("null Imf::FrameBuffer pointer");
         }
@@ -127,34 +144,103 @@ void Java_edu_cornell_graphics_exr_EXROutputFile_setNativeFrameBuffer(
         }
         FrameBuffer* fb = reinterpret_cast<FrameBuffer*>(nativeFrameBufferPtr);
         to->m_outputFile->setFrameBuffer(*fb);
-    });
-}
+    }
+
+private:
+    const jlong nativePtr;
+    const jlong nativeFrameBufferPtr;
+};
 
 
 
-jint Java_edu_cornell_graphics_exr_EXROutputFile_currentNativeScanLine(
-    JNIEnv* env, jclass, jlong nativePtr)
+// Functor for EXROutputFile_currentNativeScanLine
+class Functor_currentNativeScanLine
 {
-    int retVal = safeCall(env, [nativePtr] (JNIEnv* env) -> int {
+public:
+    Functor_currentNativeScanLine(jlong _nativePtr) : nativePtr(_nativePtr) {}
+
+    int operator() (JNIEnv* env) const {
         EXROutputFileTO* to = EXROutputFileTO::get(nativePtr);
         if (to->m_outputFile == nullptr) {
             throw Iex::LogicExc("null output file");
         }
         return to->m_outputFile->currentScanLine();
-    }, static_cast<int>(0));
-    return retVal;
-}
+    }
+
+private:
+    const jlong nativePtr;
+};
 
 
 
-void Java_edu_cornell_graphics_exr_EXROutputFile_writeNativePixels(
-    JNIEnv* env, jclass, jlong nativePtr, jint numScanlines)
+// Functor for EXROutputFile_writeNativePixels
+class Functor_writeNativePixels
 {
-    safeCall(env, [nativePtr, numScanlines](JNIEnv* env) {
+public:
+    Functor_writeNativePixels(jlong _nativePtr, jint _numScanlines) :
+    nativePtr(_nativePtr), numScanlines(_numScanlines) {}
+
+    void operator() (JNIEnv* env) const {
         EXROutputFileTO* to = EXROutputFileTO::get(nativePtr);
         if (to->m_outputFile == nullptr) {
             throw Iex::LogicExc("null output file");
         }
         to->m_outputFile->writePixels(numScanlines);
-    });
+    }
+
+private:
+    const jlong nativePtr;
+    const jint numScanlines;
+};
+
+} // namespace
+
+
+
+jlong JNICALL Java_edu_cornell_graphics_exr_EXROutputFile_getNativeOutputFile(
+    JNIEnv* env, jclass, jbyteArray jHeaderBuffer, jint jHeaderBufferLen,
+    jobject os, jstring jfilename, jint nThreads)
+{
+    Functor_getNativeOutputFile impl(jHeaderBuffer, jHeaderBufferLen,
+        os, jfilename, nThreads);
+    EXROutputFileTO* retVal = safeCall(env, impl,
+        static_cast<EXROutputFileTO*>(nullptr));
+    return reinterpret_cast<jlong>(retVal);
+}
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_EXROutputFile_deleteNativeOutputFile(
+    JNIEnv* env, jclass, jlong nativePtr)
+{
+    Functor_deleteNativeOutputFile impl(nativePtr);
+    safeCall(env, impl);
+}
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_EXROutputFile_setNativeFrameBuffer(
+    JNIEnv* env, jclass, jlong nativePtr, jlong nativeFrameBufferPtr)
+{
+    Functor_setNativeFrameBuffer impl(nativePtr, nativeFrameBufferPtr);
+    safeCall(env, impl);
+}
+
+
+
+jint JNICALL Java_edu_cornell_graphics_exr_EXROutputFile_currentNativeScanLine(
+    JNIEnv* env, jclass, jlong nativePtr)
+{
+    Functor_currentNativeScanLine impl(nativePtr);
+    int retVal = safeCall(env, impl, static_cast<int>(0));
+    return retVal;
+}
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_EXROutputFile_writeNativePixels(
+    JNIEnv* env, jclass, jlong nativePtr, jint numScanlines)
+{
+    Functor_writeNativePixels impl(nativePtr, numScanlines);
+    safeCall(env, impl);
 }
