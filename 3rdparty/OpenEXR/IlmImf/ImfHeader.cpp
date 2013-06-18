@@ -956,7 +956,6 @@ Header::readFrom (IStream &is, int &version)
     // Read the magic number and the file format version number.
     // Then check if we can read the rest of this file.
     //
-    int magic;
     char magicNumber[4];
     is.read(magicNumber, 4);
 
