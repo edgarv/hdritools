@@ -134,27 +134,29 @@ Imf::Slice JVMData::getSlice(JNIEnv* env, jobject jslice) const
 // Actual instance of the JVM Data cache
 std::auto_ptr<JVMData> jvmData;
 
-} // namespace
 
 
-
-void Java_edu_cornell_graphics_exr_NativeFrameBuffer_initNativeCache(
-    JNIEnv* env, jclass)
+// Functor for NativeFrameBuffer_initNativeCache
+struct Functor_initNativeCache
 {
-    JVMData* const data = safeCall(env, [](JNIEnv* env) {
+    inline JVMData* operator() (JNIEnv* env) const {
         return new JVMData(env);
-    }, static_cast<JVMData*>(nullptr));
-    jvmData.reset(data);
-}
+    }
+};
 
 
 
-jlong Java_edu_cornell_graphics_exr_NativeFrameBuffer_newNativeFrameBuffer(
-    JNIEnv* env, jclass, jint count, jobjectArray names, jobjectArray slices)
+// Functor for NativeFrameBuffer_newNativeFrameBuffer
+class Functor_newNativeFrameBuffer
 {
-    using Imf::FrameBuffer;
-    FrameBuffer* const frameBuffer = safeCall(env,
-        [count, names, slices](JNIEnv* env) -> FrameBuffer* {
+public:
+    Functor_newNativeFrameBuffer(jint _count, jobjectArray _names,
+        jobjectArray _slices) :
+    count(_count), names(_names), slices(_slices) {}
+
+    Imf::FrameBuffer* operator() (JNIEnv* env) const
+    {
+        using Imf::FrameBuffer;
         FrameBuffer* frameBuffer = new FrameBuffer;
         for (jint i = 0; i < count; ++i) {
             Imf::Slice slice(jvmData->getSlice(env,
@@ -164,23 +166,70 @@ jlong Java_edu_cornell_graphics_exr_NativeFrameBuffer_newNativeFrameBuffer(
             frameBuffer->insert(name, slice);
         }
         return frameBuffer;
-    }, static_cast<FrameBuffer*>(nullptr));
+    }
+
+private:
+    const jint count;
+    const jobjectArray names;
+    const jobjectArray slices;
+};
+
+
+
+// Functor for NativeFrameBuffer_deleteNativeHandle
+class Functor_deleteNativeHandle
+{
+public:
+    Functor_deleteNativeHandle(jlong _nativeFrameBufferPtr) :
+    nativeFrameBufferPtr(_nativeFrameBufferPtr) {}
+
+    void operator() (JNIEnv* env) const
+    {
+        using Imf::FrameBuffer;
+        if (nativeFrameBufferPtr == 0) {
+            throw Iex::ArgExc("null Imf::FrameBuffer pointer");
+        }
+        // We assume that nativeFramBufferPtr actually contains a valid
+        // instance, otherwise there will be an access violation exception
+        FrameBuffer* to = reinterpret_cast<FrameBuffer*>(nativeFrameBufferPtr);
+        delete to;
+    }
+
+private:
+    const jlong nativeFrameBufferPtr;
+};
+
+} // namespace
+
+
+
+void JNICALL Java_edu_cornell_graphics_exr_NativeFrameBuffer_initNativeCache(
+    JNIEnv* env, jclass)
+{
+    Functor_initNativeCache impl;
+    JVMData* const data = safeCall(env, impl, static_cast<JVMData*>(nullptr));
+    jvmData.reset(data);
+}
+
+
+
+jlong
+JNICALL Java_edu_cornell_graphics_exr_NativeFrameBuffer_newNativeFrameBuffer(
+    JNIEnv* env, jclass, jint count, jobjectArray names, jobjectArray slices)
+{
+    using Imf::FrameBuffer;
+    Functor_newNativeFrameBuffer impl(count, names, slices);
+    FrameBuffer* const frameBuffer = safeCall(env, impl,
+        static_cast<FrameBuffer*>(nullptr));
     return reinterpret_cast<jlong>(frameBuffer);
 }
 
 
 
-void Java_edu_cornell_graphics_exr_NativeFrameBuffer_deleteNativeHandle(
-    JNIEnv* env, jclass, jlong nativeFramBufferPtr)
+void JNICALL Java_edu_cornell_graphics_exr_NativeFrameBuffer_deleteNativeHandle(
+    JNIEnv* env, jclass, jlong nativeFrameBufferPtr)
 {
+    Functor_deleteNativeHandle impl(nativeFrameBufferPtr);
     using Imf::FrameBuffer;
-    safeCall(env, [nativeFramBufferPtr] (JNIEnv* env) {
-        if (nativeFramBufferPtr == 0) {
-            throw Iex::ArgExc("null Imf::FrameBuffer pointer");
-        }
-        // We assume that nativeFramBufferPtr actually contains a valid
-        // instance, otherwise there will be an access violation exception
-        FrameBuffer* to = reinterpret_cast<FrameBuffer*>(nativeFramBufferPtr);
-        delete to;
-    });
+    safeCall(env, impl);
 }
