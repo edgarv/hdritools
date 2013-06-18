@@ -105,6 +105,11 @@ public class ChannelList implements Iterable<ChannelList.ChannelListElement> {
                 public Channel getChannel() {
                     return curr.getValue();
                 }
+                
+                @Override
+                public String toString() {
+                    return curr.toString();
+                }
             };
 
             @Override
