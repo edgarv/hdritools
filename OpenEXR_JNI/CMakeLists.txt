@@ -254,17 +254,21 @@ include_directories(
 )
 
 # Finally adds the actual library targets
-add_library(openexrjni SHARED ${SRCS} ${JNI_HEADERS})
+add_library(openexrjni MODULE ${SRCS} ${JNI_HEADERS})
 HDRITOOLS_LTCG(openexrjni)
 target_link_libraries(openexrjni ${OpenEXR_LIBRARIES})
 add_dependencies(openexrjni openexrjni_jar)
 
 # Append the major version to the file name to avoid loading old versions
 set_target_properties(openexrjni PROPERTIES
-  VERSION "${OPENEXRJNI_VERSION}"
   OUTPUT_NAME "openexrjni${OPENEXRJNI_VERSION_MAJOR}"
   FOLDER "Java-JNI"
 )
+
+# gcc/clang do not like VERSION/SOVERSION with modules, only with shared libraries
+if(MSVC)
+  set_target_properties(openexrjni PROPERTIES VERSION "${OPENEXRJNI_VERSION}")
+endif()
 
 # On Mac OS X the jni libs need an especial suffix
 if(APPLE)
