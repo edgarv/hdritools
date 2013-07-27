@@ -152,10 +152,8 @@ log2_range = 1/log(2)*range(log_Lwv);
 %% Average log luminance
 % Equation 1 of the paper, without \delta since there are no zeros
 if isnan(p.Results.Lav)
-    if (isnan(p.Results.key))
-        N = length(Lwv);
-        Lwp = exp((1/N)*sum(log_Lwv));
-    end
+    N = length(Lwv);
+    Lwp = exp((1/N)*sum(log_Lwv));
 else
     Lwp = p.Results.Lav;
 end
@@ -203,13 +201,28 @@ end
 if ~useScales
 %% Global tone mapping    
 
-    % This expression combines equations 2 and 4 of the paper with the 
-    % scaling: the result is Ld[Lw]/Lw for each pixel, so that the result 
-    % can be applied to each channel while preserving the color.
-    Lwhite2 = Lwhite*Lwhite;
-    partA = Lwp / (a * Lwhite2);
-    partB = (a*a*Lwhite2 - Lwp*Lwp) / (a * Lwhite2);
-    Ls = partA + partB ./ (Lwp + a*Lw);
+    % This expressions combine equations 2 and 4 of the paper with the 
+    % scaling: The canonical approach is:
+    %   a. Transform sRGB to xyY
+    %   b. Apply the TMO to Y
+    %   c. Transform x,y,TMO(Y) back to sRGB
+    %
+    % However, having only Y and assuming that TMO(Y) == k*Y, then the
+    % result of all the transformation is just k*[r,g,b]
+    % Thus:
+    %         (key/avgLogLum) * (1 + (key/avgLogLum)/pow(Lwhite,2) * Y)
+    %    k == ---------------------------------------------------------
+    %                        1 + (key/avgLogLum)*Y
+    % Where:
+    %    k == (P * (R + Q*(P*Y)) / (R + P*Y)
+    %    P == key / avgLogLum
+    %    Q == 1 / pow(Lwhite,2)
+    %    R == 1
+    
+    P  = a / Lwp;
+    Q  = 1.0/(Lwhite*Lwhite);
+    Lp = P .* Lw;
+    Ls = (P * (1 + Q.*Lp)) ./ (1 + Lp);
     
 else
 %% Local dodge & burn
