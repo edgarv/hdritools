@@ -117,8 +117,6 @@ height = size(hdr, 1);
 width  = size(hdr, 2);
 
 % TODO Allow a custom min/max intensity value
-% FIXME handle images with some zero pixels
-
 
 
 %% Compute the log-intensity channel
@@ -128,20 +126,38 @@ intensity = (20./61)*double(hdr(:,:,1)) + ...
 log_intensity = log10(intensity);
 
 
-%% Filter the log-intensity channel
+%% Choose sane default values
 space_sigma = 0.02 * min(width, height);
 range_sigma = 0.4;
 
+% Handle zeros, nans and inf
+log_intensity_mask = ~isnan(log_intensity) & ~isinf(log_intensity);
+LogI_valid = log_intensity(log_intensity_mask);
+if isempty(LogI_valid)
+    error('PCG:invalidImage', 'The image does not contain normal values');
+elseif range(LogI_valid) < 1e-10
+    error('PCG:invalidImage', 'The image hast the same overall luminance');
+end
+% Delete the extreme 1.5% at both ends to remove weird values
+[~, bins] = hist(LogI_valid, 100);
+input_min = bins(2);
+input_max = bins(99);
+
+
+%% Filter the log-intensity channel
 filtered_log_intensity = linear_BF(log_intensity, ...
-    space_sigma, range_sigma);
+    space_sigma, range_sigma, input_min, input_max);
+FLogI_valid = filtered_log_intensity(~isnan(filtered_log_intensity) & ...
+                                     ~isinf(filtered_log_intensity));
 
 % TODO Implement the edge correction
 
 
 %% Compute the new intensity channel
 detail = log_intensity - filtered_log_intensity;
-min_value = min(filtered_log_intensity(:));
-max_value = max(filtered_log_intensity(:));
+detail(~log_intensity_mask) = log_intensity(~log_intensity_mask);
+min_value = min(FLogI_valid);
+max_value = max(FLogI_valid);
 
 % The multiplication by compressionFactor can be replaced by any
 % contrast-reduction curve (e.g. histogram adjustment, Reinhard et al.'s
@@ -155,7 +171,12 @@ new_intensity = 10.0 .^ (compressionFactor * filtered_log_intensity ...
 
 %% Recompose the color image
 ldr = zeros(height, width, 3);
+% Avoid NaNs
+mask = isnan(intensity) | isinf(intensity) | intensity == 0;
+original_values = intensity(mask);
+intensity(mask) = -1;
 ratio = new_intensity ./ intensity;
+ratio(mask) = original_values;
 for k=1:3
     ldr(:,:,k) = ratio .* hdr(:,:,k);
 end
@@ -164,8 +185,9 @@ end
 
 
 
-function filtered = linear_BF(A, space_sigma, range_sigma)
-% filtered = linear_BF(A, space_sigma, range_sigma)
+function filtered = linear_BF(A, space_sigma, range_sigma, ...
+    input_min, input_max)
+% filtered = linear_BF(A, space_sigma, range_sigma, in_min, in_max)
 % Computes the bilateral filter of A using a truncated 7^3 kernel.
 % This function uses the same sampling factor as the sigmas, thus both
 % the derived sigma_range and sigma_space are one. Therefore a a truncated
@@ -181,14 +203,14 @@ inv_range_sampling = 1.0 / range_sigma;
 
 height = size(A, 1);
 width  = size(A, 2);
+if input_min >= input_max
+    error('PCG:invalidParameter', 'Invalid input min/max values');
+end
+input_delta = input_max - input_min;
 
 % With a kernel width of 7 it is enough to add 3 pixels of zero padding
 % at each end
 padding = 3;
-
-input_min = min(A(:));
-input_max = max(A(:));
-input_delta = input_max - input_min;
 
 small_width  = fix((width-1)  * inv_space_sampling)  + 1 + 2*padding;
 small_height = fix((height-1) * inv_space_sampling)  + 1 + 2*padding;
@@ -212,7 +234,7 @@ dz = round((A - input_min) * inv_range_sampling) + padding + 1;
 % perform scatter/gather (there's probably a faster way than this)
 for k = 1 : numel( dz )
     dataZ = A(k); % traverses the image column wise, same as di(k)
-    if ~isnan(dataZ)
+    if ~isnan(dataZ) && dz(k) > padding && dz(k) < (small_depth-padding)
         dik = di(k);
         djk = dj(k);
         dzk = dz(k);
@@ -253,7 +275,7 @@ blurredIW = convn(IW, g3D, 'same');
 blurredW  = convn(W,  g3D, 'same');
 
 
-%% Normalize and interpolate to get the final result
+%% Normalize weights
 
 % Normalization: because both IW and W are convolved with the same filter
 % it does not matter if such filter is not normalized per se as IW/W will
@@ -262,15 +284,24 @@ blurredW(blurredW == 0) = -1; % avoid divide by 0, won't read there anyway
 blurredI = blurredIW ./ blurredW;
 blurredI(blurredW < 0) = 0; % put 0s where it's undefined
 
+%% Upsampling indices
+
 % Upsample: meshgrid does x, then y so output arguments need to be reversed
 [jj, ii] = meshgrid(0 : width-1, 0 : height-1);
 % no rounding as we want fractional coordinates for interpolation
 di = (ii * inv_space_sampling) + padding + 1;
 dj = (jj * inv_space_sampling) + padding + 1;
-dz = ((A - input_min) * inv_range_sampling) + padding + 1;
+Z_clamped = max(0, min(input_delta, (A - input_min)));
+dz = (Z_clamped * inv_range_sampling) + padding + 1;
 
-% Trilinear interpolation: interpn takes rows, then cols, etc
+%% Interpolation and result
+
+%Trilinear interpolation: interpn takes rows, then cols, etc
 % i.e. size(v,1), then size(v,2), ...
 filtered = interpn(blurredI, di, dj, dz);
+
+% Restore the original invalid values (e.g. zeros)
+valid_mask = ~isnan(A) & ~isinf(A);
+filtered(~valid_mask) = A(~valid_mask);
 
 end
