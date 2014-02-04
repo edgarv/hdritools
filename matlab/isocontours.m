@@ -84,3 +84,128 @@ x1 = x0 + w;
 % Now we want to integrate the normalized pulsetrain over [x0,x1]
 n = (intfpt(edge,x1) - intfpt(edge,x0)) ./ (x1-x0);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function M = dFdx(A)
+%dFdx per-pixel first derivative in the x direction of the real 2D image A.
+%   M = dFdx(A) approximates the  per pixel-first derivative of the
+%   real 2D image A in the direction of x (columns in matrix terms.)
+%
+%   The function uses center differences of the interpolated values except
+%   at the top and bottom edges, where it falls back to forward and
+%   backwards differences respectively.
+
+[m,n] = size(A);
+M = zeros(m,n);
+
+% Matlab-style code, working on entire columns. The code uses:
+%  * Forward difference in the left edge
+%  * Center difference using the interpolated values f(x-0.5),f(x+0.5)
+%  * Backward difference in the right edge
+
+M(:,1) = A(:,2) - A(:,1);
+x = 2:n-1;
+M(:,x) = 0.5 * (A(:, x+1) - A(:, x-1));
+M(:,n) = A(:,n) - A(:, n-1);
+
+% Reference C-style code
+%{
+for y=1:m
+    % Forward difference in the left edge
+    M(y,1) = A(y,2) - A(y,1);
+    % Center difference using the interpolated values f(x-0.5),f(x+0.5)
+    for x=2:n-1
+        M(y,x) = 0.5 * (A(y, x+1) - A(y, x-1));
+    end
+    % Backward difference in the right edge
+    M(y,n) = A(y,n) - A(y, n-1);
+end
+%}
+
+end
+
+
+
+% This is the sparse matrix version. It is slower for a single matrix,
+% however it becomes quite fast if the scaling matrix 'T' can be reused
+% between invocations.
+% The input matrix X has to be of type 'double', otherwise the 
+% sparse matrix multiply fails.
+%{
+function Gx = dFdx_matrix(X)
+
+[m,n] = size(X);
+i = (1:m*n);
+j0 = [1:m, 1:(n-1)*m];
+j1 = [(1:(n-1)*m) + m, (n-1)*m+1:m*n];
+s  = [-ones(1,m) -0.5*ones(1, (n-2)*m) -ones(1,m)];
+T = sparse([i,i]', [j0,j1]', [s,-s]');
+
+Gx = reshape(T*X(:), m, n);
+
+end
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function M = dFdy(A)
+%dFdy per-pixel first derivative in the y direction of the real 2D image A.
+%   M = dFdy(A) approximates the  per pixel-first derivative of the
+%   real 2D image A in the direction of y (rows in matrix terms.)
+%
+%   The function uses center differences of the interpolated values except
+%   at the top and bottom edges, where it falls back to forward and
+%   backwards differences respectively.
+
+[m,n] = size(A);
+M = zeros(m,n);
+
+% Matlab-style code, working on entire rows. The code uses:
+%  * Forward difference in the top edge
+%  * Center difference using the interpolated values f(x-0.5),f(x+0.5)
+%  * Backward difference in the bottom edge
+
+M(1,:) = A(2,:) - A(1,:);
+y = 2:m-1;
+M(y,:) = 0.5 * (A(y+1,:) - A(y-1,:));
+M(m,:) = A(m,:) - A(m-1,:);
+
+% Reference C-style code
+%{
+for x=1:n
+    % Forward difference in the top edge
+    M(1,x) = A(2,x) - A(1,x);
+    % Center difference using the interpolated values f(x-0.5),f(x+0.5)
+    for y=2:m-1
+        M(y,x) = 0.5 * (A(y+1,x) - A(y-1,x));
+    end
+    % Backward difference in the bottom edge
+    M(m,x) = A(m,x) - A(m-1,x);
+end
+%}
+
+end
+
+
+
+% This is the sparse matrix version. It is slower for a single matrix,
+% however it becomes quite fast if the scaling matrix 'T' can be reused
+% between invocations.
+% The input matrix X has to be of type 'double', otherwise the 
+% sparse matrix multiply fails.
+%{
+function Gy = dFdy_matrix(X)
+
+[m,n] = size(X);
+i = (1:m*n)';
+Offsets = m*ones(m,1)*(0:n-1);
+j0 = [1 1:m-1]' * ones(1,n) + Offsets;
+j1 = [2:m m]'   * ones(1,n) + Offsets;
+s  = [-1; -0.5 * ones(m-2, 1); -1] * ones(1,m);
+T = sparse([i;i], [j0(:); j1(:)], [s(:); -s(:)]);
+
+Gy = reshape(T*X(:), m, n);
+
+end
+%}
