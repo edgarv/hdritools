@@ -1157,10 +1157,6 @@ struct SumThresholdFunctor
         removed_sum   += rhs.removed_sum;
         removed_count += rhs.removed_count;
     }
-
-private:
-    // Compensation value
-    float sum_c;
 };
 
 
