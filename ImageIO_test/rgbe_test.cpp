@@ -26,6 +26,7 @@
 #include <iostream>
 #include <memory>
 #include <limits>
+#include <algorithm>
 
 
 class RgbeTest : public ::testing::Test

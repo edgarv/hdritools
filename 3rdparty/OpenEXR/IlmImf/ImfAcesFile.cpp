@@ -43,7 +43,10 @@
 #include <ImfStandardAttributes.h>
 #include <Iex.h>
 
-using namespace std;
+#include <algorithm>
+
+using std::min;
+using std::max;
 using namespace Imath;
 using namespace Iex;
 

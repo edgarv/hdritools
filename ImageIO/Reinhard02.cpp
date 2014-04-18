@@ -65,7 +65,7 @@ namespace ssemath {
 
 #if !defined(_WIN32) || !defined(__INTEL_COMPILER)
 # include <cmath>
-# if defined (_MSC_VER)
+# if defined (_MSC_VER) && _MSC_VER < 1800
 
 namespace {
 

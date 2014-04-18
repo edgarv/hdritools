@@ -61,7 +61,8 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <assert.h>
+#include <algorithm>
+#include <cassert>
 #include <map>
 
 

@@ -58,7 +58,8 @@
 
 #include <string>
 #include <vector>
-#include <assert.h>
+#include <algorithm>
+#include <cassert>
 
 // include the intrinsics headers for the _m128 type
 extern "C"

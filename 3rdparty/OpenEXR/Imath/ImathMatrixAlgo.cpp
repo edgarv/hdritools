@@ -43,6 +43,7 @@
 //----------------------------------------------------------------------------
 
 #include "ImathMatrixAlgo.h"
+#include <algorithm>
 #include <cmath>
 
 #if defined(OPENEXR_DLL)

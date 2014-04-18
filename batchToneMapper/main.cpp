@@ -69,7 +69,7 @@ Q_IMPORT_PLUGIN(qtiff)
 
 
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
 namespace
 {
 inline float log2f(float x)

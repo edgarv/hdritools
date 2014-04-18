@@ -96,7 +96,7 @@ const uint32_t MOVEMASK_LUT[] = {
 };
 
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
 inline float exp2f(float x)
 {
     return powf(2.0f, x);
