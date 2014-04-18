@@ -104,22 +104,41 @@ option(BUILD_UTILS
 # Check for the AVX intrinsics header
 include(CheckIncludeFile)
 include(CMakeDependentOption)
+include(CheckCXXCompilerFlag)
 CHECK_INCLUDE_FILE("immintrin.h" HAVE_IMMINTRIN_H)
 CMAKE_DEPENDENT_OPTION(USE_AVX "Compile using AVX instructions." OFF
   HAVE_IMMINTRIN_H OFF)
 if (USE_AVX)
   add_definitions("-DPCG_USE_AVX")
 endif()
+
+# Enable AVX2 as well
+CMAKE_DEPENDENT_OPTION(USE_AVX2 "Compile using AVX2 instructions." OFF
+  USE_AVX OFF)
+if (USE_AVX2)
+  add_definitions("-DPCG_USE_AVX2")
+endif()
   
 # Extra compiler flags for enabling SSE & SSE2. These will always be enabled.
 if(MSVC)
-  if (USE_AVX)
+  # MSVC 2013 Update 2 introduced full compilation using AVX2
+  if (NOT "${MSVC_VERSION}" LESS 1800)
+    CHECK_CXX_COMPILER_FLAG("/arch:AVX2" HAVE_MSVC_AVX2)
+  endif()
+  
+  if (USE_AVX2 AND HAVE_MSVC_AVX2)
+    set(SIMD_COMPILER_FLAGS "/arch:AVX2")
+  elseif (USE_AVX)
     set(SIMD_COMPILER_FLAGS "/arch:AVX")
   elseif(NOT CMAKE_CL_64)
     set(SIMD_COMPILER_FLAGS "/arch:SSE2")
   endif()
 elseif(NOT MSVC OR NOT WIN32)
-  if (USE_AVX)
+  CHECK_CXX_COMPILER_FLAG("-march=core-avx2" HAVE_CXX_CORE_AVX2)
+
+  if (USE_AVX2 AND HAVE_CXX_CORE_AVX2)
+    set(SIMD_COMPILER_FLAGS "-march=core-avx2")
+  elseif (USE_AVX)
     set(SIMD_COMPILER_FLAGS "-mavx")
   else()
     set(SIMD_COMPILER_FLAGS "-msse3")
