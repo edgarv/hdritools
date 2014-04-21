@@ -422,7 +422,6 @@ inline v8i sll(const v8i& a, const int& count)
 
 inline __m256 am::log_avx(__m256 x)
 {
-    typedef pcg::Vec8i v8i;
     typedef pcg::Vec8f v8f;
 
     // Constants
