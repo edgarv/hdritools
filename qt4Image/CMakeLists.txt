@@ -124,6 +124,12 @@ if(WIN32 OR APPLE)
     VERSION "${HDRITOOLS_VERSION}")
 endif()
 
+# Remove the debug output in the release versions
+set_target_properties(qt4Image PROPERTIES
+  COMPILE_DEFINITIONS_RELWITHDEBINFO "QT_NO_DEBUG;QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT"
+  COMPILE_DEFINITIONS_RELEASE        "QT_NO_DEBUG;QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT"
+)
+
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( qt4Image )
 
