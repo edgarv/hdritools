@@ -30,8 +30,8 @@
 #include <QTextStream>
 namespace
 {
-QTextStream cerr(stderr, QIODevice::WriteOnly);
-QTextStream cout(stdout, QIODevice::WriteOnly);
+QTextStream qcerr(stderr, QIODevice::WriteOnly);
+QTextStream qcout(stdout, QIODevice::WriteOnly);
 }
 
 
@@ -68,13 +68,13 @@ ImageInfo* FloatImageProcessor::load(const QString& filenameStr,
             PfmIO::Load(*floatImage, is);
         }
         else {
-            cerr << "Ooops! Unrecognized file : " << filename << endl;
+            qcerr << "Ooops! Unrecognized file : " << filename << endl;
             // Returns an invalid handle
             return new ImageInfo;
         }
     }
     catch (std::exception e) {
-        cerr << "Ooops! While loading " << filename << ": " << e.what() << endl;
+        qcerr << "Ooops! While loading " << filename << ": " << e.what() << endl;
         return new ImageInfo;
     }
 

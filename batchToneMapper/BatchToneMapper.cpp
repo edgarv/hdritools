@@ -30,8 +30,8 @@
 #include <QTextStream>
 namespace
 {
-QTextStream cerr(stderr, QIODevice::WriteOnly);
-QTextStream cout(stdout, QIODevice::WriteOnly);
+QTextStream qcerr(stderr, QIODevice::WriteOnly);
+QTextStream qcout(stdout, QIODevice::WriteOnly);
 }
 
 using namespace std;
@@ -89,12 +89,12 @@ void BatchToneMapper::setFormat(const QString & newFormat)
                 return;
             }
         }
-        cerr << "Warning: unsupported format \"" << newFormat << "\"" << endl;
+        qcerr << "Warning: unsupported format \"" << newFormat << "\"" << endl;
     }
     else {
         // Only png is supported
         if (newFormat != "png" && newFormat != Util::PNG16_FORMAT_STR) {
-            cerr << "Warning: unsupported format for bpp16 \"" << newFormat 
+            qcerr << "Warning: unsupported format for bpp16 \"" << newFormat
                  << "\". Using png." << endl;
         }
         format = "png";
@@ -106,12 +106,12 @@ void BatchToneMapper::execute() {
 
     if (!zipFiles.isEmpty()) {
         executeZip();
-        cout << "All Zip files have been processed." << endl;
+        qcout << "All Zip files have been processed." << endl;
     }
 
     if (!hdrFiles.isEmpty()) {
         executeHdr();
-        cout << "All HDR files have been processed." << endl;
+        qcout << "All HDR files have been processed." << endl;
     }
 }
 
@@ -161,7 +161,7 @@ void BatchToneMapper::classifyFiles(const QStringList & files) {
         const bool readable = Util::isReadable(*it, isZip, isHdr);
 
         if (!readable) {
-            cerr << "Warning: cannot read " << *it << "." << endl;
+            qcerr << "Warning: cannot read " << *it << "." << endl;
         }
         else {
             if (isZip) {
@@ -171,7 +171,7 @@ void BatchToneMapper::classifyFiles(const QStringList & files) {
                 hdrFiles.append(*it);
             }
             else {
-                cerr << "Warning: the file " << *it << " doesn't have a recognized type." << endl;
+                qcerr << "Warning: the file " << *it << " doesn't have a recognized type." << endl;
             }
         }
     }
