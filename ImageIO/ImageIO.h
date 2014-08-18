@@ -37,13 +37,14 @@
 // For proper memory alignment
 #if defined(_MSC_VER)
 #define PCG_USE_MEMALIGN 0
-#include <malloc.h>
-#elif _XOPEN_SOURCE >= 600 || defined(__APPLE__)
-#define PCG_USE_MEMALIGN 1
-#include <cstdlib>
+  #include <malloc.h>
 #else
-#define PCG_USE_MEMALIGN 0
-#include <cstdlib>
+  #include <cstdlib>
+  #if (_POSIX_C_SOURCE >= 200112L) || (_XOPEN_SOURCE >= 600) || defined(__APPLE__)
+    #define PCG_USE_MEMALIGN 1
+  #else
+    #define PCG_USE_MEMALIGN 0
+  #endif
 #endif
 
 namespace pcg {
@@ -61,6 +62,7 @@ inline T* alloc_align (size_t alignment, size_t count = 1)
     ptr = (T*) _aligned_malloc (size, alignment);
 #else
     // warning: not actually aligned!
+   #pragma message "Using malloc(), alignment requests are likely to fail."
     ptr = (T*) malloc (size);
 #endif
     return ptr;

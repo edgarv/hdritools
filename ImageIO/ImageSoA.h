@@ -80,6 +80,7 @@ protected:
         // At this point offset contains the total requested memory
         const size_t totalBytes = offset;
         m_data = alloc_align<int8_t>(64, totalBytes);
+        assert(reinterpret_cast<intptr_t>(m_data) % 64 == 0);
         if (m_data == NULL) {
             throw RuntimeException("Couldn't allocate memory for the image.");
         }
