@@ -23,14 +23,18 @@
 // that uses this DLL. This way any other project whose source files include this file see 
 // IMAGEIO_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
-#ifdef WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
   #ifdef IMAGEIO_EXPORTS
   #define IMAGEIO_API __declspec(dllexport)
   #else
   #define IMAGEIO_API __declspec(dllimport)
   #endif
 #else
+  #if __GNUC__ >= 4
+  #define IMAGEIO_API __attribute__ ((visibility ("default")))
+  #else
   #define IMAGEIO_API
+  #endif
 #endif /* WIN32 */
 
 
