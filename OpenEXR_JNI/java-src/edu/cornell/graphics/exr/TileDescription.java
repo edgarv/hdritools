@@ -57,8 +57,8 @@ public class TileDescription implements Cloneable {
          * <p>Each successive level is half the resolution of the previous 
          * level in both dimensions. The lowest-resolution level contains only 
          * a single pixel. For example, if the first level, with full 
-         * resolution, contains 16×8 pixels, then the file contains four more 
-         * levels with 8×4, 4×2, 2×1, and 1×1 pixels respectively.
+         * resolution, contains 16&times;8 pixels, then the file contains four more 
+         * levels with 8&times;4, 4&times;2, 2&times;1, and 1&times;1 pixels respectively.
          */
         MIPMAP_LEVELS,
         
@@ -67,7 +67,7 @@ public class TileDescription implements Cloneable {
          * 
          * <p>The levels include all combinations of reducing the resolution 
          * of the first level by powers of two independently in both dimensions.
-         * For example, if the first level contains 4×4 pixels, then the file
+         * For example, if the first level contains 4&times;4 pixels, then the file
          * contains eight more levels, with the following resolutions:
          * <blockquote><pre>
          *      2x4  1x4

@@ -105,7 +105,7 @@ public class HalfTest {
         assertEquals((short)0x0001, Half.floatToShortBits(Half.MIN_VALUE));
         assertEquals((short)0x0400, Half.floatToShortBits(Half.MIN_NORMAL));
         {
-            // Biggest denormal, (1.0/(1<<14))*(1.0/(1<<10)*0x3ff) ~= 6.09756e−5
+            // Biggest denormal, (1.0/(1<<14))*(1.0/(1<<10)*0x3ff) ~= 6.09756e-5
             float f = Float.intBitsToFloat(0x387fc000);
             assertEquals((short)0x03ff, Half.floatToShortBits(f));
             
@@ -192,7 +192,7 @@ public class HalfTest {
         assertEquals(Half.MIN_NORMAL, Half.shortBitsToFloat((short)0x0400),0.0);
         assertEquals(Half.MAX_VALUE,  Half.shortBitsToFloat((short)0x7bff),0.0);
         {
-            // Biggest denormal, (1.0/(1<<14))*(1.0/(1<<10)*0x3ff) ~= 6.09756e−5
+            // Biggest denormal, (1.0/(1<<14))*(1.0/(1<<10)*0x3ff) ~= 6.09756e-5
             final float f = Float.intBitsToFloat(0x387fc000);
             assertEquals(f, Half.shortBitsToFloat((short)0x03ff), 0.0);
         }
