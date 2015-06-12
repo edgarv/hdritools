@@ -19,12 +19,18 @@
 #include <QImage>
 #include <PngIO.h>
 
+#include <ostream>
 #include <cstdio>
 #include <QTextStream>
+#include <QMutex>
+#include <QMutexLocker>
+
 namespace
 {
 QTextStream cerr(stderr, QIODevice::WriteOnly);
 QTextStream cout(stdout, QIODevice::WriteOnly);
+
+QMutex write_mutex;
 }
 
 
@@ -102,7 +108,10 @@ void* ToneMappingFilter::operator()(void* item)
             }
         }
 
-        cout << info->originalFile << " -> " << info->filename << endl;
+        {
+            QMutexLocker lock(&write_mutex);
+            cout << info->originalFile << " -> " << info->filename << endl;
+        }
 
         // Deletes the info structure when it's done
         delete info;
