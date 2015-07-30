@@ -27,7 +27,7 @@ function [ldr, a, Lwhite, Lwp, nZones] = reinhard02(hdr, varargin)
 %                   each pixel to the power of 1/value. If the parameter's
 %                   value is 'sRGB' it will apply the sRGB transform.
 %                   (Default 1.0, i.e. no transform.)
-%     'scale'     - <'auto'|true|false'> If 'auto', it will chose either
+%     'scale'     - <'auto'|true|false> If 'auto', it will chose either
 %                   the simple operator or the dodge and burn one
 %                   automatically depending on the number of zones. If the
 %                   parameter is the logical value 'true' it will use the
@@ -84,7 +84,8 @@ p = inputParser;
 p.FunctionName = 'reinhard02';
 
 % Setup the required hdr parameter
-p.addRequired('hdr', @(x)(ndims(x) == 3 && isreal(x)));
+p.addRequired('hdr', @(x)(ndims(x) <= 3 && ...
+    (size(x,3) == 1 || size(x,3) == 3) && isreal(x)));
 
 % The "key" and "whitePoint" are user params for which default values may
 % be obtained later
@@ -104,8 +105,7 @@ p.addParamValue('scale', false, @(x)((islogical(x) && ...
 % The rest are parameters for the dodge and burn operator, normally they
 % shouldn't be modified
 
-validint = @(x)(validateattributes(x, {'numeric'}, ...
-    {'scalar','integer','positive'}));
+validint = @(x)(isscalar(x) && isreal(x) && (mod(x,1) == 0));
 
 % Smallest gaussian
 p.addParamValue('low', 1, @(x)(x > 0 && validint(x)));
@@ -129,7 +129,12 @@ p.parse(hdr, varargin{:});
 %% Luminance calculation
 
 % Is there a more elegant way to do this?
-Lw = 0.27*hdr(:,:,1) + 0.67*hdr(:,:,2) + 0.06*hdr(:,:,3);
+if size(hdr,3) == 3
+    Lw = 0.27*hdr(:,:,1) + 0.67*hdr(:,:,2) + 0.06*hdr(:,:,3);
+else
+    assert(size(hdr,3) == 1, 'PCG:illegalState', 'Not a monochrome image');
+    Lw = hdr;
+end
 
 
 % Automatic parameters:
@@ -271,9 +276,9 @@ end
 
 %% LDR Assembly
 ldr = zeros(size(hdr));
-ldr(:,:,1) = Ls .* hdr(:,:,1);
-ldr(:,:,2) = Ls .* hdr(:,:,2);
-ldr(:,:,3) = Ls .* hdr(:,:,3);
+for i=1:size(hdr,3)
+    ldr(:,:,i) = Ls .* hdr(:,:,i);
+end
 
 
 %% Gamma and class modifications
