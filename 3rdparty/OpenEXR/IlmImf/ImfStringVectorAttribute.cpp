@@ -32,17 +32,19 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-
 //-----------------------------------------------------------------------------
 //
-//	class StringAttribute
+//	class StringVectorAttribute
 //
 //-----------------------------------------------------------------------------
 
 #include <ImfStringVectorAttribute.h>
 
 
-namespace Imf {
+OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_ENTER
+
+
+using namespace OPENEXR_IMF_INTERNAL_NAMESPACE;
 
 
 template <>
@@ -55,7 +57,7 @@ StringVectorAttribute::staticTypeName ()
 
 template <>
 void
-StringVectorAttribute::writeValueTo (OStream &os, int version) const
+StringVectorAttribute::writeValueTo (OPENEXR_IMF_INTERNAL_NAMESPACE::OStream &os, int version) const
 {
     int size = _value.size();
 
@@ -63,14 +65,14 @@ StringVectorAttribute::writeValueTo (OStream &os, int version) const
     {
         int strSize = _value[i].size();
         Xdr::write <StreamIO> (os, strSize);
-	Xdr::write <StreamIO> (os, &_value[i][0], strSize);
+        Xdr::write <StreamIO> (os, &_value[i][0], strSize);
     }
 }
 
 
 template <>
 void
-StringVectorAttribute::readValueFrom (IStream &is, int size, int version)
+StringVectorAttribute::readValueFrom (OPENEXR_IMF_INTERNAL_NAMESPACE::IStream &is, int size, int version)
 {
     int read = 0;
 
@@ -83,10 +85,7 @@ StringVectorAttribute::readValueFrom (IStream &is, int size, int version)
        std::string str;
        str.resize (strSize);
   
-       // Some implementations of std::string throw exceptions when 
-       // tyring to access any element of a string resized to 0.  
-       // The following check is necessary on some compilers.
-       if(strSize > 0)
+       if( strSize>0 )
        {
            Xdr::read<StreamIO> (is, &str[0], strSize);
        }
@@ -98,4 +97,4 @@ StringVectorAttribute::readValueFrom (IStream &is, int size, int version)
 }
 
 
-} // namespace Imf
+OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_EXIT 

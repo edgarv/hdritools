@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2005, Industrial Light & Magic, a division of Lucas
+// Copyright (c) 2005-2012, Industrial Light & Magic, a division of Lucas
 // Digital Ltd. LLC
 // 
 // All rights reserved.
@@ -41,10 +41,23 @@
 
 #include "IlmThread.h"
 #include "Iex.h"
-#include <iostream>
-#include <assert.h>
 
-namespace IlmThread {
+#ifdef WIN32_LEAN_AND_MEAN
+    #undef WIN32_LEAN_AND_MEAN
+#endif
+#ifdef NOMINMAX
+    #undef NOMINMAX
+#endif
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <process.h>
+
+#include <iostream>
+#include <cassert>
+
+ILMTHREAD_INTERNAL_NAMESPACE_SOURCE_ENTER
 
 
 bool
@@ -88,8 +101,8 @@ Thread::start ()
     _thread = (HANDLE)::_beginthreadex (0, 0, &threadLoop, this, 0, &id);
 
     if (_thread == 0)
-	Iex::throwErrnoExc ("Cannot create new thread (%T).");
+        IEX_NAMESPACE::throwErrnoExc ("Cannot create new thread (%T).");
 }
 
 
-} // namespace IlmThread
+ILMTHREAD_INTERNAL_NAMESPACE_SOURCE_EXIT

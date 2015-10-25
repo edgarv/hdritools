@@ -36,26 +36,28 @@
 
 //-----------------------------------------------------------------------------
 //
-//	class Slice
-//	class FrameBuffer
+//      class Slice
+//      class FrameBuffer
 //
 //-----------------------------------------------------------------------------
 
 #include <ImfFrameBuffer.h>
 #include "Iex.h"
-#include "half.h"
+
 
 using namespace std;
 
-namespace Imf {
+#include "ImfNamespace.h"
+
+OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_ENTER
 
 Slice::Slice (PixelType t,
-	      char *b,
-	      size_t xst,
-	      size_t yst,
-	      int xsm,
-	      int ysm,
-	      double fv,
+              char *b,
+              size_t xst,
+              size_t yst,
+              int xsm,
+              int ysm,
+              double fv,
               bool xtc,
               bool ytc)
 :
@@ -73,20 +75,20 @@ Slice::Slice (PixelType t,
 }
 
 
-void	
+void
 FrameBuffer::insert (const char name[], const Slice &slice)
 {
     if (name[0] == 0)
     {
-	THROW (Iex::ArgExc,
-	       "Frame buffer slice name cannot be an empty string.");
+        THROW (IEX_NAMESPACE::ArgExc,
+               "Frame buffer slice name cannot be an empty string.");
     }
 
     _map[name] = slice;
 }
 
 
-void	
+void
 FrameBuffer::insert (const string &name, const Slice &slice)
 {
     insert (name.c_str(), slice);
@@ -100,8 +102,8 @@ FrameBuffer::operator [] (const char name[])
 
     if (i == _map.end())
     {
-	THROW (Iex::ArgExc,
-	       "Cannot find frame buffer slice \"" << name << "\".");
+        THROW (IEX_NAMESPACE::ArgExc,
+               "Cannot find frame buffer slice \"" << name << "\".");
     }
 
     return i->second;
@@ -115,8 +117,8 @@ FrameBuffer::operator [] (const char name[]) const
 
     if (i == _map.end())
     {
-	THROW (Iex::ArgExc,
-	       "Cannot find frame buffer slice \"" << name << "\".");
+        THROW (IEX_NAMESPACE::ArgExc,
+               "Cannot find frame buffer slice \"" << name << "\".");
     }
 
     return i->second;
@@ -174,7 +176,7 @@ FrameBuffer::begin ()
 }
 
 
-FrameBuffer::ConstIterator	
+FrameBuffer::ConstIterator
 FrameBuffer::begin () const
 {
     return _map.begin();
@@ -188,7 +190,7 @@ FrameBuffer::end ()
 }
 
 
-FrameBuffer::ConstIterator	
+FrameBuffer::ConstIterator
 FrameBuffer::end () const
 {
     return _map.end();
@@ -222,108 +224,5 @@ FrameBuffer::find (const string &name) const
     return find (name.c_str());
 }
 
-OptimizationMode::ChannelsInfo
-FrameBuffer::getOptimizationInfo() const
-{
-    OptimizationMode::ChannelsInfo optimizationInfo;    
-    optimizationInfo._format = OptimizationMode::PIXELFORMAT_OTHER;
 
-    int fullMask = 0;
-    ConstIterator channelIterator = begin();
-    
-    if(channelIterator == end())
-    {
-        return optimizationInfo;
-    }
-
-    int globalXStride = channelIterator.slice().xStride;
-    
-    // Needs to be RGB or RGBA, Mono or Stereo
-    if (globalXStride != (3 * sizeof(half)) &&
-        globalXStride != (4 * sizeof(half)) &&
-        globalXStride != (6 * sizeof(half)) &&
-        globalXStride != (8 * sizeof(half)))
-    {
-        return optimizationInfo;
-    }
-
-    // Since we are saving everything contiguously, make sure
-    // all the slices have the same ySampling.  We cannot use
-    // a different ySampling from the 'R' channel than the 'A' channel
-    // because we need the same number of pixels for every channel.
-    int globalYSampling = channelIterator.slice().ySampling;
-
-    optimizationInfo._xStride = globalXStride;
-    optimizationInfo._ySampling = globalYSampling;
-
-    for (ConstIterator channelIterator = begin(); channelIterator != end(); ++channelIterator)
-    {        
-        const Slice currentSlice = channelIterator.slice();
-
-
-        // we support only channels RGB and RGBA for IIF optimizations.  
-        // Those values should also be of type HALF.
-        // We also support only an xSampling of 1 and the same ySampling
-        // across the channels
-        if (currentSlice.type != HALF || 
-            currentSlice.xStride != globalXStride ||
-            currentSlice.ySampling != globalYSampling ||
-            currentSlice.xSampling != 1)
-        {
-            return optimizationInfo;
-        }
-
-        // convert the channel name into a string for easy manipulation
-        // find out the last element after the last dot
-        std::string lChannelName = channelIterator.name();
-
-        int maskForChannel = IIFOptimizable::getMaskFromChannelName (lChannelName);
-        fullMask |= maskForChannel;
-
-        if (maskForChannel == IIFOptimizable::CHANNELMASK_A)
-        {
-            optimizationInfo._alphaFillValueRight = currentSlice.fillValue;
-        }
-        else if (maskForChannel == IIFOptimizable::CHANNELMASK_ALEFT)
-        {
-            optimizationInfo._alphaFillValueLeft = currentSlice.fillValue;
-        }
-    } 
-
-    switch (fullMask)
-    {
-        case IIFOptimizable::CHANNELMASK_RGB:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGB;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_MONO;
-            break;
-
-        case IIFOptimizable::CHANNELMASK_RGBA:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGBA;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_MONO;
-            break;
-
-        case IIFOptimizable::CHANNELMASK_RGB_STEREO:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGB;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_STEREO;
-            break;
-
-        case IIFOptimizable::CHANNELMASK_RGBA_STEREO:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGBA;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_STEREO;
-            break;
-
-        default:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_OTHER;
-            break;
-    }
-
-    return optimizationInfo;
-}
-
-
-} // namespace Imf
+OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_EXIT

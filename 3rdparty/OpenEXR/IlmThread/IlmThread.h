@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2005, Industrial Light & Magic, a division of Lucas
+// Copyright (c) 2005-2012, Industrial Light & Magic, a division of Lucas
 // Digital Ltd. LLC
 // 
 // All rights reserved.
@@ -91,29 +91,14 @@
 //-----------------------------------------------------------------------------
 
 #include "IlmBaseConfig.h"
+#include "IlmThreadExport.h"
+#include "IlmThreadNamespace.h"
 
-#if defined _WIN32 || defined _WIN64
-    #ifdef NOMINMAX
-        #undef NOMINMAX
-    #endif
-    #define NOMINMAX
-    #include <windows.h>
-    #include <process.h>
-#elif HAVE_PTHREAD
+#if HAVE_PTHREAD
     #include <pthread.h>
 #endif
 
-#if defined(OPENEXR_DLL) && !defined(ZENO_STATIC)
-    #ifdef ILMTHREAD_EXPORTS
-	#define ILMTHREAD_EXPORT __declspec(dllexport)
-    #else
-	#define ILMTHREAD_EXPORT __declspec(dllimport)
-    #endif
-#else
-    #define ILMTHREAD_EXPORT 
-#endif
-
-namespace IlmThread {
+ILMTHREAD_INTERNAL_NAMESPACE_HEADER_ENTER
 
 //
 // Query function to determine if the current platform supports
@@ -136,7 +121,7 @@ class ILMTHREAD_EXPORT Thread
   private:
 
     #if defined _WIN32 || defined _WIN64
-	HANDLE _thread;
+	void* _thread;
     #elif HAVE_PTHREAD
 	pthread_t _thread;
     #endif
@@ -146,6 +131,6 @@ class ILMTHREAD_EXPORT Thread
 };
 
 
-} // namespace IlmThread
+ILMTHREAD_INTERNAL_NAMESPACE_HEADER_EXIT
 
-#endif
+#endif // INCLUDED_ILM_THREAD_H

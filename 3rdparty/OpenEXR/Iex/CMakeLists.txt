@@ -1,13 +1,16 @@
 # Description of the Iex library
 
 set(IEX_HEADERS
-  IexBaseExc.h 
-  IexMathExc.h 
+  IexBaseExc.h
+  IexMathExc.h
   IexThrowErrnoExc.h
-  IexErrnoExc.h 
-  IexMacros.h 
+  IexErrnoExc.h
+  IexMacros.h
   Iex.h
-  )
+  IexNamespace.h
+  IexExport.h
+  IexForward.h
+)
   
 set(IEX_SOURCES
   IexThrowErrnoExc.cpp 

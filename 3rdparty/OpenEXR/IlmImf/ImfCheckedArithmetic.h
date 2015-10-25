@@ -43,9 +43,10 @@
 //-----------------------------------------------------------------------------
 
 #include <limits>
-#include <IexMathExc.h>
+#include "IexMathExc.h"
+#include "ImfNamespace.h"
 
-namespace Imf {
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
 
 #if ((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 2)) && defined(__GXX_EXPERIMENTAL_CXX0X__)) || (_MSC_VER >= 1600)
 #define IMF_STATIC_ASSERT(x) static_assert(x, "ImfCheckedArithmetic: " #x)
@@ -60,7 +61,7 @@ template <bool b> struct StaticAssertionFailed;
 template <> struct StaticAssertionFailed <true> {};
 
 #define IMF_STATIC_ASSERT(x) \
-    do {StaticAssertionFailed <x> staticAssertionFailed;} while (false)
+    do {StaticAssertionFailed <x> staticAssertionFailed; ((void) staticAssertionFailed);} while (false)
 
 #endif
 
@@ -77,7 +78,7 @@ uiMult (T a, T b)
                         std::numeric_limits<T>::is_integer);
 
     if (a > 0 && b > std::numeric_limits<T>::max() / a)
-        throw Iex::OverflowExc ("Integer multiplication overflow.");
+        throw IEX_NAMESPACE::OverflowExc ("Integer multiplication overflow.");
 
     return a * b;
 }
@@ -95,7 +96,7 @@ uiDiv (T a, T b)
                         std::numeric_limits<T>::is_integer);
 
     if (b == 0)
-        throw Iex::DivzeroExc ("Integer division by zero.");
+        throw IEX_NAMESPACE::DivzeroExc ("Integer division by zero.");
 
     return a / b;
 }
@@ -113,7 +114,7 @@ uiAdd (T a, T b)
                         std::numeric_limits<T>::is_integer);
 
     if (a > std::numeric_limits<T>::max() - b)
-        throw Iex::OverflowExc ("Integer addition overflow.");
+        throw IEX_NAMESPACE::OverflowExc ("Integer addition overflow.");
 
     return a + b;
 }
@@ -131,7 +132,7 @@ uiSub (T a, T b)
                         std::numeric_limits<T>::is_integer);
 
     if (a < b)
-        throw Iex::UnderflowExc ("Integer subtraction underflow.");
+        throw IEX_NAMESPACE::UnderflowExc ("Integer subtraction underflow.");
 
     return a - b;
 }
@@ -149,7 +150,7 @@ checkArraySize (T n, size_t s)
     //
     //      size_t (n) * s
     //
-    // would overflow, then throw an Iex::OverflowExc exception.
+    // would overflow, then throw an IEX_NAMESPACE::OverflowExc exception.
     // Otherwise return
     //
     //      size_t (n).
@@ -161,7 +162,7 @@ checkArraySize (T n, size_t s)
     IMF_STATIC_ASSERT (sizeof (T) <= sizeof (size_t));
 
     if (size_t (n) > std::numeric_limits<size_t>::max() / s)
-        throw Iex::OverflowExc ("Integer multiplication overflow.");
+        throw IEX_NAMESPACE::OverflowExc ("Integer multiplication overflow.");
 
     return size_t (n);
 }
@@ -170,6 +171,7 @@ checkArraySize (T n, size_t s)
 #pragma warning( pop )
 #endif
 
-} // namespace Imf
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_EXIT
+
 
 #endif

@@ -42,9 +42,10 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "ImfExport.h"
+#include "ImfNamespace.h"
 
-namespace Imf {
-
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
 
 //
 // The MAGIC number is stored in the first four bytes of every
@@ -53,7 +54,7 @@ namespace Imf {
 //
 
 const int MAGIC = 20000630;
-const char MAGIC_CHAR[4] = {0x01, 0x31, 0x2F, 0x76};
+
 
 //
 // The second item in each OpenEXR image file, right after the
@@ -88,11 +89,19 @@ const int LONG_NAMES_FLAG       = 0x00000400;   // File contains long
                                                 // attribute or channel
                                                 // names
 
+const int NON_IMAGE_FLAG        = 0x00000800;   // File has at least one part
+                                                // which is not a regular
+                                                // scanline image or regular tiled image
+                                                // (that is, it is a deep format)
+
+const int MULTI_PART_FILE_FLAG  = 0x00001000;   // File has multiple parts
+
 //
 // Bitwise OR of all known flags.
 //
 
-const int ALL_FLAGS		= TILED_FLAG | LONG_NAMES_FLAG;
+const int ALL_FLAGS		= TILED_FLAG | LONG_NAMES_FLAG |
+                                  NON_IMAGE_FLAG | MULTI_PART_FILE_FLAG;
 
 
 //
@@ -100,6 +109,8 @@ const int ALL_FLAGS		= TILED_FLAG | LONG_NAMES_FLAG;
 //
 
 inline bool  isTiled (int version)	{return !!(version & TILED_FLAG);}
+inline bool  isMultiPart (int version)  {return (version & MULTI_PART_FILE_FLAG) != 0; }
+inline bool  isNonImage(int version)    {return (version & NON_IMAGE_FLAG) != 0; }
 inline int   makeTiled (int version)	{return version | TILED_FLAG;}
 inline int   makeNotTiled (int version) {return version & ~TILED_FLAG;}
 inline int   getVersion (int version)	{return version & VERSION_NUMBER_FIELD;}
@@ -112,9 +123,14 @@ inline bool  supportsFlags (int flags)	{return !(flags & ~ALL_FLAGS);}
 // file is probably an OpenEXR image file, false if not.
 //
 
+IMF_EXPORT 
 bool	     isImfMagic (const char bytes[4]);
 
 
-} // namespace Imf
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_EXIT
+
+
+
+
 
 #endif

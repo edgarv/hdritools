@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2002, Industrial Light & Magic, a division of Lucas
+// Copyright (c) 2002-2012, Industrial Light & Magic, a division of Lucas
 // Digital Ltd. LLC
 // 
 // All rights reserved.
@@ -82,9 +82,10 @@
 
 #include "ImathPlatform.h"
 #include "ImathLimits.h"
+#include "ImathNamespace.h"
 #include <math.h>
 
-namespace Imath {
+IMATH_INTERNAL_NAMESPACE_HEADER_ENTER
 
 
 template <class T>
@@ -146,7 +147,7 @@ struct Math<float>
 #if !defined(_MSC_VER)
    static float	hypot (float x, float y)	{return ::hypotf (x, y);}
 #else
-   static float hypot (float x, float y)	{return ::sqrtf(x*x + y*y);}
+   static float hypot (float x, float y)	{return ::_hypotf (x, y);}
 #endif
 };
 
@@ -202,7 +203,6 @@ equalWithRelError (T x1, T x2, T e)
 }
 
 
+IMATH_INTERNAL_NAMESPACE_HEADER_EXIT
 
-} // namespace Imath
-
-#endif
+#endif // INCLUDED_IMATHMATH_H

@@ -44,18 +44,20 @@
 //
 //-----------------------------------------------------------------------------
 
-#include <ImfName.h>
-#include <ImfPixelType.h>
+#include "ImfName.h"
+#include "ImfPixelType.h"
+
+#include "ImfNamespace.h"
+#include "ImfExport.h"
+
 #include <map>
 #include <set>
 #include <string>
-#include <ImfOptimizedPixelReading.h>
+
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
 
 
-namespace Imf {
-
-
-struct Channel
+struct IMF_EXPORT Channel
 {
     //------------------------------
     // Data type; see ImfPixelType.h
@@ -112,7 +114,12 @@ struct Channel
 };
 
 
-class ChannelList : public IIFOptimizable
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
+class IMF_EXPORT ChannelList
 {
   public:
 
@@ -130,7 +137,7 @@ class ChannelList : public IIFOptimizable
     // Access to existing channels:
     //
     // [n]		Returns a reference to the channel with name n.
-    //			If no channel with name n exists, an Iex::ArgExc
+    //			If no channel with name n exists, an IEX_NAMESPACE::ArgExc
     //			is thrown.
     //
     // findChannel(n)	Returns a pointer to the channel with name n,
@@ -258,16 +265,14 @@ class ChannelList : public IIFOptimizable
 
     bool			operator == (const ChannelList &other) const;
 
-    //-------------------------------------------------------------
-    // Special cases of framebuffer for optimizations (IIF files)
-    //-------------------------------------------------------------
-    virtual OptimizationMode::ChannelsInfo getOptimizationInfo() const;
-    using IIFOptimizable::getMaskFromChannelName;
-	
   private:
 
     ChannelMap			_map;
 };
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 
 //----------
@@ -435,6 +440,6 @@ operator != (const ChannelList::ConstIterator &x,
 }
 
 
-} // namespace Imf
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_EXIT
 
 #endif

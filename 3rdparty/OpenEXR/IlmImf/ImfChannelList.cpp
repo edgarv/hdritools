@@ -47,8 +47,9 @@
 
 using std::string;
 using std::set;
+#include "ImfNamespace.h"
 
-namespace Imf {
+OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_ENTER
 
 
 Channel::Channel (PixelType t, int xs, int ys, bool pl):
@@ -75,7 +76,7 @@ void
 ChannelList::insert (const char name[], const Channel &channel)
 {
     if (name[0] == 0)
-	THROW (Iex::ArgExc, "Image channel name cannot be an empty string.");
+	THROW (IEX_NAMESPACE::ArgExc, "Image channel name cannot be an empty string.");
 
     _map[name] = channel;
 }
@@ -94,7 +95,7 @@ ChannelList::operator [] (const char name[])
     ChannelMap::iterator i = _map.find (name);
 
     if (i == _map.end())
-	THROW (Iex::ArgExc, "Cannot find image channel \"" << name << "\".");
+	THROW (IEX_NAMESPACE::ArgExc, "Cannot find image channel \"" << name << "\".");
 
     return i->second;
 }
@@ -106,7 +107,7 @@ ChannelList::operator [] (const char name[]) const
     ChannelMap::const_iterator i = _map.find (name);
 
     if (i == _map.end())
-	THROW (Iex::ArgExc, "Cannot find image channel \"" << name << "\".");
+	THROW (IEX_NAMESPACE::ArgExc, "Cannot find image channel \"" << name << "\".");
 
     return i->second;
 }
@@ -255,7 +256,7 @@ ChannelList::channelsWithPrefix (const char prefix[],
 				 Iterator &last)
 {
     first = last = _map.lower_bound (prefix);
-    int n = strlen (prefix);
+    size_t n = int(strlen (prefix));
 
     while (last != Iterator (_map.end()) &&
 	   strncmp (last.name(), prefix, n) <= 0)
@@ -271,7 +272,7 @@ ChannelList::channelsWithPrefix (const char prefix[],
 				 ConstIterator &last) const
 {
     first = last = _map.lower_bound (prefix);
-    int n = strlen (prefix);
+    size_t n = strlen (prefix);
 
     while (last != ConstIterator (_map.end()) &&
 	   strncmp (last.name(), prefix, n) <= 0)
@@ -317,58 +318,5 @@ ChannelList::operator == (const ChannelList &other) const
     return i == end() && j == other.end();
 }
 
-OptimizationMode::ChannelsInfo
-ChannelList::getOptimizationInfo() const
-{
-    OptimizationMode::ChannelsInfo optimizationInfo;
-    optimizationInfo._format = OptimizationMode::PIXELFORMAT_OTHER;
 
-    int fullMask = 0;
-
-    for (ChannelList::ConstIterator j = _map.begin();
-	 j != _map.end();
-	 ++j)
-    {
-        // convert the channel name into a string for easy manipulation
-        // find out the last element after the last dot
-        std::string channelName = j.name();
-        fullMask |= getMaskFromChannelName(channelName);
-    }
-
-    switch (fullMask)
-    {
-        case IIFOptimizable::CHANNELMASK_RGB:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGB;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_MONO;
-            break;
-        
-        case IIFOptimizable::CHANNELMASK_RGBA:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGBA;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_MONO;
-            break;
-
-        case IIFOptimizable::CHANNELMASK_RGB_STEREO:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGB;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_STEREO;
-            break;
-
-        case IIFOptimizable::CHANNELMASK_RGBA_STEREO:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_RGBA;
-            optimizationInfo._multiview = OptimizationMode::MULTIVIEW_STEREO;
-            break;
-
-        default:
-
-            optimizationInfo._format = OptimizationMode::PIXELFORMAT_OTHER;   
-            break;
-    }
-
-    return optimizationInfo;
-}
-
-
-} // namespace Imf
+OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_EXIT

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2002, Industrial Light & Magic, a division of Lucas
+// Copyright (c) 2002-2012, Industrial Light & Magic, a division of Lucas
 // Digital Ltd. LLC
 // 
 // All rights reserved.
@@ -40,14 +40,18 @@
 //
 //---------------------------------------------------------------------
 
+#include "IexExport.h"
 #include "IexBaseExc.h"
+#include "IexMacros.h"
 
-namespace Iex {
+#include <stdlib.h>
+
+IEX_INTERNAL_NAMESPACE_SOURCE_ENTER
+
+
 namespace {
 
-
 StackTracer currentStackTracer = 0;
-
 
 } // namespace
 
@@ -66,33 +70,55 @@ stackTracer ()
 }
 
 
+struct BaseExc::Data
+{
+    Data(const char* s) throw() :
+        text(s? s: ""),
+        stackTrace (currentStackTracer? currentStackTracer(): "")
+    {
+        // empty
+    }
+    Data(const std::string& s) throw() :
+        text(s),
+        stackTrace (currentStackTracer? currentStackTracer(): "")
+    {
+        // empty
+    }
+    explicit Data(const Data* d) throw() :
+        text(d->text),
+        stackTrace(d->stackTrace)
+    {
+        // empty
+    }
+
+    std::string text;
+    std::string stackTrace;
+};
+
+
 BaseExc::BaseExc (const char* s) throw () :
-    std::string (s? s: ""),
-    _stackTrace (currentStackTracer? currentStackTracer(): "")
+    _d (new Data (s? s: ""))
 {
     // empty
 }
 
 
 BaseExc::BaseExc (const std::string &s) throw () :
-    std::string (s),
-    _stackTrace (currentStackTracer? currentStackTracer(): "")
+    _d (new Data (s))
 {
     // empty
 }
 
 
 BaseExc::BaseExc (std::stringstream &s) throw () :
-    std::string (s.str()),
-    _stackTrace (currentStackTracer? currentStackTracer(): "")
+    _d (new Data (s.str()))
 {
     // empty
 }
 
 
 BaseExc::BaseExc (const BaseExc &be) throw () :
-    std::string (be),
-    _stackTrace (be._stackTrace)
+    _d (new Data (be._d))
 {
     // empty
 }
@@ -100,30 +126,120 @@ BaseExc::BaseExc (const BaseExc &be) throw () :
 
 BaseExc::~BaseExc () throw ()
 {
-    // empty
+    delete _d;
 }
 
 
 const char *
 BaseExc::what () const throw ()
 {
-    return c_str();
+    return _d->text.c_str();
+}
+
+
+BaseExc &
+BaseExc::assign (const std::string &s)
+{
+    _d->text.assign (s);
+    return *this;
+}
+
+BaseExc &
+BaseExc::append (const std::string &s)
+{
+    _d->text.append (s);
+    return *this;
 }
 
 
 BaseExc &
 BaseExc::assign (std::stringstream &s)
 {
-    std::string::assign (s.str());
+    _d->text.assign (s.str());
     return *this;
 }
 
 BaseExc &
 BaseExc::append (std::stringstream &s)
 {
-    std::string::append (s.str());
+    _d->text.append (s.str());
     return *this;
 }
 
 
-} // namespace Iex
+BaseExc &
+BaseExc::assign (const char *s)
+{
+    _d->text.assign (s);
+    return *this;
+}
+
+BaseExc &
+BaseExc::append (const char *s)
+{
+    _d->text.append (s);
+    return *this;
+}
+
+
+bool
+BaseExc::operator== (const std::string &s) const
+{
+    return _d->text == s;
+}
+
+bool
+BaseExc::operator!= (const std::string &s) const
+{
+    return _d->text != s;
+}
+
+
+const std::string &
+BaseExc::stackTrace () const
+{
+    return _d->stackTrace;
+}
+
+
+std::ostream &
+operator<< (std::ostream &os, const BaseExc &be)
+{
+    return os << be._d->text;
+}
+
+IEX_INTERNAL_NAMESPACE_SOURCE_EXIT
+
+
+#if _MSC_VER >= 1400
+
+#include <intrin.h>
+#pragma optimize("", off)
+void
+iex_debugTrap()
+{
+    size_t requiredSize;
+    getenv_s(&requiredSize, NULL, 0, "IEXDEBUGTHROW");
+    if (requiredSize != 0)
+        __debugbreak();
+}
+#elif defined(_MSC_VER)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#pragma optimize("", off)
+void
+iex_debugTrap()
+{
+    if (0 != getenv("IEXDEBUGTHROW"))
+        ::DebugBreak();
+}
+#else
+void
+iex_debugTrap()
+{
+    // how to in Linux?
+    if (0 != ::getenv("IEXDEBUGTHROW"))
+        __builtin_trap();
+}
+#endif

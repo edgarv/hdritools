@@ -39,184 +39,28 @@
 #ifndef INCLUDED_IMF_OPTIMIZED_PIXEL_READING_H
 #define INCLUDED_IMF_OPTIMIZED_PIXEL_READING_H
 
-extern "C"
-{
-#include <emmintrin.h>
-#include <mmintrin.h>
-}
-
+#include "ImfSimd.h"
 #include "ImfSystemSpecific.h"
 #include <iostream>
+#include "ImfChannelList.h"
+#include "ImfFrameBuffer.h"
+#include "ImfStringVectorAttribute.h"
 
-namespace Imf
-{
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
 
 class OptimizationMode
 {
 public:
 
-    enum PixelFormat
-    {
-        PIXELFORMAT_RGB    = 0,     // pixel contains components 'R', 'G' and 'B' only
-        PIXELFORMAT_RGBA   = 1,     // pixel contains components 'R', 'G', 'B' and 'A' only
-        PIXELFORMAT_OTHER  = 2,     // pixel contains any other components
-        
-        NUM_PIXELFORMATS
-    };
 
-    enum MultiView
-    {
-        MULTIVIEW_MONO      = 0,    // image is mono (only one view)
-        MULTIVIEW_STEREO    = 1,    // image is stereo (right and left views)
-        
-        NUM_MULTIVIEW_TYPES 
-    };
-
-    struct ChannelsInfo
-    {
-        PixelFormat     _format;
-        MultiView       _multiview;
-        int             _xStride;
-        int             _ySampling;
-        float           _alphaFillValueLeft;
-        float           _alphaFillValueRight;
-
-        // Retrieve the number of channels in the image/framebuffer
-        int getNbChannels()
-        {
-            int nbChannels = 0;
-
-            if (_format == PIXELFORMAT_RGB)
-            {
-                nbChannels = 3;
-            }
-            else if (_format == PIXELFORMAT_RGBA)
-            {
-                nbChannels = 4;
-            }
-
-            if (_multiview == MULTIVIEW_STEREO)
-            {
-                nbChannels *= 2;
-            }
-
-            return nbChannels;
-        }
-
-        // Constructor
-        ChannelsInfo()
-            : _format (PIXELFORMAT_OTHER)
-        {
-        }
-    };
-
-    OptimizationMode (ChannelsInfo source, ChannelsInfo destination)
-        : _source(source)
-        , _destination(destination)
-    {
-    }
-
-    OptimizationMode()
-    {
-    }
-
-    bool                _fillAlpha;
-
-    // Optimization is for reading images, so the source will be the image file
-    ChannelsInfo        _source;
-
-    // The destination will be the framebuffer
-    ChannelsInfo        _destination;
+    bool _optimizable;
+    int _ySampling;
+    OptimizationMode() : _optimizable(false) {}
+    
 };
 
-class IIFOptimizable
-{
-public:
-    virtual OptimizationMode::ChannelsInfo getOptimizationInfo() const = 0;
 
-protected:
-    enum ChannelMask
-    {
-        CHANNELMASK_OTHER        = 0x1,   // Channel contains data that is neither R, G, B, nor A
-
-        CHANNELMASK_A            = 0x2,   // Channel contains alpha data (right in stereo or mono)
-        CHANNELMASK_G            = 0x4,   // Channel contains green data (right in stereo or mono)
-        CHANNELMASK_B            = 0x8,   // Channel contains blue data (right in stereo or mono)
-        CHANNELMASK_R            = 0x10,  // Channel contains red data (right in stereo or mono)
-
-        CHANNELMASK_ALEFT        = 0x20,  // Channel contains alpha data (left in stereo / unused in mono)
-        CHANNELMASK_GLEFT        = 0x40,  // Channel contains green data (left in stereo / unused in mono)
-        CHANNELMASK_BLEFT        = 0x80,  // Channel contains blue data (left in stereo / unused in mono)
-        CHANNELMASK_RLEFT        = 0x100, // Channel contains red data (left in stereo / unused in mono)
-
-        //
-        // The following are used as shortcuts in order to determine whether
-        // a channel is conform to the IIF definition of RGB or RGBA data
-        //
-        CHANNELMASK_RGB          = CHANNELMASK_R   |
-                                   CHANNELMASK_G   |
-                                   CHANNELMASK_B,
-
-        CHANNELMASK_RGBA         = CHANNELMASK_RGB | CHANNELMASK_A,
-
-        CHANNELMASK_RGB_STEREO   = CHANNELMASK_R     |
-                                   CHANNELMASK_G     |
-                                   CHANNELMASK_B     |
-                                   CHANNELMASK_RLEFT |
-                                   CHANNELMASK_GLEFT |
-                                   CHANNELMASK_BLEFT,
-
-        CHANNELMASK_RGBA_STEREO  = CHANNELMASK_RGB_STEREO |
-                                   CHANNELMASK_A          |
-                                   CHANNELMASK_ALEFT,
-
-        CHANNELMASK_INVALID      = 0xFFFFFFFF   // channel contains invalid data
-    };
-
-    int getMaskFromChannelName (const std::string& channelName) const
-    {
-        int channelMask = 0;
-
-        if ( channelName == "R" || channelName == "right.R")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_R;
-        }
-        else if ( channelName == "G" || channelName == "right.G")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_G;
-        }
-        else if ( channelName == "B" || channelName == "right.B")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_B;
-        }
-        else if ( channelName == "A" || channelName == "right.A")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_A;
-        }
-        else if ( channelName == "left.R")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_RLEFT;
-        }
-        else if ( channelName == "left.G")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_GLEFT;
-        }
-        else if( channelName == "left.B")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_BLEFT;
-        }
-        else if( channelName == "left.A")
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_ALEFT;
-        }
-        else
-        {
-            channelMask = IIFOptimizable::CHANNELMASK_OTHER;
-        }
-
-        return channelMask;
-    }
-};
+#if IMF_HAVE_SSE2
 
 
 //------------------------------------------------------------------------
@@ -790,6 +634,13 @@ void optimizedWriteToRGB (unsigned short*& readPtrRed,
 }
 
 
-} // namespace Imf
+
+
+#else // ! defined IMF_HAVE_SSE2
+
+#endif // defined IMF_HAVE_SSE2
+
+
+OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_EXIT
 
 #endif
