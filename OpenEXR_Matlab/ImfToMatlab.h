@@ -22,12 +22,7 @@
 
 
 #include <mex.h>
-
-// Forward declaration
-namespace Imf
-{
-class Attribute;
-}
+#include <ImfAttribute.h>
 
 
 // Utilities to convert from OpenEXR types to Matlab types
