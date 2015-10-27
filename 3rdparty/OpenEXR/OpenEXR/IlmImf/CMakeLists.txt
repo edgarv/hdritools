@@ -1,6 +1,8 @@
 # Description of the IlmImf library
 
-find_package(ZLIB REQUIRED)
+if (NOT OPENEXR_IS_INTERNAL)
+  find_package(ZLIB REQUIRED)
+endif()
 
 # Programs which build the LUTs
 add_executable(b44ExpLogTable b44ExpLogTable.cpp)
