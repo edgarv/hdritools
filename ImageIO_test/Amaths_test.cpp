@@ -101,7 +101,7 @@ TEST(AMaths, Pow)
                 tmp = rnd.nextDouble();
                 tmp = tmp * 52.0 - 26.0;
                 //tmp = tmp * 0.8 + 1.8;
-            } while (abs(tmp) < 1e-30 || tmp * log2X > 127.499996185f);
+            } while (std::abs(tmp) < 1e-30 || tmp * log2X > 127.499996185f);
             y.f32[k] = static_cast<float>(tmp);
         }
 
@@ -134,11 +134,11 @@ TEST(AMaths, Pow)
 #endif
             // Error between amath and stdlib
 #if !PCG_USE_AVX
-            double absErrorAM =abs(static_cast<double>(rAM.f32[k])-ref[k]);
+            double absErrorAM = std::abs(static_cast<double>(rAM.f32[k])-ref[k]);
 #else
-            double absErrorAM =abs(static_cast<double>(rAM_AVX.f32[k])-ref[k]);
+            double absErrorAM = std::abs(static_cast<double>(rAM_AVX.f32[k])-ref[k]);
 #endif
-            double relErrorAM = ref[k] != 0.0f ? abs(absErrorAM/ref[k])
+            double relErrorAM = ref[k] != 0.0f ? std::abs(absErrorAM/ref[k])
                 : (rAM.f32[k] == 0.0f ? 0.0 : absErrorAM);
             EXPECT_TRUE(absErrorAM < 1e-4 || relErrorAM < 5e-3) << 
                 "Absolute error AM: " << absErrorAM <<
@@ -148,8 +148,8 @@ TEST(AMaths, Pow)
             varAM_Rel.update(relErrorAM);
 
             // Error between cephes version and stdlib
-            double absError = abs(static_cast<double>(ref[k]) - rCephes.f32[k]);
-            double relError = ref[k] != 0.0f ? abs(absError/ref[k]) :
+            double absError = std::abs(static_cast<double>(ref[k]) - rCephes.f32[k]);
+            double relError = ref[k] != 0.0f ? std::abs(absError/ref[k]) :
                 (rCephes.f32[k] == 0.0f ? 0.0 : absError);
             ASSERT_TRUE(absError < 1e-8 || relError < 8e-6) << 
                 "Absolute error: " << absError <<
@@ -202,7 +202,7 @@ TEST(AMaths, Pow_Benchmark)
         do {
             tmp = rnd.nextDouble();
             tmp = tmp * 52.0 - 26.0;
-        } while (abs(tmp) < 1e-30 || tmp * log2X > 127.499996185f);
+        } while (std::abs(tmp) < 1e-30 || tmp * log2X > 127.499996185f);
         valuesY[k] = static_cast<float>(tmp);
     }
 
@@ -348,8 +348,8 @@ TEST(AMaths, Log)
             ASSERT_FLOAT_EQ(ref[k], rCephes.f32[k]);
 
             // Error between amath and stdlib
-            double absErrorAM =abs(static_cast<double>(rAM.f32[k])-ref[k]);
-            double relErrorAM = ref[k] != 0.0f ? abs(absErrorAM/ref[k])
+            double absErrorAM = std::abs(static_cast<double>(rAM.f32[k])-ref[k]);
+            double relErrorAM = ref[k] != 0.0f ? std::abs(absErrorAM/ref[k])
                 : (rAM.f32[k] == 0.0f ? 0.0 : absErrorAM);
             varAM_Abs.update(absErrorAM);
             varAM_Rel.update(relErrorAM);
@@ -527,8 +527,8 @@ TEST(AMaths, FastExpGamma)
         double ref    = exp((1.0/2.2) * logX);
         double actual = fastExp((1.0/2.2) * logX);
 
-        double absError = abs(ref - actual);
-        double relError = ref != 0.0f ? abs(absError/ref) 
+        double absError = std::abs(ref - actual);
+        double relError = ref != 0.0f ? std::abs(absError/ref)
                                       : (actual == 0.0f ? 0.0 : absError);
         
         ASSERT_NEAR(actual, ref, 0.04*ref) << "x=" << x << " log(x)=" << logX;
