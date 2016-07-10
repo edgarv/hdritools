@@ -44,7 +44,7 @@ key(AutoParam()), whitePoint(AutoParam()), logLumAvg(AutoParam())
 
 ToneMappingFilter::ToneMappingFilter(ToneMapper &toneMapper, bool useBpp16,
                                      float k, float wp, float lw) :
-filter(/*is_serial=*/!isReinhard02Fixed(key, whitePoint, logLumAvg)),
+filter(/*is_serial=*/!isReinhard02Fixed(k, wp, lw)),
 toneMapper(toneMapper), useBpp16(useBpp16), technique(pcg::REINHARD02),
 key(k), whitePoint(wp), logLumAvg(lw)
 {
