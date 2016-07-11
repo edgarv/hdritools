@@ -187,6 +187,7 @@ inline void getChannelNames(const ChannelList & channels,
 
 
 
+PCG_PUBLIC
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 { 
 	pcg::mexEXRInit();

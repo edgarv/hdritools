@@ -156,6 +156,7 @@ mxArray * readPixels(const char * filename)
 } // namespace
 
 
+PCG_PUBLIC
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 { 
     pcg::mexEXRInit();

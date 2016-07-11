@@ -22,6 +22,13 @@
 #if !defined(PCH_UTIL_H)
 #define PCH_UTIL_H
 
+// Workaround macro for compiling with -fvisibility=true
+#ifndef _MSC_VER
+#define PCG_PUBLIC __attribute__ ((visibility ("default")))
+#else
+#define PCG_PUBLIC
+#endif
+
 namespace pcg
 {
 
