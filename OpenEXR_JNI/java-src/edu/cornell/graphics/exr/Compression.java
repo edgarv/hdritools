@@ -62,7 +62,7 @@ public enum Compression {
      * A wavelet transform is applied to the pixel data, and the result is 
      * Huffman-encoded. This scheme tends to provide the best compression ratio 
      * for the types of images that are typically processed at 
-     * Industrial Light & Magic. Files are compressed and decompressed at 
+     * Industrial Light &amp; Magic. Files are compressed and decompressed at 
      * roughly the same speed. For photographic images with film grain, 
      * the files are reduced to between 35 and 55 percent of their uncompressed size.
      * PIZ compression works well for scan-line-based files, and also for tiled files 

@@ -110,7 +110,11 @@ public class Channel {
         this.type = type;
     }
     
-    /** Copy constructor */
+    /**
+     * Copy constructor for a channel, copying its parameters from an existing one.
+     * 
+     * @param other an existing, non-null channel.
+     */
     public Channel(Channel other) {
         if (other == null) {
             throw new IllegalArgumentException("null source channel");

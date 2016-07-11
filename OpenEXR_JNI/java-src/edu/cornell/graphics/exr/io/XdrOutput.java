@@ -81,6 +81,7 @@ public class XdrOutput {
      * 
      * @param pos the new writing position.
      * @return a reference to this {@code XdrOutput} instance
+     * @throws EXRIOException if an I/O error occurs.
      */
     public XdrOutput position(long pos) throws EXRIOException {
         os.position(pos);
@@ -186,6 +187,7 @@ public class XdrOutput {
      * If {@code n} is less than one the function returns immediately.
      * 
      * @param n number of padding bytes to add.
+     * @throws EXRIOException if an I/O error occurs.
      */
     public void pad(int n) throws EXRIOException {
         if (n < 1) {
@@ -210,11 +212,13 @@ public class XdrOutput {
     }
     
     /**
-     * 
-     * @param b
-     * @param off
-     * @param len
-     * @throws EXRIOException
+     * Writes {@code len} bytes of the array {@code b} into the underlying stream,
+     * starting at the given offset {@code off}.
+     *
+     * @param b the non-null source array.
+     * @param off starting index.
+     * @param len the number of bytes from the source array to write.
+     * @throws EXRIOException if an I/O error occurs.
      * @throws IllegalArgumentException if {@code b} is null.
      * @throws IndexOutOfBoundsException if {@code off} is negative,
      *         {@code len} is negative, or {@code len} is greater than

@@ -54,59 +54,59 @@ package edu.cornell.graphics.exr;
  * 
  * <p>The following fields specify film manufacturer, film type, film
  * roll and the frame's position within the roll:
- * <table border="1">
+ * <table border="1" summary="KeyCode fields describing the film">
  * <tr>
  *   <th>Field</th>
  *   <th>Description</th>
  * </tr>
  * <tr>
  *   <td>{@code filmMfcCode}</td>
- *   <td>film manufacturer code<br/>range: 0 - 99</td>
+ *   <td>film manufacturer code<br>range: 0 - 99</td>
  * </tr>
  * <tr>
  *   <td>{@code filmType}</td>
- *   <td>film type code<br/>range: 0 - 99</td>
+ *   <td>film type code<br>range: 0 - 99</td>
  * </tr>
  * <tr>
  *   <td>{@code prefix}</td>
- *   <td>prefix to identify film roll<br/>range: 0 - 999999</td>
+ *   <td>prefix to identify film roll<br>range: 0 - 999999</td>
  * </tr>
  * <tr>
  *   <td>{@code count}</td>
- *   <td>count, increments once every {@code perfsPerCount} perforations<br/>
+ *   <td>count, increments once every {@code perfsPerCount} perforations<br>
  *    range: 0 - 9999</td>
  * </tr>
  * <tr>
  *   <td>{@code perfOffset}</td>
- *   <td>offset of frame, in perforations from zero-frame reference mark<br/>
+ *   <td>offset of frame, in perforations from zero-frame reference mark<br>
  *    range: 0 - 119</td>
  * </tr>
  * <tr>
  *   <td>{@code perfsPerFrame}</td>
- *   <td><p>number of perforations per frame<br/>range: 1 - 15</p>
+ *   <td><p>number of perforations per frame<br>range: 1 - 15</p>
  *   <p>Typical values:
  *   <ul>
  *     <li>1 for 16mm film</li>
  *     <li>3, 4, or 8 for 35mm film</li>
  *     <li>5, 8 or 15 for 65mm film</li>
- *   </ul></p></td>
+ *   </ul></td>
  * </tr>
  * <tr>
  *   <td>{@code perfsPerCoun}</td>
- *   <td><p>number of perforations per count<br/>range: 20 - 120</p>
+ *   <td><p>number of perforations per count<br>range: 20 - 120</p>
  *   <p>Typical values:
  *   <ul>
  *     <li>20 for 16mm film</li>
  *     <li>64 for 35mm film</li>
  *     <li>80 or 120 for 65mm film</li>
- *   </ul></p></td>
+ *   </ul></td>
  * </tr>
- * </table></p>
+ * </table>
  * 
  * <p>For more information about the interpretation of those fields see
  * the following standards and recommended practice publications:
  * 
- * <blockquote><table border="0">
+ * <blockquote><table border="0" summary="Related SMPTE standards">
  * <tr>
  *   <td>SMPTE 254</td>
  *   <td>Motion-Picture Film (35-mm) - Manufacturer-Printed
@@ -123,7 +123,7 @@ package edu.cornell.graphics.exr;
  *   <td>SMPTE 271</td>
  *   <td>Motion-Picture Film (16-mm) - Manufacturer- Printed
  *   Latent Image Identification Information</td>
- * </tr></table></blockquote></p>
+ * </tr></table></blockquote>
  * 
  * @since OpenEXR-JNI 2.1
  */

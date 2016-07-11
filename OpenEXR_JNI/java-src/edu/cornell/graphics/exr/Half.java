@@ -201,10 +201,10 @@ public final class Half extends Number implements Comparable<Half> {
      *
      * <blockquote><pre>
      * int s = ((bits &gt;&gt; 15) == 0) ? 1 : -1;
-     * int e = ((bits &gt;&gt; 10) & 0x1f);
+     * int e = ((bits &gt;&gt; 10) &amp; 0x1f);
      * int m = (e == 0) ?
-     *                 (bits & 0x3ff) &lt;&lt; 1 :
-     *                 (bits & 0x3ff) | 0x400;
+     *                 (bits &amp; 0x3ff) &lt;&lt; 1 :
+     *                 (bits &amp; 0x3ff) | 0x400;
      * </pre></blockquote>
      *
      * Then the floating-point result equals the value of the mathematical

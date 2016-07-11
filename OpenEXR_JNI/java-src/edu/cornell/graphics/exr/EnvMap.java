@@ -166,7 +166,7 @@ public enum EnvMap {
      *       +-----------+
      *                  /
      *                 /
-     *           dataWindow.max</pre></blockquote></p>
+     *           dataWindow.max</pre></blockquote>
      * 
      * <p>The size of the data window should be {@code N} by {@code 6*N} pixels
      * (width by height), where {@code N} can be any integer greater

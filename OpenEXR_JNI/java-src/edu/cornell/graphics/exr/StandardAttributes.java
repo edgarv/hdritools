@@ -206,7 +206,6 @@ import java.util.TimeZone;
  * <p>NDC space in OpenEXR is the same as in Pixar's Renderman.</p></li>
  * 
  * </ul>
- * </p>
  * 
  * @since OpenEXR-JNI 3.0
  */

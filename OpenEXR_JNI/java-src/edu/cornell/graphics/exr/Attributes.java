@@ -156,22 +156,41 @@ public class Attributes {
         }
     }
 
-    /** Retrieves the owner. */
+    /** 
+     * Retrieves the name of the owner of the image.
+     *
+     * @return a String with the name of the owner of the image
+     */
     public String getOwner() {
         return owner;
     }
 
-    /** Sets the owner. */
+    /**
+     * Sets the name of the owner of the image. Should not be {@code null}.
+     *
+     * @param owner the new name of the owner of the image.
+     */
     public final void setOwner(String owner) {
         this.owner = owner;
     }
 
-    /** Retrieves the comments. */
+    /**
+     * Retrieves the image comments: additional image information in
+     * human-readable form, for example a verbal description of the image.
+     *
+     * @return a String with the image comments.
+     */
     public String getComments() {
         return comments;
     }
 
-    /** Sets the comments. */
+    /**
+     * Sets the image comments: additional image information in
+     * human-readable form, for example a verbal description of the image.
+     * Should not be {@code null}.
+     *
+     * @param comments the new image comments.
+     */
     public final void setComments(String comments) {
         this.comments = comments;
     }

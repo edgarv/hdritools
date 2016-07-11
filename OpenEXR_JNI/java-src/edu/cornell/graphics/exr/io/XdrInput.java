@@ -211,11 +211,13 @@ public class XdrInput {
     }
 
     /**
-     * 
-     * @param b
-     * @param off
-     * @param len
-     * @throws EXRIOException
+     * Reads {@code len} bytes from the underlying input stream, copying
+     * them into the destination buffer {@code b} starting at offset {@code off}.
+     *
+     * @param b non-null destination buffer.
+     * @param off initial index in {@code b} for storing the read bytes.
+     * @param len total byte count to read.
+     * @throws EXRIOException if an I/O error occurs.
      * @throws IllegalArgumentException if {@code b} is null.
      * @throws IndexOutOfBoundsException if {@code off} is negative,
      *         {@code len} is negative, or {@code len} is greater than
