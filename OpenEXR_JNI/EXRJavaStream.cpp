@@ -256,7 +256,11 @@ void EXRJavaOutputStream::write(const char c[/*n*/], int n)
     }
     JNIEnv* const env = getJNIEnv(jvmData->jvm);
     jobject buffer = env->NewDirectByteBuffer(const_cast<char*>(c), n);
-    jobject readBuffer=env->CallObjectMethod(buffer,jvmData->asReadOnlyBuffer);
+    jobject readBuffer=env->CallObjectMethod(buffer, jvmData->asReadOnlyBuffer);
+    if (env->ExceptionCheck() != JNI_FALSE) {
+        env->DeleteLocalRef(buffer);
+        throw JavaExc();
+    }
     env->DeleteLocalRef(buffer);
     env->CallVoidMethod(m_stream, jvmData->write, readBuffer);
     if (env->ExceptionCheck() != JNI_FALSE) {
