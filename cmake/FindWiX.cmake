@@ -54,12 +54,13 @@ else()
   set(_WiX_PATHS PATHS)
 
   # Fixed search paths
-  foreach (version "3.7" "3.6" "3.5" "3.0"  "3")
+  set(_WiX_ProgramFilesx86 "ProgramFiles(x86)") # CMP0053
+  foreach (version "3.10" "3.9" "3.8" "3.7" "3.6" "3.5" "3.0"  "3")
     # Try to get the value from the registry
     list(APPEND _WiX_PATHS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Installer XML\\${version};InstallRoot]")
     list(APPEND _WiX_PATHS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows Installer XML\\${version};InstallRoot]")
-    if (NOT "$ENV{ProgramFiles(x86)}" STREQUAL "")
-      list(APPEND _WiX_PATHS "$ENV{ProgramFiles(x86)}\\Windows Installer XML v${version}")
+    if (NOT "$ENV{${_WiX_ProgramFilesx86}}" STREQUAL "")
+      list(APPEND _WiX_PATHS "$ENV{${_WiX_ProgramFilesx86}}\\Windows Installer XML v${version}")
     endif()
     list(APPEND _WiX_PATHS "$ENV{ProgramFiles}\\Windows Installer XML v${version}")
   endforeach()
