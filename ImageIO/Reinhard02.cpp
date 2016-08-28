@@ -160,6 +160,16 @@ const Vec8f LUM_TAIL_MASKS_V8[7] = {
 
 
 
+// Support also the MSVC 2015 STL, see:
+// https://github.com/open-source-parsers/jsoncpp/pull/367
+#if __cplusplus >= 201103L || (defined(_CPPLIB_VER) && _CPPLIB_VER >= 520)
+struct AlignedDeleter {
+    void operator()(float *ptr) {
+        free_align(ptr);
+    }
+};
+typedef std::unique_ptr<float, AlignedDeleter> auto_afloat_ptr;
+#else
 // Super basic auto_ptr kind of thing for aligned float memory
 class auto_afloat_ptr : public std::auto_ptr<float>
 {
@@ -172,6 +182,7 @@ public:
         }
     }
 };
+#endif
 
 
 

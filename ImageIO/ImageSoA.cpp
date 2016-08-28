@@ -79,7 +79,7 @@ struct CopyFunctor
         const int endSSE   = range.end() & ~0x3;
         assert((endSSE - beginSSE) % 4 == 0);
         assert((beginSSE-range.begin())+(endSSE-beginSSE)+(range.end()-endSSE)\
-            ==range.size());
+            == static_cast<int>(range.size()));
 
         float * r = m_args.dest.GetDataPointer<pcg::RGBAImageSoA::R>();
         float * g = m_args.dest.GetDataPointer<pcg::RGBAImageSoA::G>();
