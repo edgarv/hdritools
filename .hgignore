@@ -5,4 +5,5 @@ qt4Image\.aps$
 .+\..+~$
 .+\..+\.orig$
 ^CMakeLists\.txt\.user$
+^.vscode/
 
