@@ -74,7 +74,7 @@ public class TileDescription implements Cloneable {
          * 4x2  2x2  1x2
          * 4x1  2x1  1x1
          * </pre>
-         * </blockquote></p>
+         * </blockquote>
          */
         RIPMAP_LEVELS
     }

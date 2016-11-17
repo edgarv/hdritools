@@ -181,7 +181,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * set to <tt>[0,0] x [width-1, height-1]</tt>, with an empty channel list.
      * 
      * <p>The other predefined attributes are initialized as follows:
-     * <table>
+     * <table summary="Default values of predefined attributes">
      *   <tr><th>Attribute</th><th>Value</th></tr>
      *   <tr><td><tt>pixelAspectRatio</tt></td><td>1.0</td>
      *   <tr><td><tt>screenWindowCenter</tt></td><td>(0.0, 0.0)</td>
@@ -348,6 +348,7 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * {@code TypedAttribute} instances are not parameterized and there is 
      * exactly one {@code TypedAttribute} class with value type {@code T}.</p>
      * 
+     * @param <T> the underlying value type of the attribute.
      * @param name non-empty name of the desired attribute.
      * @param cls the class of the concrete {@code TypedAttribute<T>}
      *         implementation.
@@ -397,11 +398,12 @@ public final class Header implements Iterable<Entry<String, Attribute>> {
      * parameter types {@code T1} and {@code T2} may only be retrieved for
      * concrete instances. To avoid very convoluted type checking via reflection
      * this implementation actually checks that the <em>typed attribute</em>
-     * class itself matches that of the existing attribute. Although this
+     * class itself matches that of the existing attributes. Although this
      * technically violates the method description, in practice concrete
      * {@code TypedAttribute} instances are not parameterized and there is 
      * exactly one {@code TypedAttribute} class with value type {@code T}.</p>
      * 
+     * @param <T> the underlying value type of the attribute.
      * @param name non-empty name of the desired attribute.
      * @param cls the class of the concrete {@code TypedAttribute<T>}
      *         implementation.

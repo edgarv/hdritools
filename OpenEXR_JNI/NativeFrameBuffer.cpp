@@ -92,6 +92,10 @@ Imf::Slice JVMData::getSlice(JNIEnv* env, jobject jslice) const
             throw JavaExc("Not a PixelType instance");
         }
         int baseType = env->CallIntMethod(jtype, m_pixelType.ordinal);
+        if (env->ExceptionCheck() != JNI_FALSE) {
+            env->DeleteLocalRef(jtype);
+            throw JavaExc("Could not get the Java enum ordinal");
+        }
         switch (baseType) {
         case Imf::UINT:
         case Imf::HALF:
@@ -99,6 +103,7 @@ Imf::Slice JVMData::getSlice(JNIEnv* env, jobject jslice) const
             slice.type = static_cast<Imf::PixelType>(baseType);
             break;
         default:
+            env->DeleteLocalRef(jtype);
             throw JavaExc("Invalid PixelType ordinal");
         }
         env->DeleteLocalRef(jtype);

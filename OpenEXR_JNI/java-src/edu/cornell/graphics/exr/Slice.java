@@ -80,10 +80,10 @@ import java.nio.ByteBuffer;
  * that the memory location of a pixel maps to a valid position within the
  * buffer. Other use of this parameter is when reading/writing only a fragment
  * of a frame buffer: it allows to map only a subset of the image data into
- * an appropriate region of the buffer.</p>
+ * an appropriate region of the buffer.
  * 
  * <p><b>Subsampling:</b> pixel {@code (x,y)} is present in the slice only if
- * <pre>    x % xSampling == 0 && y % ySampling == 0</pre></p>
+ * {@code    x % xSampling == 0 && y % ySampling == 0}</p>
  * 
  * <p>Note on terminology: as a part of a file, a component of an image (e.g.
  * red, green, blue, depth, etc.) is called a <em>channel</em>. As part of a
@@ -164,7 +164,12 @@ public class Slice {
         // empty
     }
 
-    /** Copy constructor */
+    /**
+     * Copy constructor. This performs only a <em>shallow</em> copy, referencing
+     * to the same buffer of the {@code other} slice.
+     *
+     * @param other an existing, non-null slice.
+     */
     public Slice(Slice other) {
         type        = other.type;
         buffer      = other.buffer;
@@ -290,7 +295,8 @@ public class Slice {
      *   equivalence expression {@code this.buffer == ((Slice)obj).buffer} will
      *   be {@code true}.</li>
      * </ol>
-     * A slice is not equal to any other type of object.</p>
+     * A slice is not equal to any other type of object.
+     *
      * <p>Note that even if two slices are equal, their hash codes may change
      * depending on their buffer's current position and limit.</p>
      * 

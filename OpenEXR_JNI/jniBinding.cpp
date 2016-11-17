@@ -39,9 +39,11 @@ jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
         jmethodID availableProcessorsID = env.getMethodID(clazz,
             "availableProcessors", "()I");
         jobject runtime = envPtr->CallStaticObjectMethod(clazz, getRuntimeID);
-        if (runtime != NULL) {
+        if (envPtr->ExceptionCheck() == JNI_FALSE && runtime != NULL) {
             int count = envPtr->CallIntMethod(runtime, availableProcessorsID);
-            Imf::setGlobalThreadCount(count);
+            if (envPtr->ExceptionCheck() == JNI_FALSE) {
+                Imf::setGlobalThreadCount(count);
+            }
         }
     } catch (...) {
         // nothing to do

@@ -17,6 +17,7 @@
 # define CHAR16_T wchar_t
 #endif
 
+#include "util.h"
 #include "ImfToMatlab.h"
 
 #include <mex.h>
@@ -136,6 +137,7 @@ mxArray * getAttributesMap(const Header & header)
 
 
 
+PCG_PUBLIC
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 { 
     /* Check for proper number of arguments */

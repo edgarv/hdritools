@@ -54,4 +54,4 @@ set(test_script "x35_3a_test")
 configure_file("launch_test.m.cmake" "launch_test.m" ESCAPE_QUOTES @ONLY)
 
 add_test(NAME openexrmex_x35
-  COMMAND matlab -nosplash -nodesktop -r "launch_test('$<TARGET_FILE_DIR:exrinfo>')")
+  COMMAND "${MATLAB_BIN}" -nosplash -nodesktop -r "launch_test('$<TARGET_FILE_DIR:exrinfo>')")

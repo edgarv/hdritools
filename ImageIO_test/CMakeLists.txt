@@ -27,6 +27,11 @@ if(MSVC AND MSVC_VERSION GREATER 1500)
   add_definitions(-D_VARIADIC_MAX=9)
 endif()
 
+# FIXME temporary workaround as of google test 1.6 and Xcode 7
+if(APPLE)
+  add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
+endif()
+
 include_directories(${GTEST_INCLUDE_DIRS} "${PROJECT_SOURCE_DIR}/ImageIO")
 
 # Hard-coded Mersenne Twister definitions

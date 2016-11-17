@@ -79,7 +79,7 @@ package edu.cornell.graphics.exr;
  *     be explicitly set for each file.  The default behavior is for
  *     each file to try to occupy all worker threads in the library's
  *     thread pool.</li>
- * </ul></p>
+ * </ul>
  * 
  * @since OpenEXR-JNI 3.0
  */
@@ -96,6 +96,7 @@ public final class Threading {
     /**
      * Return the number of global worker threads used for parallel
      * compression and decompression of OpenEXR files.
+     * @return the number of global worker threads.
      */
     public static synchronized native int globalThreadCount();
     

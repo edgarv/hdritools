@@ -64,13 +64,25 @@ if(WIN32)
   endif()
   
   if(MSVC_VERSION)
-    math(EXPR VC_VER_MAJOR "(${MSVC_VERSION} - 600) / 100")
-    math(EXPR VC_VER_MINOR "(${MSVC_VERSION} - ${VC_VER_MAJOR}*100 - 600) / 10")
+    # MSVC_VERSION:
+    #   1500 == vc9
+    #   1600 == vc10
+    #   1700 == vc11
+    #   1800 == vc12
+    # **1900 == vc14**, ...
+    if(MSVC_VERSION LESS 1900)
+      set(VC_VER_DELTA 600)
+    else()
+      set(VC_VER_DELTA 500)
+    endif()
+    math(EXPR VC_VER_MAJOR "(${MSVC_VERSION} - ${VC_VER_DELTA}) / 100")
+    math(EXPR VC_VER_MINOR "(${MSVC_VERSION} - ${VC_VER_MAJOR}*100 - ${VC_VER_DELTA}) / 10")
     if (${VC_VER_MINOR} EQUAL 0)
       set(TBB_COMPILER "vc${VC_VER_MAJOR}")
     else()
       set(TBB_COMPILER "vc${VC_VER_MAJOR}.${VC_VER_MINOR}")
     endif()
+    unset(VC_VER_DELTA)
     unset(VC_VER_MAJOR)
     unset(VC_VER_MINOR)
   endif()

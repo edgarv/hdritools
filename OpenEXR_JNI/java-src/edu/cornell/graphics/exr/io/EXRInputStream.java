@@ -62,6 +62,7 @@ public interface EXRInputStream {
      * {@code position()} returns <em>i</em>.
      * 
      * @param pos the new reading position.
+     * @throws EXRIOException if an I/O error occurs.
      */
     void position(long pos) throws EXRIOException;
     

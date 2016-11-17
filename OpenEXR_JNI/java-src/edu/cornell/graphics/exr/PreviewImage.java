@@ -230,7 +230,7 @@ public class PreviewImage implements Cloneable {
      * and its dimensions:
      * <blockquote>
      * <tt>"PreviewImage{" + "width=" + width + ", height=" + height + '}'
-     * </tt></blockquote></p>
+     * </tt></blockquote>
      * 
      * @return a string representation of this preview image
      */

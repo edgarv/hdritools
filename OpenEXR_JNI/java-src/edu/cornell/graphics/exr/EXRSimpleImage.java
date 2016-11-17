@@ -58,7 +58,11 @@ public class EXRSimpleImage implements Serializable {
             this.numChannels = numChannels;
         }
         
-        /** Returns the number of floating point channels */
+        /**
+         * Returns the number of floating point channels.
+         *
+         * @return the number of floating point channels.
+         */
         public int getNumChannels() {
             return numChannels;
         }

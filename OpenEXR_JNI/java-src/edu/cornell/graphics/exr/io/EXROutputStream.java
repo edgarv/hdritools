@@ -57,6 +57,7 @@ public interface EXROutputStream {
      * 
      * @param pos the new writing position.
      * @return a reference to this stream
+     * @throws EXRIOException if an I/O error occurs.
      */
     EXROutputStream position(long pos) throws EXRIOException;
 }

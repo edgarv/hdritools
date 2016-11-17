@@ -435,7 +435,6 @@ public class EXROutputFile implements AutoCloseable {
      * <p>To produce a complete and correct file, exactly {@code m} scan lines
      * must be written, where {@code m} is equal to:
      * <pre>  header().dataWindow().max.y - header().dataWindow().min.y + 1</pre>
-     * </p>
      * 
      * @param numScanlines number of the next consecutive scan lines to write
      * @throws IllegalArgumentException if {@code numScanLines} is less than
@@ -487,12 +486,12 @@ public class EXROutputFile implements AutoCloseable {
      * first scan line that will be read from the current frame buffer during
      * the next call to writePixels().</p>
      * 
-     * <p>If {@code header.lineOrder() == INCREASING_Y}:<br/>
+     * <p>If {@code header.lineOrder() == INCREASING_Y}:<br>
      * The current scan line before the first call to {@code writePixels()}
      * is {@code header().dataWindow().min.y}.  After writing each scan line,
      * the current scan line is incremented by {@literal 1}.</p>
      * 
-     * <p>If {@code header.lineOrder() == DECREASING_Y}:<br/>
+     * <p>If {@code header.lineOrder() == DECREASING_Y}:<br>
      * The current scan line before the first call to {@code writePixels()}
      * is {@code header().dataWindow().max.y}.  After writing each scan line,
      * the current scan line is decremented by {@literal 1}.

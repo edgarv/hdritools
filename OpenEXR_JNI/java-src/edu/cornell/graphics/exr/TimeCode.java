@@ -55,7 +55,7 @@ package edu.cornell.graphics.exr;
  * 
  * <p>A {@code TimeCode} object contains the following fields:
  * 
- * <table border="1">
+ * <table border="1" summary="TimeCode fields">
  * <tr>
  *   <th colspan="2">Time address</th>
  * </tr>
@@ -122,7 +122,7 @@ package edu.cornell.graphics.exr;
  *   <td>binary group 8</td>
  *   <td>integer, range 0 - 15</td>
  * </tr>
- * </table></p>
+ * </table>
  * 
  * <p>Class {@code TimeCode} contains methods to convert between the fields
  * listed above and a more compact representation where the fields are packed
@@ -131,7 +131,7 @@ package edu.cornell.graphics.exr;
  * value.</p>
  * 
  * <p>The time address and flags fields can be packed in three different ways:
- * <table border="1">
+ * <table border="1" summary="TimeCode fileds bit packing">
  * <tr>
  *   <th>bits</th>
  *   <th>packing for 24-frame film</th>
@@ -223,10 +223,9 @@ package edu.cornell.graphics.exr;
  *   <td>field/phase flag</td>
  * </tr>
  * </table>
- * </p>
  * 
  * <p>User-defined data and control codes are packed as follows:
- * <table border="1">
+ * <table border="1" summary="User-defined codes bit packing">
  * <tr>
  *   <th>bits</th>
  *   <th>field</th>
