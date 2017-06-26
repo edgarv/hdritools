@@ -92,7 +92,6 @@ set(ILMIMF_HEADERS
   ImfEnvmap.h
   ImfEnvmapAttribute.h
   ImfExport.h
-  ImfFastHuf.h
   ImfFloatAttribute.h
   ImfFloatVectorAttribute.h
   ImfForward.h
@@ -133,6 +132,7 @@ set(ILMIMF_HEADERS
   ImfRgbaFile.h
   ImfRgbaYca.h
   ImfStandardAttributes.h
+  ImfStdIO.h
   ImfStringAttribute.h
   ImfStringVectorAttribute.h
   ImfTestFile.h
