@@ -158,10 +158,10 @@ namespace {
                     } 
 
                     
-                    int  numSetBits = countSetBits(input);
+                    int  numSetBits = countSetBits((unsigned short)input);
                     half inputHalf, closestHalf;
 
-                    inputHalf.setBits(input);
+                    inputHalf.setBits((unsigned short)input);
 
                     _offset[input - _startValue] = _numElements;
 
@@ -330,8 +330,8 @@ generateToLinear()
 
     for (int i=1; i<65536; ++i) {
         half  h;
-        float sign    = 1;
-        float logBase = pow(2.7182818, 2.2);
+        float sign    = 1.0f;
+        float logBase = std::pow(2.7182818f, 2.2f);
 
         // map  NaN and inf to 0
         if ((i & 0x7c00) == 0x7c00) {
@@ -384,8 +384,8 @@ generateToNonlinear()
     for (int i=1; i<65536; ++i) {
         unsigned short usNative, usXdr;
         half  h;
-        float sign    = 1;
-        float logBase = pow(2.7182818, 2.2);
+        float sign    = 1.0f;
+        float logBase = std::pow(2.7182818f, 2.2f);
 
         usXdr           = i;
 
@@ -411,9 +411,9 @@ generateToNonlinear()
         } 
 
         if ( fabs( (float)h ) <= 1.0) {
-            h = (half)(sign * pow(fabs((float)h), 1.f/2.2f));
+            h = (half)(sign * std::pow(fabs((float)h), 1.f/2.2f));
         } else {
-            h = (half)(sign * ( log(fabs((float)h)) / log(logBase) + 1.0) );
+            h = (half)(sign * ( std::log(fabs((float)h)) / std::log(logBase) + 1.0f) );
         }
         toNonlinear[i] = h.bits();
     }
@@ -521,8 +521,8 @@ generateLutHeader()
             }
             offsetIdx++;
         }
-        offsetPrev += workers[i]->offset()[workers[i]->numValues()-1] + 
-                      workers[i]->lastCandidateCount();
+        offsetPrev += (int)(workers[i]->offset()[workers[i]->numValues()-1] + 
+                            workers[i]->lastCandidateCount());
     }
     printf("};\n\n\n");
 
