@@ -3,6 +3,9 @@
 # Programs which build the LUTs
 add_executable(eLut eLut.cpp)
 add_executable(toFloat toFloat.cpp)
+if(OPENEXR_IS_INTERNAL)
+  set_target_properties(eLut toFloat PROPERTIES FOLDER "3rdparty/OpenEXR/Tools")
+endif()
 
 # Directory with the LUTs
 set(LUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lut")
