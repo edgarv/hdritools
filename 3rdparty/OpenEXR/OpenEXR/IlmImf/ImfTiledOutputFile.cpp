@@ -63,11 +63,10 @@
 #include "ImfOutputStreamMutex.h"
 #include "ImfOutputPartData.h"
 #include "Iex.h"
-#include <algorithm>
 #include <string>
 #include <vector>
 #include <fstream>
-#include <cassert>
+#include <assert.h>
 #include <map>
 #include <algorithm>
 

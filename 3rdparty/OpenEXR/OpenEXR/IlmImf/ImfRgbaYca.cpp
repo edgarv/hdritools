@@ -47,8 +47,7 @@
 #include <algorithm>
 
 using namespace IMATH_NAMESPACE;
-using std::min;
-using std::max;
+using namespace std;
 #include "ImfNamespace.h"
 
 OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_ENTER

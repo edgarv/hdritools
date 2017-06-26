@@ -59,8 +59,6 @@
 
 #include <fstream>
 #include <algorithm>
-#include <cassert>
-#include <cstddef>
 
 #include "ImfNamespace.h"
 
@@ -190,10 +188,7 @@ InputFile::Data::deleteCachedBuffer()
 		break;
               case NUM_PIXELTYPES :
                   throw(IEX_NAMESPACE::ArgExc("Invalid pixel type"));
-
-              default:
-                  assert("Unknown slice type" == 0);
-	    }       
+	    }                
 	}
 
 	//
@@ -311,22 +306,22 @@ bufferedReadPixels (InputFile::Data* ifd, int scanLine1, int scanLine2)
 		 y <= maxYThisRow;
 		 y += toSlice.ySampling)
             {
-                //
+		//
                 // Set the pointers to the start of the y scanline in
                 // this row of tiles
-                //
+		//
                 
                 fromPtr = fromSlice.base +
-                          (y - tileRange.min.y) * static_cast<ptrdiff_t>(fromSlice.yStride) +
-                          xStart * static_cast<ptrdiff_t>(fromSlice.xStride);
+                          (y - tileRange.min.y) * fromSlice.yStride +
+                          xStart * fromSlice.xStride;
 
                 toPtr = toSlice.base +
-                        divp (y, toSlice.ySampling) * static_cast<ptrdiff_t>(toSlice.yStride) +
-                        divp (xStart, toSlice.xSampling) * static_cast<ptrdiff_t>(toSlice.xStride);
+                        divp (y, toSlice.ySampling) * toSlice.yStride +
+                        divp (xStart, toSlice.xSampling) * toSlice.xStride;
 
-                //
+		//
                 // Copy all pixels for the scanline in this row of tiles
-                //
+		//
 
                 for (int x = xStart;
 		     x <= levelRange.max.x;
@@ -645,7 +640,7 @@ InputFile::setFrameBuffer (const FrameBuffer &frameBuffer)
 	Lock lock (*_data);
 
 	//
-	// We must invalidate the cached buffer if the new frame
+        // We must invalidate the cached buffer if the new frame
 	// buffer has a different set of channels than the old
 	// frame buffer, or if the type of a channel has changed.
 	//
@@ -670,7 +665,7 @@ InputFile::setFrameBuffer (const FrameBuffer &frameBuffer)
 	    // Invalidate the cached buffer.
 	    //
 
-	    _data->deleteCachedBuffer ();
+            _data->deleteCachedBuffer ();
 	    _data->cachedTileY = -1;
 
 	    //
@@ -857,6 +852,39 @@ InputFile::rawPixelData (int firstScanLine,
 	throw;
     }
 }
+
+
+
+
+void
+InputFile::rawPixelDataToBuffer (int scanLine,
+                                 char *pixelData,
+                                 int &pixelDataSize) const
+{
+    try
+    {
+        if (_data->dsFile)
+        {
+            throw IEX_NAMESPACE::ArgExc ("Tried to read a raw scanline "
+                                         "from a deep image.");
+        }
+        
+        else if (_data->isTiled)
+        {
+            throw IEX_NAMESPACE::ArgExc ("Tried to read a raw scanline "
+                                         "from a tiled image.");
+        }
+        
+        _data->sFile->rawPixelDataToBuffer(scanLine, pixelData, pixelDataSize);
+    }
+    catch (IEX_NAMESPACE::BaseExc &e)
+    {
+        REPLACE_EXC (e, "Error reading pixel data from image "
+                     "file \"" << fileName() << "\". " << e);
+        throw;
+    }
+}
+
 
 
 void

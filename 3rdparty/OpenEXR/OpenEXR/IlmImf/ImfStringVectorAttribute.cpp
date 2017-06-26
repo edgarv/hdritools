@@ -65,7 +65,7 @@ StringVectorAttribute::writeValueTo (OPENEXR_IMF_INTERNAL_NAMESPACE::OStream &os
     {
         int strSize = _value[i].size();
         Xdr::write <StreamIO> (os, strSize);
-        Xdr::write <StreamIO> (os, &_value[i][0], strSize);
+	Xdr::write <StreamIO> (os, &_value[i][0], strSize);
     }
 }
 

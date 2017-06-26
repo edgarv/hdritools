@@ -948,7 +948,7 @@ DwaCompressor::LossyDctDecoderBase::execute ()
                 }
                 else
                 {
-                    #if IMF_HAVE_SSE2
+                    #ifdef IMF_HAVE_SSE2
 
                         __m128i *dst = (__m128i*)&rowBlock[comp][blockx*64];
 
@@ -1932,7 +1932,7 @@ DwaCompressor::compress
     if (outBufferSize > _outBufferSize) 
     {
         _outBufferSize = outBufferSize;
-        if (_outBuffer == 0)
+        if (_outBuffer != 0)
             delete[] _outBuffer;       
         _outBuffer = new char[outBufferSize];
     }

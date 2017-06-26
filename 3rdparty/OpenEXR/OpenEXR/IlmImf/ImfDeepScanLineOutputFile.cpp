@@ -60,11 +60,10 @@
 #include "IlmThreadSemaphore.h"
 #include "IlmThreadMutex.h"
 #include "Iex.h"
-#include <algorithm>
 #include <string>
 #include <vector>
 #include <fstream>
-#include <cassert>
+#include <assert.h>
 #include <algorithm>
 
 #include "ImfNamespace.h"
