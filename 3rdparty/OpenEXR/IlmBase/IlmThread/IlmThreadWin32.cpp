@@ -57,6 +57,12 @@
 #include <iostream>
 #include <cassert>
 
+// Verify our local declaration for type for Thread::_thread
+#if _MSC_VER >= 1700
+#include <type_traits>
+static_assert(std::is_same<::HANDLE, void*>::value, "Wrong HANDLE fwd decl");
+#endif
+
 ILMTHREAD_INTERNAL_NAMESPACE_SOURCE_ENTER
 
 

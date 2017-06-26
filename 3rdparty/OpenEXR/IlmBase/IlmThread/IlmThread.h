@@ -126,8 +126,13 @@ class ILMTHREAD_EXPORT Thread
 	pthread_t _thread;
     #endif
 
+#if __cplusplus >= 201103L || _MSC_VER >= 1900
+    void operator = (const Thread& t) = delete;
+    Thread (const Thread& t) = delete;
+#else
     void operator = (const Thread& t);	// not implemented
     Thread (const Thread& t);		// not implemented
+#endif
 };
 
 
