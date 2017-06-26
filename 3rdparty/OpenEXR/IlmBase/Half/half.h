@@ -88,7 +88,7 @@
 #include "halfExport.h"    // for definition of HALF_EXPORT
 #include <iostream>
 
-class HALF_EXPORT half
+class half
 {
   public:
 
@@ -197,8 +197,8 @@ class HALF_EXPORT half
     // Access to the internal representation
     //--------------------------------------
 
-    unsigned short	bits () const;
-    void		setBits (unsigned short bits);
+    HALF_EXPORT unsigned short	bits () const;
+    HALF_EXPORT void		setBits (unsigned short bits);
 
 
   public:
@@ -211,13 +211,13 @@ class HALF_EXPORT half
 
   private:
 
-    static short                  convert (int i);
-    static float                  overflow ();
+    HALF_EXPORT static short                  convert (int i);
+    HALF_EXPORT static float                  overflow ();
 
-    unsigned short                _h;
+    unsigned short                            _h;
 
-    static const uif              _toFloat[];
-    static const unsigned short   _eLut[];
+    HALF_EXPORT static const uif              _toFloat[1 << 16];
+    HALF_EXPORT static const unsigned short   _eLut[1 << 9];
 };
 
 
@@ -459,7 +459,7 @@ half::half (float f)
 	// to do the float-to-half conversion.
 	//
 
-	register int e = (x.i >> 23) & 0x000001ff;
+	int e = (x.i >> 23) & 0x000001ff;
 
 	e = _eLut[e];
 
@@ -470,7 +470,7 @@ half::half (float f)
 	    // bits and combine it with the sign and exponent.
 	    //
 
-	    register int m = x.i & 0x007fffff;
+	    int m = x.i & 0x007fffff;
 	    _h = e + ((m + 0x00000fff + ((m >> 13) & 1)) >> 13);
 	}
 	else
