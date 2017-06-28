@@ -36,10 +36,10 @@
 // for Imf::DwaCompressor
 //
 
+#include <cmath>
 #include <cstddef>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 
 #include <OpenEXRConfig.h>
