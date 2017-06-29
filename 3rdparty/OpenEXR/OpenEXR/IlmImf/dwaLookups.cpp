@@ -515,7 +515,7 @@ generateLutHeader()
             if (offsetIdx % 8 == 0) {
                 printf("    ");
             }
-            printf("%6lu, ", workers[i]->offset()[value] + offsetPrev);
+            printf("%6lu, ", (unsigned long)(workers[i]->offset()[value] + offsetPrev));
             if (offsetIdx % 8 == 7) {
                 printf("\n");
             }
