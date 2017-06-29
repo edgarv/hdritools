@@ -77,11 +77,10 @@ if(NOT WIN32)
 endif()
 
 
-# Helper function to add tests. When using the Visual Studio generators with
-# CMake 2.8 it will wrap the test in a batch file so that tests may be launched
-# from within the IDE
+# Helper function to add tests. On Windows, due to the lack of RPATH,
+# it will wrap the test in a batch file so that tests may be run from the IDE
 function(add_ImageIO_test testname Exename)  
-  if (NOT MSVC_IDE OR ${CMAKE_VERSION} VERSION_LESS "2.8")
+  if (NOT WIN32)
     add_test("${testname}" "${Exename}" ${ARGN})
     return()
   endif()

@@ -347,17 +347,7 @@ macro(ADD_OPENEXR_LIBRARY targetname publicheaders_var sources_var description
     DEBUG_POSTFIX "d"
   )
   set_property(GLOBAL APPEND PROPERTY OPENEXR_LIBRARY_TARGETS "${targetname}")
-  
-  # If built as a static library in gcc we need to add the fpic flag, so that the code will work when linked into a shared lib
-  # TODO Remove legacy CMake code when changing the baseline version
-  if (NOT CMAKE_VERSION VERSION_LESS 2.8.11 AND OPENEXR_LIBTYPE STREQUAL "STATIC")
-    set_target_properties(${targetname} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  else()
-    if(OPENEXR_LIBTYPE STREQUAL "STATIC" AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
-      # TODO Use the position-independent target property
-      set_target_properties(${targetname} PROPERTIES COMPILE_FLAGS "-fpic")
-    endif()
-  endif()
+  set_target_properties(${targetname} PROPERTIES POSITION_INDEPENDENT_CODE ON)
   
   # For MSVC static libraries, modify the name so that the shared and static
   # library files may coexists

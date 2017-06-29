@@ -125,16 +125,9 @@ if(WIN32 OR APPLE)
 endif()
 
 # Remove the debug output in the release versions
-if (NOT DEFINED CMAKE_VERSION OR CMAKE_VERSION VERSION_LESS 2.8.12)
-  set_target_properties(qt4Image PROPERTIES
-    COMPILE_DEFINITIONS_RELWITHDEBINFO "QT_NO_DEBUG;QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT"
-    COMPILE_DEFINITIONS_RELEASE        "QT_NO_DEBUG;QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT"
-  )
-else()
-  target_compile_definitions(qt4Image PRIVATE
-    $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG;QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT>
-  )
-endif()
+target_compile_definitions(qt4Image PRIVATE
+  $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG;QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT>
+)
 
 # Add the image plugins with the fancy macro
 QT_ADD_IMG_PLUGINS( qt4Image )
@@ -146,8 +139,8 @@ if(APPLE AND QT4IMAGE_BUNDLE)
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${HDRITOOLS_VERSION})
   set(MACOSX_BUNDLE_BUNDLE_VERSION ${HDRITOOLS_MACLS_VERSION})
   configure_file(res/Info.plist.in "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
-    set_target_properties(qt4Image PROPERTIES
-	  MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+  set_target_properties(qt4Image PROPERTIES
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
 endif()
 
 
@@ -178,7 +171,7 @@ if(QT4IMAGE_REG_FILES)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/InstallVista.reg.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/InstallVista.reg
-	ESCAPE_QUOTES
+    ESCAPE_QUOTES
   )
   
   install(FILES
@@ -190,7 +183,7 @@ if(QT4IMAGE_REG_FILES)
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes-Photoshop.reg
     DESTINATION win32
     COMPONENT "qt4image"
-	)
+  )
 endif()
 
 
@@ -223,20 +216,20 @@ if(EXISTS "${QT_PLUGINS_DIR}/imageformats" AND NOT(QT_CONFIG MATCHES "static"))
     install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
       DESTINATION ${plugin_dest_dir}/plugins
       COMPONENT "qt4image"
-	  REGEX "svg|mng|gif" EXCLUDE)
+      REGEX "svg|mng|gif" EXCLUDE)
   else()
     # There are different plugins for release and debug
-	install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
+    install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
       DESTINATION ${plugin_dest_dir}/plugins
       COMPONENT "qt4image" CONFIGURATIONS Debug
-	  REGEX ".+d4\\.dll$"
-	  REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
-	
-	install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
+      REGEX ".+d4\\.dll$"
+      REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
+    
+    install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
       DESTINATION ${plugin_dest_dir}/plugins
       COMPONENT "qt4image" CONFIGURATIONS Release MinSizeRel RelWithDebInfo
-	  REGEX ".+d4\\.dll$" EXCLUDE
-	  REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
+      REGEX ".+d4\\.dll$" EXCLUDE
+      REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
   endif()
   
 endif()
@@ -341,7 +334,7 @@ if(APPLE OR WIN32)
     if(NOT overriden)
       if(item MATCHES \"[^/]+\\\\.framework/\")
         set(path \"@executable_path/../Frameworks\")
-	    set(overriden TRUE)
+        set(overriden TRUE)
       endif()
     endif()
 

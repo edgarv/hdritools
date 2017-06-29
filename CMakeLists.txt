@@ -16,16 +16,12 @@
 project(HDRImageTools)
 
 
-cmake_minimum_required(VERSION 2.6.4)
+cmake_minimum_required(VERSION 2.8.12)
 enable_testing()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-# Also add the compatibility modules for CMake < 2.8.3
-if(CMAKE_VERSION VERSION_LESS "2.8.3")
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat")
-endif()
 
 # Prefer new behavior for visibility when using CMake >= 3.3
 if (POLICY CMP0063)

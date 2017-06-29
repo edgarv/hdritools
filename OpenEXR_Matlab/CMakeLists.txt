@@ -186,10 +186,8 @@ install(FILES exrread.m exrwrite.m exrinfo.m exrreadchannels.m exrwritechannels.
   )
   
 
-if(NOT CMAKE_VERSION VERSION_LESS "2.8")
-  option("BUILD_OPENEXR_MATLAB_TEST"
-    "Add test cases for the Matlab OpenEXR MEX modules." OFF)
-  if(BUILD_OPENEXR_MATLAB_TEST)
-    add_subdirectory(test)
-  endif()
+option("BUILD_OPENEXR_MATLAB_TEST"
+  "Add test cases for the Matlab OpenEXR MEX modules." OFF)
+if(BUILD_OPENEXR_MATLAB_TEST)
+  add_subdirectory(test)
 endif()

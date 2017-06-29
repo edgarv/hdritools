@@ -166,27 +166,6 @@ if(NOT JNI_INCLUDE_DIRS)
   message(FATAL_ERROR "Could NOT find JNI (missing header files)")
 endif()
 
-# JAVA_RUNTIME, JAVA_COMPILE, JAVA_ARCHIVE were deprecated in CMake 2.8.1
-if(JAVA_RUNTIME AND NOT Java_JAVA_EXECUTABLE)
-  set(Java_JAVA_EXECUTABLE "${JAVA_RUNTIME}")
-endif()
-if(JAVA_COMPILE AND NOT Java_JAVAC_EXECUTABLE)
-  set(Java_JAVAC_EXECUTABLE "${JAVA_COMPILE}")
-endif()
-if(JAVA_ARCHIVE AND NOT Java_JAR_EXECUTABLE)
-  set(Java_JAR_EXECUTABLE "${JAVA_ARCHIVE}")
-endif()
-
-# Java_JAVAH_EXECUTABLE, Java_JAVADOC_EXECUTABLE were added in CMake 2.8.6
-if(CMAKE_VERSION VERSION_LESS "2.8.6")
-  get_filename_component(_JAVA_BIN_PATH "${Java_JAVAC_EXECUTABLE}" PATH)
-  find_program(Java_JAVAH_EXECUTABLE   javah
-    HINTS "${_JAVA_BIN_PATH}" NO_DEFAULT_PATH)
-  find_program(Java_JAVADOC_EXECUTABLE javadoc 
-    HINTS "${_JAVA_BIN_PATH}" NO_DEFAULT_PATH)
-  mark_as_advanced(Java_JAVAH_EXECUTABLE Java_JAVADOC_EXECUTABLE)
-endif()
-
 if(NOT Java_JAVAC_EXECUTABLE OR NOT Java_JAR_EXECUTABLE OR
    NOT Java_JAVAH_EXECUTABLE OR NOT Java_JAVADOC_EXECUTABLE)
   message(FATAL_ERROR "Not all of the Java components were found.")
