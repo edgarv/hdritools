@@ -8,12 +8,8 @@ if(APPLE OR WIN32)
 else()
   set(QT4IMAGE_BUNDLE_DEFAULT OFF)
 endif()
-if(NOT "${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_LESS "2.8")
-  set(HAS_BUNDLE_SUPPORT TRUE)
-endif()
-CMAKE_DEPENDENT_OPTION(QT4IMAGE_BUNDLE
-  "Automatically bundle all qt4image dependencies." ${QT4IMAGE_BUNDLE_DEFAULT}
-  "HAS_BUNDLE_SUPPORT" OFF)
+option(QT4IMAGE_BUNDLE
+  "Automatically bundle all qt4image dependencies." ${QT4IMAGE_BUNDLE_DEFAULT})
 
 # The general sources
 set(SRCS
@@ -119,7 +115,7 @@ add_executable(qt4Image ${EXECUTABLE_TYPE}
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
 HDRITOOLS_LTCG(qt4Image)
 target_link_libraries(qt4Image ImageIO ${QT_LIBRARIES})
-if(WIN32 OR APPLE)
+if(WIN32)
   set_target_properties(qt4Image PROPERTIES
     VERSION "${HDRITOOLS_VERSION}")
 endif()
@@ -231,7 +227,6 @@ if(EXISTS "${QT_PLUGINS_DIR}/imageformats" AND NOT(QT_CONFIG MATCHES "static"))
       REGEX ".+d4\\.dll$" EXCLUDE
       REGEX "svg|mng|gif|\\.pdb$|\\.lib$" EXCLUDE)
   endif()
-  
 endif()
 
 # The Cocoa version needs extra resources
@@ -253,7 +248,6 @@ install(CODE "
   " COMPONENT "qt4image")
 
 # Use BundleUtils to get all other dependencies to work. For Windows and Linux
-# CMake 2.8 is required
 
 # Directories to look for dependencies
 set(DIRS ${QT_LIBRARY_DIR})
@@ -313,7 +307,7 @@ if(APPLE OR WIN32)
     # By default, embed things right next to the main bundle executable:
     if(APPLE)
       set(path \"@executable_path/../../Contents/MacOS\")
-      elseif(WIN32)
+    elseif(WIN32)
       set(path \"@executable_path\")
     endif()
 
