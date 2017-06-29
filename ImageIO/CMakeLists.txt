@@ -122,7 +122,7 @@ set_target_properties(ImageIO PROPERTIES
 if(IMAGEIO_DEV_INSTALL)
   set_target_properties(ImageIO PROPERTIES
     PUBLIC_HEADER "${SRCS_PUBLIC}"
-	FRAMEWORK TRUE
+    FRAMEWORK TRUE
   )
 endif()
   
