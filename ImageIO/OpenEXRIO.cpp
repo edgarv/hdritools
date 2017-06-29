@@ -317,7 +317,7 @@ void LoadImpl(ImageCls& img, std::istream &is, int nThreads = 0)
             ReadImage(img, ycFile);
         }
     }
-    catch (Iex::BaseExc &e) {
+    catch (const Iex::BaseExc &e) {
         throw IOException(e);
     }
 }
@@ -339,7 +339,7 @@ void LoadImpl(ImageCls& img,  const char *filename, int nThreads = 0)
             ReadImage(img, ycFile);
         }
     }
-    catch (Iex::BaseExc &e) {
+    catch (const Iex::BaseExc &e) {
         throw IOException(e);
     }
 }
@@ -448,7 +448,7 @@ void SaveImpl(const ImgIterator begin, OStreamArgT &ostreamArg,
         file.setFrameBuffer(&halfPixels[0][0], 1, width);
         file.writePixels(height);
     }
-    catch (Iex::BaseExc &e) {
+    catch (const Iex::BaseExc &e) {
         throw IOException(e);
     }
 }

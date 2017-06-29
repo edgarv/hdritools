@@ -21,15 +21,9 @@
 
 #include <string>
 
-
-// Forward declarations
-namespace Imf {
-    class Header;
-    struct Rgba;
-
-    template<class T>
-    class Array2D;
-}
+#include <ImfRgba.h>
+#include <ImfHeader.h>
+#include <ImfArray.h>
 
 
 

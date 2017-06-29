@@ -22,38 +22,40 @@
 
 // Macro to save typing when subclassing the basic exception
 // based on the IexBaseExc.h macro
-#define PCG_DEFINE_EXC(name, base)				            \
-    class name: public base				                    \
-    {							                            \
-      public:                                               \
-	name (const char* text=0)      throw(): base (text) {}	\
-	name (const std::string &text) throw(): base (text) {}	\
-	virtual ~name() throw() {} \
+#define PCG_DEFINE_EXC(name, base)                      \
+    class name: public base                             \
+    {                                                   \
+      public:                                           \
+        name (const char* text=0)     : base (text) {}  \
+        name (const std::string &text): base (text) {}  \
+        name (const std::exception &e): base (e) {}     \
+        virtual ~name() throw() {} \
     };
 
 namespace pcg {
 
-	// Basic exception type
-	class Exception: public std::exception
-	{
-	  public:
-		Exception (const char* text=0) throw()     : message(text) {}
-		Exception (const std::string &text) throw(): message(text) {}
+    // Basic exception type
+    class Exception: public std::exception
+    {
+        public:
+            Exception (const char* text=0)     : message(text) {}
+            Exception (const std::string &text): message(text) {}
+            Exception (const std::exception& e): std::exception(e) {} 
 
-		virtual ~Exception() throw () {}
+            virtual ~Exception() throw () {}
 
-		virtual const char * what () const throw () {
-			return message.c_str();
-		}
+            virtual const char * what () const throw () {
+                    return message.c_str();
+            }
 
-	private:
-		std::string message;
-	};
+    private:
+            std::string message;
+    };
 
-	// Some specific exceptions
-	PCG_DEFINE_EXC(IllegalArgumentException, Exception)
-	PCG_DEFINE_EXC(IOException, Exception)
-	PCG_DEFINE_EXC(RuntimeException, Exception)
+    // Some specific exceptions
+    PCG_DEFINE_EXC(IllegalArgumentException, Exception)
+    PCG_DEFINE_EXC(IOException, Exception)
+    PCG_DEFINE_EXC(RuntimeException, Exception)
 
 }
 

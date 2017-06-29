@@ -27,6 +27,10 @@ if(CMAKE_VERSION VERSION_LESS "2.8.3")
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat")
 endif()
 
+# Prefer new behavior for visibility when using CMake >= 3.3
+if (POLICY CMP0063)
+  cmake_policy(SET CMP0063 NEW)
+endif()
 
 # Set the version-related variables
 include(HDRIToolsGetVersionInfo)

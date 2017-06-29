@@ -25,6 +25,7 @@
 #include <half.h>
 #include <ImfPixelType.h>
 #include <ImfCompression.h>
+#include <ImfAttribute.h>
 
 #include <mex.h>
 
@@ -33,13 +34,6 @@
 #include <utility>
 #include <cstring>
 #include <cassert>
-
-
-// Forward declaration
-namespace Imf
-{
-class Attribute;
-}
 
 
 // Utilities to convert from Matlab types to OpenEXR types
