@@ -125,11 +125,11 @@ TEST(AMaths, Pow)
         // Compare
         for (int k = 0; k != 8; ++k) {
 #if PCG_USE_AVX
-			// SSE and AVX have to generate the same values.
+            // SSE and AVX have to generate the same values.
             ASSERT_EQ(rAM.f32[k], rAM_AVX.f32[k]);
 # if !PCG_USE_AVX2
-			// Values might not be exactly the same due to FMA in AVX2
-			ASSERT_EQ(rCephes.f32[k], rCephes_AVX.f32[k]);
+            // Values might not be exactly the same due to FMA in AVX2
+            ASSERT_EQ(rCephes.f32[k], rCephes_AVX.f32[k]);
 # endif
 #endif
             // Error between amath and stdlib

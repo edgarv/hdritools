@@ -66,7 +66,7 @@ if(UNIX)
     # add the automatically determined parts of the RPATH
     # which point to directories outside the build tree to the install RPATH
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-	
+    
   else()
     # Use the default settings
     set(CMAKE_INSTALL_RPATH "")
@@ -184,7 +184,7 @@ if(NOT USE_SYSTEM_OPENEXR OR BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
   if(USE_SYSTEM_ZLIB)
     find_package(ZLIB REQUIRED)
-	get_filename_component(ZLIB_LIB_FILENAME "${ZLIB_LIBRARIES}" ABSOLUTE)
+    get_filename_component(ZLIB_LIB_FILENAME "${ZLIB_LIBRARIES}" ABSOLUTE)
   else()
     set(ZLIB_IS_INTERNAL TRUE)
     set(ZLIB_ZCONF_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/headers/")
@@ -235,7 +235,7 @@ if (WIN32)
     elseif(filename MATCHES ".+\\.[dD][lL][lL]$")
       set(RC_FILETYPE "VFT_DLL")
     endif()
-	
+    
     configure_file("${HDRITOOLS_RC_TEMPLATE}"
       "${CMAKE_CURRENT_BINARY_DIR}/res/${product_name}.rc")
     set(${out_variable}
@@ -254,9 +254,9 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   
   # ImageIO requires libpng
   option(USE_SYSTEM_PNG
-	"Use the system version of libpng instead of the bundled one."
-	${USE_SYSTEM_LIBS_DEFAULT})
-	
+    "Use the system version of libpng instead of the bundled one."
+    ${USE_SYSTEM_LIBS_DEFAULT})
+    
   if(USE_SYSTEM_PNG)
     find_package(PNG REQUIRED)
   else()
