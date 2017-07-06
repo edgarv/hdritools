@@ -107,9 +107,6 @@ if(APPLE AND QT4IMAGE_BUNDLE)
 endif()
 
 
-# Load the QT configuration
-include(${QT_USE_FILE})
-
 # Creates the executable with all the stuff
 add_executable(qt4Image ${EXECUTABLE_TYPE} 
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})

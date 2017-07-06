@@ -246,7 +246,28 @@ endif()
   
 # Both the batch renderer and qt4Image depend on qt4
 if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
-  find_package(Qt4 REQUIRED)
+  # Transitional approach from the CMake GUI: try to use Qt5,
+  # if it is not found keep using Qt4. See also:
+  # https://github.com/Kitware/CMake/blob/22d0a83a/Source/QtDialog/CMakeLists.txt
+  find_package(Qt5 COMPONENTS Core Widgets)
+  if (Qt5_FOUND)
+    # Backwards compatibility macros
+    macro(qt4_wrap_ui)
+      qt5_wrap_ui(${ARGN})
+    endmacro()
+    macro(qt4_wrap_cpp)
+      qt5_wrap_cpp(${ARGN})
+    endmacro()
+    macro(qt4_add_resources)
+      qt5_add_resources(${ARGN})
+    endmacro()
+    # Imported targets, they have all the needed details
+    set(QT_LIBRARIES Qt5::Core Qt5::Widgets)
+  else()
+    message(STATUS "Qt5 was not found, trying with Qt4...")
+    find_package(Qt4 REQUIRED)
+    include(${QT_USE_FILE})
+  endif()
   include(QtAddImgPlugins)
   
   # ImageIO depends on TBB

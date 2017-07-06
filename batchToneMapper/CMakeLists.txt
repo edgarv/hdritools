@@ -35,9 +35,6 @@ if (WIN32)
   list(APPEND SRCS "${RCFILE}")
 endif()
   
-# Load the QT configuration
-include(${QT_USE_FILE})
-  
 add_executable(batchToneMapper ${SRCS})
 HDRITOOLS_LTCG(batchToneMapper)
 target_link_libraries(batchToneMapper ImageIO zipfile ${QT_LIBRARIES})

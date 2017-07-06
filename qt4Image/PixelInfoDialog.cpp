@@ -18,7 +18,11 @@
 #include "PixelInfoDialog.h"
 
 // Includes everything that we might need
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 
 PixelInfoDialog::PixelInfoDialog(const ImageDataProvider &imgDataProvider, QWidget *parent) : 
     QDialog(parent, Qt::Tool), dataProvider(imgDataProvider), lastQuery(-1,-1)

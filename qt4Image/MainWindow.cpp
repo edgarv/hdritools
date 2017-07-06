@@ -25,7 +25,11 @@
 
 // This is the easiest way to solve the includes, altough it must be defining much
 // more stuff than it's actually needed
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include <QSysInfo>
 
 #include "DoubleSpinSliderConnect.h"
