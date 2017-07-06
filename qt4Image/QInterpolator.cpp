@@ -24,6 +24,8 @@
 
 #include <limits>
 
+typedef std::numeric_limits<double> double_limits;
+
 
 QInterpolator::QInterpolator(double minimum, double midpoint, double maximum,
                              QAbstractSlider *slider, QLineEdit *edit,
@@ -225,9 +227,6 @@ namespace
 class LogLinearFunctor
 {
 public:
-#ifndef QT_NO_DEBUG
-    typedef std::numeric_limits<double> double_limits;
-
     LogLinearFunctor() :
     m_slope(double_limits::signaling_NaN()),
     m_offset(double_limits::signaling_NaN()),
@@ -239,19 +238,16 @@ public:
     m_sliderMax(double_limits::signaling_NaN()),
     m_valid(false)
     {}
-#endif
 
     void update(double vMin, double vMax, double sliderMin, double sliderMax)
     {
         Q_ASSERT(0.0<vMin && vMin<vMax && vMax<double_limits::infinity());
         Q_ASSERT(sliderMin<sliderMax && sliderMax<double_limits::infinity());
-#ifndef QT_NO_DEBUG
         m_vMin = vMin;
         m_vMax = vMax;
         m_sliderMin = sliderMin;
         m_sliderMax = sliderMax;
         m_valid = true;
-#endif
         const double valMax = log(vMax);
         const double valMin = log(vMin);
 
@@ -266,9 +262,7 @@ public:
     }
 
     inline void invalidate()  {
-#ifndef QT_NO_DEBUG
         m_valid = false;
-#endif
     }
 
     inline double toValue(double slider) const {
@@ -298,13 +292,11 @@ private:
     double m_offset;
     double m_invSlope;
     double m_invOffset;
-#ifndef QT_NO_DEBUG
     double m_vMin;
     double m_vMax;
     double m_sliderMin;
     double m_sliderMax;
     double m_valid;
-#endif
 };
 
 
