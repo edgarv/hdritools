@@ -106,6 +106,13 @@ if (WIN32)
     "pcgImageIO" "pcgImageIO.dll")
   list(APPEND SRCS "${RCFILE}")
 endif()
+
+# Older versions of gcc do not distinguish between overrides of __m128 and __256
+if (USE_AVX AND CMAKE_COMPILER_IS_GNUCXX AND 
+    CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0.0)
+  set_source_files_properties(ToneMapperSoA.cpp
+    PROPERTIES COMPILE_FLAGS -fabi-version=4)
+endif()
   
 add_library(ImageIO SHARED ${SRCS})
 HDRITOOLS_LTCG(ImageIO)

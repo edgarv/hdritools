@@ -56,6 +56,13 @@ set(SRCS
   dSFMT/RandomMT.h dSFMT/RandomMT.cpp
   dSFMT/dSFMT.c dSFMT/dSFMT.h dSFMT/dSFMT-params.h dSFMT/dSFMT-params19937.h
   )
+
+# Older versions of gcc do not distinguish between overrides of __m128 and __256
+if (USE_AVX AND CMAKE_COMPILER_IS_GNUCXX AND 
+    CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0.0)
+  set_source_files_properties(Amaths_test.cpp
+    PROPERTIES COMPILE_FLAGS -fabi-version=4)
+endif()
   
 # Group the MT stuff
 source_group(dSFMT REGULAR_EXPRESSION "dSFMT.+")
