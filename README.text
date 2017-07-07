@@ -1,13 +1,13 @@
 PCG HDRITools
 =============
 
-HDR Image Tools 0.4.0
+HDR Image Tools 0.5.0
 ---------------------
 (C) 2008-2014
 [Program of Computer Graphics](http://www.graphics.cornell.edu),
-[Cornell University](http://www.cornell.edu).
+[Cornell University](http://www.cornell.edu).  
 (C) 2014-2017
-Edgar Velázquez-Armendáriz
+Edgar Velázquez-Armendáriz  
 Distributed under the OSI-approved [MIT License](http://opensource.org/licenses/MIT).
 
 Primary author: [Edgar Velázquez-Armendáriz](http://www.cs.cornell.edu/~eva5/) -
@@ -65,7 +65,7 @@ back in 1998.
 Required external components
 ----------------------------
 
-- [CMake](http://www.cmake.org) >=2.6 - to create the build files. 
+- [CMake](http://www.cmake.org) >=2.8.12 - to create the build files. 
 - [Threading Building Blocks](http://www.threadingbuildingblocks.org) >= 2.2 -
   used for the parallelization. 
 - [Qt](http://qt.nokia.com) >= 4.4 - for batchToneMapper and qt4Image.
