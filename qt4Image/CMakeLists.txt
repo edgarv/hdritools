@@ -131,6 +131,13 @@ if(APPLE AND QT4IMAGE_BUNDLE)
   set(MACOSX_BUNDLE_EXECUTABLE_NAME "qt4Image")
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${HDRITOOLS_VERSION})
   set(MACOSX_BUNDLE_BUNDLE_VERSION ${HDRITOOLS_MACLS_VERSION})
+  if (TARGET Qt5::Widgets)
+    set(MACOSX_HIDPI_AWARE "\
+\t<key>NSPrincipalClass</key>
+\t<string>NSApplication</string>
+\t<key>NSHighResolutionCapable</key>
+\t<true/>\n")
+  endif()
   configure_file(res/Info.plist.in "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
   set_target_properties(qt4Image PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
