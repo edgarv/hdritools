@@ -318,7 +318,7 @@ void LoadImpl(ImageCls& img, std::istream &is, int nThreads = 0)
         }
     }
     catch (const Iex::BaseExc &e) {
-        throw IOException(e);
+        throw IOException(static_cast<const std::exception&>(e));
     }
 }
 
@@ -340,7 +340,7 @@ void LoadImpl(ImageCls& img,  const char *filename, int nThreads = 0)
         }
     }
     catch (const Iex::BaseExc &e) {
-        throw IOException(e);
+        throw IOException(static_cast<const std::exception&>(e));
     }
 }
 
@@ -449,7 +449,7 @@ void SaveImpl(const ImgIterator begin, OStreamArgT &ostreamArg,
         file.writePixels(height);
     }
     catch (const Iex::BaseExc &e) {
-        throw IOException(e);
+        throw IOException(static_cast<const std::exception&>(e));
     }
 }
 
