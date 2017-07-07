@@ -249,7 +249,7 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   # Transitional approach from the CMake GUI: try to use Qt5,
   # if it is not found keep using Qt4. See also:
   # https://github.com/Kitware/CMake/blob/22d0a83a/Source/QtDialog/CMakeLists.txt
-  find_package(Qt5 COMPONENTS Core Widgets)
+  find_package(Qt5 COMPONENTS Core Widgets QUIET)
   if (Qt5_FOUND)
     # Backwards compatibility macros
     macro(qt4_wrap_ui)
