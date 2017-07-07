@@ -248,7 +248,13 @@ endif()
 if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
   find_package(Qt4 REQUIRED)
   include(QtAddImgPlugins)
-  
+endif()
+
+# Allow to build ImageIO even if not required by anything else
+CMAKE_DEPENDENT_OPTION(BUILD_IMAGEIO "Build the ImageIO library" OFF
+  "NOT BUILD_BATCH_TONEMAPPER;NOT BUILD_QT4IMAGE;NOT BUILD_UTILS" ON)
+if (BUILD_IMAGEIO)
+
   # ImageIO depends on TBB
   find_package(TBB 2.0 REQUIRED)
   
