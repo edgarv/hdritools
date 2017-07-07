@@ -297,7 +297,12 @@ protected:
 
         // Compare all the pixels
         for (int i = 0; i < numPixels; ++i) {
+            // FMA might generate slighly diferent results
+#if !PCG_USE_AVX2
             ASSERT_RGBA32F_EQ (reference[i], result[i]);
+#else
+            ASSERT_RGBA32F_CLOSE (reference[i], result[i]);
+#endif
         }
 
         // Test the SoA version
@@ -312,7 +317,7 @@ protected:
 
                 const pcg::Rgba32F &expected = result[idx];
                 const pcg::Rgba32F actual    = destSoA[idxSoA];
-                ASSSERT_RGBA32F_CLOSE (expected, actual);
+                ASSERT_RGBA32F_CLOSE (expected, actual);
             }
         }
     }

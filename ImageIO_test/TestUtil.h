@@ -109,7 +109,7 @@ private:
 #define ASSERT_RGBA32F_EQ(expected, result) \
     ASSERT_PRED2 (pcg::TestEquals, expected, result)
 
-#define ASSSERT_RGBA32F_CLOSE(expected, result) \
+#define ASSERT_RGBA32F_CLOSE(expected, result) \
     EXPECT_PRED2 (pcg::TestClose, expected, result)
 
 #endif // PCG_TESTUTIL_H
