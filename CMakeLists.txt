@@ -175,9 +175,11 @@ endif()
 
 
 # Option and helper macro to enable global optimization on targets.
-# As of CMake 2.8.4 this seems to work only on the command line Intel compiler
+# As of CMake 2.8.4 this seems to work only on the command line Intel compiler.
+# CMake 3.9 introduced support for (at least) gcc, however the configuration will
+# fail if CMake does not know how to enable LTCG for the current toolchain
 option(USE_INTERPROCEDURAL_OPTIMIZATION
-  "Enable global optimization/LTCG on Release builds." ON)
+  "Enable global optimization/LTCG on Release builds." OFF)
 macro(HDRITOOLS_LTCG targetname)
   set_target_properties(${targetname} PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE ${USE_INTERPROCEDURAL_OPTIMIZATION})
