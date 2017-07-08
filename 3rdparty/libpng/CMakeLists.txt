@@ -63,7 +63,7 @@ else()
   option(PNG_STATIC "Build static lib" ON)
 endif()
 else() # NOT PNG_IS_INTERNAL
-  option(PNG_SHARED_LIB "Build shared lib" ${USE_SYSTEM_LIBS_DEFAULT})
+  option(PNG_SHARED_LIB "Build shared lib" OFF)
   set(PNG_SHARED ${PNG_SHARED_LIB})
   set(PNG_STATIC (NOT ${PNG_SHARED_LIB}))
 endif()# NOT PNG_IS_INTERNAL

@@ -41,16 +41,22 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/headers")
 
 # Options on how to use zlib and openexr
 if(WIN32)
-  set(USE_SYSTEM_LIBS_DEFAULT OFF)
+  set(USE_SYSTEM_ZLIB_DEFAULT OFF)
+  set(USE_SYSTEM_OPENEXR_DEFAULT OFF)
 else()
-  set(USE_SYSTEM_LIBS_DEFAULT ON)
+  set(USE_SYSTEM_ZLIB_DEFAULT ON)
+  if (APPLE)
+    set(USE_SYSTEM_OPENEXR_DEFAULT OFF)
+  else()
+    set(USE_SYSTEM_OPENEXR_DEFAULT ON)
+  endif()
 endif()
 option(USE_SYSTEM_ZLIB
   "Use the system version of zlib instead of the bundled one."
-  ${USE_SYSTEM_LIBS_DEFAULT})
+  ${USE_SYSTEM_ZLIB_DEFAULT})
 option(USE_SYSTEM_OPENEXR
   "Use the system version of OpenEXR instead of the bundled one."
-  ${USE_SYSTEM_LIBS_DEFAULT})
+  ${USE_SYSTEM_OPENEXR_DEFAULT})
 
 # For UNIX-flavored systems, options for the RPATH
 if(UNIX)
@@ -259,9 +265,14 @@ if (BUILD_IMAGEIO)
   find_package(TBB 2.0 REQUIRED)
   
   # ImageIO requires libpng
+  if (WIN32 OR APPLE)
+    set(USE_SYSTEM_PNG_DEFAULT OFF)
+  else()
+    set(USE_SYSTEM_PNG_DEFAULT ON)
+  endif()
   option(USE_SYSTEM_PNG
     "Use the system version of libpng instead of the bundled one."
-    ${USE_SYSTEM_LIBS_DEFAULT})
+    ${USE_SYSTEM_PNG_DEFAULT})
     
   if(USE_SYSTEM_PNG)
     find_package(PNG REQUIRED)
