@@ -85,20 +85,7 @@ macro(HDRITOOLS_GET_VERSION_INFO)
   endif()
 
   if (NOT HDRITOOLS_DATE)
-    # Windows' date command output depends on the regional settings
-    if (WIN32)
-      set(GETDATE_CMD "${CMAKE_CURRENT_SOURCE_DIR}/win32/getdate.exe")
-    else()
-      set(GETDATE_CMD "date")
-      set(GETDATE_ARGS "+'%Y.%m.%d'")    
-    endif()
-    execute_process(COMMAND "${GETDATE_CMD}" ${GETDATE_ARGS}
-      OUTPUT_VARIABLE HDRITOOLS_DATE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (NOT HDRITOOLS_DATE)
-      message(FATAL_ERROR "Unable to get a build date!")
-    endif()
+    string(TIMESTAMP HDRITOOLS_DATE "%Y.%m.%d")
   endif()
 
   if (HDRITOOLS_REV_ID)
