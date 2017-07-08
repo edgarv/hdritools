@@ -35,6 +35,7 @@
 #ifndef INCLUDED_IMF_COMPILER_SPECIFIC_H
 #define INCLUDED_IMF_COMPILER_SPECIFIC_H
 
+#include <IexThrowErrnoExc.h>
 #include <ImfNamespace.h>
 #include <ImfSimd.h>
 #include <stdlib.h>
@@ -63,8 +64,13 @@ static bool GLOBAL_SYSTEM_LITTLE_ENDIAN =
 static void* EXRAllocAligned(size_t size, size_t alignment)
 {
     void* ptr = 0;
-    posix_memalign(&ptr, alignment, size);
-    return ptr;
+    int ret = posix_memalign(&ptr, alignment, size);
+    if (ret == 0) {
+        return ptr;
+    } else {
+        ::IEX_NAMESPACE::throwErrnoExc("EXRAllocAligned error: %T", ret);
+        return (void*)0;  // Unreachable, avoid compiler warnings
+    }
 }
 
 
