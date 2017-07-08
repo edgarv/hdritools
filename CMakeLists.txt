@@ -252,7 +252,8 @@ endif()
   
 # Both the batch renderer and qt4Image depend on qt4
 if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
-  find_package(Qt4 REQUIRED)
+  set(QT_MIN_VERSION "4.5.0")
+  find_package(Qt4 REQUIRED QtCore QtGui)
   include(QtAddImgPlugins)
 endif()
 
