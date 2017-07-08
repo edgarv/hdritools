@@ -214,6 +214,7 @@ if(PNG_STATIC)
   if(PNG_IS_INTERNAL)
     set(PNG_LIBRARIES ${PNG_LIB_NAME_STATIC} PARENT_SCOPE)
     HDRITOOLS_LTCG(${PNG_LIB_NAME_STATIC})
+    set_target_properties(${PNG_LIB_NAME_STATIC} PROPERTIES POSITION_INDEPENDENT_CODE ON)
   endif()
   if(MSVC)
     # msvc does not append 'lib' - do it here to have consistent name
