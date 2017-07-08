@@ -16,11 +16,14 @@
 if(NOT OPENEXR_IS_INTERNAL)
   cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
   project(OpenEXR)
+  set(OPENEXR_SHARED_LIBS_DEFAULT ON)
+else()
+  set(OPENEXR_SHARED_LIBS_DEFAULT OFF)
 endif()
 
 
 option(OPENEXR_SHARED_LIBS
-  "Builds the different OpenEXR components as shared libraries." ON)
+  "Builds the different OpenEXR components as shared libraries." ${OPENEXR_SHARED_LIBS_DEFAULT})
   
 # TODO Find a better place for the platform defines
 if (NOT MSVC)

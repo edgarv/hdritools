@@ -41,16 +41,22 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/headers")
 
 # Options on how to use zlib and openexr
 if(WIN32)
-  set(USE_SYSTEM_LIBS_DEFAULT OFF)
+  set(USE_SYSTEM_ZLIB_DEFAULT OFF)
+  set(USE_SYSTEM_OPENEXR_DEFAULT OFF)
 else()
-  set(USE_SYSTEM_LIBS_DEFAULT ON)
+  set(USE_SYSTEM_ZLIB_DEFAULT ON)
+  if (APPLE)
+    set(USE_SYSTEM_OPENEXR_DEFAULT OFF)
+  else()
+    set(USE_SYSTEM_OPENEXR_DEFAULT ON)
+  endif()
 endif()
 option(USE_SYSTEM_ZLIB
   "Use the system version of zlib instead of the bundled one."
-  ${USE_SYSTEM_LIBS_DEFAULT})
+  ${USE_SYSTEM_ZLIB_DEFAULT})
 option(USE_SYSTEM_OPENEXR
   "Use the system version of OpenEXR instead of the bundled one."
-  ${USE_SYSTEM_LIBS_DEFAULT})
+  ${USE_SYSTEM_OPENEXR_DEFAULT})
 
 # For UNIX-flavored systems, options for the RPATH
 if(UNIX)
@@ -103,8 +109,10 @@ option(BUILD_UTILS
 
 # Check for the AVX intrinsics header
 include(CheckIncludeFile)
+include(CMakePushCheckState)
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
+include(CheckCSourceCompiles)
 CHECK_INCLUDE_FILE("immintrin.h" HAVE_IMMINTRIN_H)
 CMAKE_DEPENDENT_OPTION(USE_AVX "Compile using AVX instructions." OFF
   HAVE_IMMINTRIN_H OFF)
@@ -152,7 +160,6 @@ set (CMAKE_CXX_FLAGS "${SIMD_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 # For GCC 4.1+ we always want to use the source fortify options
 if(CMAKE_COMPILER_IS_GNUCXX)
-  include(CheckCSourceCompiles)
   CHECK_C_SOURCE_COMPILES("
 #define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #if GCC_VERSION < 401
@@ -168,10 +175,38 @@ int main(int argc, char **argv) { return 0; }
 endif()
 
 
+# On non-MSVC compilers remove unused shared libraries references
+if (NOT MSVC)
+  set(LINKER_FLAGS_AS_NEEDED "")
+  CMAKE_PUSH_CHECK_STATE(RESET)
+  set(WL_CHECK_SRC "int main(int argc, char **argv) { return 0; }")
+  set(CMAKE_REQUIRED_FLAGS "-Wl,--as-needed")
+  CHECK_C_SOURCE_COMPILES("${WL_CHECK_SRC}" HAS_WL_AS_NEEDED)
+  if (HAS_WL_AS_NEEDED)
+    set(LINKER_FLAGS_AS_NEEDED "-Wl,--as-needed")
+  else()
+    set(CMAKE_REQUIRED_FLAGS "-Wl,-dead_strip_dylibs")
+    CHECK_C_SOURCE_COMPILES("${WL_CHECK_SRC}" HAS_WL_DEAD_STRIP_DYLIBS)
+    if (HAS_WL_DEAD_STRIP_DYLIBS)
+      set(LINKER_FLAGS_AS_NEEDED "-Wl,-dead_strip_dylibs")
+    endif()
+  endif()
+  CMAKE_POP_CHECK_STATE()
+
+  if (LINKER_FLAGS_AS_NEEDED)
+    set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS_AS_NEEDED}")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${LINKER_FLAGS_AS_NEEDED}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${LINKER_FLAGS_AS_NEEDED}")
+  endif()
+endif()
+
+
 # Option and helper macro to enable global optimization on targets.
-# As of CMake 2.8.4 this seems to work only on the command line Intel compiler
+# As of CMake 2.8.4 this seems to work only on the command line Intel compiler.
+# CMake 3.9 introduced support for (at least) gcc, however the configuration will
+# fail if CMake does not know how to enable LTCG for the current toolchain
 option(USE_INTERPROCEDURAL_OPTIMIZATION
-  "Enable global optimization/LTCG on Release builds." ON)
+  "Enable global optimization/LTCG on Release builds." OFF)
 macro(HDRITOOLS_LTCG targetname)
   set_target_properties(${targetname} PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION_RELEASE ${USE_INTERPROCEDURAL_OPTIMIZATION})
@@ -265,7 +300,8 @@ if(BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     set(QT_LIBRARIES Qt5::Core Qt5::Widgets)
   else()
     message(STATUS "Qt5 was not found, trying with Qt4...")
-    find_package(Qt4 REQUIRED)
+    set(QT_MIN_VERSION "4.5.0")
+    find_package(Qt4 REQUIRED QtCore QtGui)
     include(${QT_USE_FILE})
   endif()
   include(QtAddImgPlugins)
@@ -280,9 +316,14 @@ if (BUILD_IMAGEIO)
   find_package(TBB 2.0 REQUIRED)
   
   # ImageIO requires libpng
+  if (WIN32 OR APPLE)
+    set(USE_SYSTEM_PNG_DEFAULT OFF)
+  else()
+    set(USE_SYSTEM_PNG_DEFAULT ON)
+  endif()
   option(USE_SYSTEM_PNG
     "Use the system version of libpng instead of the bundled one."
-    ${USE_SYSTEM_LIBS_DEFAULT})
+    ${USE_SYSTEM_PNG_DEFAULT})
     
   if(USE_SYSTEM_PNG)
     find_package(PNG REQUIRED)

@@ -117,13 +117,14 @@ endif()
 add_library(ImageIO SHARED ${SRCS})
 HDRITOOLS_LTCG(ImageIO)
 target_link_libraries(ImageIO ${TBB_LIBRARIES} ${OpenEXR_LIBRARIES} ${PNG_LIBRARIES})
-include_directories(${PNG_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${TBB_INCLUDE_DIR})
+target_include_directories(ImageIO SYSTEM PRIVATE ${PNG_INCLUDE_DIR} ${OpenEXR_INCLUDE_DIR} ${TBB_INCLUDE_DIR})
 
 set_target_properties(ImageIO PROPERTIES
-  OUTPUT_NAME "pcgImageIO"
-  DEBUG_POSTFIX "d"
-  VERSION "${HDRITOOLS_VERSION}"
-  SOVERSION "${HDRITOOLS_VERSION_MAJOR}.${HDRITOOLS_VERSION_MINOR}"
+  OUTPUT_NAME   pcgImageIO
+  DEFINE_SYMBOL IMAGEIO_EXPORTS
+  DEBUG_POSTFIX d
+  VERSION       ${HDRITOOLS_VERSION}
+  SOVERSION     ${HDRITOOLS_VERSION_MAJOR}.${HDRITOOLS_VERSION_MINOR}
 )
 
 if(IMAGEIO_DEV_INSTALL)
@@ -132,9 +133,6 @@ if(IMAGEIO_DEV_INSTALL)
     FRAMEWORK TRUE
   )
 endif()
-  
-# TODO This should be done only when building it as a shared library in Windows
-add_definitions(-DIMAGEIO_EXPORTS)
 
 # Per Appendix C of the TBB documentation, make windows.h not to define min/max
 if(WIN32)
