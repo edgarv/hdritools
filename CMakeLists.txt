@@ -109,8 +109,10 @@ option(BUILD_UTILS
 
 # Check for the AVX intrinsics header
 include(CheckIncludeFile)
+include(CMakePushCheckState)
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
+include(CheckCSourceCompiles)
 CHECK_INCLUDE_FILE("immintrin.h" HAVE_IMMINTRIN_H)
 CMAKE_DEPENDENT_OPTION(USE_AVX "Compile using AVX instructions." OFF
   HAVE_IMMINTRIN_H OFF)
@@ -158,7 +160,6 @@ set (CMAKE_CXX_FLAGS "${SIMD_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 # For GCC 4.1+ we always want to use the source fortify options
 if(CMAKE_COMPILER_IS_GNUCXX)
-  include(CheckCSourceCompiles)
   CHECK_C_SOURCE_COMPILES("
 #define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #if GCC_VERSION < 401
@@ -170,6 +171,32 @@ int main(int argc, char **argv) { return 0; }
 
   if(HAS_GCC41)
     add_definitions("-D_FORTIFY_SOURCE=2")
+  endif()
+endif()
+
+
+# On non-MSVC compilers remove unused shared libraries references
+if (NOT MSVC)
+  set(LINKER_FLAGS_AS_NEEDED "")
+  CMAKE_PUSH_CHECK_STATE(RESET)
+  set(WL_CHECK_SRC "int main(int argc, char **argv) { return 0; }")
+  set(CMAKE_REQUIRED_FLAGS "-Wl,--as-needed")
+  CHECK_C_SOURCE_COMPILES("${WL_CHECK_SRC}" HAS_WL_AS_NEEDED)
+  if (HAS_WL_AS_NEEDED)
+    set(LINKER_FLAGS_AS_NEEDED "-Wl,--as-needed")
+  else()
+    set(CMAKE_REQUIRED_FLAGS "-Wl,-dead_strip_dylibs")
+    CHECK_C_SOURCE_COMPILES("${WL_CHECK_SRC}" HAS_WL_DEAD_STRIP_DYLIBS)
+    if (HAS_WL_DEAD_STRIP_DYLIBS)
+      set(LINKER_FLAGS_AS_NEEDED "-Wl,-dead_strip_dylibs")
+    endif()
+  endif()
+  CMAKE_POP_CHECK_STATE()
+
+  if (LINKER_FLAGS_AS_NEEDED)
+    set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} ${LINKER_FLAGS_AS_NEEDED}")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${LINKER_FLAGS_AS_NEEDED}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${LINKER_FLAGS_AS_NEEDED}")
   endif()
 endif()
 
