@@ -153,16 +153,15 @@ include_directories("${PROJECT_SOURCE_DIR}/ImageIO")
 
 # Installs this
 install(TARGETS qt4Image
-  RUNTIME DESTINATION bin COMPONENT "qt4image"
-  LIBRARY DESTINATION lib COMPONENT "qt4image"
-  BUNDLE  DESTINATION .   COMPONENT "qt4image"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT "qt4image"
+  BUNDLE  DESTINATION "."                       COMPONENT "qt4image"
   )
 
 # For windows we also generate and install a .reg file to register the program 
 # with Vista's association mechanism.
 # This should be an option in the program, but for now this should do the trick
 CMAKE_DEPENDENT_OPTION(QT4IMAGE_REG_FILES
-  "Generate Windows registry files to associate file types with SDP." OFF
+  "Generate Windows registry files to associate file types with qt4Image." OFF
   "WIN32" OFF)
 if(QT4IMAGE_REG_FILES)
   set(QT4_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/bin/qt4Image.exe")
@@ -181,8 +180,8 @@ if(QT4IMAGE_REG_FILES)
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/Types-Photoshop.reg
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes.reg
     ${CMAKE_CURRENT_SOURCE_DIR}/win32/UninstallTypes-Photoshop.reg
-    DESTINATION win32
-    COMPONENT "qt4image"
+    DESTINATION "${HDRITOOLS_SHARE_DIR}/win32"
+    COMPONENT   "qt4image"
   )
 endif()
 

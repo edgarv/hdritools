@@ -83,10 +83,11 @@ endif()
 
 
 # Unix-style system should install additional components under "share"
+include(GNUInstallDirs)
 if (APPLE OR (WIN32 AND NOT CYGWIN))
   set(HDRITOOLS_SHARE_DIR ".")
 else()
-  set(HDRITOOLS_SHARE_DIR "share/hdritools")
+  set(HDRITOOLS_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/hdritools")
 endif()
 
   
