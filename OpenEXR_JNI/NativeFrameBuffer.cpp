@@ -137,7 +137,7 @@ Imf::Slice JVMData::getSlice(JNIEnv* env, jobject jslice) const
 
 
 // Actual instance of the JVM Data cache
-std::auto_ptr<JVMData> jvmData;
+std::unique_ptr<JVMData> jvmData;
 
 
 
