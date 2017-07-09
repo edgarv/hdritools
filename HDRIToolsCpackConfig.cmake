@@ -182,8 +182,25 @@ if (USE_SYSTEM_ZLIB)
   list(APPEND PACKAGE_DEB_REQUIRES_LIST "zlib1g (>= 1:1.2)")
 endif()
 if (BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
-  list(APPEND PACKAGE_RPM_REQUIRES_LIST "qt >= 4.5")
-  list(APPEND PACKAGE_DEB_REQUIRES_LIST "libqtcore4 (>= 4:4.5)" "libqtgui4 (>= 4:4.5)")
+  # Assume that we are still under the scope of find_package(Qt5)
+  if (TARGET Qt5::Core)
+    # New version, assumes qt >= 5.2 on Ubuntu. Based on the Ubuntu cmake-qt-gui package.
+    # We have conditional HiDPI code for Qt 5.6
+    if (Qt5_VERSION VERSION_LESS 5.6)
+      set(PACKAGE_MIN_QT_VERSION "5.2")
+    else()
+      set(PACKAGE_MIN_QT_VERSION "5.6")
+    endif()
+    list(APPEND PACKAGE_RPM_REQUIRES_LIST "qt >= ${PACKAGE_MIN_QT_VERSION}")
+    list(APPEND PACKAGE_DEB_REQUIRES_LIST
+      "libqt5core5a (>= ${PACKAGE_MIN_QT_VERSION})"
+      "libqt5gui5 (>= ${PACKAGE_MIN_QT_VERSION})"
+      "libqt5widgets5 (>= ${PACKAGE_MIN_QT_VERSION})")
+  else()
+    # Legacy, requiring qt 4.5
+    list(APPEND PACKAGE_RPM_REQUIRES_LIST "qt >= 4.5")
+    list(APPEND PACKAGE_DEB_REQUIRES_LIST "libqtcore4 (>= 4:4.5)" "libqtgui4 (>= 4:4.5)")
+  endif()
 endif()
 string(REGEX REPLACE ";" ", " CPACK_RPM_PACKAGE_REQUIRES
   "${PACKAGE_RPM_REQUIRES_LIST}")
