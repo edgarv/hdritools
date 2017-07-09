@@ -113,6 +113,12 @@ if (MSVC)
 endif()
 
 
+# Strip files by default, since we only intend to distribute release builds
+if (NOT DEFINED CPACK_STRIP_FILES)
+  set(CPACK_STRIP_FILES ON)
+endif()
+
+
 # Extra stuff for NSIS
 set(CPACK_NSIS_URL_INFO_ABOUT ${HDRITOOLS_URL})
 if (HDRITOOLS_64)
