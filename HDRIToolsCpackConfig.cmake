@@ -145,6 +145,34 @@ set(CPACK_DMG_FORMAT "UDBZ") # UDIF bzip2-compressed image (OS X 10.4+ only)
 # Additional variables for Debian packages
 set(CPACK_DEBIAN_PACKAGE_SECTION "graphics")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE ${HDRITOOLS_URL})
+set(CPACK_DEBIAN_COMPRESSION_TYPE "xz")
+if (CMAKE_CXX_SIZEOF_DATA_PTR EQUAL 8)
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+else()
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
+endif()
+# Debian also has particular rules about versioning. To make versioning easier,
+# both prereleases and tagged releases will include the commit date 
+# to impose a monotonic order, followed by the commit ID for identification.
+# See also: https://serverfault.com/a/604549  [July 2017]
+set(CPACK_DEBIAN_PACKAGE_VERSION ${HDRITOOLS_VERSION}~${HDRITOOLS_VERSION_BUILD})
+if (HDRITOOLS_HAS_VALID_REV)
+  set(CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_DEBIAN_PACKAGE_VERSION}+hg.${HDRITOOLS_REV_ID})
+endif()
+# Try to get the distro flavor
+if (UNIX AND NOT APPLE)
+  execute_process(COMMAND         lsb_release -r -i -s
+                  RESULT_VARIABLE HDRITOOLS_DEBIAN_RELEASE_RESULT
+                  OUTPUT_VARIABLE HDRITOOLS_DEBIAN_RELEASE
+                  ERROR_QUIET
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if ("${HDRITOOLS_DEBIAN_RELEASE_RESULT}" STREQUAL "0")
+    string(REPLACE "\n" "~" HDRITOOLS_DEBIAN_RELEASE "${HDRITOOLS_DEBIAN_RELEASE}")
+    string(TOLOWER "${HDRITOOLS_DEBIAN_RELEASE}" HDRITOOLS_DEBIAN_RELEASE)
+    # Zero since there no official Debian package, we consider the package distro-specific
+    set(CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_DEBIAN_PACKAGE_VERSION}-0${HDRITOOLS_DEBIAN_RELEASE})
+  endif()
+endif()
 
 
 # RPM has strict requisites about version strings. Also each different release
