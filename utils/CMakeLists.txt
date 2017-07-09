@@ -40,7 +40,7 @@ endif()
 if (APPLE AND BUILD_QT4IMAGE AND QT4IMAGE_BUNDLE)
   set (DESTINATION_DIR "qt4Image.app/Contents/MacOS")
 else()
-  set (DESTINATION_DIR "bin")
+  set (DESTINATION_DIR "${CMAKE_INSTALL_BINDIR}")
 endif()
 install(TARGETS exrcompress
   RUNTIME DESTINATION ${DESTINATION_DIR} COMPONENT "utils"
