@@ -14,6 +14,7 @@
 ============================================================================*/
 
 #include "QInterpolator.h"
+#include <QLocale>
 #include <QDebug>
 
 #if defined(__INTEL_COMPILER)
@@ -70,7 +71,7 @@ void QInterpolator::setValue(double value)
         bool textOk;
         const double textValue = m_edit->text().toDouble(&textOk);
         if (!textOk || !qFuzzyCompare(value, textValue)) {
-            QString text = QString::number(value);
+            QString text = locale.toString(value);
             int txtPos;
             QValidator::State state = m_validator.validate(text, txtPos);
             if (state != QValidator::Acceptable) {
@@ -282,8 +283,9 @@ public:
         
         const double y = log(value);
         double x = m_invSlope * y + m_invOffset;
-        Q_ASSERT(m_sliderMin <= x || qFuzzyCompare(m_sliderMin, x));
-        Q_ASSERT(m_sliderMax >= x || qFuzzyCompare(m_sliderMax, x));
+        Q_ASSERT(m_sliderMin <= x || qFuzzyCompare(m_sliderMin, x) || ((m_invSlope * log(m_vMin) + m_invOffset) <= value));
+        Q_ASSERT(m_sliderMax >= x || qFuzzyCompare(m_sliderMax, x) || ((m_invSlope * log(m_vMax) + m_invOffset) >= value));
+        x = qBound(m_sliderMin, x, m_sliderMax);
         return x;
     }
 

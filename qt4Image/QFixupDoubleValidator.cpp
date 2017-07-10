@@ -16,7 +16,10 @@
 #include "QFixupDoubleValidator.h"
 
 #include <QLineEdit>
+#include <QLocale>
 #include <QDebug>
+
+#include <math.h>
 
 
 // Disable the balloon code since it doesn't seem to work
@@ -63,7 +66,7 @@ void editShowBalloonTip(QObject *qobject,
     tip.pszTitle = (LPCWSTR) title.utf16();
     tip.ttiIcon  = TTI_WARNING;
 
-    const HWND editHWND = edit->winId();
+    const HWND editHWND = (HWND) edit->winId();
 
     ::SendMessage(editHWND, WM_COPY, 0, 0);
     qDebug() << "Copy message returned: " << GetLastError();
@@ -75,19 +78,28 @@ void editShowBalloonTip(QObject *qobject,
 }
 #endif // USE_BALLOONTIP
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+// Borrow the definition from the Windows 10 SDK, as available in MSVC 2015
+template <class T>
+inline bool isfinite(T x) throw() {
+    return ::fpclassify(x) <= 0;
+}
+#endif
+
 template <bool greaterThan>
-inline void createBoundary(QString &str, const double n)
+void createBoundary(QString &str, const double n, const QLocale& locale)
 {
     double delta = 1e-6 * n;
     bool isValid = false;
-    str.setNum(n);
-    double value = str.toDouble(&isValid);
+    str = locale.toString(n);
+    double value = locale.toDouble(str, &isValid);
     Q_ASSERT(isValid);
     while (greaterThan ? value > n : value < n) {
+        Q_ASSERT(isfinite(delta));
         value += greaterThan ? -delta : delta;
         delta *= 8.0;
-        str.setNum(value);
-        value = str.toDouble(&isValid);
+        str = locale.toString(value);
+        value = locale.toDouble(str, &isValid);
         Q_ASSERT(isValid);
     }
 }
@@ -99,8 +111,8 @@ QFixupDoubleValidator::QFixupDoubleValidator(double bottom, double top,
                                              int decimals, QObject * parent) :
 QDoubleValidator(bottom, top, decimals, parent)
 {
-    createBoundary</*LT*/false>(m_bottomFixup, bottom);
-    createBoundary</*GT*/true> (m_topFixup, top);
+    createBoundary</*LT*/false>(m_bottomFixup, bottom, m_locale);
+    createBoundary</*GT*/true> (m_topFixup,    top,    m_locale);
 }
 
 
@@ -109,8 +121,8 @@ void QFixupDoubleValidator::setRange(double minimum, double maximum,
                                      int decimals)
 {
     QDoubleValidator::setRange(minimum, maximum, decimals);
-    createBoundary</*LT*/false>(m_bottomFixup, minimum);
-    createBoundary</*GT*/true> (m_topFixup, maximum);
+    createBoundary</*LT*/false>(m_bottomFixup, minimum, m_locale);
+    createBoundary</*GT*/true> (m_topFixup,    maximum, m_locale);
 }
 
 
@@ -118,7 +130,7 @@ void QFixupDoubleValidator::setRange(double minimum, double maximum,
 void QFixupDoubleValidator::fixup (QString & input) const
 {
     bool isValid = false;
-    const double value = input.toDouble(&isValid);
+    const double value = m_locale.toDouble(input, &isValid);
     if (!isValid) {
         return;
     }

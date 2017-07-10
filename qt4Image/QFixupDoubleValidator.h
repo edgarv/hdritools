@@ -19,6 +19,7 @@
 #if !defined (PCG_QFIXUPDOUBLEVALIDATOR_H)
 
 #include <QDoubleValidator>
+#include <QLocale>
 
 class QFixupDoubleValidator : public QDoubleValidator
 {
@@ -38,6 +39,7 @@ public:
 private:
     QString m_bottomFixup;
     QString m_topFixup;
+    QLocale m_locale;
 };
 
 #endif // PCG_QFIXUPDOUBLEVALIDATOR_H

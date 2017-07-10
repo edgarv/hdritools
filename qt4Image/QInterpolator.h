@@ -19,6 +19,7 @@
 
 #include <QAbstractSlider>
 #include <QLineEdit>
+#include <QLocale>
 #include <QPointer>
 #include "QFixupDoubleValidator.h"
 
@@ -98,6 +99,7 @@ private:
     QPointer<QLineEdit> m_edit;
     QFixupDoubleValidator m_validator;
     double m_value;
+    QLocale locale;
 };
 
 
