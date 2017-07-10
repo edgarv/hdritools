@@ -107,9 +107,6 @@ if(APPLE AND QT4IMAGE_BUNDLE)
 endif()
 
 
-# Load the QT configuration
-include(${QT_USE_FILE})
-
 # Creates the executable with all the stuff
 add_executable(qt4Image ${EXECUTABLE_TYPE} 
   ${SRCS} ${MOC_SRCS} ${UI_FILES} ${UI_SRCS} ${QRC_SRCS})
@@ -134,6 +131,13 @@ if(APPLE AND QT4IMAGE_BUNDLE)
   set(MACOSX_BUNDLE_EXECUTABLE_NAME "qt4Image")
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${HDRITOOLS_VERSION})
   set(MACOSX_BUNDLE_BUNDLE_VERSION ${HDRITOOLS_MACLS_VERSION})
+  if (TARGET Qt5::Widgets)
+    set(MACOSX_HIDPI_AWARE "\
+\t<key>NSPrincipalClass</key>
+\t<string>NSApplication</string>
+\t<key>NSHighResolutionCapable</key>
+\t<true/>\n")
+  endif()
   configure_file(res/Info.plist.in "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
   set_target_properties(qt4Image PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
@@ -205,7 +209,7 @@ elseif(WIN32)
   set(APPS "\${CMAKE_INSTALL_PREFIX}/bin/qt4Image.exe")
 endif()
 
-# Install the needed Qt plugins
+# Install the needed Qt plugins (Qt only)
 if(EXISTS "${QT_PLUGINS_DIR}/imageformats" AND NOT(QT_CONFIG MATCHES "static"))
   if(NOT WIN32 OR NOT (QT_QTGUI_LIBRARY_RELEASE AND QT_QTGUI_LIBRARY_DEBUG))
     install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats"
@@ -228,7 +232,7 @@ if(EXISTS "${QT_PLUGINS_DIR}/imageformats" AND NOT(QT_CONFIG MATCHES "static"))
   endif()
 endif()
 
-# The Cocoa version needs extra resources
+# The Cocoa version needs extra resources (Qt4 only)
 set(QTCOCOA_MENU_NIB ${QT_QTGUI_LIBRARY}/Resources/qt_menu.nib)
 if(QT_MAC_USE_COCOA AND EXISTS "${QTCOCOA_MENU_NIB}")
 
@@ -239,6 +243,39 @@ if(QT_MAC_USE_COCOA AND EXISTS "${QTCOCOA_MENU_NIB}")
       \"${QTCOCOA_MENU_NIB}\" 
       \"\${CMAKE_INSTALL_PREFIX}/${qtconf_dest_dir}/qt_menu.nib\")
     " COMPONENT "qt4image")
+endif()
+
+# In Qt5 the plugins are imported targets
+set(qt5_imageformats_plugins_install "")
+foreach(plugin ${Qt5Gui_PLUGINS})
+  get_target_property(_loc ${plugin} LOCATION)
+  if ("${_loc}" MATCHES ".+/imageformats/.+")
+    string(TOLOWER ${plugin} _plugin_lower)
+    if (NOT _plugin_lower MATCHES "svg|mng|gif|icns|ico")
+      list(APPEND qt5_imageformats_plugins_install $<TARGET_FILE:${plugin}>)
+    endif()
+  endif()
+endforeach()
+unset(_loc)
+unset(_plugin_lower)
+install(FILES ${qt5_imageformats_plugins_install}
+  DESTINATION ${plugin_dest_dir}/plugins/imageformats
+  COMPONENT "qt4image"
+)
+
+# Qt5 Platform specific plugins
+if (APPLE OR WIN32)
+  if (APPLE)
+    set(qt5_platform_plugin "Qt5::QCocoaIntegrationPlugin")
+  else()
+    set(qt5_platform_plugin "Qt5::QWindowsIntegrationPlugin")
+  endif()
+  if (TARGET ${qt5_platform_plugin})
+    install(FILES 
+      $<TARGET_FILE:${qt5_platform_plugin}>
+      DESTINATION ${plugin_dest_dir}/plugins/platforms
+      COMPONENT "qt4image")
+  endif()
 endif()
 
 # Install a qt.conf file by running cmake code from the install script

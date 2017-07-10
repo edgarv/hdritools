@@ -23,7 +23,11 @@
 
 #include "HDRImageLabel.h"
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include <QtDebug>
 
 HDRImageLabel::HDRImageLabel(QWidget *parent, Qt::WindowFlags f) : QLabel(parent, f)

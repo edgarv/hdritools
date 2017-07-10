@@ -15,7 +15,6 @@
 
 #include <QApplication>
 
-//#include "MainWindow.h"
 #include "ImageApp.h"
 
 // Required when building with the static Qt
@@ -32,6 +31,12 @@ Q_IMPORT_PLUGIN(qtiff)
 
 int main(int argc, char *argv[])
 {
+#if QT_VERSION >= 0x050600
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+#if QT_VERSION >= 0x050000
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
     ImageApp app(argc, argv);
 
     // The application accepts for now one optional argument: the file to load
