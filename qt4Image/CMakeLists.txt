@@ -185,6 +185,20 @@ if(QT4IMAGE_REG_FILES)
   )
 endif()
 
+# On Linux install a .desktop file to get a "Start" menu entry with an icon
+# Based on the cmake-gui approach: https://github.com/Kitware/CMake/blob/master/Source/QtDialog/CMakeLists.txt
+if (UNIX AND NOT APPLE)
+  install(
+    FILES       "${CMAKE_CURRENT_SOURCE_DIR}/res/app-48x48.png"
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps"
+    RENAME      "Qt4Image.png"
+    COMPONENT   "qt4image")
+  install(
+    FILES       "${CMAKE_CURRENT_SOURCE_DIR}/res/edu.cornell.graphics.qt4Image.desktop"
+    DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications"
+    COMPONENT   "qt4image")
+endif()
+
 
 # Add set the file with extra CPack config for qt4Image
 set (QT4IMAGE_CPACK_CONFIG_FILE 

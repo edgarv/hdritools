@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Categories=Graphics
+Name=Qt4Image
+Comment=Qt4Image HDR image viewer
+TryExec=qt4Image
+Exec=qt4Image %f
+Icon=Qt4Image
+MimeType=image/x-exr;image/x-hdr;image/x-rgbe;image/x-portable-floatmap;
