@@ -50,7 +50,7 @@
 # define FORCEINLINE_BEG __forceinline
 # define FORCEINLINE_END 
 #else
-# define FORCEINLINE_BEG
+# define FORCEINLINE_BEG inline
 # define FORCEINLINE_END __attribute__((always_inline))
 #endif
 
