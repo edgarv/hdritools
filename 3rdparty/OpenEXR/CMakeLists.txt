@@ -3,10 +3,8 @@
 # awere that the library is being built for internal usage
 # only, so that it doesn't install everything.
 #
-# Assumes  that the variables set up by FindZlib are already configured by another entity,
-# like the top level directory, and also ZLIB_LIB_FILENAME must
-# contain the full path to the zlib import library when building
-# this as a Windows DLL.
+# Assumes  that the variables set up by FindZlib are already configured by
+# another entity, like the top level directory.
 # In this case it also defines:
 #  OpenEXR_INCLUDE_DIR
 #  OpenEXR_LIBRARIES
