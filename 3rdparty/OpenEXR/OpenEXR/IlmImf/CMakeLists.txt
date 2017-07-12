@@ -16,15 +16,18 @@ set(LUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lut")
 file(MAKE_DIRECTORY "${LUT_DIRECTORY}")
 include_directories("${LUT_DIRECTORY}")
 
-# TODO Use CMake 2.8.12 generator expressions instead
 # We set the working directory to the one containing the half dll (not an
 # issue with the static libs). On gcc there is no problem because CMake uses
 # the full rpath to dependent libraries during the build process.
-get_target_property(_halfLoc Half "LOCATION")
-get_filename_component(HALF_OUT_DIR "${_halfLoc}" PATH)
+# When using static libraries, or on platforms enabling build rpath,
+# this is unnecessary.
+if (WIN32)
+  set(b44ExpLogTable_COMMAND cd "$<TARGET_FILE_DIR:Half>" && "$<TARGET_FILE:b44ExpLogTable>")
+else()
+  set(b44ExpLogTable_COMMAND b44ExpLogTable)
+endif()
 add_custom_command(OUTPUT ${LUT_DIRECTORY}/b44ExpLogTable.h
-  COMMAND b44ExpLogTable > ${LUT_DIRECTORY}/b44ExpLogTable.h
-  WORKING_DIRECTORY "${HALF_OUT_DIR}"
+  COMMAND ${b44ExpLogTable_COMMAND} > ${LUT_DIRECTORY}/b44ExpLogTable.h
   COMMENT "Generating b44 Exp->Log LUT..."
   VERBATIM
 )
