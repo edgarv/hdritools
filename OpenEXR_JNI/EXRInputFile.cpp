@@ -24,6 +24,11 @@
 
 #include <ImfInputFile.h>
 #include <ImfVersion.h>
+#if defined(OPENEXR_IMF_INTERNAL_NAMESPACE)
+#define USE_OPENEXR_2 1
+#include <ImfGenericOutputFile.h>
+#endif
+
 
 #include <cassert>
 #include <memory>
@@ -37,6 +42,23 @@ struct EXRInputFileTO
     std::unique_ptr<Imf::IStream>   m_stream;
     std::unique_ptr<Imf::InputFile> m_inputFile;
 };
+
+
+
+#if USE_OPENEXR_2
+class DummyEXROutputFile : public OPENEXR_IMF_INTERNAL_NAMESPACE::GenericOutputFile {
+public:
+    DummyEXROutputFile(OPENEXR_IMF_INTERNAL_NAMESPACE::OStream& os,
+        const OPENEXR_IMF_INTERNAL_NAMESPACE::Header& header) {
+        writeMagicNumberAndVersionField(os, header);
+    }
+};
+#else
+class DummyEXROutputFile {
+public:
+    DummyEXROutputFile(Imf::OStream& os, const Imf::Header& header) {}
+};
+#endif
 
 
 
@@ -175,6 +197,9 @@ public:
         // reading code, effectively serializing the existing header
         StdOSStream os;
         bool isTiled = Imf::isTiled(to->m_inputFile->version());
+        // Before OpenEXR 2, writeTo wrote the magic number and the version,
+        // later it was separated into two functions
+        DummyEXROutputFile dummy(os, to->m_inputFile->header());
         to->m_inputFile->header().writeTo(os, isTiled);
         const std::string headerData(os.str());
 

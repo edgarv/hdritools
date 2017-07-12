@@ -23,6 +23,10 @@
 #endif
 
 #include <ImfOutputFile.h>
+#if defined(OPENEXR_IMF_INTERNAL_NAMESPACE)
+#define USE_OPENEXR_2 1
+#include <ImfGenericInputFile.h>
+#endif
 
 #include <memory>
 #include <cassert>
@@ -45,6 +49,22 @@ struct EXROutputFileTO
         return to;
     }
 };
+
+
+
+#if USE_OPENEXR_2
+class DummyEXRInputFile : public OPENEXR_IMF_INTERNAL_NAMESPACE::GenericInputFile {
+public:
+    DummyEXRInputFile(OPENEXR_IMF_INTERNAL_NAMESPACE::IStream& is, int& version) {
+        readMagicNumberAndVersionField(is, version);
+    }
+};
+#else
+class DummyEXRInputFile {
+public:
+    DummyEXRInputFile(Imf::IStream& is, int& version) {}
+};
+#endif
 
 
 
@@ -75,6 +95,9 @@ public:
 
         Header header;
         int version;
+        // Before OpenEXR 2, readFrom read the magic number and the version,
+        // later it was separated into two functions
+        DummyEXRInputFile dummy(isstream, version);
         header.readFrom(isstream, version);
 
         EXROutputFileTO* const to = new EXROutputFileTO;
