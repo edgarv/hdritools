@@ -106,6 +106,13 @@ if (NOT CPACK_SYSTEM_NAME)
   endif()
 endif()
 
+# Identify AVX/AVX2 packages, since HDRITools lack dynamic dispatching
+if (USE_AVX2)
+  set(CPACK_SYSTEM_NAME "${CPACK_SYSTEM_NAME}.avx2")
+elseif (USE_AVX)
+  set(CPACK_SYSTEM_NAME "${CPACK_SYSTEM_NAME}.avx")
+endif()
+
 set (CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${HDRITOOLS_VERSION_BUILD}-${CPACK_SYSTEM_NAME})
 if (MSVC)
   math(EXPR MSVC_SIMPLE_VER "(${MSVC_VERSION} - 600) / 100")
