@@ -19,7 +19,11 @@
 #include <QLocale>
 #include <QDebug>
 
-#include <math.h>
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#include <float.h>
+#else
+#include <cmath>
+#endif
 
 
 // Disable the balloon code since it doesn't seem to work
@@ -78,12 +82,12 @@ void editShowBalloonTip(QObject *qobject,
 }
 #endif // USE_BALLOONTIP
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
-// Borrow the definition from the Windows 10 SDK, as available in MSVC 2015
-template <class T>
-inline bool isfinite(T x) throw() {
-    return ::fpclassify(x) <= 0;
+#if defined(_MSC_VER) && _MSC_VER < 1800
+inline bool isfinite(double x) {
+    return ::_finite(x) != 0;
 }
+#else
+using std::isfinite;
 #endif
 
 template <bool greaterThan>
