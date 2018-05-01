@@ -169,7 +169,7 @@ cachePadding (ptrdiff_t size)
     //
 
     static const int LOG2_CACHE_LINE_SIZE = 8;
-    static const ptrdiff_t CACHE_LINE_SIZE = (1 << LOG2_CACHE_LINE_SIZE);
+    //static const ptrdiff_t CACHE_LINE_SIZE = (1 << LOG2_CACHE_LINE_SIZE);
 
     int i = LOG2_CACHE_LINE_SIZE + 2;
 

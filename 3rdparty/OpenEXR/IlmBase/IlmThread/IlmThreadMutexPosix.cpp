@@ -61,6 +61,7 @@ Mutex::~Mutex ()
 {
     int error = ::pthread_mutex_destroy (&_mutex);
     assert (error == 0);
+    (void) error;
 }
 
 

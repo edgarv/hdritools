@@ -458,6 +458,7 @@ readTileData (InputStreamMutex *streamData,
 }
 
 
+#if 0
 void
 readNextTileData (InputStreamMutex *streamData,
                   DeepTiledInputFile::Data *ifd,
@@ -509,6 +510,7 @@ readNextTileData (InputStreamMutex *streamData,
                                    tableSize              +
                                    dataSize;
 }
+#endif
 
 
 //

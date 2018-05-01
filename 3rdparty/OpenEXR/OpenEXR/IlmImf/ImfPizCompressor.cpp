@@ -537,6 +537,7 @@ PizCompressor::uncompress (const char *inPtr,
 
 	tmpBufferEnd += cd.nx * cd.ny * cd.size;
     }
+    (void) _maxScanLineSize;
 
     //
     // Read range compression data

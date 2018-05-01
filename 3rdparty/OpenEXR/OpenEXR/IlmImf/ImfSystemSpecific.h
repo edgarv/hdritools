@@ -61,7 +61,7 @@ static bool GLOBAL_SYSTEM_LITTLE_ENDIAN =
 #define EXR_FORCEINLINE inline
 #define EXR_RESTRICT __restrict
 
-static void* EXRAllocAligned(size_t size, size_t alignment)
+inline static void* EXRAllocAligned(size_t size, size_t alignment)
 {
     void* ptr = 0;
     int ret = posix_memalign(&ptr, alignment, size);
@@ -74,7 +74,7 @@ static void* EXRAllocAligned(size_t size, size_t alignment)
 }
 
 
-static void EXRFreeAligned(void* ptr)
+inline static void EXRFreeAligned(void* ptr)
 {
     free(ptr);
 }

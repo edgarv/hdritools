@@ -117,6 +117,7 @@ ZipCompressor::uncompress (const char *inPtr,
     }
 
     int outSize = _zip.uncompress(inPtr, inSize, _outBuffer);
+    (void) _maxScanLineSize;
 
     outPtr = _outBuffer;
     return outSize;

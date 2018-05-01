@@ -493,7 +493,7 @@ B44Compressor::B44Compressor
 
     _tmpBuffer = new unsigned short
         [checkArraySize (uiMult (maxScanLineSize, numScanLines),
-                         sizeof (unsigned short))];
+                         int(sizeof (unsigned short)))];
 
     const ChannelList &channels = header().channels();
     int numHalfChans = 0;
@@ -908,6 +908,7 @@ B44Compressor::uncompress (const char *inPtr,
 
 	tmpBufferEnd += cd.nx * cd.ny * cd.size;
     }
+    (void) _maxScanLineSize;
 
     for (int i = 0; i < _numChans; ++i)
     {

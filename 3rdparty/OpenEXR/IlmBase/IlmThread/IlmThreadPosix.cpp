@@ -82,6 +82,7 @@ Thread::~Thread ()
 {
     int error = ::pthread_join (_thread, 0);
     assert (error == 0);
+    (void) error;
 }
 
 
