@@ -327,6 +327,7 @@ inline float horizontal_max(const float& x, const Vec4f& vec) {
 }
 
 
+#if !PCG_USE_AVX
 // Sum of each element in the vector using SSE3
 inline float horizontal_sum(const __m128& vec) {
     __m128 sum_tmp = _mm_hadd_ps(vec, vec);
@@ -339,6 +340,7 @@ inline float horizontal_sum(const __m128& vec) {
 inline Vec4i truncate(const Vec4f& v) {
     return _mm_cvttps_epi32(v);
 }
+#endif // !PCG_USE_AVX
 
 
 // SIMD logarithm: this method might only work correctly for valid values

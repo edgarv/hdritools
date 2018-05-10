@@ -376,7 +376,7 @@ namespace constants
 
 // Helper function to set either a scalar or a float from a Vec4fUnion
 template <typename T>
-inline const T& getValue(const pcg::Vec4fUnion& value);
+inline const T& MAY_BE_UNUSED getValue(const pcg::Vec4fUnion& value);
 
 template <>
 inline const float& MAY_BE_UNUSED getValue(const pcg::Vec4fUnion& value) {
@@ -396,7 +396,7 @@ template <typename T>
 inline const T& getValue(const pcg::Vec8fUnion& value);
 
 template <>
-inline const float& getValue(const pcg::Vec8fUnion& value) {
+inline const float& MAY_BE_UNUSED getValue(const pcg::Vec8fUnion& value) {
     return value.f[0];
 }
 
@@ -423,11 +423,12 @@ typedef pcg::Vec8fUnion VecfUnion;
 typedef pcg::Vec4fUnion VecfUnion;
 #endif
 
-static const VecfUnion ZERO = {PCG_TMOSOA_VECF( 0.0f )};
 static const VecfUnion ONE  = {PCG_TMOSOA_VECF( 1.0f )};
     
 static const VecfUnion Q_8bit  = {PCG_TMOSOA_VECF(   255.0f )};
+#if TONEMAPPERSOA_HAS_16BIT
 static const VecfUnion Q_16bit = {PCG_TMOSOA_VECF( 65535.0f )};
+#endif
 
 // Luminance conversion
 static const VecfUnion LVec[3] = {
@@ -776,6 +777,7 @@ struct Quantizer8bit
 };
 
 
+#if TONEMAPPERSOA_HAS_16BIT
 template <typename T, typename QT>
 struct Quantizer16bit
 {
@@ -787,6 +789,7 @@ struct Quantizer16bit
         return ops::round<QT>(FACTOR * x);
     }
 };
+#endif // TONEMAPPERSOA_HAS_16BIT
 
 
 

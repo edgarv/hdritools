@@ -47,7 +47,7 @@
 
 namespace
 {
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(__APPLE__)
 inline int64_t timespecToNano (const timespec &x)
 {
     return (x.tv_sec * 1000000000L) + x.tv_nsec;
