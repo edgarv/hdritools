@@ -18,6 +18,8 @@
 #include <Exception.h>
 #include <Reinhard02.h>
 
+#include <QDebug>
+
 void ImageDataProvider::setSize( const QSize &otherSize ) {
     if (otherSize != _size) {
         _size = otherSize;
@@ -29,6 +31,8 @@ void ImageDataProvider::setWhitePointRange( const range_t &otherRange, double ot
     if (otherRange != _whitePointRange || qFuzzyCompare(otherAvgLuminance, _avgLuminance)) {
         _whitePointRange = otherRange;
         _avgLuminance    = otherAvgLuminance;
+        qDebug() << "Setting white point range: " << _whitePointRange.first << ", " << _whitePointRange.second
+                 << ". Average: " << _avgLuminance;
         whitePointRangeChanged(_whitePointRange.first, _avgLuminance, _whitePointRange.second);
     }
 }

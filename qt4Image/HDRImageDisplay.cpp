@@ -282,8 +282,13 @@ void HDRImageDisplay::setSRGB(bool enable)
 
 void HDRImageDisplay::setWhitePoint(double value)
 {
-    const float l_white = static_cast<float>(value);
+    // Adjust by the average log luminance to get a more predictable behavior
+    float l_white = static_cast<float>(value);
+    l_white /= reinhard02Params.l_w;
     if (!qFuzzyCompare(l_white, reinhard02Params.l_white)) {
+        qDebug() << "New white point: raw input" << value
+                 << ", avg log lum: " << reinhard02Params.l_w
+                 << ", adjusted: " << l_white;
         reinhard02Params.l_white = l_white;
         toneMapper.SetParams(reinhard02Params);
         if (technique == REINHARD02) {
