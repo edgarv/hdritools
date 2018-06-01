@@ -116,8 +116,11 @@ void QInterpolator::textEdited()
 {
     bool ok;
     const double value = m_edit->text().toDouble(&ok);
-    Q_ASSERT(ok);
-    setValue(value);
+    if (ok) {
+        setValue(value);
+    } else {
+        qDebug() << "QInterpolator::textEdited: not a double: " << m_edit->text();
+    }
 }
 
 
