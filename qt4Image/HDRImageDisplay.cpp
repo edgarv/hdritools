@@ -85,6 +85,11 @@ bool HDRImageDisplay::open(const QString &fileName, HdrResult * result)
         return true;
 
     }
+    catch (const std::exception &e) {
+        qDebug() << "HDRImageDisplay::open exception: " << e.what();
+        if (result != NULL) { *result = ExceptionError; }
+        return false;
+    }
     catch (...) {
         if (result != NULL) { *result = ExceptionError; }
         return false;
