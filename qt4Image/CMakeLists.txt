@@ -302,8 +302,15 @@ install(CODE "
 # Directories to look for dependencies
 set(DIRS ${QT_LIBRARY_DIR})
 if (WIN32 AND QT_QMAKE_EXECUTABLE AND EXISTS "${QT_QMAKE_EXECUTABLE}")
-  get_filename_component(QT_BINARY_DIR ${QT_QMAKE_EXECUTABLE} PATH)
-  list(APPEND DIRS ${QT_BINARY_DIR})
+  get_filename_component(QT_BINARY_DIR "${QT_QMAKE_EXECUTABLE}" PATH)
+  list(APPEND DIRS "${QT_BINARY_DIR}")
+elseif (WIN32 AND TARGET Qt5::Core)
+  # Both release and debug configurations should be located in the same folder
+  get_target_property(QT_BINARY_DIR Qt5::Core LOCATION)
+  if (EXISTS "${QT_BINARY_DIR}")
+    get_filename_component(QT_BINARY_DIR "${QT_BINARY_DIR}" PATH)
+	list(APPEND DIRS "${QT_BINARY_DIR}")
+  endif()
 endif()
 
 # The default downloaded version of TBB seems to be problematic...
