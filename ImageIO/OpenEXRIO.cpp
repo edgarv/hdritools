@@ -184,7 +184,7 @@ void ReadImage(Image<Rgba32F, TopDown> &img, Imf::RgbaInputFile &file)
     Rgba32F *pixel = img.GetDataPointer();
     for(int i = 0; i < width*height; ++i) {
         Rgba32F temp(halfPixel[i].r, halfPixel[i].g, halfPixel[i].b, halfPixel[i].a);
-        _mm_stream_ps((float*)pixel[i], temp);
+        pixel[i] = temp;
     }
 }
 
