@@ -72,8 +72,8 @@ MainWindow::MainWindow(const QApplication *application, QMainWindow *parent) :
     setAcceptDrops(true);
 
     // Synchronizes the exposure and gamma controls, initially they are disabled
-    exposureConnect=new DoubleSpinSliderConnect(exposureSlider,exposureSpinBox);
-    gammaConnect   =new DoubleSpinSliderConnect(gammaSlider, gammaSpinBox);
+    exposureConnect = new DoubleSpinSliderConnect(exposureSlider,exposureSpinBox, this);
+    gammaConnect    = new DoubleSpinSliderConnect(gammaSlider, gammaSpinBox, this);
     exposureConnect->setEnabled(false);
     gammaConnect->setEnabled(false);
 
