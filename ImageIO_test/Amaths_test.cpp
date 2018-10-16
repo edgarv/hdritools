@@ -130,6 +130,8 @@ TEST(AMaths, Pow)
 # if !PCG_USE_AVX2
             // Values might not be exactly the same due to FMA in AVX2
             ASSERT_EQ(rCephes.f32[k], rCephes_AVX.f32[k]);
+# else
+            (void)rCephes_AVX;  // Silence gcc warning: unused-but-set-variable
 # endif
 #endif
             // Error between amath and stdlib
