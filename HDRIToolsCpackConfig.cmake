@@ -265,7 +265,8 @@ if (BUILD_BATCH_TONEMAPPER OR BUILD_QT4IMAGE)
     list(APPEND PACKAGE_DEB_REQUIRES_LIST
       "libqt5core5a (>= ${PACKAGE_MIN_QT_VERSION})"
       "libqt5gui5 (>= ${PACKAGE_MIN_QT_VERSION})"
-      "libqt5widgets5 (>= ${PACKAGE_MIN_QT_VERSION})")
+      "libqt5widgets5 (>= ${PACKAGE_MIN_QT_VERSION})"
+      "qt5-image-formats-plugins (>= ${PACKAGE_MIN_QT_VERSION})")
   else()
     # Legacy, requiring qt 4.5
     list(APPEND PACKAGE_RPM_REQUIRES_LIST "qt >= 4.5")
