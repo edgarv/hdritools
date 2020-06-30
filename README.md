@@ -6,7 +6,7 @@ HDR Image Tools 0.5.0
 
 (C) 2008-2014
 [Program of Computer Graphics](http://www.graphics.cornell.edu),
-[Cornell University](http://www.cornell.edu).  
+[Cornell University](https://www.cornell.edu/).  
 (C) 2014-2020
 Edgar Velázquez-Armendáriz  
 Distributed under the OSI-approved [MIT License](http://opensource.org/licenses/MIT).
@@ -17,9 +17,9 @@ Overview
 --------
 
 This package provides a set of simple tools to manipulate HDR images in
-the [Radiance](http://radsite.lbl.gov/radiance/refer/filefmts.pdf)
-(.pic;.rgbe;.hdr), [OpenEXR](http://www.openexr.com) (.exr) and
-[Portable Float Map](http://gl.ict.usc.edu/HDRShop/PFM/PFM_Image_File_Format.html) (.pfm)
+the [Radiance](https://floyd.lbl.gov/radiance/refer/filefmts.pdf)
+(.pic;.rgbe;.hdr), [OpenEXR](https://www.openexr.com/) (.exr) and
+[Portable Float Map](https://www.pauldebevec.com/Research/HDR/PFM/) (.pfm)
 formats. They include a viewer, a batch tonemapper, and OpenEXR bindings for
 Java (using JNI) and Matlab (using MEX files).
 
@@ -64,11 +64,11 @@ back in 1998.
 Required external components
 ----------------------------
 
-- [CMake](http://www.cmake.org) >=2.8.12 - to create the build files.
-- [Threading Building Blocks](http://www.threadingbuildingblocks.org) >= 2.2 -
+- [CMake](https://cmake.org/) >=2.8.12 - to create the build files.
+- [Threading Building Blocks](https://github.com/oneapi-src/oneTBB) >= 2.2 -
   used for the parallelization.
-- [Qt](http://qt.nokia.com) >= 4.4 - for batchToneMapper and qt4Image.
-- [JUnit](http://www.junit.org/) >= 4 - used for the optional Java unit tests.
+- [Qt](https://www.qt.io/) >= 4.4 - for batchToneMapper and qt4Image.
+- [JUnit](https://junit.org/) >= 4 - used for the optional Java unit tests.
 
 Build options
 -------------
@@ -97,22 +97,22 @@ DirectX SDK.
 Acknowledgements
 ----------------
 
-[Fabio Pellacini](http://www.cs.dartmouth.edu/~fabio/) wrote the original
+[Fabio Pellacini](http://pellacini.di.uniroma1.it/) wrote the original
 version of `ImageIO/Image.h`.
 The zip file reading functionality is based on MiniZip.
 The OpenEXR_Matlab module is originally based on work by
-[Jinwei Gu](http://www.cs.columbia.edu/~jwgu/).
-Experiments badge icon by [David Lanham](http://dlanham.com/).
+[Jinwei Gu](https://www.gujinwei.org/).
+Experiments badge icon by [David Lanham](https://dlanham.com/).
 
 The HDRITools package uses and includes free software:
 
-- The [zlib](http://www.zlib.net/) compression library
+- The [zlib](https://www.zlib.net/) compression library
   (Jean-loup Gailly, Mark Adler and team)
 - The [MiniZip](http://www.winimage.com/zLibDll/minizip.html) compression
   library (Gilles Vollant and team)
 - The [libpng](http://www.libpng.org/pub/png/) graphics library
   (Glenn Randers-Pehrson and team)
-- The [OpenEXR](http://www.openexr.com) graphics library
+- The [OpenEXR](https://www.openexr.com/) graphics library
   (Industrial Light & Magic, a division of
   Lucasfilm Entertainment Company Ltd.)
 - The [TCLAP](http://tclap.sourceforge.net/) command line parser library
@@ -123,5 +123,5 @@ The HDRITools package uses and includes free software:
 - The [SIMD oriented Fast Mersenne Twister](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/)
   random number library
   (Mutsuo Saito, Makoto Matsumoto and Hiroshima University)
-- The [Google Test](http://code.google.com/p/googletest/)
+- The [Google Test](https://github.com/google/googletest)
   C++ Testing Framework (Google Inc.)
