@@ -3,43 +3,43 @@ PCG HDRITools
 
 HDR Image Tools 0.5.0
 ---------------------
+
 (C) 2008-2014
 [Program of Computer Graphics](http://www.graphics.cornell.edu),
 [Cornell University](http://www.cornell.edu).  
-(C) 2014-2017
+(C) 2014-2020
 Edgar Velázquez-Armendáriz  
 Distributed under the OSI-approved [MIT License](http://opensource.org/licenses/MIT).
 
-Primary author: [Edgar Velázquez-Armendáriz](http://www.cs.cornell.edu/~eva5/) -
-eva5 _at_ cs~cornell~edu
-
+Primary author: [Edgar Velázquez-Armendáriz](https://www.edgarphd.com)
 
 Overview
 --------
 
-This package provides a set of simple tools to manipulate HDR images in 
-the [Radiance](http://radsite.lbl.gov/radiance/refer/filefmts.pdf) 
-(.pic;.rgbe;.hdr), [OpenEXR](http://www.openexr.com) (.exr) and 
+This package provides a set of simple tools to manipulate HDR images in
+the [Radiance](http://radsite.lbl.gov/radiance/refer/filefmts.pdf)
+(.pic;.rgbe;.hdr), [OpenEXR](http://www.openexr.com) (.exr) and
 [Portable Float Map](http://gl.ict.usc.edu/HDRShop/PFM/PFM_Image_File_Format.html) (.pfm)
 formats. They include a viewer, a batch tonemapper, and OpenEXR bindings for
-Java (using JNI) and Matlab (using MEX files.) 
+Java (using JNI) and Matlab (using MEX files).
 
-The projects use the meta-build system CMake to create the actual build 
-files. To generate the build files using `cmake` one can just execute, 
-from the directory where the build files will be created: 
+The projects use the meta-build system CMake to create the actual build
+files. To generate the build files using `cmake` one can just execute,
+from the directory where the build files will be created:
 
-    $ cmake -G "Generator Name" PATH_TO_MODULE
+```console
+cmake -G "Generator Name" PATH_TO_MODULE
+```
 
-Where `Generator Name` is the name of the desired generator as shown by 
+Where `Generator Name` is the name of the desired generator as shown by
 executing `cmake` without arguments. `PATH_TO_MODULE` is the path (relative
 or absolute) to the directory where the `CMakeLists.txt` file at the top of
 the module is located. More details about how to invoke cmake may be consulted
 on its online documentation. An easier way might be to use either the ncurses
 variant `ccmake` or the Qt based one, `cmake-gui` instead.
 
-
 Package contents
----------------
+----------------
 
 The HDRITools package provides the following:
 
@@ -52,50 +52,51 @@ OpenEXR and Portable Float Map files. It is (allegedly) tuned for speed, using
 templates and SSE/SSE2/SSE3/AVX intrinsics. It can also write PNGs of integral-type
 pixels at 8 and 16 bits per pixel.
 
-- *batchToneMapper* - a parallel command line utility to tone map HDR 
-files using exposure and gamma correction. It can also read the HDR 
+- *batchToneMapper* - a parallel command line utility to tone map HDR
+files using exposure and gamma correction. It can also read the HDR
 files contained in a zip file directly. It is based on ImageIO.
 
-- *qt4Image* - HDR file viewer to tone map, zoom and compare files, using 
-amenities such as drag-and-drop. This is meant to be a modern 
+- *qt4Image* - HDR file viewer to tone map, zoom and compare files, using
+amenities such as drag-and-drop. This is meant to be a modern
 replacement of the venerable `glimage` created by Mahesh Ramasubramanian
-back in 1998. 
-
+back in 1998.
 
 Required external components
 ----------------------------
 
-- [CMake](http://www.cmake.org) >=2.8.12 - to create the build files. 
+- [CMake](http://www.cmake.org) >=2.8.12 - to create the build files.
 - [Threading Building Blocks](http://www.threadingbuildingblocks.org) >= 2.2 -
-  used for the parallelization. 
+  used for the parallelization.
 - [Qt](http://qt.nokia.com) >= 4.4 - for batchToneMapper and qt4Image.
 - [JUnit](http://www.junit.org/) >= 4 - used for the optional Java unit tests.
 
-
 Build options
 -------------
-The options are documented in CMake, use the GUI or ncurses version to see 
-their description. However the defaults should be decent enough. 
 
+The options are documented in CMake, use the GUI or ncurses version to see
+their description. However the defaults should be decent enough.
 
 Known issues
 ------------
+
 When compiling against a static Qt4 in windows, if you receive the error:
 
-    error LNK2001: unresolved external symbol IID_ID3DXEffectStateManager
+```console
+error LNK2001: unresolved external symbol IID_ID3DXEffectStateManager
+```
 
 Then you might need to link manually `batchToneMapper` and `qt4Image` to a
 DirectX library contained in the SKD:
- 
+
 - `%DXSDK_DIR%\Lib\x64\dxguid.lib` (for Win64 or)
 - `%DXSDK_DIR%\Lib\x86\dxguid.lib` (for Win32)
 
 Where `DXSDK_DIR` is the environment variable with the path to the
 DirectX SDK.
 
-
 Acknowledgements
 ----------------
+
 [Fabio Pellacini](http://www.cs.dartmouth.edu/~fabio/) wrote the original
 version of `ImageIO/Image.h`.
 The zip file reading functionality is based on MiniZip.
